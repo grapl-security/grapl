@@ -363,3 +363,9 @@ FROM rust-dist AS uid-allocator-deploy
 
 COPY --from=build /outputs/uid-allocator /
 ENTRYPOINT ["/uid-allocator"]
+
+##### generator-dispatcher
+FROM rust-dist AS generator-dispatcher-deploy
+
+COPY --from=build /outputs/generator-dispatcher /
+ENTRYPOINT ["/generator-dispatcher"]

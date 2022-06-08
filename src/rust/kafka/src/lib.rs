@@ -1,5 +1,11 @@
+pub mod config;
+
 use std::marker::PhantomData;
 
+use config::{
+    ConsumerConfig,
+    ProducerConfig,
+};
 use futures::{
     stream::{
         Stream,
@@ -111,15 +117,14 @@ where
 /// A producer publishes data to a topic. This producer serializes the data it
 /// is given before publishing.
 impl<T: SerDe> Producer<T> {
-    pub fn new(
-        bootstrap_servers: String,
-        sasl_username: String,
-        sasl_password: String,
-        topic: String,
-    ) -> Result<Producer<T>, ConfigurationError> {
-        Ok(Producer {
-            producer: producer(bootstrap_servers, sasl_username, sasl_password)?,
-            topic,
+    pub fn new(config: ProducerConfig) -> Result<Self, ConfigurationError> {
+        Ok(Self {
+            producer: producer(
+                config.bootstrap_servers,
+                config.sasl_username,
+                config.sasl_password,
+            )?,
+            topic: config.topic,
             _t: PhantomData,
         })
     }
@@ -191,21 +196,15 @@ where
 }
 
 impl<T: SerDe> Consumer<T> {
-    pub fn new(
-        bootstrap_servers: String,
-        sasl_username: String,
-        sasl_password: String,
-        consumer_group_name: String,
-        topic: String,
-    ) -> Result<Consumer<T>, ConfigurationError> {
-        Ok(Consumer {
+    pub fn new(config: ConsumerConfig) -> Result<Self, ConfigurationError> {
+        Ok(Self {
             consumer: consumer(
-                bootstrap_servers,
-                sasl_username,
-                sasl_password,
-                consumer_group_name,
+                config.bootstrap_servers,
+                config.sasl_username,
+                config.sasl_password,
+                config.consumer_group_name,
             )?,
-            topic,
+            topic: config.topic,
             _t: PhantomData,
         })
     }
@@ -266,27 +265,12 @@ where
     P: SerDe,
 {
     pub fn new(
-        bootstrap_servers: String,
-        sasl_username: String,
-        sasl_password: String,
-        consumer_group_name: String,
-        consumer_topic: String,
-        producer_topic: String,
+        consumer_config: ConsumerConfig,
+        producer_config: ProducerConfig,
     ) -> Result<StreamProcessor<C, P>, ConfigurationError> {
         Ok(StreamProcessor {
-            consumer: Consumer::new(
-                bootstrap_servers.clone(),
-                sasl_username.clone(),
-                sasl_password.clone(),
-                consumer_group_name,
-                consumer_topic,
-            )?,
-            producer: Producer::new(
-                bootstrap_servers,
-                sasl_username,
-                sasl_password,
-                producer_topic,
-            )?,
+            consumer: Consumer::new(consumer_config)?,
+            producer: Producer::new(producer_config)?,
         })
     }
 

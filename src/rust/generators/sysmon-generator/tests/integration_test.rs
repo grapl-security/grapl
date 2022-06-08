@@ -3,8 +3,10 @@
 use std::time::Duration;
 
 use bytes::Bytes;
+use clap::Parser;
 use futures::StreamExt;
 use kafka::{
+    config::ConsumerConfig,
     Consumer,
     ConsumerError,
 };
@@ -57,12 +59,11 @@ fn find_node<'a>(
 
 struct SysmonGeneratorTestContext {
     pipeline_ingress_client: PipelineIngressClient,
-    bootstrap_servers: String,
-    sasl_username: String,
-    sasl_password: String,
-    consumer_group_name: String,
+    consumer_config: ConsumerConfig,
     _guard: WorkerGuard,
 }
+
+static CONSUMER_TOPIC: &'static str = "generated-graphs";
 
 #[async_trait::async_trait]
 impl AsyncTestContext for SysmonGeneratorTestContext {
@@ -94,15 +95,6 @@ impl AsyncTestContext for SysmonGeneratorTestContext {
         let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
             .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
 
-        let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
-            .expect("missing environment variable KAFKA_BOOTSTRAP_SERVERS");
-        let sasl_username = std::env::var("INTEGRATION_TESTS_KAFKA_SASL_USERNAME")
-            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_SASL_USERNAME");
-        let sasl_password = std::env::var("INTEGRATION_TESTS_KAFKA_SASL_PASSWORD")
-            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_SASL_PASSWORD");
-        let consumer_group_name = std::env::var("INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME")
-            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME");
-
         tracing::info!(
             message = "waiting 10s for pipeline-ingress to report healthy",
             endpoint = %endpoint,
@@ -122,12 +114,14 @@ impl AsyncTestContext for SysmonGeneratorTestContext {
             .await
             .expect("could not configure gRPC client");
 
+        let consumer_config = ConsumerConfig {
+            topic: CONSUMER_TOPIC.to_string(),
+            ..ConsumerConfig::parse()
+        };
+
         SysmonGeneratorTestContext {
             pipeline_ingress_client,
-            bootstrap_servers,
-            sasl_username,
-            sasl_password,
-            consumer_group_name,
+            consumer_config,
             _guard,
         }
     }
@@ -139,20 +133,9 @@ async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTest
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
 
-    let bootstrap_servers = ctx.bootstrap_servers.clone();
-    let sasl_username = ctx.sasl_username.clone();
-    let sasl_password = ctx.sasl_password.clone();
-    let consumer_group_name = ctx.consumer_group_name.clone();
-
     tracing::info!("configuring kafka consumer");
-    let kafka_consumer = Consumer::new(
-        bootstrap_servers,
-        sasl_username,
-        sasl_password,
-        consumer_group_name,
-        "generated-graphs".to_string(),
-    )
-    .expect("could not configure kafka consumer");
+    let kafka_consumer =
+        Consumer::new(ctx.consumer_config.clone()).expect("could not configure kafka consumer");
 
     // we'll use this channel to communicate that the consumer is ready to
     // consume messages
@@ -219,7 +202,50 @@ async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTest
     rx.await
         .expect("failed to receive notification that consumer is consuming");
 
-    let log_event: Bytes = r#"<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Sysmon' Guid='{5770385F-C22A-43E0-BF4C-06F5698FFBD9}'/><EventID>1</EventID><Version>5</Version><Level>4</Level><Task>1</Task><Opcode>0</Opcode><Keywords>0x8000000000000000</Keywords><TimeCreated SystemTime='2019-07-24T18:05:14.402156600Z'/><EventRecordID>550</EventRecordID><Correlation/><Execution ProcessID='3324' ThreadID='3220'/><Channel>Microsoft-Windows-Sysmon/Operational</Channel><Computer>DESKTOP-FVSHABR</Computer><Security UserID='S-1-5-18'/></System><EventData><Data Name='RuleName'></Data><Data Name='UtcTime'>2019-07-24 18:05:14.399</Data><Data Name='ProcessGuid'>{87E8D3BD-9DDA-5D38-0000-0010A3941D00}</Data><Data Name='ProcessId'>5752</Data><Data Name='Image'>C:\Windows\System32\cmd.exe</Data><Data Name='FileVersion'>10.0.10240.16384 (th1.150709-1700)</Data><Data Name='Description'>Windows Command Processor</Data><Data Name='Product'>Microsoft� Windows� Operating System</Data><Data Name='Company'>Microsoft Corporation</Data><Data Name='OriginalFileName'>Cmd.Exe</Data><Data Name='CommandLine'>"cmd" /C "msiexec /quiet /i cmd.msi"</Data><Data Name='CurrentDirectory'>C:\Users\grapltest\Downloads\</Data><Data Name='User'>DESKTOP-FVSHABR\grapltest</Data><Data Name='LogonGuid'>{87E8D3BD-99C8-5D38-0000-002088140200}</Data><Data Name='LogonId'>0x21488</Data><Data Name='TerminalSessionId'>1</Data><Data Name='IntegrityLevel'>Medium</Data><Data Name='Hashes'>MD5=A6177D080759CF4A03EF837A38F62401,SHA256=79D1FFABDD7841D9043D4DDF1F93721BCD35D823614411FD4EAB5D2C16A86F35</Data><Data Name='ParentProcessGuid'>{87E8D3BD-9DD8-5D38-0000-00109F871D00}</Data><Data Name='ParentProcessId'>6132</Data><Data Name='ParentImage'>C:\Users\grapltest\Downloads\svchost.exe</Data><Data Name='ParentCommandLine'>.\svchost.exe</Data></EventData></Event>"#.into();
+    let log_event: Bytes = r#"
+<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+  <System>
+    <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385F-C22A-43E0-BF4C-06F5698FFBD9}"/>
+    <EventID>1</EventID>
+    <Version>5</Version>
+    <Level>4</Level>
+    <Task>1</Task>
+    <Opcode>0</Opcode>
+    <Keywords>0x8000000000000000</Keywords>
+    <TimeCreated SystemTime="2019-07-24T18:05:14.402156600Z"/>
+    <EventRecordID>550</EventRecordID>
+    <Correlation/>
+    <Execution ProcessID="3324" ThreadID="3220"/>
+    <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+    <Computer>DESKTOP-FVSHABR</Computer>
+    <Security UserID="S-1-5-18"/>
+  </System>
+  <EventData>
+    <Data Name="RuleName"/>
+    <Data Name="UtcTime">2019-07-24 18:05:14.399</Data>
+    <Data Name="ProcessGuid">{87E8D3BD-9DDA-5D38-0000-0010A3941D00}</Data>
+    <Data Name="ProcessId">5752</Data>
+    <Data Name="Image">C:\Windows\System32\cmd.exe</Data>
+    <Data Name="FileVersion">10.0.10240.16384 (th1.150709-1700)</Data>
+    <Data Name="Description">Windows Command Processor</Data>
+    <Data Name="Product">Microsoft&#xFFFD; Windows&#xFFFD; Operating System</Data>
+    <Data Name="Company">Microsoft Corporation</Data>
+    <Data Name="OriginalFileName">Cmd.Exe</Data>
+    <Data Name="CommandLine">"cmd" /C "msiexec /quiet /i cmd.msi"</Data>
+    <Data Name="CurrentDirectory">C:\Users\grapltest\Downloads\</Data>
+    <Data Name="User">DESKTOP-FVSHABR\grapltest</Data>
+    <Data Name="LogonGuid">{87E8D3BD-99C8-5D38-0000-002088140200}</Data>
+    <Data Name="LogonId">0x21488</Data>
+    <Data Name="TerminalSessionId">1</Data>
+    <Data Name="IntegrityLevel">Medium</Data>
+    <Data Name="Hashes">MD5=A6177D080759CF4A03EF837A38F62401,SHA256=79D1FFABDD7841D9043D4DDF1F93721BCD35D823614411FD4EAB5D2C16A86F35</Data>
+    <Data Name="ParentProcessGuid">{87E8D3BD-9DD8-5D38-0000-00109F871D00}</Data>
+    <Data Name="ParentProcessId">6132</Data>
+    <Data Name="ParentImage">C:\Users\grapltest\Downloads\svchost.exe</Data>
+    <Data Name="ParentCommandLine">.\svchost.exe</Data>
+  </EventData>
+</Event>
+"#.into();
 
     tracing::info!("sending publish_raw_log request");
     ctx.pipeline_ingress_client

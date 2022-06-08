@@ -78,24 +78,14 @@ variable "session_table_name" {
   description = "What is the name of the session table?"
 }
 
-variable "plugin_registry_db_hostname" {
-  type        = string
-  description = "What is the host for the plugin registry table?"
-}
-
-variable "plugin_registry_db_port" {
-  type        = string
-  description = "What is the port for the plugin registry table?"
-}
-
-variable "plugin_registry_db_username" {
-  type        = string
-  description = "What is the username for the plugin registry table?"
-}
-
-variable "plugin_registry_db_password" {
-  type        = string
-  description = "What is the password for the plugin registry table?"
+variable "plugin_registry_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for plugin-registry database"
 }
 
 variable "plugin_registry_kernel_artifact_url" {
@@ -108,24 +98,14 @@ variable "plugin_registry_rootfs_artifact_url" {
   description = "URL specifying the rootfs.tar.gz for the Firecracker VM"
 }
 
-variable "organization_management_db_hostname" {
-  type        = string
-  description = "What is the host for the organization management database?"
-}
-
-variable "organization_management_db_port" {
-  type        = string
-  description = "What is the port for the organization management database?"
-}
-
-variable "organization_management_db_username" {
-  type        = string
-  description = "What is the username for the organization management database?"
-}
-
-variable "organization_management_db_password" {
-  type        = string
-  description = "What is the password for the organization management database?"
+variable "organization_management_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for organization-management database"
 }
 
 variable "pipeline_ingress_healthcheck_polling_interval_ms" {
@@ -133,54 +113,39 @@ variable "pipeline_ingress_healthcheck_polling_interval_ms" {
   description = "The amount of time to wait between each healthcheck execution."
 }
 
-variable "pipeline_ingress_kafka_sasl_username" {
-  type        = string
-  description = "The username to authenticate with Confluent Cloud cluster."
+variable "kafka_credentials" {
+  description = "Map from service-name to kafka credentials for that service"
+  type = map(object({
+    # The username to authenticate with Confluent Cloud cluster.
+    sasl_username = string
+    # The password to authenticate with Confluent Cloud cluster.
+    sasl_password = string
+  }))
 }
 
-variable "pipeline_ingress_kafka_sasl_password" {
-  type        = string
-  description = "The password to authenticate with Confluent Cloud cluster."
+variable "kafka_consumer_groups" {
+  description = "Map from service-name to the consumer group for that service to join"
+  type        = map(string)
 }
 
-variable "plugin_work_queue_db_hostname" {
-  type        = string
-  description = "What is the host for the plugin work queue table?"
+variable "plugin_work_queue_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for plugin-work-queue database"
 }
 
-variable "plugin_work_queue_db_port" {
-  type        = string
-  description = "What is the port for the plugin work queue table?"
-}
-
-variable "plugin_work_queue_db_username" {
-  type        = string
-  description = "What is the username for the plugin work queue table?"
-}
-
-variable "plugin_work_queue_db_password" {
-  type        = string
-  description = "What is the password for the plugin work queue table?"
-}
-
-variable "uid_allocator_db_hostname" {
-  type        = string
-  description = "What is the host for the uid-allocator table?"
-}
-
-variable "uid_allocator_db_port" {
-  type        = string
-  description = "What is the port for the uid-allocator table?"
-}
-
-variable "uid_allocator_db_username" {
-  type        = string
-  description = "What is the username for the uid-allocator table?"
-}
-
-variable "uid_allocator_db_password" {
-  type        = string
-  description = "What is the password for the uid-allocator table?"
+variable "uid_allocator_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for uid-allocator database"
 }
 
 variable "plugin_registry_bucket_aws_account_id" {
@@ -193,40 +158,10 @@ variable "plugin_registry_bucket_name" {
   description = "The name of the bucket where plugins are stored"
 }
 
-variable "graph_generator_kafka_sasl_username" {
-  type        = string
-  description = "The username to authenticate with Confluent Cloud cluster."
-}
-
-variable "graph_generator_kafka_sasl_password" {
-  type        = string
-  description = "The password to authenticate with Confluent Cloud cluster."
-}
-
-variable "graph_generator_kafka_consumer_group" {
-  type        = string
-  description = "Consumer group for graph-generator consumers to join."
-}
-
 variable "num_graph_mergers" {
   type        = number
   default     = 1
   description = "The number of graph merger instances to run."
-}
-
-variable "graph_merger_kafka_sasl_username" {
-  type        = string
-  description = "The username to authenticate with Confluent Cloud cluster."
-}
-
-variable "graph_merger_kafka_sasl_password" {
-  type        = string
-  description = "The password to authenticate with Confluent Cloud cluster."
-}
-
-variable "graph_merger_kafka_consumer_group" {
-  type        = string
-  description = "Consumer group for node-identifier consumers to join."
 }
 
 variable "test_user_name" {
@@ -243,21 +178,6 @@ variable "num_node_identifiers" {
   type        = number
   default     = 1
   description = "The number of node identifiers to run."
-}
-
-variable "node_identifier_kafka_sasl_username" {
-  type        = string
-  description = "The username to authenticate with Confluent Cloud cluster."
-}
-
-variable "node_identifier_kafka_sasl_password" {
-  type        = string
-  description = "The password to authenticate with Confluent Cloud cluster."
-}
-
-variable "node_identifier_kafka_consumer_group" {
-  type        = string
-  description = "Consumer group for node-identifier consumers to join."
 }
 
 variable "user_auth_table" {
@@ -678,6 +598,55 @@ job "grapl-core" {
   ## Begin actual Grapl core services ##
   #######################################
 
+  group "generator-dispatcher" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+    }
+
+    task "generator-dispatcher" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["generator-dispatcher"]
+      }
+
+      env {
+        # Upstreams
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+
+        # Kafka
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["generator-dispatcher"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["generator-dispatcher"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher"]
+        KAFKA_CONSUMER_TOPIC      = "raw-logs"
+        KAFKA_PRODUCER_TOPIC      = "generated-graphs"
+
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "generator-dispatcher"
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "plugin-work-queue"
+              local_bind_port  = 1000
+            }
+          }
+        }
+      }
+    }
+  }
+
   group "generator-executor" {
     network {
       mode = "bridge"
@@ -756,10 +725,12 @@ job "grapl-core" {
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
 
-        KAFKA_BOOTSTRAP_SERVERS     = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME         = var.node_identifier_kafka_sasl_username
-        KAFKA_SASL_PASSWORD         = var.node_identifier_kafka_sasl_password
-        GRAPH_MERGER_CONSUMER_GROUP = var.graph_merger_kafka_consumer_group
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["graph-merger"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["graph-merger"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["graph-merger"]
+        KAFKA_CONSUMER_TOPIC      = "identified-graphs"
+        KAFKA_PRODUCER_TOPIC      = "merged-graphs"
 
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
@@ -819,10 +790,12 @@ job "grapl-core" {
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
 
-        KAFKA_BOOTSTRAP_SERVERS        = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME            = var.node_identifier_kafka_sasl_username
-        KAFKA_SASL_PASSWORD            = var.node_identifier_kafka_sasl_password
-        NODE_IDENTIFIER_CONSUMER_GROUP = var.node_identifier_kafka_consumer_group
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["node-identifier"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["node-identifier"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["node-identifier"]
+        KAFKA_CONSUMER_TOPIC      = "generated-graphs"
+        KAFKA_PRODUCER_TOPIC      = "identified-graphs"
 
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
@@ -1175,10 +1148,14 @@ job "grapl-core" {
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
 
-        KAFKA_BOOTSTRAP_SERVERS        = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME            = var.graph_generator_kafka_sasl_username
-        KAFKA_SASL_PASSWORD            = var.graph_generator_kafka_sasl_password
-        GRAPH_GENERATOR_CONSUMER_GROUP = var.graph_generator_kafka_consumer_group
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["graph-generator"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["graph-generator"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["graph-generator"]
+
+        # Temp, until we change sysmon-generator to use the real Plugin SDK
+        KAFKA_CONSUMER_TOPIC = "raw-logs"
+        KAFKA_PRODUCER_TOPIC = "generated-graphs"
       }
     }
   }
@@ -1213,10 +1190,10 @@ job "grapl-core" {
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_organization-management-port}"
         RUST_BACKTRACE                       = local.rust_backtrace
         RUST_LOG                             = var.rust_log
-        ORGANIZATION_MANAGEMENT_DB_HOSTNAME  = var.organization_management_db_hostname
-        ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db_password
-        ORGANIZATION_MANAGEMENT_DB_PORT      = var.organization_management_db_port
-        ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db_username
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME  = var.organization_management_db.hostname
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db.password
+        ORGANIZATION_MANAGEMENT_DB_PORT      = var.organization_management_db.port
+        ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db.username
         OTEL_EXPORTER_JAEGER_AGENT_HOST      = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT      = local.tracing_jaeger_endpoint_port
       }
@@ -1264,8 +1241,9 @@ job "grapl-core" {
         RUST_LOG                                         = var.rust_log
         PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS = var.pipeline_ingress_healthcheck_polling_interval_ms
         KAFKA_BOOTSTRAP_SERVERS                          = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME                              = var.pipeline_ingress_kafka_sasl_username
-        KAFKA_SASL_PASSWORD                              = var.pipeline_ingress_kafka_sasl_password
+        KAFKA_SASL_USERNAME                              = var.kafka_credentials["pipeline-ingress"].sasl_username
+        KAFKA_SASL_PASSWORD                              = var.kafka_credentials["pipeline-ingress"].sasl_password
+        KAFKA_PRODUCER_TOPIC                             = "raw-logs"
 
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
@@ -1318,10 +1296,10 @@ job "grapl-core" {
         AWS_REGION                                      = var.aws_region
         NOMAD_SERVICE_ADDRESS                           = "${attr.unique.network.ip-address}:4646"
         PLUGIN_REGISTRY_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_DB_HOSTNAME                     = var.plugin_registry_db_hostname
-        PLUGIN_REGISTRY_DB_PASSWORD                     = var.plugin_registry_db_password
-        PLUGIN_REGISTRY_DB_PORT                         = var.plugin_registry_db_port
-        PLUGIN_REGISTRY_DB_USERNAME                     = var.plugin_registry_db_username
+        PLUGIN_REGISTRY_DB_HOSTNAME                     = var.plugin_registry_db.hostname
+        PLUGIN_REGISTRY_DB_PASSWORD                     = var.plugin_registry_db.password
+        PLUGIN_REGISTRY_DB_PORT                         = var.plugin_registry_db.port
+        PLUGIN_REGISTRY_DB_USERNAME                     = var.plugin_registry_db.username
         PLUGIN_BOOTSTRAP_CONTAINER_IMAGE                = var.container_images["plugin-bootstrap"]
         PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL             = var.plugin_registry_kernel_artifact_url
         PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL             = var.plugin_registry_rootfs_artifact_url
@@ -1388,10 +1366,10 @@ job "grapl-core" {
 
       env {
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME  = var.plugin_work_queue_db_hostname
-        PLUGIN_WORK_QUEUE_DB_PASSWORD  = var.plugin_work_queue_db_password
-        PLUGIN_WORK_QUEUE_DB_PORT      = var.plugin_work_queue_db_port
-        PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db_username
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME  = var.plugin_work_queue_db.hostname
+        PLUGIN_WORK_QUEUE_DB_PASSWORD  = var.plugin_work_queue_db.password
+        PLUGIN_WORK_QUEUE_DB_PORT      = var.plugin_work_queue_db.port
+        PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db.username
         # Hardcoded, but makes little sense to pipe up through Pulumi
         PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
@@ -1441,10 +1419,10 @@ job "grapl-core" {
 
       env {
         UID_ALLOCATOR_BIND_ADDRESS      = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
-        UID_ALLOCATOR_DB_HOSTNAME       = var.uid_allocator_db_hostname
-        UID_ALLOCATOR_DB_PASSWORD       = var.uid_allocator_db_password
-        UID_ALLOCATOR_DB_PORT           = var.uid_allocator_db_port
-        UID_ALLOCATOR_DB_USERNAME       = var.uid_allocator_db_username
+        UID_ALLOCATOR_DB_HOSTNAME       = var.uid_allocator_db.hostname
+        UID_ALLOCATOR_DB_PASSWORD       = var.uid_allocator_db.password
+        UID_ALLOCATOR_DB_PORT           = var.uid_allocator_db.port
+        UID_ALLOCATOR_DB_USERNAME       = var.uid_allocator_db.username
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host

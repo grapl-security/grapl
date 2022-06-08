@@ -1,9 +1,14 @@
 use std::sync::Arc;
 
+use clap::Parser;
 use dgraph_tonic::Client as DgraphClient;
 use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
 use kafka::{
+    config::{
+        ConsumerConfig,
+        ProducerConfig,
+    },
     StreamProcessor,
     StreamProcessorError,
 };
@@ -78,46 +83,37 @@ async fn main() -> Result<(), GraphMergerError> {
 
     let graph_merger = GraphMerger::new(DgraphClient::new(mg_alphas)?, reverse_edge_resolver);
 
-    handler(Arc::new(Mutex::new(graph_merger))).await
+    let consumer_config = ConsumerConfig::parse();
+    let producer_config = ProducerConfig::parse();
+
+    handler(
+        Arc::new(Mutex::new(graph_merger)),
+        consumer_config,
+        producer_config,
+    )
+    .await
 }
 
 #[tracing::instrument(skip(graph_merger))]
-async fn handler(graph_merger: Arc<Mutex<GraphMerger>>) -> Result<(), GraphMergerError> {
-    let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")?;
-    let sasl_username = std::env::var("KAFKA_SASL_USERNAME")?;
-    let sasl_password = std::env::var("KAFKA_SASL_PASSWORD")?;
-    let consumer_group_name = std::env::var("GRAPH_MERGER_CONSUMER_GROUP")?;
-    let consumer_topic = "identified-graphs".to_string();
-    let producer_topic = "merged-graphs".to_string();
-
+async fn handler(
+    graph_merger: Arc<Mutex<GraphMerger>>,
+    consumer_config: ConsumerConfig,
+    producer_config: ProducerConfig,
+) -> Result<(), GraphMergerError> {
     tracing::info!(
         message = "configuring kafka stream processor",
-        bootstrap_servers = %bootstrap_servers,
-        consumer_group_name = %consumer_group_name,
-        consumer_topic = %consumer_topic,
-        producer_topic = %producer_topic,
+        bootstrap_servers = %consumer_config.bootstrap_servers,
+        consumer_group_name = %consumer_config.consumer_group_name,
+        consumer_topic = %consumer_config.topic,
+        producer_topic = %producer_config.topic,
     );
 
     // TODO: also construct a stream processor for retries
 
     let stream_processor: StreamProcessor<Envelope<IdentifiedGraph>, Envelope<MergedGraph>> =
-        StreamProcessor::new(
-            bootstrap_servers.clone(),
-            sasl_username,
-            sasl_password,
-            consumer_group_name.clone(),
-            consumer_topic.clone(),
-            producer_topic.clone(),
-        )?;
+        StreamProcessor::new(consumer_config, producer_config)?;
 
-    tracing::info!(
-        message = "kafka stream processor configured successfully",
-        bootstrap_servers = %bootstrap_servers,
-        consumer_group_name = %consumer_group_name,
-        consumer_topic = %consumer_topic,
-        producer_topic = %producer_topic,
-    );
-    tracing::info!("starting up!");
+    tracing::info!(message = "kafka stream processor configured successfully",);
 
     let stream = stream_processor.stream::<_, _, StreamProcessorError>(
         move |event: Result<Envelope<IdentifiedGraph>, StreamProcessorError>| {

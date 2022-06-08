@@ -19,6 +19,7 @@ new_integration_tests = []
 anyhow = "1.0"
 async-trait = "0.1"
 bytes = "1.1.0"
+clap = { version = "3.0", default_features = false, features = ["std", "env"] }
 dgraph_query_lib = "0.1.0"
 dgraph-tonic = { version = "0.10.0", features = ["dgraph-1-1"] }
 futures = "0.3"

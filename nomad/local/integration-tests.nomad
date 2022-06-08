@@ -57,48 +57,24 @@ variable "grapl_root" {
   description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
 }
 
-variable "plugin_work_queue_db_hostname" {
-  type        = string
-  description = "The host for the local plugin work queue db"
+variable "plugin_work_queue_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for plugin-work-queue database"
 }
 
-variable "plugin_work_queue_db_port" {
-  type        = string
-  default     = "5432"
-  description = "The port for the local plugin_work_queue postgres"
-}
-
-variable "plugin_work_queue_db_username" {
-  type        = string
-  description = "The username for the local plugin_work_queue postgres"
-}
-
-variable "plugin_work_queue_db_password" {
-  type        = string
-  description = "The password for the local plugin_work_queue postgres"
-}
-
-
-
-variable "organization_management_db_hostname" {
-  type        = string
-  description = "The host for the local organization management  db"
-}
-
-variable "organization_management_db_port" {
-  type        = string
-  default     = "5432"
-  description = "The port for the local organization management postgres"
-}
-
-variable "organization_management_db_username" {
-  type        = string
-  description = "The username for the local organization management postgres"
-}
-
-variable "organization_management_db_password" {
-  type        = string
-  description = "The password for the local organization management postgres"
+variable "organization_management_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for organization-management database"
 }
 
 locals {
@@ -196,18 +172,18 @@ job "integration-tests" {
 
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-work-queue}"
 
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME = "${var.plugin_work_queue_db_hostname}"
-        PLUGIN_WORK_QUEUE_DB_PORT     = "${var.plugin_work_queue_db_port}"
-        PLUGIN_WORK_QUEUE_DB_USERNAME = "${var.plugin_work_queue_db_username}"
-        PLUGIN_WORK_QUEUE_DB_PASSWORD = "${var.plugin_work_queue_db_password}"
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME = var.plugin_work_queue_db.hostname
+        PLUGIN_WORK_QUEUE_DB_PORT     = var.plugin_work_queue_db.port
+        PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue_db.username
+        PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue_db.password
 
         ORGANIZATION_MANAGEMENT_ADDRESS      = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
 
-        ORGANIZATION_MANAGEMENT_DB_HOSTNAME = "${var.organization_management_db_hostname}"
-        ORGANIZATION_MANAGEMENT_DB_PORT     = "${var.organization_management_db_port}"
-        ORGANIZATION_MANAGEMENT_DB_USERNAME = "${var.organization_management_db_username}"
-        ORGANIZATION_MANAGEMENT_DB_PASSWORD = "${var.organization_management_db_password}"
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME = var.organization_management_db.hostname
+        ORGANIZATION_MANAGEMENT_DB_PORT     = var.organization_management_db.port
+        ORGANIZATION_MANAGEMENT_DB_USERNAME = var.organization_management_db.username
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD = var.organization_management_db.password
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }

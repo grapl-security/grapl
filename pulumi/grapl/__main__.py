@@ -26,9 +26,10 @@ from infra.hashicorp_provider import (
     get_consul_provider_address,
     get_nomad_provider_address,
 )
-from infra.kafka import Kafka
+from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
+from infra.nomad_service_postgres import NomadServicePostgresResource
 from infra.path import path_from_root
 from infra.postgres import Postgres
 
@@ -67,6 +68,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "analyzer-executor": builder.build_with_tag("analyzer-executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "engagement-creator": builder.build_with_tag("engagement-creator"),
+        "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
         "generator-executor": builder.build_with_tag("generator-executor"),
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
@@ -186,6 +188,29 @@ def main() -> None:
     aws_env_vars_for_local = _get_aws_env_vars_for_local()
     pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
 
+    kafka_services = (
+        "generator-dispatcher",
+        "graph-generator",
+        "graph-merger",
+        "node-identifier",
+        "pipeline-ingress",
+    )
+    kafka_service_credentials = {
+        service: kafka.service_credentials(service).apply(
+            Credential.to_nomad_service_creds
+        )
+        for service in kafka_services
+    }
+    kafka_consumer_services = (
+        "generator-dispatcher",
+        "graph-generator",
+        "graph-merger",
+        "node-identifier",
+    )
+    kafka_consumer_groups = {
+        service: kafka.consumer_group(service) for service in kafka_consumer_services
+    }
+
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         analyzer_bucket=analyzers_bucket.bucket,
@@ -193,12 +218,15 @@ def main() -> None:
         aws_region=aws.get_region().name,
         container_images=_container_images(artifacts),
         dns_server=config.CONSUL_DNS_IP,
-        graph_generator_kafka_consumer_group=kafka.consumer_group("graph-generator"),
-        node_identifier_kafka_consumer_group=kafka.consumer_group("node-identifier"),
-        graph_merger_kafka_consumer_group=kafka.consumer_group("graph-merger"),
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
+        kafka_credentials=kafka_service_credentials,
+        kafka_consumer_groups=kafka_consumer_groups,
         model_plugins_bucket=model_plugins_bucket.bucket,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
+        plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
+        plugin_registry_bucket_name=plugin_registry_bucket.bucket,
+        plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
+        plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
         py_log_level=log_levels.PY_LOG_LEVEL,
         rust_log=log_levels.RUST_LOG_LEVELS,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
@@ -207,10 +235,6 @@ def main() -> None:
         test_user_name=config.GRAPL_TEST_USER_NAME,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
-        plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
-        plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
-        plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
-        plugin_registry_bucket_name=plugin_registry_bucket.bucket,
     )
 
     provision_vars: Final[NomadVars] = {
@@ -267,10 +291,10 @@ def main() -> None:
         ),
     )
 
-    pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
-    graph_generator_kafka_credentials = kafka.service_credentials("graph-generator")
-    node_identifier_kafka_credentials = kafka.service_credentials("node-identifier")
-    graph_merger_kafka_credentials = kafka.service_credentials("graph-merger")
+    organization_management_db: NomadServicePostgresResource
+    plugin_registry_db: NomadServicePostgresResource
+    plugin_work_queue_db: NomadServicePostgresResource
+    uid_allocator_db: NomadServicePostgresResource
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -305,31 +329,6 @@ def main() -> None:
             port=5732,
         )
 
-        pulumi.export("plugin-work-queue-db-hostname", plugin_work_queue_db.hostname)
-        pulumi.export("plugin-work-queue-db-port", str(plugin_work_queue_db.port))
-        pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
-        pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
-
-        pulumi.export("uid-allocator-db-hostname", uid_allocator_db.hostname)
-        pulumi.export("uid-allocator-db-port", str(uid_allocator_db.port))
-        pulumi.export("uid-allocator-db-username", uid_allocator_db.username)
-        pulumi.export("uid-allocator-db-password", uid_allocator_db.password)
-
-        # TODO: ADD EXPORTS FOR PLUGIN-REGISTRY
-
-        pulumi.export(
-            "organization-management-db-hostname", organization_management_db.hostname
-        )
-        pulumi.export(
-            "organization-management-db-port", str(organization_management_db.port)
-        )
-        pulumi.export(
-            "organization-management-db-username", organization_management_db.username
-        )
-        pulumi.export(
-            "organization-management-db-password", organization_management_db.password
-        )
-
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
 
         pulumi.export("redis-endpoint", redis_endpoint)
@@ -343,30 +342,10 @@ def main() -> None:
         )
 
         local_grapl_core_vars: Final[NomadVars] = dict(
-            graph_generator_kafka_sasl_username=graph_generator_kafka_credentials.api_key,
-            graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
-            node_identifier_kafka_sasl_username=node_identifier_kafka_credentials.api_key,
-            node_identifier_kafka_sasl_password=node_identifier_kafka_credentials.api_secret,
-            graph_merger_kafka_sasl_username=graph_merger_kafka_credentials.api_key,
-            graph_merger_kafka_sasl_password=graph_merger_kafka_credentials.api_secret,
-            organization_management_db_hostname=organization_management_db.hostname,
-            organization_management_db_port=str(organization_management_db.port),
-            organization_management_db_username=organization_management_db.username,
-            organization_management_db_password=organization_management_db.password,
-            pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
-            pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
-            plugin_registry_db_hostname=plugin_registry_db.hostname,
-            plugin_registry_db_port=str(plugin_registry_db.port),
-            plugin_registry_db_username=plugin_registry_db.username,
-            plugin_registry_db_password=plugin_registry_db.password,
-            plugin_work_queue_db_hostname=plugin_work_queue_db.hostname,
-            plugin_work_queue_db_port=str(plugin_work_queue_db.port),
-            plugin_work_queue_db_username=plugin_work_queue_db.username,
-            plugin_work_queue_db_password=plugin_work_queue_db.password,
-            uid_allocator_db_hostname=uid_allocator_db.hostname,
-            uid_allocator_db_port=str(uid_allocator_db.port),
-            uid_allocator_db_username=uid_allocator_db.username,
-            uid_allocator_db_password=uid_allocator_db.password,
+            organization_management_db=organization_management_db.to_nomad_service_db_args(),
+            plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
+            plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+            uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
             redis_endpoint=redis_endpoint,
             **nomad_inputs,
         )
@@ -437,7 +416,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        organization_management_postgres = Postgres(
+        organization_management_db = Postgres(
             name="organization-management",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
@@ -445,7 +424,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        plugin_registry_postgres = Postgres(
+        plugin_registry_db = Postgres(
             name="plugin-registry",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
@@ -453,7 +432,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        plugin_work_queue_postgres = Postgres(
+        plugin_work_queue_db = Postgres(
             name="plugin-work-queue",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
@@ -461,7 +440,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        uid_allocator_postgres = Postgres(
+        uid_allocator_db = Postgres(
             name="uid-allocator-db",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
@@ -469,80 +448,15 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        pulumi.export(
-            "organization-management-db-hostname",
-            organization_management_postgres.host(),
-        )
-        pulumi.export(
-            "organization-management-db-port",
-            organization_management_postgres.port().apply(str),
-        )
-        pulumi.export(
-            "organization-management-db-username",
-            organization_management_postgres.username(),
-        )
-        pulumi.export(
-            "organization-management-db-password",
-            organization_management_postgres.password(),
-        )
-
-        pulumi.export(
-            "plugin-work-queue-db-hostname", plugin_work_queue_postgres.host()
-        )
-        pulumi.export(
-            "plugin-work-queue-db-port", plugin_work_queue_postgres.port().apply(str)
-        )
-        pulumi.export(
-            "plugin-work-queue-db-username",
-            plugin_work_queue_postgres.username(),
-        )
-        pulumi.export(
-            "plugin-work-queue-db-password",
-            plugin_work_queue_postgres.password(),
-        )
-
-        pulumi.export("uid-allocator-db-hostname", uid_allocator_postgres.host())
-        pulumi.export("uid-allocator-db-port", uid_allocator_postgres.port().apply(str))
-        pulumi.export(
-            "uid-allocator-db-username",
-            uid_allocator_postgres.username(),
-        )
-        pulumi.export(
-            "uid-allocator-db-password",
-            uid_allocator_postgres.password(),
-        )
-
         pulumi.export("redis-endpoint", cache.endpoint)
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
-            graph_generator_kafka_sasl_username=graph_generator_kafka_credentials.api_key,
-            graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
-            node_identifier_kafka_sasl_username=node_identifier_kafka_credentials.api_key,
-            node_identifier_kafka_sasl_password=node_identifier_kafka_credentials.api_secret,
-            graph_merger_kafka_sasl_username=graph_merger_kafka_credentials.api_key,
-            graph_merger_kafka_sasl_password=graph_merger_kafka_credentials.api_secret,
-            organization_management_db_hostname=organization_management_postgres.host(),
-            organization_management_db_port=organization_management_postgres.port().apply(
-                str
-            ),
-            organization_management_db_username=organization_management_postgres.username(),
-            organization_management_db_password=organization_management_postgres.password(),
-            pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
-            pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
-            plugin_registry_db_hostname=plugin_registry_postgres.host(),
-            plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
-            plugin_registry_db_username=plugin_registry_postgres.username(),
-            plugin_registry_db_password=plugin_registry_postgres.password(),
-            plugin_work_queue_db_hostname=plugin_work_queue_postgres.host(),
-            plugin_work_queue_db_port=plugin_work_queue_postgres.port().apply(str),
-            plugin_work_queue_db_username=plugin_work_queue_postgres.username(),
-            plugin_work_queue_db_password=plugin_work_queue_postgres.password(),
-            uid_allocator_db_hostname=uid_allocator_postgres.host(),
-            uid_allocator_db_port=uid_allocator_postgres.port().apply(str),
-            uid_allocator_db_username=uid_allocator_postgres.username(),
-            uid_allocator_db_password=uid_allocator_postgres.password(),
+            organization_management_db=organization_management_db.to_nomad_service_db_args(),
+            plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
+            plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+            uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
             redis_endpoint=cache.endpoint,
             **nomad_inputs,
         )
@@ -594,6 +508,18 @@ def main() -> None:
         )
 
     OpsAlarms(name="ops-alarms")
+
+    pulumi.export(
+        "organization-management-db",
+        organization_management_db.to_nomad_service_db_args(),
+    )
+
+    pulumi.export(
+        "plugin-work-queue-db", plugin_work_queue_db.to_nomad_service_db_args()
+    )
+    # Not currently imported in integration tests:
+    # - uid-allocator-db
+    # - plugin-registry-db
 
 
 if __name__ == "__main__":

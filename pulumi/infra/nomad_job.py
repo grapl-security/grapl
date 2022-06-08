@@ -1,13 +1,24 @@
 import json
 from pathlib import Path
-from typing import Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Union, cast
 
 import pulumi_nomad as nomad
 from infra.config import STACK_NAME
+from infra.kafka import NomadServiceKafkaCredentials
+from infra.nomad_service_postgres import NomadServicePostgresDbArgs
 
 import pulumi
 
-_ValidNomadVarTypes = pulumi.Input[Union[str, bool, int, Mapping[str, str]]]
+_ValidNomadVarTypePrimitives = Union[str, bool, int]
+_ValidNomadVarTypes = pulumi.Input[
+    Union[
+        _ValidNomadVarTypePrimitives,
+        Mapping[str, pulumi.Input[_ValidNomadVarTypePrimitives]],
+        # Upsettingly, TypedDicts are a Mapping[str, object]
+        NomadServicePostgresDbArgs,
+        Mapping[str, pulumi.Input[NomadServiceKafkaCredentials]],
+    ]
+]
 NomadVars = Mapping[str, Optional[_ValidNomadVarTypes]]
 
 
@@ -45,14 +56,31 @@ class NomadJob(pulumi.ComponentResource):
             f.close()
             return jobspec
 
-    def _json_dump_complex_types(self, vars: NomadVars) -> NomadVars:
+    @staticmethod
+    def _json_dump_complex_types(vars: NomadVars) -> NomadVars:
         """
         Nomad accepts input of lists and maps, but the Nomad/Pulumi plugin doesn't
         convert them correctly.
         """
+
+        def escape_str_value(
+            val: _ValidNomadVarTypePrimitives,
+        ) -> _ValidNomadVarTypePrimitives:
+            if isinstance(val, str):
+                # Gotta do some annoying escaping when the object field contains "${}"
+                return val.replace("${", "$${")
+            return val
+
+        def dump_value(val: Any) -> _ValidNomadVarTypePrimitives:
+            if isinstance(val, list):
+                return json.dumps(val)
+            elif isinstance(val, dict):
+                return json.dumps({k: escape_str_value(v) for (k, v) in val.items()})
+            else:
+                return cast(_ValidNomadVarTypePrimitives, val)
+
         return {
-            k: json.dumps(v) if isinstance(v, (dict, list)) else v
-            for (k, v) in vars.items()
+            k: pulumi.Output.from_input(v).apply(dump_value) for (k, v) in vars.items()
         }
 
     def _fix_pulumi_preview(self, vars: NomadVars) -> NomadVars:

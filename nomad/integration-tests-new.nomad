@@ -51,9 +51,17 @@ variable "integration_tests_kafka_sasl_password" {
   description = "The Confluent Cloud API secret to configure integration test consumers with."
 }
 
-variable "rust_log" {
+variable "dns_server" {
   type        = string
-  description = "Controls the logging behavior of Rust-based services."
+  description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
+  default     = ""
+}
+
+locals {
+  log_level = "DEBUG"
+  # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
+  # added for network.dns as of 1.3.0
+  dns_servers = [var.dns_server]
 }
 
 job "integration-tests-new" {
@@ -77,6 +85,9 @@ job "integration-tests-new" {
 
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     # Enable service discovery
@@ -86,21 +97,23 @@ job "integration-tests-new" {
         sidecar_service {
           proxy {
             upstreams {
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 9080
+            }
+
+            upstreams {
               destination_name = "pipeline-ingress"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1000
+              local_bind_port  = 1000
             }
 
             upstreams {
               destination_name = "plugin-registry"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1001
+              local_bind_port  = 1001
             }
 
             upstreams {
               destination_name = "sysmon-generator"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1002
+              local_bind_port  = 1002
             }
           }
         }
@@ -125,16 +138,22 @@ job "integration-tests-new" {
         AWS_REGION = var.aws_region
 
         RUST_BACKTRACE = 1
-        RUST_LOG       = var.rust_log
+        RUST_LOG       = local.log_level
+
+        GRAPL_LOG_LEVEL = local.log_level
+
+        MG_ALPHAS = "localhost:${NOMAD_UPSTREAM_PORT_dgraph-alpha-0-grpc-public}"
 
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
 
         PIPELINE_INGRESS_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_pipeline_ingress}"
         PLUGIN_REGISTRY_CLIENT_ADDRESS  = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
 
-        INTEGRATION_TESTS_KAFKA_SASL_USERNAME       = var.integration_tests_kafka_sasl_username
-        INTEGRATION_TESTS_KAFKA_SASL_PASSWORD       = var.integration_tests_kafka_sasl_password
-        INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME = var.integration_tests_kafka_consumer_group_name
+        KAFKA_SASL_USERNAME       = var.integration_tests_kafka_sasl_username
+        KAFKA_SASL_PASSWORD       = var.integration_tests_kafka_sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.integration_tests_kafka_consumer_group_name
+        # (this is an invalid topic name, so it'd throw an error if consumed)
+        KAFKA_CONSUMER_TOPIC = "<replace me at integration test setup>"
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }
