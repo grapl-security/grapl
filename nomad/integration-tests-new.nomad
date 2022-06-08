@@ -101,11 +101,6 @@ job "integration-tests-new" {
         sidecar_service {
           proxy {
             upstreams {
-              destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 9080
-            }
-
-            upstreams {
               destination_name = "pipeline-ingress"
               local_bind_port  = 1000
             }
@@ -118,6 +113,11 @@ job "integration-tests-new" {
             upstreams {
               destination_name = "plugin-work-queue"
               local_bind_port  = 1002
+            }
+
+            upstreams {
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 1003
             }
           }
         }
