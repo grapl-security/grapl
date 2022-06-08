@@ -62,6 +62,16 @@ variable "dns_server" {
   default     = ""
 }
 
+variable "plugin_work_queue_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for plugin-work-queue database"
+}
+
 locals {
   # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
   # added for network.dns as of 1.3.0
@@ -159,6 +169,11 @@ job "integration-tests-new" {
         KAFKA_CONSUMER_TOPIC = "<replace me at integration test setup>"
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
+
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME = var.plugin_work_queue_db.hostname
+        PLUGIN_WORK_QUEUE_DB_PORT     = var.plugin_work_queue_db.port
+        PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue_db.username
+        PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue_db.password
       }
 
       resources {

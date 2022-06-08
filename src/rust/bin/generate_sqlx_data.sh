@@ -37,18 +37,18 @@ start_postgres() {
 
 stop_postgres() {
     echo -e "\n--- Stopping Postgres"
-    docker stop "${CONTAINER_NAME}" || true
+    docker rm --force "${CONTAINER_NAME}" || true
 }
 
 sqlx_prepare() {
     local -r which_rust_lib="${1}"
 
+    echo -e "\n--- Sqlx Prepare on ${which_rust_lib}"
     start_postgres
-    echo -e "\n --- Sqlx Prepare on ${which_rust_lib}"
     (
         cd "${which_rust_lib}"
         DATABASE_URL="${DB_URL}" cargo sqlx migrate run
-        DATABASE_URL="${DB_URL}" cargo sqlx prepare -- --lib
+        DATABASE_URL="${DB_URL}" cargo sqlx prepare -- --lib --all-features
     )
     stop_postgres
 }
