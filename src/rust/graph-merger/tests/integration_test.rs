@@ -103,7 +103,7 @@ impl AsyncTestContext for GraphMergerTestContext {
         HealthcheckClient::wait_until_healthy(
             endpoint.clone(),
             "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService",
-            Duration::from_millis(10000),
+            Duration::from_secs(10),
             Duration::from_millis(500),
         )
         .await
@@ -198,7 +198,7 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut GraphMergerTestContex
 
         tracing::info!("consuming kafka messages for 30s");
         assert!(
-            tokio::time::timeout(Duration::from_millis(30000), contains_expected)
+            tokio::time::timeout(Duration::from_secs(30), contains_expected)
                 .await
                 .expect("failed to consume expected message within 30s")
         );

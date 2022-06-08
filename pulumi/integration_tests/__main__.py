@@ -6,7 +6,7 @@ import os
 from typing import Mapping, Optional, cast
 
 import pulumi_aws as aws
-from infra import config
+from infra import config, log_levels
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
@@ -98,6 +98,7 @@ def main() -> None:
             lambda c: c.api_secret
         ),
         "kafka_bootstrap_servers": kafka.bootstrap_servers(),
+        "rust_log": log_levels.RUST_LOG_LEVELS,
         "pipeline_ingress_healthcheck_polling_interval_ms": grapl_stack.pipeline_ingress_healthcheck_polling_interval_ms,
     }
 

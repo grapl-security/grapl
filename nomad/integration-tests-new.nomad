@@ -51,6 +51,11 @@ variable "integration_tests_kafka_sasl_password" {
   description = "The Confluent Cloud API secret to configure integration test consumers with."
 }
 
+variable "rust_log" {
+  type        = string
+  description = "Controls the logging behavior of Rust-based services."
+}
+
 variable "dns_server" {
   type        = string
   description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
@@ -58,7 +63,6 @@ variable "dns_server" {
 }
 
 locals {
-  log_level = "DEBUG"
   # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
   # added for network.dns as of 1.3.0
   dns_servers = [var.dns_server]
@@ -113,7 +117,7 @@ job "integration-tests-new" {
 
             upstreams {
               destination_name = "plugin-work-queue"
-              local_bind_port = 1002
+              local_bind_port  = 1002
             }
           }
         }
@@ -138,11 +142,9 @@ job "integration-tests-new" {
         AWS_REGION = var.aws_region
 
         RUST_BACKTRACE = 1
-        RUST_LOG       = local.log_level
+        RUST_LOG       = var.rust_log
 
-        GRAPL_LOG_LEVEL = local.log_level
-
-        MG_ALPHAS = "localhost:${NOMAD_UPSTREAM_PORT_dgraph-alpha-0-grpc-public}"
+        MG_ALPHAS = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-grpc-public}"
 
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
 
