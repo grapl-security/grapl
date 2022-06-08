@@ -39,4 +39,4 @@ pub struct LensUpdate {
     pub tenant_id: Uuid,
 }
 
-
+impl 
