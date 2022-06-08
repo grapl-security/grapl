@@ -112,8 +112,8 @@ job "integration-tests-new" {
             }
 
             upstreams {
-              destination_name = "sysmon-generator"
-              local_bind_port  = 1002
+              destination_name = "plugin-work-queue"
+              local_bind_port = 1002
             }
           }
         }
@@ -146,8 +146,9 @@ job "integration-tests-new" {
 
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
 
-        PIPELINE_INGRESS_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_pipeline_ingress}"
-        PLUGIN_REGISTRY_CLIENT_ADDRESS  = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
+        PIPELINE_INGRESS_CLIENT_ADDRESS  = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
+        PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
 
         KAFKA_SASL_USERNAME       = var.integration_tests_kafka_sasl_username
         KAFKA_SASL_PASSWORD       = var.integration_tests_kafka_sasl_password

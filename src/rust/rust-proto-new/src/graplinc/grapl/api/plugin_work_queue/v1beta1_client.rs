@@ -16,7 +16,7 @@ pub enum PluginWorkQueueServiceClientError {
     PluginRegistryDeserializationError(#[from] SerDeError),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PluginWorkQueueServiceClient {
     proto_client: PluginWorkQueueServiceClientProto<tonic::transport::Channel>,
 }
