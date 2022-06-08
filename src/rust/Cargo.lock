@@ -1708,6 +1708,10 @@ dependencies = [
  "tracing-appender",
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
+ "plugin-work-queue",
+ "rust-proto-new",
+ "tokio",
+ "tracing",
  "uuid",
 ]
 

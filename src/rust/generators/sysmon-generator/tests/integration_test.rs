@@ -145,8 +145,7 @@ async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTest
     let kafka_subscriber = tokio::task::spawn(async move {
         let stream = kafka_consumer
             .stream()
-            .expect("could not subscribe to the topic");
-
+            .expect("could not subscribe to the generated-graphs topic");
         // notify the consumer that we're ready to receive messages
         tx.send(())
             .expect("failed to notify sender that consumer is consuming");

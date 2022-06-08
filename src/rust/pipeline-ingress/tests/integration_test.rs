@@ -130,7 +130,7 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
     let kafka_subscriber = tokio::task::spawn(async move {
         let stream = kafka_consumer
             .stream()
-            .expect("could not subscribe to the topic");
+            .expect("could not subscribe to the raw-logs topic");
 
         // notify the consumer that we're ready to receive messages
         tx.send(())
