@@ -99,6 +99,7 @@ def main() -> None:
         ),
         "kafka_bootstrap_servers": kafka.bootstrap_servers(),
         "pipeline_ingress_healthcheck_polling_interval_ms": grapl_stack.pipeline_ingress_healthcheck_polling_interval_ms,
+        "plugin_work_queue_db": grapl_stack.plugin_work_queue_db,
     }
 
     integration_tests_new = NomadJob(

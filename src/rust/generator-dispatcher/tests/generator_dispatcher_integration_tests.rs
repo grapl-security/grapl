@@ -3,10 +3,8 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use rust_proto_new::graplinc::grapl::api::{
-    pipeline_ingress::v1beta1::PublishRawLogRequest,
-    plugin_work_queue::v1beta1::GetExecuteGeneratorRequest,
-};
+use plugin_work_queue::test_utils::PsqlQueueTestExtensions;
+use rust_proto_new::graplinc::grapl::api::pipeline_ingress::v1beta1::PublishRawLogRequest;
 use test_context::test_context;
 use tracing::Instrument;
 use uuid::Uuid;
@@ -22,17 +20,14 @@ async fn test_dispatcher_inserts_job_into_plugin_work_queue(
     let tenant_id = Uuid::new_v4();
 
     tracing::info!("creating plugin-work-queue scan thread");
-    let mut pwq_client = ctx.plugin_work_queue_client.clone();
+    let psql_queue = ctx.plugin_work_queue_psql_client.clone();
     let scan_thread = tokio::task::spawn(async move {
         let scan_for_generator_job = async move {
-            while let Ok(get_execute_response) = pwq_client
-                .get_execute_generator(GetExecuteGeneratorRequest {})
-                .await
+            while let Ok(generator_messages) =
+                psql_queue.get_all_generator_messages(tenant_id).await
             {
-                if let Some(job) = get_execute_response.execution_job {
-                    if job.tenant_id == tenant_id {
-                        return Some(job);
-                    }
+                if let Some(message) = generator_messages.first() {
+                    return Some(message.clone());
                 } else {
                     tokio::time::sleep(Duration::from_millis(500)).await;
                 }
