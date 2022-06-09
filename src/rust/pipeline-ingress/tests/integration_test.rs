@@ -25,7 +25,10 @@ use rust_proto_new::{
             v1beta2::Envelope,
         },
     },
-    protocol::healthcheck::client::HealthcheckClient,
+    protocol::{
+        healthcheck::client::HealthcheckClient,
+        service_client::AssociatedNamedService,
+    },
 };
 use test_context::{
     test_context,
@@ -85,7 +88,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
 
         HealthcheckClient::wait_until_healthy(
             endpoint.clone(),
-            "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService",
+            PipelineIngressClient::SERVICE_NAME,
             Duration::from_millis(10000),
             Duration::from_millis(500),
         )

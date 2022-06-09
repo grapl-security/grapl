@@ -11,7 +11,10 @@ use plugin_work_queue::{
 };
 use rust_proto_new::{
     graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient,
-    protocol::healthcheck::client::HealthcheckClient,
+    protocol::{
+        healthcheck::client::HealthcheckClient,
+        service_client::AssociatedNamedService,
+    },
 };
 use test_context::AsyncTestContext;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -63,7 +66,7 @@ impl AsyncTestContext for GeneratorDispatcherTestContext {
 
         HealthcheckClient::wait_until_healthy(
             endpoint.clone(),
-            "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService",
+            PipelineIngressClient::SERVICE_NAME,
             Duration::from_millis(10000),
             Duration::from_millis(500),
         )

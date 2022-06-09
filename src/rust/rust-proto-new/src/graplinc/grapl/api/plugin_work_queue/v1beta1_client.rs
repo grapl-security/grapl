@@ -5,6 +5,7 @@ use proto::plugin_work_queue_service_client::PluginWorkQueueServiceClient as Plu
 use crate::{
     graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
+    protocol::service_client::AssociatedNamedService,
     SerDeError,
 };
 
@@ -116,4 +117,9 @@ impl PluginWorkQueueServiceClient {
             .await?;
         Ok(response.into_inner().try_into()?)
     }
+}
+
+impl AssociatedNamedService for PluginWorkQueueServiceClient {
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.plugin_work_queue.v1beta1.PluginWorkQueueService";
 }
