@@ -5,26 +5,31 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug, Clone)]
 pub struct CounterDbConfig {
     #[structopt(env)]
-    /// The address of the counter database
-    counter_postgres_connect_address: SocketAddr,
+    /// The hostname of the counter database
+    counter_db_hostname: String,
 
     #[structopt(env)]
     /// The username to use when connecting to the counter database
-    counter_postgres_username: String,
+    counter_db_username: String,
 
     #[structopt(env)]
     /// The password to use when connecting to the counter database
-    counter_postgres_password: String,
+    counter_db_password: String,
+
+    #[structopt(env)]
+    /// The port to use when connecting to the counter database
+    counter_db_port: u16,
 }
 
 impl CounterDbConfig {
     /// Returns the postgres connection url
     pub fn to_postgres_url(&self) -> String {
         format!(
-            "postgres://{}:{}@{}",
-            self.counter_postgres_username,
-            self.counter_postgres_password,
-            self.counter_postgres_connect_address
+            "postgres://{}:{}@{}:{}",
+            self.counter_db_username,
+            self.counter_db_password,
+            self.counter_db_hostname,
+            self.counter_db_port,
         )
     }
 }

@@ -275,6 +275,11 @@ def main() -> None:
         plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
         plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
         plugin_registry_bucket_name=plugin_registry_bucket.bucket,
+        uid_allocator_service_config={
+            "default_allocation_size": 10,
+            "preallocation_size": 10_000,
+            "maximum_allocation_size": 1_000,
+        },
     )
 
     provision_vars: Final[NomadVars] = {

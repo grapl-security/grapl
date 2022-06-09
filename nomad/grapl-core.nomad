@@ -172,6 +172,15 @@ variable "uid_allocator_db" {
   description = "Vars for uid-allocator database"
 }
 
+variable "uid_allocator_service_config" {
+  type = object({
+    default_allocation_size = number
+    preallocation_size      = number
+    maximum_allocation_size = number
+  })
+  description = "Vars for the uid allocator service"
+}
+
 variable "plugin_registry_bucket_aws_account_id" {
   type        = string
   description = "The account id that owns the bucket where plugins are stored"
@@ -1517,10 +1526,13 @@ job "grapl-core" {
 
       env {
         UID_ALLOCATOR_BIND_ADDRESS      = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
-        UID_ALLOCATOR_DB_HOSTNAME       = var.uid_allocator_db.hostname
-        UID_ALLOCATOR_DB_PASSWORD       = var.uid_allocator_db.password
-        UID_ALLOCATOR_DB_PORT           = var.uid_allocator_db.port
-        UID_ALLOCATOR_DB_USERNAME       = var.uid_allocator_db.username
+        COUNTER_DB_HOSTNAME             = var.uid_allocator_db.hostname
+        COUNTER_DB_PASSWORD             = var.uid_allocator_db.password
+        COUNTER_DB_PORT                 = var.uid_allocator_db.port
+        COUNTER_DB_USERNAME             = var.uid_allocator_db.username
+        DEFAULT_ALLOCATION_SIZE         = var.uid_allocator_service_config.default_allocation_size
+        PREALLOCATION_SIZE              = var.uid_allocator_service_config.preallocation_size
+        MAXIMUM_ALLOCATION_SIZE         = var.uid_allocator_service_config.maximum_allocation_size
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host

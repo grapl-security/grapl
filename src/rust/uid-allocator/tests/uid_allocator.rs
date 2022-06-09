@@ -6,8 +6,6 @@ use structopt::StructOpt;
 use uid_allocator::client::CachingUidAllocatorClient;
 
 #[tokio::test]
-/// This test allocates 3 times. After the first two allocations, the preallocated space
-/// is exhausted.
 async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
     let counter_db_config = uid_allocator::config::CounterDbConfig::from_args();
     let client_config = uid_allocator::config::UidAllocatorClientConfig::from_args();
