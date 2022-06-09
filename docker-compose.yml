@@ -13,7 +13,7 @@ services:
       - |
         pulumi login --local
         TRACING_BACKEND_URL="http://host.docker.internal:9411/api/v1/spans"
-        if [ $WITH_PULUMI_TRACING -eq 1 ]; then
+        if [[ "${WITH_PULUMI_TRACING}" -eq 1 ]]; then
           TRACING_ARGS="--tracing $$TRACING_BACKEND_URL";
         else
           TRACING_ARGS="";
