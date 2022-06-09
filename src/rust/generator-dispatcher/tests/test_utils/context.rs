@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use clap::Parser;
 use opentelemetry::{
     global,
