@@ -421,7 +421,6 @@ mod plugin_work_queue {
     }
 }
 
-
 mod lens_manager {
     use strategies::lens_manager as lm_strats;
 
@@ -488,5 +487,4 @@ mod lens_manager {
             check_encode_decode_invariant(value)
         }
     }
-
 }
