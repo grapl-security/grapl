@@ -165,7 +165,6 @@ group "rust-services" {
 group "python-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "analyzer-executor",
     "engagement-creator",
     "provisioner"
   ]
@@ -400,14 +399,6 @@ target "_python-base" {
     etc-ctx  = "etc"
   }
   dockerfile = "src/python/Dockerfile"
-}
-
-target "analyzer-executor" {
-  inherits = ["_python-base"]
-  target   = "analyzer-executor-deploy"
-  tags = [
-    upstream_aware_tag("analyzer-executor")
-  ]
 }
 
 target "engagement-creator" {

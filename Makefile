@@ -114,7 +114,7 @@ help: ## Print this help
 	@printf -- '             (≡)      /____/             /_/            \n'
 	@printf -- '\n'
 	@printf -- '${FMT_BOLD}Useful environment variables (with examples):${FMT_END}\n'
-	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-analyzer-executor typecheck-grapl-common" make typecheck\n'
+	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-grapl-common" make typecheck\n'
 	@printf -- '    to only run a subset of test targets.\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration\n'

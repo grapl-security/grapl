@@ -20,14 +20,6 @@ USER grapl
 WORKDIR /home/grapl
 ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 
-# analyzer-executor
-################################################################################
-FROM grapl-python-base AS analyzer-executor-deploy
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --from=dist-ctx analyzer-executor.pex .
-CMD ["./analyzer-executor.pex"]
-
 # engagement-creator
 ################################################################################
 FROM grapl-python-base AS engagement-creator-deploy
