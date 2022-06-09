@@ -11,7 +11,6 @@ PRIORITIZATION = [
     "sysmon-generator.stdout",
     "node-identifier.stdout",
     "graph-merger.stdout",
-    "analyzer-dispatcher.stdout",
     "analyzer-executor.stdout",
     "engagement-creator.stdout",
 ]

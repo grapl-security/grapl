@@ -281,12 +281,6 @@ COPY --from=build /outputs/example-generator /
 COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /plugin-bootstrap-init/
 COPY rust/plugin-bootstrap/grapl-plugin.service /plugin-bootstrap-init/
 
-##### analyzer-dispatcher
-FROM rust-dist AS analyzer-dispatcher-deploy
-
-COPY --from=build /outputs/analyzer-dispatcher /
-ENTRYPOINT ["/analyzer-dispatcher"]
-
 ##### graph-merger
 FROM rust-dist AS graph-merger-deploy
 

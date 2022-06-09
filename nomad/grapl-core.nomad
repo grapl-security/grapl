@@ -807,45 +807,6 @@ job "grapl-core" {
     }
   }
 
-  group "analyzer-dispatcher" {
-
-    task "analyzer-dispatcher" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["analyzer-dispatcher"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        # AWS vars
-        AWS_REGION = var.aws_region
-        # rust vars
-        RUST_LOG       = var.rust_log
-        RUST_BACKTRACE = local.rust_backtrace
-        # service vars
-        GRAPL_ANALYZERS_BUCKET = var.analyzer_bucket
-        DEST_BUCKET_NAME       = "fake"
-        SOURCE_QUEUE_URL       = "fake"
-        DEAD_LETTER_QUEUE_URL  = "fake"
-        # tracing vars
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
-      }
-
-      service {
-        name = "analyzer-dispatcher"
-      }
-
-    }
-
-  }
-
   group "analyzer-executor" {
     network {
       mode = "bridge"

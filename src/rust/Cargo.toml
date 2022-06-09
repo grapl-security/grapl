@@ -1,6 +1,5 @@
 [workspace]
 members = [
-  "./analyzer-dispatcher",
   "./derive-dynamic-node",
   "./consul-connect",
   "./endpoint-plugin",

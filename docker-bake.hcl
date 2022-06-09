@@ -146,7 +146,6 @@ group "cloudsmith-images" {
 group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "analyzer-dispatcher",
     "generator-dispatcher",
     "generator-executor",
     "graph-merger",
@@ -272,14 +271,6 @@ target "_rust-base" {
   args = {
     RUST_BUILD = "${RUST_BUILD}"
   }
-}
-
-target "analyzer-dispatcher" {
-  inherits = ["_rust-base"]
-  target   = "analyzer-dispatcher-deploy"
-  tags = [
-    upstream_aware_tag("analyzer-dispatcher")
-  ]
 }
 
 target "generator-dispatcher" {
