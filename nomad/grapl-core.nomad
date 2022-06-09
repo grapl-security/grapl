@@ -107,24 +107,14 @@ variable "session_table_name" {
   description = "What is the name of the session table?"
 }
 
-variable "plugin_registry_db_hostname" {
-  type        = string
-  description = "What is the host for the plugin registry table?"
-}
-
-variable "plugin_registry_db_port" {
-  type        = string
-  description = "What is the port for the plugin registry table?"
-}
-
-variable "plugin_registry_db_username" {
-  type        = string
-  description = "What is the username for the plugin registry table?"
-}
-
-variable "plugin_registry_db_password" {
-  type        = string
-  description = "What is the password for the plugin registry table?"
+variable "plugin_registry_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for plugin-registry database"
 }
 
 variable "plugin_registry_kernel_artifact_url" {
@@ -137,24 +127,14 @@ variable "plugin_registry_rootfs_artifact_url" {
   description = "URL specifying the rootfs.tar.gz for the Firecracker VM"
 }
 
-variable "organization_management_db_hostname" {
-  type        = string
-  description = "What is the host for the organization management database?"
-}
-
-variable "organization_management_db_port" {
-  type        = string
-  description = "What is the port for the organization management database?"
-}
-
-variable "organization_management_db_username" {
-  type        = string
-  description = "What is the username for the organization management database?"
-}
-
-variable "organization_management_db_password" {
-  type        = string
-  description = "What is the password for the organization management database?"
+variable "organization_management_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for organization-management database"
 }
 
 variable "pipeline_ingress_healthcheck_polling_interval_ms" {
@@ -172,32 +152,32 @@ variable "pipeline_ingress_kafka_sasl_password" {
   description = "The password to authenticate with Confluent Cloud cluster."
 }
 
-variable "plugin_work_queue_db_hostname" {
-  type        = string
-  description = "What is the host for the plugin work queue table?"
+variable "plugin_work_queue_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for plugin-work-queue database"
 }
 
-variable "plugin_work_queue_db_port" {
-  type        = string
-  description = "What is the port for the plugin work queue table?"
+variable "uid_allocator_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for uid-allocator database"
 }
 
-variable "plugin_work_queue_db_username" {
-  type        = string
-  description = "What is the username for the plugin work queue table?"
-}
-
-variable "plugin_work_queue_db_password" {
-  type        = string
-  description = "What is the password for the plugin work queue table?"
-}
-
-variable "plugin_s3_bucket_aws_account_id" {
+variable "plugin_registry_bucket_aws_account_id" {
   type        = string
   description = "The account id that owns the bucket where plugins are stored"
 }
 
-variable "plugin_s3_bucket_name" {
+variable "plugin_registry_bucket_name" {
   type        = string
   description = "The name of the bucket where plugins are stored"
 }
@@ -1309,10 +1289,10 @@ job "grapl-core" {
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_organization-management-port}"
         RUST_BACKTRACE                       = local.rust_backtrace
         RUST_LOG                             = var.rust_log
-        ORGANIZATION_MANAGEMENT_DB_HOSTNAME  = var.organization_management_db_hostname
-        ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db_password
-        ORGANIZATION_MANAGEMENT_DB_PORT      = var.organization_management_db_port
-        ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db_username
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME  = var.organization_management_db.hostname
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db.password
+        ORGANIZATION_MANAGEMENT_DB_PORT      = var.organization_management_db.port
+        ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db.username
         OTEL_EXPORTER_JAEGER_AGENT_HOST      = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT      = local.tracing_jaeger_endpoint_port
       }
@@ -1414,22 +1394,24 @@ job "grapl-core" {
         AWS_REGION                                      = var.aws_region
         NOMAD_SERVICE_ADDRESS                           = "${attr.unique.network.ip-address}:4646"
         PLUGIN_REGISTRY_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_DB_HOSTNAME                     = var.plugin_registry_db_hostname
-        PLUGIN_REGISTRY_DB_PASSWORD                     = var.plugin_registry_db_password
-        PLUGIN_REGISTRY_DB_PORT                         = var.plugin_registry_db_port
-        PLUGIN_REGISTRY_DB_USERNAME                     = var.plugin_registry_db_username
+        PLUGIN_REGISTRY_DB_HOSTNAME                     = var.plugin_registry_db.hostname
+        PLUGIN_REGISTRY_DB_PASSWORD                     = var.plugin_registry_db.password
+        PLUGIN_REGISTRY_DB_PORT                         = var.plugin_registry_db.port
+        PLUGIN_REGISTRY_DB_USERNAME                     = var.plugin_registry_db.username
         PLUGIN_BOOTSTRAP_CONTAINER_IMAGE                = var.container_images["plugin-bootstrap"]
         PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL             = var.plugin_registry_kernel_artifact_url
         PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL             = var.plugin_registry_rootfs_artifact_url
         PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE = var.container_images["hax-docker-plugin-runtime"]
         # Plugin Execution code/image doesn't exist yet; change this once it does!
-        PLUGIN_EXECUTION_CONTAINER_IMAGE = "grapl/plugin-execution-sidecar-TODO"
-        PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID  = var.plugin_s3_bucket_aws_account_id
-        PLUGIN_S3_BUCKET_NAME            = var.plugin_s3_bucket_name
-        RUST_BACKTRACE                   = local.rust_backtrace
-        RUST_LOG                         = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST  = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT  = local.tracing_jaeger_endpoint_port
+        PLUGIN_EXECUTION_CONTAINER_IMAGE      = "grapl/plugin-execution-sidecar-TODO"
+        PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID = var.plugin_registry_bucket_aws_account_id
+        PLUGIN_REGISTRY_BUCKET_NAME           = var.plugin_registry_bucket_name
+
+        # common Rust env vars
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
 
       resources {
@@ -1482,18 +1464,18 @@ job "grapl-core" {
 
       env {
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME  = var.plugin_work_queue_db_hostname
-        PLUGIN_WORK_QUEUE_DB_PASSWORD  = var.plugin_work_queue_db_password
-        PLUGIN_WORK_QUEUE_DB_PORT      = var.plugin_work_queue_db_port
-        PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db_username
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME  = var.plugin_work_queue_db.hostname
+        PLUGIN_WORK_QUEUE_DB_PASSWORD  = var.plugin_work_queue_db.password
+        PLUGIN_WORK_QUEUE_DB_PORT      = var.plugin_work_queue_db.port
+        PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db.username
         # Hardcoded, but makes little sense to pipe up through Pulumi
         PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
-        PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID                   = var.plugin_s3_bucket_aws_account_id
-        PLUGIN_S3_BUCKET_NAME                             = var.plugin_s3_bucket_name
-        RUST_BACKTRACE                                    = local.rust_backtrace
-        RUST_LOG                                          = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST                   = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT                   = local.tracing_jaeger_endpoint_port
+
+        # common Rust env vars
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
     }
 
@@ -1513,4 +1495,47 @@ job "grapl-core" {
       }
     }
   }
+
+  group "uid-allocator" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+
+      port "uid-allocator-port" {
+      }
+    }
+
+    task "uid-allocator" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["uid-allocator"]
+        ports = ["uid-allocator-port"]
+      }
+
+      env {
+        UID_ALLOCATOR_BIND_ADDRESS      = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
+        UID_ALLOCATOR_DB_HOSTNAME       = var.uid_allocator_db.hostname
+        UID_ALLOCATOR_DB_PASSWORD       = var.uid_allocator_db.password
+        UID_ALLOCATOR_DB_PORT           = var.uid_allocator_db.port
+        UID_ALLOCATOR_DB_USERNAME       = var.uid_allocator_db.username
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "uid-allocator"
+      port = "uid-allocator-port"
+      connect {
+        sidecar_service {
+        }
+      }
+    }
+  }
+
 }

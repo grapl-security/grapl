@@ -9,6 +9,7 @@ license = "MIT"
 [dependencies]
 bytes = "1.1"
 futures = "0.3"
+grapl-utils = { path = "../grapl-utils" }
 prost = "0.10"
 prost-types = "0.10"
 thiserror = "1.0"
@@ -30,15 +31,28 @@ test-context = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [features]
-default = ["full"]
-full = ["graph-mutation-full"]
+default = [
+  "graph-mutation-full",
+  "uid-allocator-full",
+]
+graph-mutation = []
+graph-mutation-messages = ["graph-mutation"]
+graph-mutation-server = ["graph-mutation", "graph-mutation-messages"]
+graph-mutation-client = ["graph-mutation", "graph-mutation-messages"]
 graph-mutation-full = [
   "graph-mutation-server",
   "graph-mutation-client",
   "graph-mutation-messages",
   "graph-mutation",
 ]
-graph-mutation-server = ["graph-mutation", "graph-mutation-messages"]
-graph-mutation-client = ["graph-mutation", "graph-mutation-messages"]
-graph-mutation-messages = ["graph-mutation"]
-graph-mutation = []
+
+uid-allocator = []
+uid-allocator-messages = ["uid-allocator"]
+uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
+uid-allocator-client = ["uid-allocator-messages", "uid-allocator"]
+uid-allocator-full = [
+  "uid-allocator-messages",
+  "uid-allocator-client",
+  "uid-allocator-server",
+  "uid-allocator"
+]

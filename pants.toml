@@ -30,7 +30,7 @@ pants_ignore=[
 ]
 
 plugins = [
-  "toolchain.pants.plugin==0.19.0"
+  "toolchain.pants.plugin==0.20.0"
 ]
 
 remote_cache_read = true
@@ -83,10 +83,16 @@ root_patterns = [
 ]
 
 [python]
+lockfile_generator = "pex"
 # Use this as a lockfile; speeds up installation of dependencies
 # To update it, see build-support/manage_virtualenv.sh
 requirement_constraints = "3rdparty/python/constraints.txt"
-interpreter_constraints = ["CPython==3.7.*"]
+# If you update these constraints, also update the ones in the
+# `[black]` section below; see there for further background.
+interpreter_constraints = ["==3.8.*"]
+
+[python-bootstrap]
+search_path = ["<PYENV_LOCAL>", "<PYENV>", "<PATH>"]
 
 # We have at least one __init__.py file that has code in it.
 # See https://www.pantsbuild.org/docs/python-backend
@@ -98,7 +104,14 @@ mypy_plugin = true
 
 [black]
 lockfile = "3rdparty/python/black.lockfile"
+# Version specified due to https://github.com/psf/black/issues/2964
+# Not entirely clear how we triggered this, given that we are on Click
+# < 8.1.0, but updating allows Black to run again.
+version = "black>=22.3.0"
 config = "pyproject.toml"
+# This should mirror the same global constraints above. This is a
+# work-around for https://github.com/pantsbuild/pants/issues/14912.
+interpreter_constraints = ["==3.8.*"]
 
 [isort]
 lockfile = "3rdparty/python/isort.lockfile"
@@ -158,6 +171,7 @@ extra_type_stubs = [
 ]
 
 [ipython]
+lockfile = "3rdparty/python/ipython.lockfile"
 version = "ipython==7.20.0"
 
 [flake8]

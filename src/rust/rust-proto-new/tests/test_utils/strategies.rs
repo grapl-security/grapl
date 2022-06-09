@@ -561,6 +561,7 @@ pub mod pipeline_ingress {
 pub mod plugin_registry {
     use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
+        CreatePluginRequestMetadata,
         CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
@@ -603,15 +604,20 @@ pub mod plugin_registry {
         }
     }
 
+    pub fn create_plugin_requests() -> impl Strategy<Value = CreatePluginRequest> {
+        prop_oneof![
+            any::<Vec<u8>>().prop_map(CreatePluginRequest::Chunk),
+            create_plugin_request_metadatas().prop_map(CreatePluginRequest::Metadata)
+        ]
+    }
+
     prop_compose! {
-        pub fn create_plugin_requests()(
-            plugin_artifact in string_not_empty().prop_map(|s| s.as_bytes().to_vec()),
+        pub fn create_plugin_request_metadatas()(
             tenant_id in uuids(),
             display_name in string_not_empty(),
             plugin_type in plugin_types(),
-        ) -> CreatePluginRequest {
-            CreatePluginRequest {
-                plugin_artifact,
+        ) -> CreatePluginRequestMetadata {
+            CreatePluginRequestMetadata {
                 tenant_id,
                 display_name,
                 plugin_type,
@@ -628,6 +634,7 @@ pub mod plugin_registry {
             }
         }
     }
+
     prop_compose! {
         pub fn get_analyzers_for_tenant_requests()(
             tenant_id in uuids(),

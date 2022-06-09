@@ -1,6 +1,9 @@
 use rusoto_s3::{
+    AbortMultipartUploadError,
+    CompleteMultipartUploadError,
+    CreateMultipartUploadError,
     GetObjectError,
-    PutObjectError,
+    UploadPartError,
 };
 use rust_proto_new::{
     protocol::status::Status,
@@ -13,29 +16,41 @@ use crate::{
 };
 
 #[derive(Debug, thiserror::Error)]
+pub enum S3PutError {
+    #[error(transparent)]
+    CreateError(#[from] rusoto_core::RusotoError<CreateMultipartUploadError>),
+    #[error(transparent)]
+    UploadPartError(#[from] rusoto_core::RusotoError<UploadPartError>),
+    #[error(transparent)]
+    CompleteError(#[from] rusoto_core::RusotoError<CompleteMultipartUploadError>),
+    #[error(transparent)]
+    AbortError(#[from] rusoto_core::RusotoError<AbortMultipartUploadError>),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceError {
-    #[error("SqlxError")]
+    #[error(transparent)]
     SqlxError(#[from] sqlx::Error),
-    #[error("S2PutObjectError")]
-    PutObjectError(#[from] rusoto_core::RusotoError<PutObjectError>),
-    #[error("S2GetObjectError")]
-    GetObjectError(#[from] rusoto_core::RusotoError<GetObjectError>),
+    #[error(transparent)]
+    S3PutObjectError(#[from] S3PutError),
+    #[error(transparent)]
+    S3GetObjectError(#[from] rusoto_core::RusotoError<GetObjectError>),
     #[error("EmptyObject")]
     EmptyObject,
-    #[error("IoError")]
+    #[error(transparent)]
     IoError(#[from] std::io::Error),
-    #[error("SerDeError")]
+    #[error(transparent)]
     SerDeError(#[from] SerDeError),
-    #[error("DatabaseSerDeError")]
+    #[error(transparent)]
     DatabaseSerDeError(#[from] DatabaseSerDeError),
-    #[error("NomadClientError")]
+    #[error(transparent)]
     NomadClientError(#[from] nomad::client::NomadClientError),
-    #[error("NomadCliError")]
+    #[error(transparent)]
     NomadCliError(#[from] nomad::cli::NomadCliError),
     #[error("NomadJobAllocationError")]
     NomadJobAllocationError,
-    #[error("ArtifactTooLargeError {0}")]
-    ArtifactTooLargeError(String),
+    #[error("StreamInputError {0}")]
+    StreamInputError(&'static str),
     // TODO: These errs are meant to be human-readable and are not directly
     // sent over the wire, so add {0}s to them!
 }
@@ -52,8 +67,8 @@ impl From<PluginRegistryServiceError> for Status {
                 Status::internal("Invalid SQL configuration")
             }
             Error::SqlxError(_) => Status::internal("Failed to operate on postgres"),
-            Error::PutObjectError(_) => Status::internal("Failed to put s3 object"),
-            Error::GetObjectError(_) => Status::internal("Failed to get s3 object"),
+            Error::S3PutObjectError(_) => Status::internal("Failed to put s3 object"),
+            Error::S3GetObjectError(_) => Status::internal("Failed to get s3 object"),
             Error::EmptyObject => Status::internal("S3 Object was unexpectedly empty"),
             Error::IoError(_) => Status::internal("IoError"),
             Error::SerDeError(_) => Status::invalid_argument("Unable to deserialize message"),
@@ -65,7 +80,10 @@ impl From<PluginRegistryServiceError> for Status {
             Error::NomadJobAllocationError => {
                 Status::internal("Unable to allocate Nomad job - it may be out of resources.")
             }
-            Error::ArtifactTooLargeError(msg) => Status::invalid_argument(msg),
+            Error::StreamInputError(e) => {
+                // Since it's regarding user input, we can de-anonymize this message
+                Status::invalid_argument(format!("Unexpected input to Stream RPC: {e}"))
+            }
         }
     }
 }

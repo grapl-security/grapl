@@ -2,9 +2,6 @@
 
 set -euo pipefail
 
-# Set versions
-PYENV_PYTHON_VERSION="3.7.10"
-
 # We're starting to use this  script for more than chromebooks. As such we're starting to make this
 # architecture-independent, so that in the future we can use it for AWS graviton instances, which are significantly
 # more cost-effective, especially the metal ones.
@@ -106,14 +103,6 @@ install_docker() {
         sudo usermod -a -G docker "$USER"
     fi
 
-    echo_banner "Install docker-compose (v1, old, Python)"
-    sudo curl --proto "=https" \
-        --tlsv1.2 \
-        --location \
-        --output /usr/local/bin/docker-compose \
-        "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname --kernel-name)-$(uname --machine)"
-    sudo chmod +x /usr/local/bin/docker-compose
-
     echo_banner "Install docker compose (v2, new, Go) CLI plugin"
     user_docker_cli_plugins_dir="${HOME}/.docker/cli-plugins"
     mkdir --parents "${user_docker_cli_plugins_dir}"
@@ -153,7 +142,7 @@ install_rust_and_utilities() {
 }
 
 install_pyenv() {
-    echo_banner "Install pyenv and set python version to ${PYENV_PYTHON_VERSION}"
+    echo_banner "Install pyenv"
     sudo apt-get install --yes make libssl-dev zlib1g-dev libbz2-dev \
         libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
         xz-utils tk-dev libffi-dev liblzma-dev python3-dev
@@ -197,9 +186,10 @@ install_pyenv() {
     fi
 
     source_profile
-    pyenv install --skip-existing "${PYENV_PYTHON_VERSION}"
-    pyenv global "${PYENV_PYTHON_VERSION}"
-
+    pyenv install --skip-existing
+    # Sets global Python to the same thing that is configured in
+    # .python-version in this repository
+    pyenv global "$(pyenv local)"
 }
 
 install_pipx() {
@@ -278,12 +268,12 @@ install_hashicorp_tools() {
 
     # Set specific versions since we're enabling the hashicorp test repo
     CONSUL_VERSION="1.12.0-1"
-    NOMAD_VERSION="1.3.0-1~rc.1"
+    NOMAD_VERSION="1.3.1-1"
     # packer doesn't have the -1s at the end for some reason
     PACKER_VERSION="1.8.0"
     VAULT_VERSION="1.10.2-1"
 
-    sudo apt-get install --yes \
+    sudo apt-get install --yes --allow-downgrades \
         consul="${CONSUL_VERSION}" \
         nomad="${NOMAD_VERSION}" \
         packer="${PACKER_VERSION}" \

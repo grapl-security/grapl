@@ -1,3 +1,4 @@
+.python-version @christophermaier
 /3rdparty/ @christophermaier
 /bin/ @christophermaier
 /buf.yaml @christophermaier
@@ -53,8 +54,7 @@ BUILD @christophermaier
 /src/python/mypy.ini @christophermaier @wimax-grapl
 /src/python/provisioner/ @jgrillo-grapl
 /src/python/python-proto/ @grapl-security/wg-data-infra
-/src/sh/BUILD @wimax-grapl
-/src/sh/shell_color.sh @wimax-grapl
+/src/sh/ @wimax-grapl @christophermaier
 /src/rust/analyzer-dispatcher/ @grapl-security/wg-data-infra
 /src/rust/bin/ @christophermaier
 /src/rust/.cargo @christophermaier
@@ -89,6 +89,7 @@ src/rust/rust-proto-new/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain.toml @inickles-grapl
 /src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
 /src/rust/sysmon-parser/ @inickles-grapl
+/src/rust/uid-allocator/ @colin-grapl
 /test/docker-compose* @inickles-grapl @christophermaier
 /test/run @wimax-grapl
 

@@ -33,7 +33,7 @@ readonly CURRENT_DIR
 if [[ ! "${CURRENT_DIR}" =~ ^${GRAPL_DEVBOX_LOCAL_GRAPL} ]]; then
     echo "devbox/do.sh: only works if you're in your local Grapl directory:"
     echo "${GRAPL_DEVBOX_LOCAL_GRAPL}"
-    exit 42
+    exit 44
 fi
 
 CURRENT_DIR_RELATIVE_TO_GRAPL_ROOT="$(

@@ -25,7 +25,7 @@ any information you think might be useful for replicating it.
 
 ```
 
-#### The output of `docker-compose --version`
+#### The output of `docker compose --version`
 
 ```bash
 

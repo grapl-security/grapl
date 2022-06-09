@@ -51,7 +51,7 @@ pub fn get_job(
 ) -> Result<models::Job, NomadCliError> {
     let plugin_artifact_url = {
         let key = &plugin.artifact_s3_key;
-        let bucket = &service_config.plugin_s3_bucket_name;
+        let bucket = &service_config.bucket_name;
         get_s3_url(bucket, key)
     };
     match plugin_runtime {
@@ -60,7 +60,7 @@ pub fn get_job(
             let job_file_vars: NomadVars = HashMap::from([
                 (
                     "aws_account_id",
-                    service_config.plugin_s3_bucket_aws_account_id.to_owned(),
+                    service_config.bucket_aws_account_id.to_owned(),
                 ),
                 ("plugin_artifact_url", plugin_artifact_url),
                 (
@@ -79,7 +79,7 @@ pub fn get_job(
             let job_file_vars: NomadVars = HashMap::from([
                 (
                     "aws_account_id",
-                    service_config.plugin_s3_bucket_aws_account_id.to_owned(),
+                    service_config.bucket_aws_account_id.to_owned(),
                 ),
                 (
                     "kernel_artifact_url",
@@ -169,8 +169,8 @@ mod tests {
             kernel_artifact_url: Default::default(),
             plugin_bootstrap_container_image: Default::default(),
             plugin_execution_container_image: Default::default(),
-            plugin_s3_bucket_aws_account_id: Default::default(),
-            plugin_s3_bucket_name: Default::default(),
+            bucket_aws_account_id: Default::default(),
+            bucket_name: Default::default(),
             rootfs_artifact_url: Default::default(),
             artifact_size_limit_mb: Default::default(),
         }

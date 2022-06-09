@@ -5,7 +5,6 @@ use chrono::{
     Utc,
 };
 use derive_into_owned::IntoOwned;
-use xmlparser::Token;
 
 use super::{
     EventData,
@@ -131,63 +130,33 @@ impl<'a> ProcessCreateEventData<'a> {
         let mut parent_user = None;
         let mut sequence_number = None;
 
-        while let Some(token) = tokenizer.next() {
-            match token? {
-                Token::ElementStart { local, .. } => match local.as_str() {
-                    "Data" => {
-                        let name = util::get_name_attribute!(tokenizer);
-                        let value = util::next_text_str_span!(tokenizer);
-
-                        match name {
-                            "RuleName" => rule_name = Some(util::unescape_xml(&value)?),
-                            "SequenceNumber" => {
-                                sequence_number = Some(util::parse_int::<u64>(&value)?)
-                            }
-                            "UtcTime" => {
-                                utc_time = Some(util::parse_utc_from_str(&value, UTC_TIME_FORMAT)?)
-                            }
-                            "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(&value)?),
-                            "ProcessId" => process_id = Some(util::parse_int::<u32>(&value)?),
-                            "Image" => image = Some(util::unescape_xml(&value)?),
-                            "FileVersion" => file_version = Some(util::unescape_xml(&value)?),
-                            "Description" => description = Some(util::unescape_xml(&value)?),
-                            "Product" => product = Some(util::unescape_xml(&value)?),
-                            "Company" => company = Some(util::unescape_xml(&value)?),
-                            "OriginalFileName" => {
-                                original_file_name = Some(util::unescape_xml(&value)?)
-                            }
-                            "CommandLine" => command_line = Some(util::unescape_xml(&value)?),
-                            "CurrentDirectory" => {
-                                current_directory = Some(util::unescape_xml(&value)?)
-                            }
-                            "User" => user = Some(util::unescape_xml(&value)?),
-                            "LogonGuid" => logon_guid = Some(util::parse_win_guid_str(&value)?),
-                            "LogonId" => logon_id = Some(util::from_zero_or_hex_str(&value)?),
-                            "TerminalSessionId" => {
-                                terminal_session_id = Some(util::parse_int::<u32>(&value)?)
-                            }
-                            "IntegrityLevel" => integrity_level = Some(util::unescape_xml(&value)?),
-                            "Hashes" => hashes = Some(util::unescape_xml(&value)?),
-                            "ParentProcessGuid" => {
-                                parent_process_guid = Some(util::parse_win_guid_str(&value)?)
-                            }
-                            "ParentProcessId" => {
-                                parent_process_id = Some(util::parse_int::<u32>(&value)?)
-                            }
-                            "ParentImage" => parent_image = Some(util::unescape_xml(&value)?),
-                            "ParentCommandLine" => {
-                                parent_command_line = Some(util::unescape_xml(&value)?)
-                            }
-                            "ParentUser" => parent_user = Some(util::unescape_xml(&value)?),
-                            _ => {}
-                        }
-                    }
-                    _ => {}
-                },
-                Token::ElementEnd {
-                    end: xmlparser::ElementEnd::Close(_, name),
-                    ..
-                } if name.as_str() == "EventData" => break,
+        for result in util::EventDataIterator::new(tokenizer)? {
+            let (name, ref value) = result?;
+            match name {
+                "RuleName" => rule_name = Some(util::unescape_xml(value)?),
+                "SequenceNumber" => sequence_number = Some(util::parse_int::<u64>(value)?),
+                "UtcTime" => utc_time = Some(util::parse_utc_from_str(value, UTC_TIME_FORMAT)?),
+                "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(value)?),
+                "ProcessId" => process_id = Some(util::parse_int::<u32>(value)?),
+                "Image" => image = Some(util::unescape_xml(value)?),
+                "FileVersion" => file_version = Some(util::unescape_xml(value)?),
+                "Description" => description = Some(util::unescape_xml(value)?),
+                "Product" => product = Some(util::unescape_xml(value)?),
+                "Company" => company = Some(util::unescape_xml(value)?),
+                "OriginalFileName" => original_file_name = Some(util::unescape_xml(value)?),
+                "CommandLine" => command_line = Some(util::unescape_xml(value)?),
+                "CurrentDirectory" => current_directory = Some(util::unescape_xml(value)?),
+                "User" => user = Some(util::unescape_xml(value)?),
+                "LogonGuid" => logon_guid = Some(util::parse_win_guid_str(value)?),
+                "LogonId" => logon_id = Some(util::from_zero_or_hex_str(value)?),
+                "TerminalSessionId" => terminal_session_id = Some(util::parse_int::<u32>(value)?),
+                "IntegrityLevel" => integrity_level = Some(util::unescape_xml(value)?),
+                "Hashes" => hashes = Some(util::unescape_xml(value)?),
+                "ParentProcessGuid" => parent_process_guid = Some(util::parse_win_guid_str(value)?),
+                "ParentProcessId" => parent_process_id = Some(util::parse_int::<u32>(value)?),
+                "ParentImage" => parent_image = Some(util::unescape_xml(value)?),
+                "ParentCommandLine" => parent_command_line = Some(util::unescape_xml(value)?),
+                "ParentUser" => parent_user = Some(util::unescape_xml(value)?),
                 _ => {}
             }
         }

@@ -1,5 +1,10 @@
 use std::fmt::Debug;
 
+use futures::{
+    Stream,
+    StreamExt,
+};
+use grapl_utils::iter_ext::GraplIterExt;
 use proto::plugin_registry_service_client::PluginRegistryServiceClient as PluginRegistryServiceClientProto;
 
 use crate::{
@@ -10,19 +15,22 @@ use crate::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceClientError {
-    #[error("ErrorStatus")]
+    #[error("TransportError {0}")]
+    TransportError(#[from] tonic::transport::Error),
+    #[error("ErrorStatus {0}")]
     ErrorStatus(#[from] tonic::Status),
-    #[error("PluginRegistryDeserializationError")]
+    #[error("PluginRegistryDeserializationError {0}")]
     PluginRegistryDeserializationError(#[from] SerDeError),
 }
 
+#[derive(Clone)]
 pub struct PluginRegistryServiceClient {
     proto_client: PluginRegistryServiceClientProto<tonic::transport::Channel>,
 }
 
 impl PluginRegistryServiceClient {
     #[tracing::instrument(err)]
-    pub async fn connect<T>(endpoint: T) -> Result<Self, Box<dyn std::error::Error>>
+    pub async fn connect<T>(endpoint: T) -> Result<Self, PluginRegistryServiceClientError>
     where
         T: std::convert::TryInto<tonic::transport::Endpoint> + Debug,
         T::Error: std::error::Error + Send + Sync + 'static,
@@ -32,19 +40,39 @@ impl PluginRegistryServiceClient {
         })
     }
 
-    /// create a new plugin
-    pub async fn create_plugin(
+    /// create a new plugin.
+    /// NOTE: Most consumers will want `create_plugin`, not `create_plugin_raw`.
+    pub async fn create_plugin_raw<S>(
         &mut self,
-        request: native::CreatePluginRequest,
-    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
-        // Might be nice to add a client-side "business-logic validation" hook
-        // i.e. to error based on .plugin_artifact.len()
+        request: S,
+    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError>
+    where
+        S: Stream<Item = native::CreatePluginRequest> + Send + 'static,
+    {
         let response = self
             .proto_client
-            .create_plugin(proto::CreatePluginRequest::from(request))
+            .create_plugin(request.map(proto::CreatePluginRequest::from))
             .await?;
         let response = native::CreatePluginResponse::try_from(response.into_inner())?;
         Ok(response)
+    }
+
+    /// Simplified wrapper function for create_plugin
+    pub async fn create_plugin(
+        &mut self,
+        metadata: native::CreatePluginRequestMetadata,
+        plugin_artifact: impl Sized + Iterator<Item = u8> + Send + 'static,
+    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
+        // Split the artifact up into 5MB chunks
+        let plugin_chunks = plugin_artifact.chunks_owned(1024 * 1024 * 5);
+        // Send the metadata first followed by N chunks
+        let request = futures::stream::iter(std::iter::once(
+            native::CreatePluginRequest::Metadata(metadata),
+        ))
+        .chain(futures::stream::iter(
+            plugin_chunks.map(native::CreatePluginRequest::Chunk),
+        ));
+        self.create_plugin_raw(request).await
     }
 
     /// retrieve the plugin corresponding to the given plugin_id

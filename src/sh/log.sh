@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 # ANSI Formatting Codes
 ########################################################################
 # Because who wants to remember all those fiddly details?
@@ -45,4 +43,40 @@ function bright_green() {
 
 function bright_yellow() {
     _bold_color "${COLORS[YELLOW]}" "${@}"
+}
+
+# Logging
+########################################################################
+
+function log() {
+    echo -e "${@}" >&2
+}
+
+function info() {
+    log "$(bright_green INFO):" "${@}"
+}
+
+function error() {
+    log "$(bright_red ERROR):" "${@}"
+}
+
+# Logs an error message and then exits the program.
+#
+# Exits with code `1` by default, but this can be overridden with the
+# `EXIT_CODE` variable, e.g.:
+#
+#     EXIT_CODE=42 fatal "Aaaaaauuuuuuggggghhhhhhh!"
+function fatal() {
+    log "$(bright_red FATAL):" "${@}"
+
+    if [ -n "${EXIT_CODE}" ]; then
+        exit "${EXIT_CODE}"
+    else
+        exit 1
+    fi
+}
+
+function log_and_run() {
+    log ❯❯ "$(bright_white "$(printf "%q " "${@}")")"
+    "$@"
 }

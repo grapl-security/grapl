@@ -29,17 +29,13 @@ macro_rules ! impl_from_for_unit {
     };
 }
 
-macro_rules ! extra_assert {
+macro_rules! extra_assert {
     ($x:expr) => {
         #[cfg(feature = "extra_assertions")]
         {
             $x
         }
     };
-    ($x:expr, $($tail:ty),*) => {
-        extra_assert!($x);
-        extra_assert!($($tail), *);
-    }
 }
 
 impl EdgeList {

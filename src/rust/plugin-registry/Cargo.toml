@@ -12,11 +12,13 @@ name = "plugin_registry"
 
 [dependencies]
 async-trait = "0.1.51"
+bytes = "1.1"
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",
   "derive"
 ] }
+futures-retry = "0.6.0"
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto-new = { path = "../rust-proto-new" }
@@ -42,13 +44,15 @@ rusoto_core = { version = "0.47.0", default_features = false, features = [
 rusoto_s3 = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
-blake3 = "1.2.0"
 uuid = { version = "0.8", features = ["v4"] }
 futures = "0.3"
 
 [dev-dependencies]
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }
 
 [features]
 new_integration_tests = []

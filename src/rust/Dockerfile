@@ -4,7 +4,7 @@
 
 FROM rust:1-slim-bullseye AS base
 
-ARG RUST_BUILD=debug
+ARG RUST_BUILD=dev-local-grapl
 
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
     && apt-get install --yes --no-install-recommends \
         build-essential=12.9 \
         cmake=3.18.4-2+deb11u1 \
-        libssl-dev=1.1.1n-0+deb11u1 \
+        libssl-dev=1.1.1n-0+deb11u2 \
         perl=5.32.1-4+deb11u2 \
         pkg-config=0.29.2-1 \
         tcl=8.6.11+1
@@ -76,7 +76,9 @@ RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked <<EOF
     case "${RUST_BUILD}" in
       debug)
-        cargo build ;;
+        cargo build;;
+      dev-local-grapl)
+        cargo build --profile dev-local-grapl;;
       release)
         cargo build --release ;;
       test)
@@ -106,7 +108,7 @@ FROM base AS tarpaulin
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tarpaulin-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        libssl-dev=1.1.1n-0+deb11u1 \
+        libssl-dev=1.1.1n-0+deb11u2 \
         pkg-config=0.29.2-1
 
 # For test coverage reports
@@ -373,3 +375,10 @@ FROM rust-dist AS pipeline-ingress-deploy
 
 COPY --from=build /outputs/pipeline-ingress /
 ENTRYPOINT ["/pipeline-ingress"]
+
+##### uid-allocator
+FROM rust-dist AS uid-allocator-deploy
+
+COPY --from=build /outputs/uid-allocator /
+ENTRYPOINT ["/uid-allocator"]
+
