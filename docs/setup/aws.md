@@ -119,17 +119,7 @@ and execute the end-to-end tests in AWS.
 
 ### Deploy analyzers
 
-To deploy the test analyzers, run the following `graplctl` commands:
-
-```bash
-./bin/graplctl upload analyzer --analyzer_main_py etc/local_grapl/unique_cmd_parent/main.py
-```
-
-```bash
-./bin/graplctl upload analyzer --analyzer_main_py etc/local_grapl/suspicious_svchost/main.py
-```
-
-Now Grapl is ready to analyze a test dataset.
+TBD
 
 ### Upload test data
 
