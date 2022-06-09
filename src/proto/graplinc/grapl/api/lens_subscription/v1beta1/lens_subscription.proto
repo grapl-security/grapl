@@ -1,5 +1,8 @@
 syntax = "proto3";
 
+package graplinc.grapl.api.lens_subscription.v1beta1;
+
+
 import "graplinc/common/v1beta1/types.proto";
 
 // Represents an operation as applied to a given lens
