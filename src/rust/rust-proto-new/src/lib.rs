@@ -40,12 +40,12 @@ pub(crate) mod protobufs {
                     }
                 }
 
-
+                #[cfg(feature = "lens-manager")]
                 pub(crate) mod lens_manager {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.api.lens_manager.v1beta1.rs"
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.lens_manager.v1beta1.rs"
                         ));
                     }
                 }
@@ -142,6 +142,7 @@ pub mod graplinc {
                 pub mod v1beta1;
             }
 
+            #[cfg(feature = "lens-manager")]
             pub mod lens_manager {
                 pub mod v1beta1;
             }
