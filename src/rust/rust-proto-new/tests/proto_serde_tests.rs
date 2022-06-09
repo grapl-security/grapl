@@ -420,3 +420,73 @@ mod plugin_work_queue {
         }
     }
 }
+
+
+mod lens_manager {
+    use strategies::lens_manager as lm_strats;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_create_lens_request(value in lm_strats::create_lens_request()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_create_lens_response(value in lm_strats::create_lens_response()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_merge_lens_request(value in lm_strats::merge_lens_request()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_merge_lens_response(value in lm_strats::merge_lens_response()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_close_lens_request(value in lm_strats::close_lens_request()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_close_lens_response(value in lm_strats::close_lens_response()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_add_node_to_scope_request(value in lm_strats::add_node_to_scope_request()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_add_node_to_scope_response(value in lm_strats::add_node_to_scope_response()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_remove_node_from_scope_request(value in lm_strats::remove_node_from_scope_request()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_remove_node_from_scope_response(value in lm_strats::remove_node_from_scope_response()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_remove_node_from_all_scopes_request(value in lm_strats::remove_node_from_all_scopes_request()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_remove_node_from_all_scopes_response(value in lm_strats::remove_node_from_all_scopes_response()) {
+            check_encode_decode_invariant(value)
+        }
+    }
+
+}

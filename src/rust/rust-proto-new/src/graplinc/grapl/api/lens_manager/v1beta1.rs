@@ -910,8 +910,7 @@ pub mod messages {
     #[derive(Debug, Clone, PartialEq)]
     pub struct RemoveNodeFromAllScopesRequest {
         pub tenant_id: Uuid,
-        //
-        pub uid: u64, // never 0, Refinement Type
+        pub uid: u64,
     }
 
     impl TryFrom<RemoveNodeFromAllScopesRequestProto> for RemoveNodeFromAllScopesRequest {

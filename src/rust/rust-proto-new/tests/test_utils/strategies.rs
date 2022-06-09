@@ -8,7 +8,7 @@ use uuid::Uuid;
 // Bytes
 //
 
-pub fn bytes(size: usize) -> impl Strategy<Value = Bytes> {
+pub fn bytes(size: usize) -> impl Strategy<Value=Bytes> {
     proptest::collection::vec(any::<u8>(), size).prop_map(Bytes::from)
 }
 
@@ -24,7 +24,7 @@ prop_compose! {
     }
 }
 
-pub fn vec_of_uuids() -> impl Strategy<Value = Vec<Uuid>> {
+pub fn vec_of_uuids() -> impl Strategy<Value=Vec<Uuid>> {
     proptest::collection::vec(uuids(), 10)
 }
 
@@ -32,9 +32,9 @@ pub fn string_not_empty() -> proptest::string::RegexGeneratorStrategy<String> {
     proptest::string::string_regex(".+").expect("Invalid regex")
 }
 
-pub fn vec_not_empty<T>() -> impl Strategy<Value = Vec<T>>
-where
-    T: Arbitrary,
+pub fn vec_not_empty<T>() -> impl Strategy<Value=Vec<T>>
+    where
+        T: Arbitrary,
 {
     any::<Vec<T>>().prop_filter("Only accept non-empty vecs", |v| !v.is_empty())
 }
@@ -113,10 +113,10 @@ pub mod pipeline {
     }
 
     pub fn envelopes<T>(
-        inner_strategy: impl Strategy<Value = T>,
-    ) -> impl Strategy<Value = Envelope<T>>
-    where
-        T: SerDe + Debug,
+        inner_strategy: impl Strategy<Value=T>,
+    ) -> impl Strategy<Value=Envelope<T>>
+        where
+            T: SerDe + Debug,
     {
         (metadatas(), inner_strategy).prop_map(|(metadata, inner_message)| -> Envelope<T> {
             Envelope {
@@ -329,7 +329,7 @@ pub mod graph {
     // Strategy
     //
 
-    pub fn strategies() -> impl Strategy<Value = GraphStrategy> {
+    pub fn strategies() -> impl Strategy<Value=GraphStrategy> {
         prop_oneof![
             sessions().prop_map(GraphStrategy::Session),
             statics().prop_map(GraphStrategy::Static),
@@ -352,7 +352,7 @@ pub mod graph {
     // Property
     //
 
-    pub fn properties() -> impl Strategy<Value = Property> {
+    pub fn properties() -> impl Strategy<Value=Property> {
         prop_oneof![
             decrement_only_int_props().prop_map(Property::DecrementOnlyIntProp),
             decrement_only_uint_props().prop_map(Property::DecrementOnlyUintProp),
@@ -585,7 +585,7 @@ pub mod plugin_registry {
             Just(PluginType::Generator),
             Just(PluginType::Analyzer),
         ]
-        .boxed()
+            .boxed()
     }
 
     prop_compose! {
@@ -604,7 +604,7 @@ pub mod plugin_registry {
         }
     }
 
-    pub fn create_plugin_requests() -> impl Strategy<Value = CreatePluginRequest> {
+    pub fn create_plugin_requests() -> impl Strategy<Value=CreatePluginRequest> {
         prop_oneof![
             any::<Vec<u8>>().prop_map(CreatePluginRequest::Chunk),
             create_plugin_request_metadatas().prop_map(CreatePluginRequest::Metadata)
@@ -664,7 +664,7 @@ pub mod plugin_registry {
         }
     }
 
-    pub fn deploy_plugin_responses() -> impl Strategy<Value = DeployPluginResponse> {
+    pub fn deploy_plugin_responses() -> impl Strategy<Value=DeployPluginResponse> {
         Just(DeployPluginResponse {})
     }
 
@@ -720,7 +720,7 @@ pub mod plugin_registry {
         }
     }
 
-    pub fn tear_down_plugin_responses() -> impl Strategy<Value = TearDownPluginResponse> {
+    pub fn tear_down_plugin_responses() -> impl Strategy<Value=TearDownPluginResponse> {
         Just(TearDownPluginResponse {})
     }
 }
@@ -792,8 +792,7 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn acknowledge_generator_responses(
-    ) -> impl Strategy<Value = native::AcknowledgeGeneratorResponse> {
+    pub fn acknowledge_generator_responses() -> impl Strategy<Value=native::AcknowledgeGeneratorResponse> {
         Just(native::AcknowledgeGeneratorResponse {})
     }
 
@@ -809,17 +808,15 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn acknowledge_analyzer_responses(
-    ) -> impl Strategy<Value = native::AcknowledgeAnalyzerResponse> {
+    pub fn acknowledge_analyzer_responses() -> impl Strategy<Value=native::AcknowledgeAnalyzerResponse> {
         Just(native::AcknowledgeAnalyzerResponse {})
     }
 
-    pub fn maybe_jobs() -> impl Strategy<Value = Option<native::ExecutionJob>> {
+    pub fn maybe_jobs() -> impl Strategy<Value=Option<native::ExecutionJob>> {
         proptest::option::of(execution_jobs())
     }
 
-    pub fn get_execute_analyzer_requests(
-    ) -> impl Strategy<Value = native::GetExecuteAnalyzerRequest> {
+    pub fn get_execute_analyzer_requests() -> impl Strategy<Value=native::GetExecuteAnalyzerRequest> {
         Just(native::GetExecuteAnalyzerRequest {})
     }
 
@@ -835,8 +832,7 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn get_execute_generator_requests(
-    ) -> impl Strategy<Value = native::GetExecuteGeneratorRequest> {
+    pub fn get_execute_generator_requests() -> impl Strategy<Value=native::GetExecuteGeneratorRequest> {
         Just(native::GetExecuteGeneratorRequest {})
     }
 
@@ -862,8 +858,7 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn put_execute_analyzer_responses(
-    ) -> impl Strategy<Value = native::PutExecuteAnalyzerResponse> {
+    pub fn put_execute_analyzer_responses() -> impl Strategy<Value=native::PutExecuteAnalyzerResponse> {
         Just(native::PutExecuteAnalyzerResponse {})
     }
 
@@ -877,8 +872,136 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn put_execute_generator_responses(
-    ) -> impl Strategy<Value = native::PutExecuteGeneratorResponse> {
+    pub fn put_execute_generator_responses() -> impl Strategy<Value=native::PutExecuteGeneratorResponse> {
         Just(native::PutExecuteGeneratorResponse {})
     }
+}
+
+pub mod lens_manager {
+    use rust_proto_new::graplinc::grapl::api::lens_manager::v1beta1::messages as native;
+
+
+    use super::*;
+
+    prop_compose! {
+        pub fn create_lens_request()(
+            tenant_id in uuids(),
+            lens_type in string_not_empty(),
+            lens_name in string_not_empty(),
+            is_engagement in any::<bool>(),
+        ) -> native::CreateLensRequest {
+            native::CreateLensRequest {
+                tenant_id,
+                lens_type,
+                lens_name,
+                is_engagement,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn create_lens_response()(
+            lens_uid in any::<u64>(),
+        ) -> native::CreateLensResponse {
+            native::CreateLensResponse {
+                lens_uid,
+            }
+        }
+    }
+
+    pub fn merge_behavior() -> impl Strategy<Value=native::MergeBehavior> {
+        prop_oneof![
+                Just(native::MergeBehavior::Preserve),
+                Just(native::MergeBehavior::Close),
+            ]
+    }
+
+    prop_compose! {
+        pub fn merge_lens_request()(
+            tenant_id in uuids(),
+            source_lens_uid in any::<u64>(),
+            target_lens_uid in any::<u64>(),
+            merge_behavior in merge_behavior(),
+        ) -> native::MergeLensRequest {
+            native::MergeLensRequest {
+                tenant_id,
+                source_lens_uid,
+                target_lens_uid,
+                merge_behavior,
+            }
+        }
+    }
+
+    pub fn merge_lens_response() -> impl Strategy<Value=native::MergeLensResponse> {
+        Just(native::MergeLensResponse {})
+    }
+
+    prop_compose! {
+        pub fn close_lens_request()(
+            tenant_id in uuids(),
+            lens_uid in any::<u64>(),
+        ) -> native::CloseLensRequest {
+            native::CloseLensRequest {
+                tenant_id,
+                lens_uid,
+            }
+        }
+    }
+
+    pub fn close_lens_response() -> impl Strategy<Value=native::CloseLensResponse> {
+        Just(native::CloseLensResponse {})
+    }
+
+    prop_compose! {
+        pub fn add_node_to_scope_request()(
+            tenant_id in uuids(),
+            lens_uid in any::<u64>(),
+            uid in any::<u64>(),
+        ) -> native::AddNodeToScopeRequest {
+            native::AddNodeToScopeRequest {
+                tenant_id,
+                lens_uid,
+                uid,
+            }
+        }
+    }
+
+    pub fn add_node_to_scope_response() -> impl Strategy<Value=native::AddNodeToScopeResponse> {
+        Just(native::AddNodeToScopeResponse {})
+    }
+
+    prop_compose! {
+        pub fn remove_node_from_scope_request()(
+            tenant_id in uuids(),
+            lens_uid in any::<u64>(),
+            uid in any::<u64>(),
+        ) -> native::RemoveNodeFromScopeRequest {
+            native::RemoveNodeFromScopeRequest {
+                tenant_id,
+                lens_uid,
+                uid,
+            }
+        }
+    }
+
+    pub fn remove_node_from_scope_response() -> impl Strategy<Value=native::RemoveNodeFromScopeResponse> {
+        Just(native::RemoveNodeFromScopeResponse {})
+    }
+
+    prop_compose! {
+        pub fn remove_node_from_all_scopes_request()(
+            tenant_id in uuids(),
+            uid in any::<u64>(),
+        ) -> native::RemoveNodeFromAllScopesRequest {
+            native::RemoveNodeFromAllScopesRequest {
+                tenant_id,
+                uid,
+            }
+        }
+    }
+
+    pub fn remove_node_from_all_scopes_response() -> impl Strategy<Value=native::RemoveNodeFromAllScopesResponse> {
+        Just(native::RemoveNodeFromAllScopesResponse {})
+    }
+
 }
