@@ -7,32 +7,50 @@ use std::{
     },
 };
 
-use async_trait::async_trait;
 use dgraph_tonic::Client as DgraphClient;
-use rust_proto::graph_descriptions::{
+use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
     IdentifiedGraph,
     MergedGraph,
-};
-use sqs_executor::{
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
-    event_handler::{
-        CompletedEvents,
-        EventHandler,
-    },
-};
-use tracing::{
-    error,
-    info,
-    warn,
 };
 
 use crate::{
     reverse_resolver::ReverseEdgeResolver,
     upserter,
 };
+
+#[non_exhaustive]
+#[derive(thiserror::Error, Debug)]
+pub enum GraphMergerError {
+    #[error("unexpected error")]
+    Unexpected(String),
+
+    #[error("error processing event {0}")]
+    StreamProcessorError(#[from] kafka::StreamProcessorError),
+
+    #[error("missing environment variable {0}")]
+    MissingEnvironmentVariable(#[from] std::env::VarError),
+
+    #[error("kafka configuration error {0}")]
+    KafkaConfigurationError(#[from] kafka::ConfigurationError),
+
+    #[error("error configuring tracing {0}")]
+    TraceError(#[from] opentelemetry::trace::TraceError),
+
+    #[error("anyhow error {0}")]
+    AnyhowError(#[from] anyhow::Error),
+}
+
+impl From<GraphMergerError> for kafka::StreamProcessorError {
+    fn from(graph_merger_error: GraphMergerError) -> Self {
+        kafka::StreamProcessorError::EventHandlerError(graph_merger_error.to_string())
+    }
+}
+
+impl From<&GraphMergerError> for kafka::StreamProcessorError {
+    fn from(graph_merger_error: &GraphMergerError) -> Self {
+        kafka::StreamProcessorError::EventHandlerError(graph_merger_error.to_string())
+    }
+}
 
 #[derive(Clone)]
 pub struct GraphMerger {
@@ -41,57 +59,32 @@ pub struct GraphMerger {
 }
 
 impl GraphMerger {
-    pub fn new(mg_alphas: Vec<String>, reverse_edge_resolver: ReverseEdgeResolver) -> Self {
-        let mg_client = DgraphClient::new(mg_alphas).expect("Failed to create dgraph client.");
-
+    pub fn new(mg_client: DgraphClient, reverse_edge_resolver: ReverseEdgeResolver) -> Self {
         Self {
             mg_client: Arc::new(mg_client),
             reverse_edge_resolver,
         }
     }
-}
 
-#[derive(thiserror::Error, Debug)]
-pub enum GraphMergerError {
-    #[error("UnexpectedError")]
-    Unexpected(String),
-}
-
-impl CheckedError for GraphMergerError {
-    fn error_type(&self) -> Recoverable {
-        Recoverable::Transient
-    }
-}
-
-#[async_trait]
-impl EventHandler for GraphMerger {
-    type InputEvent = IdentifiedGraph;
-    type OutputEvent = MergedGraph;
-    type Error = GraphMergerError;
-
-    async fn handle_event(
+    #[tracing::instrument(skip(self, subgraph))]
+    pub async fn handle_event(
         &mut self,
-        subgraph: Self::InputEvent,
-        _completed: &mut CompletedEvents,
-    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
+        subgraph: IdentifiedGraph,
+    ) -> Result<MergedGraph, Result<(MergedGraph, GraphMergerError), GraphMergerError>> {
         if subgraph.is_empty() {
-            warn!("Attempted to merge empty subgraph. Short circuiting.");
+            tracing::warn!("Attempted to merge empty subgraph. Short circuiting.");
             return Ok(MergedGraph::default());
         }
 
-        info!(
-            message=
-            "handling new subgraph",
-            nodes=?subgraph.nodes.len(),
-            edges=?subgraph.edges.len(),
+        tracing::info!(
+            message = "handling new subgraph",
+            nodes =? subgraph.nodes.len(),
+            edges =? subgraph.edges.len(),
         );
 
         let uncached_nodes = subgraph.nodes.into_iter().map(|(_, n)| n);
-        let mut uncached_edges: Vec<_> = subgraph
-            .edges
-            .into_iter()
-            .flat_map(|e| e.1.into_vec())
-            .collect();
+        let mut uncached_edges: Vec<_> =
+            subgraph.edges.into_iter().flat_map(|e| e.1.edges).collect();
         let reverse = self
             .reverse_edge_resolver
             .resolve_reverse_edges(uncached_edges.clone())

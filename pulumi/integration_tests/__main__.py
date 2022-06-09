@@ -87,7 +87,7 @@ def main() -> None:
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _integration_new_container_images(artifacts),
-        "rust_log": log_levels.RUST_LOG_LEVELS,
+        "dns_server": config.CONSUL_DNS_IP,
         "integration_tests_kafka_consumer_group_name": kafka.consumer_group(
             "integration-tests"
         ),
@@ -98,6 +98,7 @@ def main() -> None:
             lambda c: c.api_secret
         ),
         "kafka_bootstrap_servers": kafka.bootstrap_servers(),
+        "rust_log": log_levels.RUST_LOG_LEVELS,
         "pipeline_ingress_healthcheck_polling_interval_ms": grapl_stack.pipeline_ingress_healthcheck_polling_interval_ms,
         "plugin_work_queue_db": grapl_stack.plugin_work_queue_db,
     }

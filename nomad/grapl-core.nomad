@@ -116,7 +116,7 @@ variable "pipeline_ingress_healthcheck_polling_interval_ms" {
 variable "kafka_credentials" {
   description = "Map from service-name to kafka credentials for that service"
   type = map(object({
-    # The username to authenticate with Confluent Cloud cluster. 
+    # The username to authenticate with Confluent Cloud cluster.
     sasl_username = string
     # The password to authenticate with Confluent Cloud cluster.
     sasl_password = string
@@ -725,9 +725,12 @@ job "grapl-core" {
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
 
-        DEST_BUCKET_NAME      = "fake"
-        SOURCE_QUEUE_URL      = "fake"
-        DEAD_LETTER_QUEUE_URL = "fake"
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["graph-merger"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["graph-merger"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["graph-merger"]
+        KAFKA_CONSUMER_TOPIC      = "identified-graphs"
+        KAFKA_PRODUCER_TOPIC      = "merged-graphs"
 
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port

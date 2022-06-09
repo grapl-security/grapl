@@ -18,9 +18,9 @@ use rust_proto_new::{
     graplinc::grapl::{
         api::{
             graph::v1beta1::{
-                GraphDescription,
                 ImmutableUintProp,
-                NodeDescription,
+                MergedGraph,
+                MergedNode,
                 Property,
             },
             pipeline_ingress::v1beta1::{
@@ -46,10 +46,10 @@ use tracing_subscriber::{
 use uuid::Uuid;
 
 fn find_node<'a>(
-    graph: &'a GraphDescription,
+    graph: &'a MergedGraph,
     o_p_name: &str,
     o_p_value: Property,
-) -> Option<&'a NodeDescription> {
+) -> Option<&'a MergedNode> {
     graph.nodes.values().find(|n| {
         n.properties.iter().any(|(p_name, p_value)| {
             p_name.as_str() == o_p_name && p_value.property.clone() == o_p_value
@@ -57,16 +57,16 @@ fn find_node<'a>(
     })
 }
 
-struct SysmonGeneratorTestContext {
+struct GraphMergerTestContext {
     pipeline_ingress_client: PipelineIngressClient,
     consumer_config: ConsumerConfig,
     _guard: WorkerGuard,
 }
 
-static CONSUMER_TOPIC: &'static str = "generated-graphs";
+static CONSUMER_TOPIC: &'static str = "merged-graphs";
 
 #[async_trait::async_trait]
-impl AsyncTestContext for SysmonGeneratorTestContext {
+impl AsyncTestContext for GraphMergerTestContext {
     async fn setup() -> Self {
         let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
 
@@ -78,7 +78,7 @@ impl AsyncTestContext for SysmonGeneratorTestContext {
         // initialize tracing layer
         global::set_text_map_propagator(TraceContextPropagator::new());
         let tracer = opentelemetry_jaeger::new_pipeline()
-            .with_service_name("sysmon-generator-integration-tests")
+            .with_service_name("graph-merger-integration-tests")
             .install_batch(opentelemetry::runtime::Tokio)
             .expect("could not configure tracer");
 
@@ -103,7 +103,7 @@ impl AsyncTestContext for SysmonGeneratorTestContext {
         HealthcheckClient::wait_until_healthy(
             endpoint.clone(),
             "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService",
-            Duration::from_millis(10000),
+            Duration::from_secs(10),
             Duration::from_millis(500),
         )
         .await
@@ -119,7 +119,7 @@ impl AsyncTestContext for SysmonGeneratorTestContext {
             ..ConsumerConfig::parse()
         };
 
-        SysmonGeneratorTestContext {
+        GraphMergerTestContext {
             pipeline_ingress_client,
             consumer_config,
             _guard,
@@ -127,9 +127,9 @@ impl AsyncTestContext for SysmonGeneratorTestContext {
     }
 }
 
-#[test_context(SysmonGeneratorTestContext)]
+#[test_context(GraphMergerTestContext)]
 #[tokio::test]
-async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTestContext) {
+async fn test_sysmon_event_produces_merged_graph(ctx: &mut GraphMergerTestContext) {
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
 
@@ -145,43 +145,51 @@ async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTest
     let kafka_subscriber = tokio::task::spawn(async move {
         let stream = kafka_consumer
             .stream()
-            .expect("could not subscribe to the generated-graphs topic");
+            .expect("could not subscribe to the merged-graphs topic");
+
         // notify the consumer that we're ready to receive messages
         tx.send(())
             .expect("failed to notify sender that consumer is consuming");
 
         let contains_expected = stream.any(
-            |res: Result<Envelope<GraphDescription>, ConsumerError>| async move {
+            |res: Result<Envelope<MergedGraph>, ConsumerError>| async move {
                 let envelope = res.expect("error consuming message from kafka");
                 let metadata = envelope.metadata;
-                let generated_graph = envelope.inner_message;
+                let merged_graph = envelope.inner_message;
 
                 tracing::debug!(message = "consumed kafka message");
 
                 if metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id {
                     let parent_process = find_node(
-                        &generated_graph,
+                        &merged_graph,
                         "process_id",
                         ImmutableUintProp { prop: 6132 }.into(),
                     )
                     .expect("parent process missing");
 
                     let child_process = find_node(
-                        &generated_graph,
+                        &merged_graph,
                         "process_id",
                         ImmutableUintProp { prop: 5752 }.into(),
                     )
                     .expect("child process missing");
 
-                    let parent_to_child_edge = generated_graph
+                    // NOTE: here, unlike node-identifier, we expect the edge
+                    // connecting the parent and child proceses to be *absent*
+                    // in the message emitted to the merged-graphs topic. The
+                    // reason for this is that downstream services (analyzers)
+                    // don't operate on edges, just nodes. So the view of the
+                    // graph diverges at the graph-merger--we now tell one story
+                    // in our Kafka messages and a totally different story in
+                    // Dgraph. This is confusing and we should fix it:
+                    //
+                    // https://app.zenhub.com/workspaces/grapl-6036cbd36bacff000ef314f2/issues/grapl-security/issue-tracker/950
+                    !merged_graph
                         .edges
                         .get(parent_process.get_node_key())
                         .iter()
                         .flat_map(|edge_list| edge_list.edges.iter())
-                        .find(|edge| edge.to_node_key == child_process.get_node_key())
-                        .expect("missing edge from parent to child");
-
-                    parent_to_child_edge.edge_name == "children"
+                        .any(|edge| edge.to_node_key == child_process.get_node_key())
                 } else {
                     false
                 }
@@ -190,7 +198,7 @@ async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTest
 
         tracing::info!("consuming kafka messages for 30s");
         assert!(
-            tokio::time::timeout(Duration::from_millis(30000), contains_expected)
+            tokio::time::timeout(Duration::from_secs(30), contains_expected)
                 .await
                 .expect("failed to consume expected message within 30s")
         );

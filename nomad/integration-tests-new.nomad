@@ -56,6 +56,12 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
+variable "dns_server" {
+  type        = string
+  description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
+  default     = ""
+}
+
 variable "plugin_work_queue_db" {
   type = object({
     hostname = string
@@ -64,6 +70,12 @@ variable "plugin_work_queue_db" {
     password = string
   })
   description = "Vars for plugin-work-queue database"
+}
+
+locals {
+  # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
+  # added for network.dns as of 1.3.0
+  dns_servers = [var.dns_server]
 }
 
 job "integration-tests-new" {
@@ -87,6 +99,9 @@ job "integration-tests-new" {
 
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     # Enable service discovery
@@ -97,20 +112,22 @@ job "integration-tests-new" {
           proxy {
             upstreams {
               destination_name = "pipeline-ingress"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1000
+              local_bind_port  = 1000
             }
 
             upstreams {
               destination_name = "plugin-registry"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1001
+              local_bind_port  = 1001
             }
 
             upstreams {
               destination_name = "plugin-work-queue"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1002
+              local_bind_port  = 1002
+            }
+
+            upstreams {
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 1003
             }
           }
         }
@@ -136,6 +153,8 @@ job "integration-tests-new" {
 
         RUST_BACKTRACE = 1
         RUST_LOG       = var.rust_log
+
+        MG_ALPHAS = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-grpc-public}"
 
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
 
