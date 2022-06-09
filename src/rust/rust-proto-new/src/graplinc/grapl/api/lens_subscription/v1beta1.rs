@@ -1,70 +1,68 @@
 use crate::{
     protobufs::graplinc::grapl::api::lens_subscription::v1beta1::{
-        SubscribeToLensRequest as SubscribeToLensRequestProto,
-
+        CreateEdge as CreateEdgeProto,
     },
     type_url,
     serde_impl,
+    SerDeError,
 };
 
-
-
-//
-// // Requests a stream of updates for a given lens
-// message SubscribeToLensRequest {
-// // Lens Subscription Message
-// LensSubscription lens_subscription = 1;
-// }
-//
-// message SubscribeToLensResponse {
-// // LensUpdate Message
-// LensUpdate operation = 1;
+// message CreateEdge {
+// uint64 source_uid = 1;
+// uint64 dest_uid = 2;
+// string forward_edge_name = 3;
+// string reverse_edge_name = 4;
+// string source_node_type = 5;
+// string dest_node_type = 6;
 // }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SubscribeToLensRequest{
-    pub lens_subscription: LensSubscription, // needs to be lens-subscription
+pub struct CreateEdge {
+    pub source_uid: u64,
+    pub dest_uid: u64,
+    pub forward_edge_name: String,
+    pub reverse_edge_name: String,
+    pub source_node_type: String,
+    pub dest_node_type: String,
 }
 
-impl From<SubscribeToLensRequest> for SubscribeToLensRequestProto {
-    fn from(request: SubscribeToLensRequest) -> Self {
-        SubscribeToLensRequestProto {
-            lens_subscription: request.lens_subscription,
+impl TryFrom<CreateEdgeProto> for CreateEdge {
+    type Error = SerDeError;
 
+    fn try_from(response_proto: CreateEdgeProto) -> Result<Self, Self::Error> {
+        Ok(CreateEdge {
+            source_uid: response_proto.source_uid,
+            dest_uid: response_proto.dest_uid,
+            forward_edge_name: response_proto.forward_edge_name,
+            reverse_edge_name: response_proto.reverse_edge_name,
+            source_node_type: response_proto.source_node_type,
+            dest_node_type: response_proto.dest_node_type,
+        })
+    }
+}
+
+impl From<CreateEdge> for CreateEdgeProto {
+    fn from(response: CreateEdge) -> Self {
+        CreateEdgeProto {
+            source_uid: response.source_uid,
+            dest_uid: response.dest_uid,
+            forward_edge_name: response.forward_edge_name,
+            reverse_edge_name: response.reverse_edge_name,
+            source_node_type: response.source_node_type,
+            dest_node_type: response.dest_node_type,
         }
     }
 }
 
-impl type_url::TypeUrl for SubscribeToLensRequest {
+impl type_url::TypeUrl for CreateEdge {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.lens_subscription.v1beta1.SubscribeToLensRequest";
+        "graplsecurity.com/TODO";
 }
 
-impl serde_impl::ProtobufSerializable for SubscribeToLensRequest {
-    type ProtobufMessage = SubscribeToLensRequestProto;
+impl serde_impl::ProtobufSerializable for CreateEdge {
+    type ProtobufMessage = CreateEdgeProto;
 }
 
-//
-// CloseLensResponse
-//
-//
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct CloseLensResponse {}
-//
-// impl TryFrom<CloseLensResponseProto> for CloseLensResponse {
-//     type Error = SerDeError;
-//
-//     fn try_from(_response_proto: CloseLensResponseProto) -> Result<Self, Self::Error> {
-//         Ok(Self {})
-//     }
-// }
-//
-// impl From<CloseLensResponse> for CloseLensResponseProto {
-//     fn from(_request: CloseLensResponse) -> Self {
-//         CloseLensResponseProto {}
-//     }
-// }
-//
 // impl type_url::TypeUrl for CloseLensResponse {
 //     const TYPE_URL: &'static str =
 //         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.CloseLensResponse";

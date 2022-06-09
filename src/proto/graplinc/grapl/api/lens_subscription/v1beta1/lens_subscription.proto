@@ -2,13 +2,54 @@ syntax = "proto3";
 
 package graplinc.grapl.api.lens_subscription.v1beta1;
 
-
 import "graplinc/common/v1beta1/types.proto";
+
+// A CDC representation for the creation of an edge between two nodes
+message CreateEdge {
+  uint64 source_uid = 1;
+  uint64 dest_uid = 2;
+  string forward_edge_name = 3;
+  string reverse_edge_name = 4;
+  string source_node_type = 5;
+  string dest_node_type = 6;
+}
+
+// A CDC representation for the deletion of an edge between two nodes
+message DeleteEdge {
+  uint64 source_uid = 1;
+  uint64 dest_uid = 2;
+  string forward_edge_name = 3;
+  string reverse_edge_name = 4;
+  string source_node_type = 5;
+  string dest_node_type = 6;
+}
+
+// A CDC representation for the creation of a node
+message CreateNode {
+  uint64 uid = 1;
+  string node_type = 2;
+}
+
+// A CDC representation for the deletion of a node
+message DeleteNode {
+  uint64 uid = 1;
+  string node_type = 2;
+}
+
+// Representation of an operation on the graph
+message Operation {
+  oneof operation {
+    CreateEdge create_edge = 1;
+    DeleteEdge delete_edge = 2;
+    CreateNode create_node = 3;
+    DeleteNode delete_node = 4;
+  }
+}
 
 // Represents an operation as applied to a given lens
 message LensUpdate {
   // Type of Operation
-  string Operation = 1;
+  Operation operation = 1;
 //  Operation operation = 1; // This needs to change to Operation!!!!!
   // Type of Lens
   string lens_type = 2;
