@@ -1,65 +1,75 @@
-use bytes::Bytes;
-
 use crate::{
-    graplinc::common::v1beta1::{
-        SystemTime,
-        Uuid,
-    },
     protobufs::graplinc::grapl::api::lens_subscription::v1beta1::{
-        LensUpdate as LensUpdateProto,
+        SubscribeToLensRequest as SubscribeToLensRequestProto,
+
     },
-    serde_impl,
     type_url,
-    SerDeError,
+    serde_impl,
 };
 
-///
-/// Lens Update
-///
+
+
+//
+// // Requests a stream of updates for a given lens
+// message SubscribeToLensRequest {
+// // Lens Subscription Message
+// LensSubscription lens_subscription = 1;
+// }
+//
+// message SubscribeToLensResponse {
+// // LensUpdate Message
+// LensUpdate operation = 1;
+// }
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct LensUpdate {
-    pub operation: string,
-    // needs to be Operation TypeUrl
-    pub lens_type: string,
-    pub lens_name: string,
-    pub tenant_id: Uuid,
+pub struct SubscribeToLensRequest{
+    pub lens_subscription: LensSubscription, // needs to be lens-subscription
 }
 
-impl TryFrom<LensUpdateProto> for LensUpdate {
-    type Error = SerDeError;
+impl From<SubscribeToLensRequest> for SubscribeToLensRequestProto {
+    fn from(request: SubscribeToLensRequest) -> Self {
+        SubscribeToLensRequestProto {
+            lens_subscription: request.lens_subscription,
 
-    fn try_from(lens_update: LensUpdateProto) -> Result<Self, Self::Error> {
-        let operation = lens_update.operation;
-        let lens_type = lens_update.lens_type;
-        let lens_name = lens_update.lens_name;
-        let tenant_id = lens_update.tenant_id.ok_or(SerDeError::MissingField("tenant_id"))?;
-        Ok(LensUpdate {
-            operation,
-            lens_type,
-            lens_name,
-            tenant_id.into(),
-        })
-    }
-}
-
-impl From<LensUpdate> for LensUpdateProto {
-    fn from(lens_update: LensUpdate) {
-        LensUpdateProto {
-            operation: lens_update.operation,
-            lens_type: lens_update.lens_type,
-            lens_name: lens_update.lens_name,
-            tenant_id: Some(request.tenant_id.into()),
         }
     }
 }
 
-
-impl type_url::TypeUrl for LensUpdate {
+impl type_url::TypeUrl for SubscribeToLensRequest {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.lens_subscription.v1beta1.LensUpdate";
+        "graplsecurity.com/graplinc.grapl.api.lens_subscription.v1beta1.SubscribeToLensRequest";
 }
 
-impl serde_impl::ProtobufSerializable for LensUpdate {
-    type ProtobufMessage = LensUpdatetProto;
+impl serde_impl::ProtobufSerializable for SubscribeToLensRequest {
+    type ProtobufMessage = SubscribeToLensRequestProto;
 }
-daf
+
+//
+// CloseLensResponse
+//
+//
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct CloseLensResponse {}
+//
+// impl TryFrom<CloseLensResponseProto> for CloseLensResponse {
+//     type Error = SerDeError;
+//
+//     fn try_from(_response_proto: CloseLensResponseProto) -> Result<Self, Self::Error> {
+//         Ok(Self {})
+//     }
+// }
+//
+// impl From<CloseLensResponse> for CloseLensResponseProto {
+//     fn from(_request: CloseLensResponse) -> Self {
+//         CloseLensResponseProto {}
+//     }
+// }
+//
+// impl type_url::TypeUrl for CloseLensResponse {
+//     const TYPE_URL: &'static str =
+//         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.CloseLensResponse";
+// }
+//
+// impl serde_impl::ProtobufSerializable for CloseLensResponse {
+//     type ProtobufMessage = CloseLensResponseProto;
+// }
