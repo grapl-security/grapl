@@ -14,18 +14,15 @@ use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
 };
-use rust_proto_new::{
-    graplinc::grapl::{
-        api::pipeline_ingress::v1beta1::{
-            client::PipelineIngressClient,
-            PublishRawLogRequest,
-        },
-        pipeline::{
-            v1beta1::RawLog,
-            v1beta2::Envelope,
-        },
+use rust_proto_new::graplinc::grapl::{
+    api::pipeline_ingress::v1beta1::{
+        client::PipelineIngressClient,
+        PublishRawLogRequest,
     },
-    protocol::healthcheck::client::HealthcheckClient,
+    pipeline::{
+        v1beta1::RawLog,
+        v1beta2::Envelope,
+    },
 };
 use test_context::{
     test_context,
@@ -82,15 +79,6 @@ impl AsyncTestContext for PipelineIngressTestContext {
             message = "waiting 10s for pipeline-ingress to report healthy",
             endpoint = %endpoint,
         );
-
-        HealthcheckClient::wait_until_healthy(
-            endpoint.clone(),
-            "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService",
-            Duration::from_millis(10000),
-            Duration::from_millis(500),
-        )
-        .await
-        .expect("pipeline-ingress never reported healthy");
 
         tracing::info!("connecting pipeline-ingress gRPC client");
         let grpc_client = PipelineIngressClient::connect(endpoint.clone())
