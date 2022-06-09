@@ -10,7 +10,7 @@ use proto::plugin_registry_service_client::PluginRegistryServiceClient as Plugin
 use crate::{
     graplinc::grapl::api::plugin_registry::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
-    protocol::service_client::AssociatedNamedService,
+    protocol::service_client::NamedService,
     SerDeError,
 };
 
@@ -139,7 +139,7 @@ impl PluginRegistryServiceClient {
     }
 }
 
-impl AssociatedNamedService for PluginRegistryServiceClient {
+impl NamedService for PluginRegistryServiceClient {
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.plugin_registry.v1beta1.PluginRegistryService";
 }

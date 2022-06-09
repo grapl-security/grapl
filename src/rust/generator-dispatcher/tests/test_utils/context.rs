@@ -13,7 +13,7 @@ use rust_proto_new::{
     graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient,
     protocol::{
         healthcheck::client::HealthcheckClient,
-        service_client::AssociatedNamedService,
+        service_client::NamedService,
     },
 };
 use test_context::AsyncTestContext;

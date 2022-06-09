@@ -32,7 +32,7 @@ use rust_proto_new::{
     },
     protocol::{
         healthcheck::client::HealthcheckClient,
-        service_client::AssociatedNamedService,
+        service_client::NamedService,
     },
 };
 use test_context::{
