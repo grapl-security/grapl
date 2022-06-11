@@ -251,9 +251,11 @@ impl type_url::TypeUrl for Operation {
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.Operation";
 }
 
-// impl serde_impl::ProtobufSerializable for Operation {
-//     type ProtobufMessage = OperationProto;
-// }
+
+impl serde_impl::ProtobufSerializable for Operation {
+    type ProtobufMessage = OperationProto;
+}
+
 
 
 //
