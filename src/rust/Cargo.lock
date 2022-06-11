@@ -1914,11 +1914,19 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "dashmap",
+ "grapl-utils",
+ "lazy_static",
+ "lru",
+ "rusoto_core",
+ "rusoto_dynamodb",
  "rust-proto-new",
  "scylla",
+ "serde",
+ "serde_dynamodb",
  "thiserror",
  "tokio",
  "tracing",
+ "uid-allocator",
  "uuid 0.8.2",
 ]
 

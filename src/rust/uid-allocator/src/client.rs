@@ -14,6 +14,7 @@ use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::{
 pub struct CachingUidAllocatorServiceClient {
     pub allocator: UidAllocatorServiceClient,
     pub allocation_map: DashMap<uuid::Uuid, Allocation>,
+    /// The number of ids to request
     pub count: u32,
 }
 
@@ -27,14 +28,14 @@ impl CachingUidAllocatorServiceClient {
     }
 
     pub async fn allocate_id(
-        &mut self,
+        &self,
         tenant_id: uuid::Uuid,
     ) -> Result<u64, UidAllocatorServiceClientError> {
         match self.get_from_allocation_map(tenant_id) {
             Some(allocation) => Ok(allocation),
             None => {
-                let mut allocation = self
-                    .allocator
+                let mut allocator = self.allocator.clone();
+                let mut allocation = allocator
                     .allocate_ids(AllocateIdsRequest {
                         tenant_id: tenant_id.into(),
                         count: self.count,
@@ -48,7 +49,7 @@ impl CachingUidAllocatorServiceClient {
         }
     }
 
-    fn get_from_allocation_map(&mut self, tenant_id: uuid::Uuid) -> Option<u64> {
+    fn get_from_allocation_map(&self, tenant_id: uuid::Uuid) -> Option<u64> {
         if let Some(mut allocation) = self.allocation_map.get_mut(&tenant_id) {
             allocation.next()
         } else {

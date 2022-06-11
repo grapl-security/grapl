@@ -50,7 +50,6 @@ pub(crate) mod protobufs {
                     }
                 }
 
-
                 pub(crate) mod pipeline_ingress {
                     pub(crate) mod v1beta1 {
                         include!(concat!(

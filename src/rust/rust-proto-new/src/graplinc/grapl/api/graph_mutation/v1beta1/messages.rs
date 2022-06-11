@@ -1,17 +1,23 @@
 #![allow(warnings)]
 
-use crate::{graplinc::grapl::api::graph::v1beta1::NodeProperty, protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
-    CreateEdgeRequest as CreateEdgeRequestProto,
-    CreateEdgeResponse as CreateEdgeResponseProto,
-    CreateNodeRequest as CreateNodeRequestProto,
-    CreateNodeResponse as CreateNodeResponseProto,
-    EdgeName as EdgeNameProto,
-    NodeType as NodeTypeProto,
-    PropertyName as PropertyNameProto,
-    SetNodePropertyRequest as SetNodePropertyRequestProto,
-    SetNodePropertyResponse as SetNodePropertyResponseProto,
-    Uid as UidProto,
-}, type_url, SerDeError, serde_impl};
+use crate::{
+    graplinc::grapl::api::graph::v1beta1::NodeProperty,
+    protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
+        CreateEdgeRequest as CreateEdgeRequestProto,
+        CreateEdgeResponse as CreateEdgeResponseProto,
+        CreateNodeRequest as CreateNodeRequestProto,
+        CreateNodeResponse as CreateNodeResponseProto,
+        EdgeName as EdgeNameProto,
+        NodeType as NodeTypeProto,
+        PropertyName as PropertyNameProto,
+        SetNodePropertyRequest as SetNodePropertyRequestProto,
+        SetNodePropertyResponse as SetNodePropertyResponseProto,
+        Uid as UidProto,
+    },
+    serde_impl,
+    type_url,
+    SerDeError,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PropertyName {
@@ -69,10 +75,17 @@ impl From<NodeType> for NodeTypeProto {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Uid {
-    pub value: u64,
+    value: u64,
 }
 
 impl Uid {
+    pub fn from_u64(value: u64) -> Option<Self> {
+        if value == 0 {
+            None
+        } else {
+            Some(Self { value })
+        }
+    }
     pub fn as_i64(&self) -> i64 {
         self.value as i64
     }
@@ -173,6 +186,8 @@ pub struct CreateEdgeRequest {
     pub tenant_id: uuid::Uuid,
     pub from_uid: Uid,
     pub to_uid: Uid,
+    pub source_node_type: NodeType,
+    pub dest_node_type: NodeType,
 }
 
 impl TryFrom<CreateEdgeRequestProto> for CreateEdgeRequest {
@@ -194,11 +209,23 @@ impl TryFrom<CreateEdgeRequestProto> for CreateEdgeRequest {
             .to_uid
             .ok_or(SerDeError::MissingField("to_uid"))?
             .try_into()?;
+
+        let source_node_type = proto
+            .source_node_type
+            .ok_or(SerDeError::MissingField("source_node_type"))?
+            .try_into()?;
+
+        let dest_node_type = proto
+            .dest_node_type
+            .ok_or(SerDeError::MissingField("dest_node_type"))?
+            .try_into()?;
         Ok(Self {
             edge_name,
             tenant_id,
             from_uid,
             to_uid,
+            source_node_type,
+            dest_node_type,
         })
     }
 }
@@ -210,6 +237,8 @@ impl From<CreateEdgeRequest> for CreateEdgeRequestProto {
             tenant_id: Some(value.tenant_id.into()),
             from_uid: Some(value.from_uid.into()),
             to_uid: Some(value.to_uid.into()),
+            source_node_type: Some(value.source_node_type.into()),
+            dest_node_type: Some(value.dest_node_type.into()),
         }
     }
 }
@@ -249,10 +278,12 @@ impl TryFrom<CreateNodeRequestProto> for CreateNodeRequest {
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id"))?
             .into();
+
         let node_type = proto
             .node_type
             .ok_or(SerDeError::MissingField("node_type"))?
             .try_into()?;
+
         Ok(Self {
             tenant_id,
             node_type,
@@ -293,7 +324,6 @@ impl From<CreateNodeResponse> for CreateNodeResponseProto {
     }
 }
 
-
 impl serde_impl::ProtobufSerializable for PropertyName {
     type ProtobufMessage = PropertyNameProto;
 }
@@ -308,7 +338,6 @@ impl type_url::TypeUrl for EdgeName {
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.EdgeName";
 }
 
-
 impl serde_impl::ProtobufSerializable for NodeType {
     type ProtobufMessage = NodeTypeProto;
 }
@@ -317,7 +346,6 @@ impl type_url::TypeUrl for NodeType {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.NodeType";
 }
-
 
 impl serde_impl::ProtobufSerializable for Uid {
     type ProtobufMessage = UidProto;
@@ -328,7 +356,6 @@ impl type_url::TypeUrl for Uid {
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.Uid";
 }
 
-
 impl serde_impl::ProtobufSerializable for SetNodePropertyRequest {
     type ProtobufMessage = SetNodePropertyRequestProto;
 }
@@ -337,7 +364,6 @@ impl type_url::TypeUrl for SetNodePropertyRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.SetNodePropertyRequest";
 }
-
 
 impl serde_impl::ProtobufSerializable for SetNodePropertyResponse {
     type ProtobufMessage = SetNodePropertyResponseProto;
@@ -348,7 +374,6 @@ impl type_url::TypeUrl for SetNodePropertyResponse {
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.SetNodePropertyResponse";
 }
 
-
 impl serde_impl::ProtobufSerializable for CreateEdgeRequest {
     type ProtobufMessage = CreateEdgeRequestProto;
 }
@@ -357,7 +382,6 @@ impl type_url::TypeUrl for CreateEdgeRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateEdgeRequest";
 }
-
 
 impl serde_impl::ProtobufSerializable for CreateEdgeResponse {
     type ProtobufMessage = CreateEdgeResponseProto;
@@ -368,7 +392,6 @@ impl type_url::TypeUrl for CreateEdgeResponse {
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateEdgeResponse";
 }
 
-
 impl serde_impl::ProtobufSerializable for CreateNodeRequest {
     type ProtobufMessage = CreateNodeRequestProto;
 }
@@ -377,7 +400,6 @@ impl type_url::TypeUrl for CreateNodeRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateNodeRequest";
 }
-
 
 impl serde_impl::ProtobufSerializable for CreateNodeResponse {
     type ProtobufMessage = CreateNodeResponseProto;

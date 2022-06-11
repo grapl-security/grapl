@@ -1,9 +1,11 @@
-#![allow(warnings)]
 use std::sync::Arc;
 
 use rust_proto_new::{
     graplinc::grapl::api::{
-        graph::v1beta1::Property,
+        graph::v1beta1::{
+            Edge,
+            Property,
+        },
         graph_mutation::v1beta1::{
             messages::{
                 CreateEdgeRequest,
@@ -16,17 +18,26 @@ use rust_proto_new::{
             },
             server::GraphMutationApi,
         },
+        uid_allocator::v1beta1::client::UidAllocatorServiceClientError,
     },
     protocol::status::Status,
 };
 use scylla::Session;
+use uid_allocator::client::CachingUidAllocatorServiceClient as UidAllocatorClient;
 
-use crate::prepared_statements::PreparedStatements;
+use crate::{
+    prepared_statements::PreparedStatements,
+    reverse_edge_resolver::ReverseEdgeResolver,
+};
 
 #[derive(thiserror::Error, Debug)]
 enum GraphMutationManagerError {
-    #[error("Unknown")]
+    #[error("Unknown {0}")]
     Error(#[from] Box<dyn std::error::Error>),
+    #[error("UidAllocatorServiceClientError {0}")]
+    UidAllocatorServiceClientError(#[from] UidAllocatorServiceClientError),
+    #[error("Allocated Zero Uid")]
+    ZeroUid,
 }
 
 impl Into<Status> for GraphMutationManagerError {
@@ -38,6 +49,8 @@ impl Into<Status> for GraphMutationManagerError {
 struct GraphMutationManager {
     scylla_client: Arc<Session>,
     prepared_statements: PreparedStatements,
+    uid_allocator_client: UidAllocatorClient,
+    reverse_edge_resolver: ReverseEdgeResolver,
 }
 
 impl GraphMutationManager {
@@ -186,9 +199,6 @@ impl GraphMutationManager {
             .prepare_imm_i64(&self.scylla_client, tenant_keyspace)
             .await?;
 
-        // Immutable values can never be overwritten
-        statement.set_timestamp(Some(1i64));
-
         self.scylla_client
             .execute(
                 &statement,
@@ -212,13 +222,47 @@ impl GraphMutationManager {
             .prepare_imm_string(&self.scylla_client, tenant_keyspace)
             .await?;
 
-        // Immutable values can never be overwritten
-        statement.set_timestamp(Some(1i64));
-
         self.scylla_client
             .execute(
                 &statement,
                 (uid.as_i64(), node_type, property_name, property_value),
+            )
+            .await?;
+        Ok(())
+    }
+
+    async fn upsert_edges(
+        &self,
+        tenant_keyspace: uuid::Uuid,
+        from_uid: Uid,
+        to_uid: Uid,
+        f_edge_name: String,
+        r_edge_name: String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        // todo: Should we only prepare statements once?
+        let f_statement = self
+            .prepared_statements
+            .prepare_edge(&self.scylla_client, tenant_keyspace)
+            .await?;
+        let r_statement = f_statement.clone();
+
+        let mut batch: scylla::batch::Batch = Default::default();
+        batch.append_statement(f_statement);
+        batch.append_statement(r_statement);
+        batch.set_is_idempotent(true);
+
+        self.scylla_client
+            .batch(
+                &batch,
+                (
+                    (
+                        from_uid.as_i64(),
+                        f_edge_name.clone(),
+                        r_edge_name.clone(),
+                        to_uid.as_i64(),
+                    ),
+                    (to_uid.as_i64(), r_edge_name, f_edge_name, from_uid.as_i64()),
+                ),
             )
             .await?;
         Ok(())
@@ -232,10 +276,24 @@ impl GraphMutationApi for GraphMutationManager {
     /// Create Node allocates a new node in the graph, returning the uid of the new node.
     async fn create_node(
         &self,
-        _request: CreateNodeRequest,
+        request: CreateNodeRequest,
     ) -> Result<CreateNodeResponse, Self::Error> {
-        // todo: Blocked on uid-allocator
-        todo!()
+        let uid = self
+            .uid_allocator_client
+            .allocate_id(request.tenant_id)
+            .await?;
+        let uid = Uid::from_u64(uid).ok_or_else(|| GraphMutationManagerError::ZeroUid)?;
+
+        self.upsert_immutable_string(
+            request.tenant_id,
+            uid,
+            &request.node_type.value,
+            "node_type",
+            request.node_type.value.clone(),
+        )
+        .await?;
+
+        Ok(CreateNodeResponse { uid })
     }
 
     /// SetNodeProperty will update the property of the node with the given uid.
@@ -326,6 +384,8 @@ impl GraphMutationApi for GraphMutationManager {
 
         Ok(SetNodePropertyResponse {
             // todo: At this point we can't tell if the update was redundant
+            //       but it is always safe (albeit suboptimal) to assume that
+            //       it was not.
             was_redundant: false,
         })
     }
@@ -334,8 +394,23 @@ impl GraphMutationApi for GraphMutationManager {
     /// that have the given uids. It will also create the reverse edge.
     async fn create_edge(
         &self,
-        _request: CreateEdgeRequest,
+        request: CreateEdgeRequest,
     ) -> Result<CreateEdgeResponse, Self::Error> {
+        let CreateEdgeRequest {
+            edge_name,
+            tenant_id,
+            from_uid,
+            to_uid,
+            source_node_type,
+            dest_node_type,
+        } = request;
+        // let reverse_edge_name = self.reverse_edge_resolver.resolve_reverse_edges(
+        //     vec![
+        //         Edge {
+        //
+        //         }
+        //     ]
+        // );
         todo!()
     }
 }

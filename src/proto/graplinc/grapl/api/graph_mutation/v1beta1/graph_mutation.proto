@@ -52,6 +52,8 @@ message CreateEdgeRequest {
   graplinc.common.v1beta1.Uuid tenant_id = 2;
   Uid from_uid = 3;
   Uid to_uid = 4;
+  NodeType source_node_type = 5;
+  NodeType dest_node_type = 6;
 }
 
 message CreateEdgeResponse {
@@ -60,7 +62,9 @@ message CreateEdgeResponse {
 }
 
 message CreateNodeRequest {
+  // The tenant id to create the node under
   graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The type of the node to request
   NodeType node_type = 2;
 }
 

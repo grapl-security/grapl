@@ -1,4 +1,3 @@
-
 use std::net::SocketAddr;
 
 use futures::FutureExt;
@@ -7,9 +6,7 @@ use tokio::{
     sync::oneshot::Receiver,
 };
 use tokio_stream::wrappers::TcpListenerStream;
-use tonic::{
-    transport::Server,
-};
+use tonic::transport::Server;
 
 use crate::{
     graplinc::grapl::api::graph_mutation::v1beta1::messages::{
@@ -32,7 +29,6 @@ use crate::{
         SetNodePropertyRequest as SetNodePropertyRequestProto,
         SetNodePropertyResponse as SetNodePropertyResponseProto,
     },
-
     protocol::{
         healthcheck::{
             server::init_health_service,
@@ -43,7 +39,6 @@ use crate::{
     SerDeError,
 };
 
-
 #[derive(thiserror::Error, Debug)]
 pub enum GraphMutationServiceServerError {
     #[error("grpc transport error: {0}")]
@@ -51,7 +46,6 @@ pub enum GraphMutationServiceServerError {
     #[error("Bind error: {0}")]
     BindError(std::io::Error),
 }
-
 
 #[tonic::async_trait]
 pub trait GraphMutationApi {
@@ -72,9 +66,9 @@ pub trait GraphMutationApi {
 
 #[tonic::async_trait]
 impl<T, E> GraphMutationServiceProto for T
-    where
-        T: GraphMutationApi<Error=E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: GraphMutationApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     /// Create Node allocates a new node in the graph, returning the uid of the new node.
     async fn create_node(
@@ -127,9 +121,9 @@ impl<T, E> GraphMutationServiceProto for T
 
 /// A server construct that drives the GraphMutationApi implementation.
 pub struct GraphMutationServiceServer<T, E>
-    where
-        T: GraphMutationApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: GraphMutationApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     server: GraphMutationServiceServerProto<T>,
     addr: SocketAddr,
@@ -137,9 +131,9 @@ pub struct GraphMutationServiceServer<T, E>
 }
 
 impl<T, E> GraphMutationServiceServer<T, E>
-    where
-        T: GraphMutationApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: GraphMutationApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     pub fn builder(
         service: T,
@@ -155,7 +149,7 @@ impl<T, E> GraphMutationServiceServer<T, E>
                 || async { Ok(HealthcheckStatus::Serving) },
                 std::time::Duration::from_millis(500),
             )
-                .await;
+            .await;
 
         let listener = TcpListener::bind(self.addr)
             .await
@@ -164,12 +158,12 @@ impl<T, E> GraphMutationServiceServer<T, E>
         Server::builder()
             .trace_fn(|request| {
                 tracing::trace_span!(
-                        "GraphMutation",
-                        headers = ?request.headers(),
-                        method = ?request.method(),
-                        uri = %request.uri(),
-                        extensions = ?request.extensions(),
-                    )
+                    "GraphMutation",
+                    headers = ?request.headers(),
+                    method = ?request.method(),
+                    uri = %request.uri(),
+                    extensions = ?request.extensions(),
+                )
             })
             .add_service(health_service)
             .add_service(self.server)
@@ -187,9 +181,9 @@ impl<T, E> GraphMutationServiceServer<T, E>
 }
 
 pub struct GraphMutationServiceServerBuilder<T, E>
-    where
-        T: GraphMutationApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: GraphMutationApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     server: GraphMutationServiceServerProto<T>,
     addr: SocketAddr,
@@ -197,9 +191,9 @@ pub struct GraphMutationServiceServerBuilder<T, E>
 }
 
 impl<T, E> GraphMutationServiceServerBuilder<T, E>
-    where
-        T: GraphMutationApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: GraphMutationApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     /// Create a new builder for a GraphMutationServiceServer,
     /// taking the required arguments upfront.
