@@ -225,18 +225,27 @@ impl TryFrom<OperationProto> for Operation {
         }
     }
 }
-//
-// impl From<Operation> for OperationProto {
-//     fn from(response: Operation) -> Self {
-//         OperationProto {
-//             create_edge: response.create_edge,
-//             delete_edge: response.delete_edge,
-//             create_node: response.create_node,
-//             delete_node: response.delete_node,
-//         }
-//     }
-// }
-//
+
+impl From<Operation> for OperationProto{
+    fn from(response_proto: Operation) -> Self {
+        OperationProto {
+            graph_operations: Some(match response_proto {
+                Operation::CreateEdgeOperation(e) => {
+                    GraphOperationsProto::CreateEdgeOperation(e.into())
+                }
+                Operation::DeleteEdgeOperation(e) => {
+                    GraphOperationsProto::DeleteEdgeOperation(e.into())
+                }
+                Operation::CreateNodeOperation(e) => {
+                    GraphOperationsProto::CreateNodeOperation(e.into())
+                }
+                Operation::DeleteNodeOperation(e) => {
+                    GraphOperationsProto::DeleteNodeOperation(e.into())
+                }
+            }),
+        }
+    }
+}
 impl type_url::TypeUrl for Operation {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.Operation";

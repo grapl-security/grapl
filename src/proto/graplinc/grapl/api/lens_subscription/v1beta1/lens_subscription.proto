@@ -38,11 +38,11 @@ message DeleteNode {
 
 // Representation of an operation on the graph
 message Operation {
-  oneof operation {
-    CreateEdge create_edge = 1;
-    DeleteEdge delete_edge = 2;
-    CreateNode create_node = 3;
-    DeleteNode delete_node = 4;
+  oneof graph_operations {
+    CreateEdge create_edge_operation = 1;
+    DeleteEdge delete_edge_operation = 2;
+    CreateNode create_node_operation = 3;
+    DeleteNode delete_node_operation = 4;
   }
 }
 
