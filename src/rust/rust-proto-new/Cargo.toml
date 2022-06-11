@@ -33,7 +33,7 @@ test-context = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [features]
-default = ["uid-allocator-full"]
+default = ["uid-allocator-full", "graph-mutation-full"]
 uid-allocator = []
 uid-allocator-messages = ["uid-allocator"]
 uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
@@ -43,4 +43,15 @@ uid-allocator-full = [
   "uid-allocator-client",
   "uid-allocator-server",
   "uid-allocator"
+]
+
+graph-mutation = []
+graph-mutation-messages = ["graph-mutation"]
+graph-mutation-server = ["graph-mutation-messages", "graph-mutation"]
+graph-mutation-client = ["graph-mutation-messages", "graph-mutation"]
+graph-mutation-full = [
+  "graph-mutation-messages",
+  "graph-mutation-client",
+  "graph-mutation-server",
+  "graph-mutation"
 ]

@@ -40,6 +40,17 @@ pub(crate) mod protobufs {
                     }
                 }
 
+                #[cfg(feature = "graph-mutation")]
+                pub(crate) mod graph_mutation {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.graph_mutation.v1beta1.rs"
+                        ));
+                    }
+                }
+
+
                 pub(crate) mod pipeline_ingress {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -129,6 +140,11 @@ pub mod graplinc {
     pub mod grapl {
         pub mod api {
             pub mod graph {
+                pub mod v1beta1;
+            }
+
+            #[cfg(feature = "graph-mutation")]
+            pub mod graph_mutation {
                 pub mod v1beta1;
             }
 
