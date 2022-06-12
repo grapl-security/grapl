@@ -2,9 +2,7 @@ use std::sync::Arc;
 
 use rust_proto_new::{
     graplinc::grapl::api::{
-        graph::v1beta1::{
-            Property,
-        },
+        graph::v1beta1::Property,
         graph_mutation::v1beta1::{
             messages::{
                 CreateEdgeRequest,
