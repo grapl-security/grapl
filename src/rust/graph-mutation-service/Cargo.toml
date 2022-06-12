@@ -22,3 +22,4 @@ uid-allocator = { path = "../uid-allocator", default-features = false, features 
 grapl-utils = { path = "../grapl-utils" }
 lazy_static = "1.4.0"
 lru = "0.7.6"
+structopt = "0.3.26"

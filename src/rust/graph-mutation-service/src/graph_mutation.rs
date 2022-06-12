@@ -31,7 +31,7 @@ use crate::{
 };
 
 #[derive(thiserror::Error, Debug)]
-enum GraphMutationManagerError {
+pub enum GraphMutationManagerError {
     #[error("Unknown {0}")]
     Error(#[from] Box<dyn std::error::Error>),
     #[error("UidAllocatorServiceClientError {0}")]
@@ -46,7 +46,7 @@ impl Into<Status> for GraphMutationManagerError {
     }
 }
 
-struct GraphMutationManager {
+pub struct GraphMutationManager {
     scylla_client: Arc<Session>,
     prepared_statements: PreparedStatements,
     uid_allocator_client: UidAllocatorClient,
@@ -55,6 +55,20 @@ struct GraphMutationManager {
 }
 
 impl GraphMutationManager {
+    pub fn new(
+        scylla_client: Arc<Session>,
+        uid_allocator_client: UidAllocatorClient,
+        reverse_edge_resolver: ReverseEdgeResolver,
+    ) -> Self {
+        Self {
+            scylla_client,
+            prepared_statements: PreparedStatements::new(),
+            uid_allocator_client,
+            reverse_edge_resolver,
+            write_dropper: WriteDropper::default(),
+        }
+    }
+
     #[tracing::instrument(skip(self), err)]
     async fn upsert_max_u64(
         &self,

@@ -17,6 +17,7 @@ struct EdgeKey {
     edge_name: String,
 }
 
+#[derive(Default)]
 pub struct WriteDropper {
     max_i64: dashmap::DashMap<PropertyKey, i64>,
     min_i64: dashmap::DashMap<PropertyKey, i64>,

@@ -1,9 +1,7 @@
 use dashmap::DashMap;
+pub use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorServiceClient;
 use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::{
-    client::{
-        UidAllocatorServiceClient,
-        UidAllocatorServiceClientError,
-    },
+    client::UidAllocatorServiceClientError,
     messages::{
         AllocateIdsRequest,
         Allocation,

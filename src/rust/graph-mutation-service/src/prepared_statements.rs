@@ -153,6 +153,12 @@ pub(crate) struct PreparedStatements {
 }
 
 impl PreparedStatements {
+    pub(crate) fn new() -> Self {
+        Self {
+            tenant_statements: DashMap::new(),
+        }
+    }
+
     pub(crate) async fn prepare_max_i64(
         &self,
         scylla_client: &Session,
