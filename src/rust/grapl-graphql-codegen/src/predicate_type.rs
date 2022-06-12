@@ -51,14 +51,14 @@ impl PredicateType {
     }
 }
 
-impl<'a> TryFrom<&Type<'a, &'a str>> for PredicateType {
-    type Error = CodeGenError<'a>;
+impl TryFrom<&Type<'static, String>> for PredicateType {
+    type Error = CodeGenError;
 
     #[tracing::instrument]
-    fn try_from(value: &Type<'a, &'a str>) -> Result<Self, Self::Error> {
+    fn try_from(value: &Type<'static, String>) -> Result<Self, Self::Error> {
         match value {
             Type::NamedType(value) => {
-                match *value {
+                match value.as_str() {
                     STRING => Ok(PredicateType::String),
                     INT => Ok(PredicateType::I64),
                     UINT => Ok(PredicateType::U64),

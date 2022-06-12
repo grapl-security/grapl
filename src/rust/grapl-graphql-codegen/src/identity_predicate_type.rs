@@ -2,7 +2,7 @@ use graphql_parser::schema::Directive;
 
 /// Identity Algorithms take various parameters, and the IdentityPreidcateType
 /// represents which of those paramters a given field may be
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum IdentityPredicateType {
     SessionPseudoKey,
     SessionCreateTime,
@@ -20,8 +20,8 @@ use crate::constants::{
 };
 
 impl IdentityPredicateType {
-    pub fn opt_from<'a>(directive: &Directive<'a, &'a str>) -> Option<Self> {
-        match directive.name {
+    pub fn opt_from(directive: &Directive<'static, String>) -> Option<Self> {
+        match directive.name.as_str() {
             PSEUDO_KEY => Some(Self::SessionPseudoKey),
             CREATE_TIME => Some(Self::SessionCreateTime),
             LAST_SEEN_TIME => Some(Self::SessionLastSeenTime),

@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.schema_manager.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+
+// Which format of schema are we sending to Model Plugin Deployer?
+enum SchemaType {
+  // Undefined
+  SCHEMA_TYPE_UNSPECIFIED = 0;
+  // The only currently-supported schema type is GraphQL schemas.
+  SCHEMA_TYPE_GRAPHQL_V0 = 1;
+}
+
+// Input to DeployModel
+message DeployModelRequest {
+  // The tenant to deploy the model to.
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The actual schema, in whichever format specified by schema_type
+  bytes schema = 2;
+  // Indicates the format and semantics for the schemat o be deployed
+  SchemaType schema_type = 3;
+  // The version number of the schema - *must* be greater than the last
+  // deployed version
+  uint32 schema_version = 4;
+}
+
+// Output for DeployModel
+message DeployModelResponse {
+  // Intentionally empty
+}
+
+enum EdgeCardinality {
+  EDGE_CARDINALITY_UNSPECIFIED = 0;
+  EDGE_CARDINALITY_TO_ONE = 1;
+  EDGE_CARDINALITY_TO_MANY = 2;
+}
+
+message GetEdgeSchemaRequest {
+  // The tenant to deploy the model to.
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+
+  string node_type = 2;
+
+  string edge_name = 3;
+}
+
+message GetEdgeSchemaResponse {
+  string reverse_edge_name = 1;
+  EdgeCardinality cardinality = 2;
+  EdgeCardinality reverse_cardinality = 3;
+}
+
+// The SchemaManagerService manages the deployment and querying of a tenant's
+// Graph Schema.
+service SchemaManagerService {
+  // Deploy a new model to Grapl.
+  rpc DeployModel(DeployModelRequest) returns (DeployModelResponse) {}
+  rpc GetEdgeSchema(GetEdgeSchemaRequest) returns (GetEdgeSchemaResponse) {}
+}

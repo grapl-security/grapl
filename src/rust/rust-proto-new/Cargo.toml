@@ -33,7 +33,13 @@ test-context = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [features]
-default = ["uid-allocator-full", "graph-mutation-full"]
+default = [
+  "uid-allocator-full",
+  "graph-mutation-full",
+  "model-plugin-deployer",
+  "schema-manager"
+]
+
 uid-allocator = []
 uid-allocator-messages = ["uid-allocator"]
 uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
@@ -54,4 +60,27 @@ graph-mutation-full = [
   "graph-mutation-client",
   "graph-mutation-server",
   "graph-mutation"
+]
+
+model-plugin-deployer = []
+model-plugin-deployer-messages = ["model-plugin-deployer"]
+model-plugin-deployer-server = ["model-plugin-deployer-messages", "model-plugin-deployer"]
+model-plugin-deployer-client = ["model-plugin-deployer-messages", "model-plugin-deployer"]
+model-plugin-deployer-full = [
+  "model-plugin-deployer-messages",
+  "model-plugin-deployer-client",
+  "model-plugin-deployer-server",
+  "model-plugin-deployer"
+]
+
+
+schema-manager = []
+schema-manager-messages = ["schema-manager"]
+schema-manager-server = ["schema-manager-messages", "schema-manager"]
+schema-manager-client = ["schema-manager-messages", "schema-manager"]
+schema-manager-full = [
+  "schema-manager-messages",
+  "schema-manager-client",
+  "schema-manager-server",
+  "schema-manager"
 ]

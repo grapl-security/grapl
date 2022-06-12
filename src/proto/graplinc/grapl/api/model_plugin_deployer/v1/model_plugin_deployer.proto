@@ -20,7 +20,7 @@ message DeployModelRequest {
 
 // Output for DeployModel
 message DeployModelResponse {
-  // In the future, we'll want to return any errors here.
+  // Intentionally empty
 }
 
 // The main service for Model Plugin Deployer.

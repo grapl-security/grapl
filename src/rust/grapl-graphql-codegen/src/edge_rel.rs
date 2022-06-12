@@ -56,10 +56,10 @@ impl EdgeRel {
 }
 use graphql_parser::schema::Field;
 
-impl<'a> TryFrom<&Field<'a, &'a str>> for EdgeRel {
-    type Error = CodeGenError<'a>;
+impl TryFrom<&Field<'static, String>> for EdgeRel {
+    type Error = CodeGenError;
 
-    fn try_from(field: &Field<'a, &'a str>) -> Result<Self, Self::Error> {
+    fn try_from(field: &Field<'static, String>) -> Result<Self, Self::Error> {
         let edge_directive = field
             .directives
             .iter()
@@ -76,7 +76,7 @@ impl<'a> TryFrom<&Field<'a, &'a str>> for EdgeRel {
             edge_directive
                 .arguments
                 .iter()
-                .find_map(|(arg_name, arg)| match (*arg_name, arg) {
+                .find_map(|(arg_name, arg)| match (arg_name.as_str(), arg) {
                     ("reverse_relationship", graphql_parser::schema::Value::String(s)) => Some(s),
                     (_, _) => None,
                 });

@@ -85,7 +85,9 @@ fn main() -> Result<()> {
     tracing::debug!(message="Executing grapl-graphql-codegen", options=?opt);
     let raw_schema = read_in_schema(&opt.input)?;
     let document = parse_schema(&raw_schema)?;
-    let node_types = node_type::parse_into_node_types(&document).expect("Failed");
+    let document = document.into_static();
+
+    let node_types = node_type::parse_into_node_types(document).expect("Failed");
 
     let mut all_code = String::with_capacity(1024 * node_types.len());
     all_code.push_str(&standin_imports());
@@ -95,7 +97,7 @@ fn main() -> Result<()> {
     }
 
     if opt.validate {
-        grapl_graphql_codegen::external_helpers::validate_code(&all_code)?;
+        external_helpers::validate_code(&all_code)?;
     }
 
     // If `no_emit` is set, return early

@@ -56,9 +56,10 @@ sqlx_prepare() {
 # Stop the container if any failures occur.
 trap stop_postgres EXIT
 
-sqlx_prepare "${REPOSITORY_ROOT}/src/rust/plugin-work-queue"
-sqlx_prepare "${REPOSITORY_ROOT}/src/rust/plugin-registry"
-sqlx_prepare "${REPOSITORY_ROOT}/src/rust/uid-allocator"
+# sqlx_prepare "${REPOSITORY_ROOT}/src/rust/plugin-work-queue"
+# sqlx_prepare "${REPOSITORY_ROOT}/src/rust/plugin-registry"
+# sqlx_prepare "${REPOSITORY_ROOT}/src/rust/uid-allocator"
+sqlx_prepare "${REPOSITORY_ROOT}/src/rust/schema-manager"
 
 # Undo the above trap
 trap - EXIT

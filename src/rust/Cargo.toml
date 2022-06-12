@@ -30,6 +30,7 @@ members = [
   "./plugin-work-queue",
   "./rust-proto",
   "./rust-proto-new",
+  "./schema-manager",
   "./sqs-executor",
   "./sysmon-parser",
   "./uid-allocator",

@@ -386,10 +386,10 @@ impl NodeType {
     }
 }
 
-impl<'a> TryFrom<&ObjectType<'a, &'a str>> for NodeType {
-    type Error = CodeGenError<'a>;
+impl TryFrom<&ObjectType<'static, String>> for NodeType {
+    type Error = CodeGenError;
 
-    fn try_from(object: &ObjectType<'a, &'a str>) -> Result<Self, Self::Error> {
+    fn try_from(object: &ObjectType<'static, String>) -> Result<Self, Self::Error> {
         let type_name = object.name.to_string();
         let mut predicates = vec![];
         let mut edges = vec![];
@@ -409,9 +409,9 @@ impl<'a> TryFrom<&ObjectType<'a, &'a str>> for NodeType {
     }
 }
 
-fn get_extends_type_name<'a>(
-    directives: &[Directive<'a, &'a str>],
-) -> Result<String, CodeGenError<'a>> {
+fn get_extends_type_name(
+    directives: &[Directive<'static, String>],
+) -> Result<String, CodeGenError> {
     let grapl_directive = directives
         .iter()
         .find_map(|d| if d.name == "grapl" { Some(Ok(d)) } else { None })
@@ -424,7 +424,7 @@ fn get_extends_type_name<'a>(
     let extends_type = grapl_directive
         .arguments
         .iter()
-        .find_map(|(arg_name, arg)| match (*arg_name, arg) {
+        .find_map(|(arg_name, arg)| match (arg_name.as_str(), arg) {
             ("extends", graphql_parser::schema::Value::String(arg)) => Some(Ok(arg)),
             _ => None,
         })
@@ -437,10 +437,10 @@ fn get_extends_type_name<'a>(
     Ok(extends_type.to_string())
 }
 
-impl<'a> TryFrom<&ObjectType<'a, &'a str>> for NodeExtension {
-    type Error = CodeGenError<'a>;
+impl TryFrom<&ObjectType<'static, String>> for NodeExtension {
+    type Error = CodeGenError;
 
-    fn try_from(object: &ObjectType<'a, &'a str>) -> Result<Self, Self::Error> {
+    fn try_from(object: &ObjectType<'static, String>) -> Result<Self, Self::Error> {
         let extends_type = get_extends_type_name(&object.directives)?;
 
         let mut predicates = vec![];
@@ -460,10 +460,10 @@ impl<'a> TryFrom<&ObjectType<'a, &'a str>> for NodeExtension {
     }
 }
 
-impl<'a> TryFrom<&ObjectType<'a, &'a str>> for NodeTypeOrExtension {
-    type Error = CodeGenError<'a>;
+impl TryFrom<&ObjectType<'static, String>> for NodeTypeOrExtension {
+    type Error = CodeGenError;
 
-    fn try_from(object: &ObjectType<'a, &'a str>) -> Result<Self, Self::Error> {
+    fn try_from(object: &ObjectType<'static, String>) -> Result<Self, Self::Error> {
         let grapl_directive = object
             .directives
             .iter()
@@ -477,7 +477,7 @@ impl<'a> TryFrom<&ObjectType<'a, &'a str>> for NodeTypeOrExtension {
         let n = grapl_directive
             .arguments
             .iter()
-            .find_map(|(arg_name, _)| match *arg_name {
+            .find_map(|(arg_name, _)| match arg_name.as_str() {
                 "identity_algorithm" => match NodeType::try_from(object) {
                     Ok(n) => Some(Ok(NodeTypeOrExtension::NodeType(n))),
                     Err(e) => Some(Err(e)),
@@ -499,9 +499,9 @@ impl<'a> TryFrom<&ObjectType<'a, &'a str>> for NodeTypeOrExtension {
 }
 
 #[tracing::instrument(skip(document))]
-pub fn parse_into_node_types<'a>(
-    document: &Document<'a, &'a str>,
-) -> Result<Vec<NodeType>, CodeGenError<'a>> {
+pub fn parse_into_node_types(
+    document: Document<'static, String>,
+) -> Result<Vec<NodeType>, CodeGenError> {
     let mut types = std::collections::BTreeMap::new();
     let mut node_types = vec![];
 

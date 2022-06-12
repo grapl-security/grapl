@@ -8,13 +8,13 @@ pub enum FieldType {
     Edge,
 }
 
-impl<'a> From<&Field<'a, &'a str>> for FieldType {
-    fn from(field: &Field<'a, &'a str>) -> Self {
+impl From<&Field<'static, String>> for FieldType {
+    fn from(field: &Field<'static, String>) -> Self {
         field
             .directives
             .iter()
             .map(|d| {
-                match d.name {
+                match d.name.as_str() {
                     "edge" => FieldType::Edge,
                     // todo: We should be more specific here
                     _ => FieldType::Predicate,

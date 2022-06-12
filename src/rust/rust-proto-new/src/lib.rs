@@ -50,6 +50,17 @@ pub(crate) mod protobufs {
                     }
                 }
 
+
+                #[cfg(feature = "model-plugin-deployer")]
+                pub(crate) mod model_plugin_deployer {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                        env!("OUT_DIR"),
+                        "/graplinc.grapl.api.model_plugin_deployer.v1.rs"
+                        ));
+                    }
+                }
+
                 pub(crate) mod pipeline_ingress {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -93,6 +104,16 @@ pub(crate) mod protobufs {
                         include!(concat!(
                             env!("OUT_DIR"),
                             "/graplinc.grapl.api.plugin_work_queue.v1beta1.rs"
+                        ));
+                    }
+                }
+
+                #[cfg(feature = "schema-manager")]
+                pub(crate) mod schema_manager {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                        env!("OUT_DIR"),
+                        "/graplinc.grapl.api.schema_manager.v1beta1.rs"
                         ));
                     }
                 }
@@ -147,8 +168,9 @@ pub mod graplinc {
                 pub mod v1beta1;
             }
 
+            #[cfg(feature = "model-plugin-deployer")]
             pub mod model_plugin_deployer {
-                pub mod v1;
+
             }
 
             pub mod pipeline_ingress {
@@ -176,6 +198,16 @@ pub mod graplinc {
                 mod v1beta1_client;
                 mod v1beta1_server;
             }
+
+            #[cfg(feature = "schema-manager")]
+            pub mod schema_manager {
+                pub mod v1beta1 {
+                    pub mod client;
+                    pub mod messages;
+                    pub mod server;
+                }
+            }
+
             #[cfg(feature = "uid-allocator")]
             pub mod uid_allocator {
                 pub mod v1beta1;
