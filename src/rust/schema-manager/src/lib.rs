@@ -1,3 +1,4 @@
+pub mod config;
 pub mod server;
 
 use grapl_graphql_codegen::{

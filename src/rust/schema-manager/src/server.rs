@@ -46,7 +46,7 @@ impl From<SchemaManagerServiceError> for Status {
 }
 
 pub struct SchemaManager {
-    pool: PgPool,
+    pub pool: PgPool,
 }
 
 #[async_trait::async_trait]

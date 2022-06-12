@@ -4295,6 +4295,7 @@ dependencies = [
  "grapl-graphql-codegen",
  "rust-proto-new",
  "sqlx",
+ "structopt",
  "thiserror",
  "tokio",
  "uuid 0.8.2",
