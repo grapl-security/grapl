@@ -72,14 +72,12 @@ impl TryFrom<&Field<'static, String>> for EdgeRel {
                 })
             }
         };
-        let reverse_rel =
-            edge_directive
-                .arguments
-                .iter()
-                .find_map(|(arg_name, arg)| match (arg_name.as_str(), arg) {
-                    ("reverse_relationship", graphql_parser::schema::Value::String(s)) => Some(s),
-                    (_, _) => None,
-                });
+        let reverse_rel = edge_directive.arguments.iter().find_map(|(arg_name, arg)| {
+            match (arg_name.as_str(), arg) {
+                ("reverse_relationship", graphql_parser::schema::Value::String(s)) => Some(s),
+                (_, _) => None,
+            }
+        });
         let reverse_rel = match reverse_rel {
             Some(reverse_rel) => reverse_rel.as_str(),
             None => return Err(CodeGenError::NodeTypeParseError),

@@ -39,7 +39,6 @@ default = [
   "model-plugin-deployer",
   "schema-manager"
 ]
-
 uid-allocator = []
 uid-allocator-messages = ["uid-allocator"]
 uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
@@ -50,7 +49,6 @@ uid-allocator-full = [
   "uid-allocator-server",
   "uid-allocator"
 ]
-
 graph-mutation = []
 graph-mutation-messages = ["graph-mutation"]
 graph-mutation-server = ["graph-mutation-messages", "graph-mutation"]
@@ -61,19 +59,22 @@ graph-mutation-full = [
   "graph-mutation-server",
   "graph-mutation"
 ]
-
 model-plugin-deployer = []
 model-plugin-deployer-messages = ["model-plugin-deployer"]
-model-plugin-deployer-server = ["model-plugin-deployer-messages", "model-plugin-deployer"]
-model-plugin-deployer-client = ["model-plugin-deployer-messages", "model-plugin-deployer"]
+model-plugin-deployer-server = [
+  "model-plugin-deployer-messages",
+  "model-plugin-deployer"
+]
+model-plugin-deployer-client = [
+  "model-plugin-deployer-messages",
+  "model-plugin-deployer"
+]
 model-plugin-deployer-full = [
   "model-plugin-deployer-messages",
   "model-plugin-deployer-client",
   "model-plugin-deployer-server",
   "model-plugin-deployer"
 ]
-
-
 schema-manager = []
 schema-manager-messages = ["schema-manager"]
 schema-manager-server = ["schema-manager-messages", "schema-manager"]

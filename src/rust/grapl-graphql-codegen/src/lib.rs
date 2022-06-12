@@ -12,6 +12,8 @@ pub mod node_predicate;
 pub mod node_type;
 pub mod predicate_type;
 
-pub use graphql_parser::schema::parse_schema;
-pub use graphql_parser::schema::Document;
-pub use graphql_parser::schema::ParseError;
+pub use graphql_parser::schema::{
+    parse_schema,
+    Document,
+    ParseError,
+};

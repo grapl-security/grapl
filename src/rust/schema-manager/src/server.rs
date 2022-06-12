@@ -1,7 +1,19 @@
+use rust_proto_new::{
+    graplinc::grapl::api::schema_manager::v1beta1::{
+        messages::{
+            DeployModelRequest,
+            DeployModelResponse,
+            EdgeCardinality,
+            GetEdgeSchemaRequest,
+            GetEdgeSchemaResponse,
+            SchemaType,
+        },
+        server::SchemaManagerApi,
+    },
+    protocol::status::Status,
+};
 use sqlx::PgPool;
-use rust_proto_new::graplinc::grapl::api::schema_manager::v1beta1::messages::{DeployModelRequest, DeployModelResponse, EdgeCardinality, GetEdgeSchemaRequest, GetEdgeSchemaResponse, SchemaType};
-use rust_proto_new::graplinc::grapl::api::schema_manager::v1beta1::server::SchemaManagerApi;
-use rust_proto_new::protocol::status::Status;
+
 use crate::StoredEdgeCardinality;
 
 #[derive(thiserror::Error, Debug)]
@@ -16,7 +28,20 @@ pub enum SchemaManagerServiceError {
 
 impl From<SchemaManagerServiceError> for Status {
     fn from(error: SchemaManagerServiceError) -> Self {
-        unimplemented!()
+        match error {
+            SchemaManagerServiceError::NonUtf8GraphQLSchema(e) => {
+                Status::invalid_argument(format!("NonUtf8GraphQLSchema - {}", e.to_string()))
+            }
+            SchemaManagerServiceError::DeployGraphqlError(
+                crate::DeployGraphqlError::SqlxError(e),
+            ) => Status::internal(format!("SqlError during deployment - {}", e.to_string())),
+            SchemaManagerServiceError::DeployGraphqlError(e) => {
+                Status::invalid_argument(format!("DeployGraphqlError - {}", e.to_string()))
+            }
+            SchemaManagerServiceError::GetEdgeSchemaSqlxError(e) => {
+                Status::internal(format!("SqlError during deployment - {}", e.to_string()))
+            }
+        }
     }
 }
 
@@ -42,7 +67,8 @@ impl SchemaManagerApi for SchemaManager {
                     &schema,
                     request.schema_version,
                     &self.pool,
-                ).await?;
+                )
+                .await?;
                 Ok(DeployModelResponse {})
             }
         }
@@ -75,8 +101,10 @@ impl SchemaManagerApi for SchemaManager {
             tenant_id,
             node_type,
             edge_name,
-        ).fetch_one(&self.pool).await
-            .map_err(SchemaManagerServiceError::GetEdgeSchemaSqlxError)?;
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(SchemaManagerServiceError::GetEdgeSchemaSqlxError)?;
 
         Ok(GetEdgeSchemaResponse {
             reverse_edge_name: response.reverse_edge_name,

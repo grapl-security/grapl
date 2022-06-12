@@ -4,16 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rust-proto-new = { path = "../rust-proto-new", default-features = false, features = ["schema-manager-server"] }
+rust-proto-new = { path = "../rust-proto-new", default-features = false, features = [
+  "schema-manager-server"
+] }
 grapl-graphql-codegen = { path = "../grapl-graphql-codegen" }
-
 sqlx = { version = "0.5", features = [
-    "runtime-tokio-rustls",
-    "postgres",
-    "time",
-#    "offline",
-    "uuid",
-    "migrate",
+  "runtime-tokio-rustls",
+  "postgres",
+  "time",
+  #    "offline",
+  "uuid",
+  "migrate",
 ] }
 thiserror = "1.0.31"
 uuid = { version = "0.8", default-features = false, features = ["v4"] }

@@ -1,18 +1,23 @@
-#![allow(warnings)]
-
 pub mod server;
 
-use sqlx::{Connection, PgPool, Postgres, Transaction};
-
-
-use grapl_graphql_codegen::{node_type, parse_schema, Document, ParseError};
-use grapl_graphql_codegen::conflict_resolution::ConflictResolution;
-use grapl_graphql_codegen::edge::Edge as EdgeSchema;
-use grapl_graphql_codegen::identification_algorithm::IdentificationAlgorithm;
-use grapl_graphql_codegen::identity_predicate_type::IdentityPredicateType;
-use grapl_graphql_codegen::node_predicate::NodePredicate;
-use grapl_graphql_codegen::node_type::NodeType;
-use grapl_graphql_codegen::predicate_type::PredicateType;
+use grapl_graphql_codegen::{
+    conflict_resolution::ConflictResolution,
+    edge::Edge as EdgeSchema,
+    identification_algorithm::IdentificationAlgorithm,
+    identity_predicate_type::IdentityPredicateType,
+    node_predicate::NodePredicate,
+    node_type,
+    node_type::NodeType,
+    parse_schema,
+    predicate_type::PredicateType,
+    Document,
+    ParseError,
+};
+use sqlx::{
+    PgPool,
+    Postgres,
+    Transaction,
+};
 
 const SCHEMA_TYPE: &str = "Graphql_V0";
 
@@ -43,39 +48,16 @@ pub async fn deploy_graphql_plugin(
     let mut txn = pool.begin().await?;
 
     for node_type in node_types.iter() {
-        deploy_identity_algorithm(
-            tenant_id,
-            node_type,
-            schema_version,
-            &mut txn,
-        ).await?;
+        deploy_identity_algorithm(tenant_id, node_type, schema_version, &mut txn).await?;
 
-        deploy_node_type(
-            tenant_id,
-            node_type,
-            schema_version,
-            raw_schema,
-            &mut txn,
-        ).await?;
+        deploy_node_type(tenant_id, node_type, schema_version, raw_schema, &mut txn).await?;
 
         for property in node_type.predicates.iter() {
-            deploy_node_property(
-                tenant_id,
-                node_type,
-                property,
-                schema_version,
-                &mut txn,
-            ).await?;
+            deploy_node_property(tenant_id, node_type, property, schema_version, &mut txn).await?;
         }
 
         for edge in node_type.edges.iter() {
-            deploy_edge(
-                tenant_id,
-                node_type,
-                edge,
-                schema_version,
-                &mut txn,
-            ).await?;
+            deploy_edge(tenant_id, node_type, edge, schema_version, &mut txn).await?;
         }
     }
 
@@ -109,19 +91,18 @@ async fn deploy_node_type(
         )
         VALUES ($1, $2, $3, $4, $5, $6)
         "#,
-            tenant_id,
-            identity_algorithm,
-            node_type_name,
-            schema_version as i16,
-            raw_schema.as_bytes(),
-            SCHEMA_TYPE,
+        tenant_id,
+        identity_algorithm,
+        node_type_name,
+        schema_version as i16,
+        raw_schema.as_bytes(),
+        SCHEMA_TYPE,
     )
-        .execute(&mut *txn)
-        .await?;
+    .execute(&mut *txn)
+    .await?;
 
     Ok(())
 }
-
 
 async fn deploy_identity_algorithm(
     tenant_id: uuid::Uuid,
@@ -144,30 +125,20 @@ async fn deploy_identity_algorithm(
         )
         VALUES ($1, $2, $3, $4)
         "#,
-            tenant_id,
-            identity_algorithm,
-            node_type_name,
-            schema_version as i16,
+        tenant_id,
+        identity_algorithm,
+        node_type_name,
+        schema_version as i16,
     )
-        .execute(&mut *txn)
-        .await?;
+    .execute(&mut *txn)
+    .await?;
 
     match node_type.identification_algorithm {
         IdentificationAlgorithm::Session => {
-            deploy_session_identity(
-                tenant_id,
-                node_type,
-                schema_version,
-                txn,
-            ).await?;
+            deploy_session_identity(tenant_id, node_type, schema_version, txn).await?;
         }
         IdentificationAlgorithm::Static => {
-            deploy_static_identity(
-                tenant_id,
-                node_type,
-                schema_version,
-                txn,
-            ).await?;
+            deploy_static_identity(tenant_id, node_type, schema_version, txn).await?;
         }
     }
 
@@ -203,22 +174,29 @@ async fn deploy_session_identity(
                 termination_timestamp_property = Some(field.predicate_name.to_string());
             }
             Some(IdentityPredicateType::StaticId) => {
-                return Err(DeployGraphqlError::InvalidSchema("StaticId is not allowed in session identity"));
+                return Err(DeployGraphqlError::InvalidSchema(
+                    "StaticId is not allowed in session identity",
+                ));
             }
             None => {}
         }
     }
 
     if pseudo_keys.is_empty() {
-        return Err(DeployGraphqlError::InvalidSchema("Session identity must have at least one pseudo key"));
+        return Err(DeployGraphqlError::InvalidSchema(
+            "Session identity must have at least one pseudo key",
+        ));
     }
 
-    let creation_timestamp_property = creation_timestamp_property
-        .ok_or_else(|| DeployGraphqlError::InvalidSchema("creation_timestamp_property must be present"))?;
-    let last_seen_timestamp_property = last_seen_timestamp_property
-        .ok_or_else(|| DeployGraphqlError::InvalidSchema("last_seen_timestamp_property must be present"))?;
-    let termination_timestamp_property = termination_timestamp_property
-        .ok_or_else(|| DeployGraphqlError::InvalidSchema("termination_timestamp_property must be present"))?;
+    let creation_timestamp_property = creation_timestamp_property.ok_or_else(|| {
+        DeployGraphqlError::InvalidSchema("creation_timestamp_property must be present")
+    })?;
+    let last_seen_timestamp_property = last_seen_timestamp_property.ok_or_else(|| {
+        DeployGraphqlError::InvalidSchema("last_seen_timestamp_property must be present")
+    })?;
+    let termination_timestamp_property = termination_timestamp_property.ok_or_else(|| {
+        DeployGraphqlError::InvalidSchema("termination_timestamp_property must be present")
+    })?;
 
     sqlx::query!(
         r#"
@@ -235,22 +213,21 @@ async fn deploy_session_identity(
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         "#,
-            tenant_id,
-            "session",
-            node_type_name,
-            schema_version as i16,
-            &pseudo_keys[..],
-            &[][..], // todo: negation keys are not supported in the parser
-            creation_timestamp_property,
-            last_seen_timestamp_property,
-            termination_timestamp_property
+        tenant_id,
+        "session",
+        node_type_name,
+        schema_version as i16,
+        &pseudo_keys[..],
+        &[][..], // todo: negation keys are not supported in the parser
+        creation_timestamp_property,
+        last_seen_timestamp_property,
+        termination_timestamp_property
     )
-        .execute(&mut *txn)
-        .await?;
+    .execute(&mut *txn)
+    .await?;
 
     Ok(())
 }
-
 
 async fn deploy_static_identity(
     tenant_id: uuid::Uuid,
@@ -267,23 +244,33 @@ async fn deploy_static_identity(
                 static_keys.push(field.predicate_name.clone());
             }
             Some(IdentityPredicateType::SessionPseudoKey) => {
-                return Err(DeployGraphqlError::InvalidSchema("SessionPseudoKey is not allowed in static identity"));
+                return Err(DeployGraphqlError::InvalidSchema(
+                    "SessionPseudoKey is not allowed in static identity",
+                ));
             }
             Some(IdentityPredicateType::SessionCreateTime) => {
-                return Err(DeployGraphqlError::InvalidSchema("SessionCreateTime is not allowed in static identity"));
+                return Err(DeployGraphqlError::InvalidSchema(
+                    "SessionCreateTime is not allowed in static identity",
+                ));
             }
             Some(IdentityPredicateType::SessionLastSeenTime) => {
-                return Err(DeployGraphqlError::InvalidSchema("SessionLastSeenTime is not allowed in static identity"));
+                return Err(DeployGraphqlError::InvalidSchema(
+                    "SessionLastSeenTime is not allowed in static identity",
+                ));
             }
             Some(IdentityPredicateType::SessionTerminateTime) => {
-                return Err(DeployGraphqlError::InvalidSchema("SessionTerminateTime is not allowed in static identity"));
+                return Err(DeployGraphqlError::InvalidSchema(
+                    "SessionTerminateTime is not allowed in static identity",
+                ));
             }
             None => (),
         }
     }
 
     if static_keys.is_empty() {
-        return Err(DeployGraphqlError::InvalidSchema("At least one static_key must be present"));
+        return Err(DeployGraphqlError::InvalidSchema(
+            "At least one static_key must be present",
+        ));
     }
 
     sqlx::query!(
@@ -297,18 +284,17 @@ async fn deploy_static_identity(
         )
         VALUES ($1, $2, $3, $4, $5)
         "#,
-            tenant_id,
-            "static",
-            node_type_name,
-            schema_version as i16,
-            &static_keys[..],
+        tenant_id,
+        "static",
+        node_type_name,
+        schema_version as i16,
+        &static_keys[..],
     )
-        .execute(&mut *txn)
-        .await?;
+    .execute(&mut *txn)
+    .await?;
 
     Ok(())
 }
-
 
 async fn deploy_node_property(
     tenant_id: uuid::Uuid,
@@ -318,9 +304,8 @@ async fn deploy_node_property(
     txn: &mut Transaction<'_, Postgres>,
 ) -> Result<(), DeployGraphqlError> {
     let node_type_name = &node_type.type_name;
-    let predicate_type_name = get_predicate_type_name(
-        property.predicate_type, property.conflict_resolution,
-    )?;
+    let predicate_type_name =
+        get_predicate_type_name(property.predicate_type, property.conflict_resolution)?;
     sqlx::query!(
         r#"
         INSERT INTO schema_manager.property_schemas (
@@ -333,19 +318,18 @@ async fn deploy_node_property(
         )
         VALUES ($1, $2, $3, $4, $5, $6)
         "#,
-            tenant_id,
-            node_type_name,
-            schema_version as i16,
-            property.predicate_name,
-            predicate_type_name as StoredPropertyType,
-            false,  // todo: implement identification only properties
+        tenant_id,
+        node_type_name,
+        schema_version as i16,
+        property.predicate_name,
+        predicate_type_name as StoredPropertyType,
+        false, // todo: implement identification only properties
     )
-        .execute(&mut *txn)
-        .await?;
+    .execute(&mut *txn)
+    .await?;
 
     Ok(())
 }
-
 
 async fn deploy_edge(
     tenant_id: uuid::Uuid,
@@ -387,8 +371,8 @@ async fn deploy_edge(
         forward_edge_cardinality as StoredEdgeCardinality,
         reverse_edge_cardinality as StoredEdgeCardinality,
     )
-        .execute(&mut *txn)
-        .await?;
+    .execute(&mut *txn)
+    .await?;
 
     sqlx::query!(
         r#"
@@ -411,8 +395,8 @@ async fn deploy_edge(
         reverse_edge_cardinality as StoredEdgeCardinality,
         forward_edge_cardinality as StoredEdgeCardinality,
     )
-        .execute(&mut *txn)
-        .await?;
+    .execute(&mut *txn)
+    .await?;
 
     Ok(())
 }
@@ -422,7 +406,9 @@ fn get_predicate_type_name(
     conflict_resolution: ConflictResolution,
 ) -> Result<StoredPropertyType, DeployGraphqlError> {
     let type_name = match (predicate_type, conflict_resolution) {
-        (PredicateType::String, ConflictResolution::Immutable) => StoredPropertyType::ImmutableString,
+        (PredicateType::String, ConflictResolution::Immutable) => {
+            StoredPropertyType::ImmutableString
+        }
         (PredicateType::I64, ConflictResolution::Immutable) => StoredPropertyType::ImmutableI64,
         (PredicateType::I64, ConflictResolution::IncrementOnly) => StoredPropertyType::MaxI64,
         (PredicateType::I64, ConflictResolution::DecrementOnly) => StoredPropertyType::MinI64,
@@ -431,12 +417,12 @@ fn get_predicate_type_name(
         (PredicateType::U64, ConflictResolution::DecrementOnly) => StoredPropertyType::MinU64,
         (PredicateType::String, ConflictResolution::IncrementOnly) => {
             return Err(DeployGraphqlError::InvalidSchema(
-                "String can only be ImmutableString. Got IncrementOnly"
+                "String can only be ImmutableString. Got IncrementOnly",
             ));
         }
         (PredicateType::String, ConflictResolution::DecrementOnly) => {
             return Err(DeployGraphqlError::InvalidSchema(
-                "String can only be ImmutableString. Got DecrementOnly"
+                "String can only be ImmutableString. Got DecrementOnly",
             ));
         }
     };
@@ -466,6 +452,7 @@ enum StoredEdgeCardinality {
 #[cfg(test)]
 mod tests {
     use sqlx::Row;
+
     use super::*;
 
     #[tokio::test]
@@ -473,14 +460,11 @@ mod tests {
         // deploy_graphql_plugin
         let pool = sqlx::PgPool::connect("postgres://postgres@localhost:5432").await?;
 
-        let schema = std::fs::read_to_string("../grapl-graphql-codegen/example_schemas/file_schema.graphql")?;
+        let schema = std::fs::read_to_string(
+            "../grapl-graphql-codegen/example_schemas/file_schema.graphql",
+        )?;
 
-        deploy_graphql_plugin(
-            uuid::Uuid::new_v4(),
-            &schema,
-            1,
-            pool.clone(),
-        ).await?;
+        deploy_graphql_plugin(uuid::Uuid::new_v4(), &schema, 1, pool.clone()).await?;
 
         let rows = sqlx::query_as!(
             NodeIdentityRow,
@@ -496,7 +480,9 @@ mod tests {
         let rows = sqlx::query_as!(
             SessionIdentityRow,
             "select * FROM schema_manager.session_identity_arguments",
-        ).fetch_all(&pool).await?;
+        )
+        .fetch_all(&pool)
+        .await?;
 
         for row in rows {
             println!("{:?}", row);
@@ -527,13 +513,13 @@ mod tests {
                 property_type as "property_type: StoredPropertyType",
                 identity_only
              FROM schema_manager.property_schemas"#,
-        ).fetch_all(&pool).await?;
+        )
+        .fetch_all(&pool)
+        .await?;
 
         for row in rows {
             println!("{:?}", row);
         }
-
-
 
         println!("------------------------------------");
 
@@ -548,7 +534,9 @@ mod tests {
                 forward_edge_cardinality as "forward_edge_cardinality: StoredEdgeCardinality",
                 reverse_edge_cardinality as "reverse_edge_cardinality: StoredEdgeCardinality"
              FROM schema_manager.edge_schemas"#,
-        ).fetch_all(&pool).await?;
+        )
+        .fetch_all(&pool)
+        .await?;
 
         for row in rows {
             println!("{:?}", row);

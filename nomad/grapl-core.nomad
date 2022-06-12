@@ -1571,11 +1571,11 @@ job "grapl-core" {
       }
 
       env {
-        GRAPH_MUTATION_SERVICE_BIND_ADDRESS      = "0.0.0.0:${NOMAD_PORT_graph-mutation-service-port}"
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+        GRAPH_MUTATION_SERVICE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-mutation-service-port}"
+        RUST_BACKTRACE                      = local.rust_backtrace
+        RUST_LOG                            = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST     = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT     = local.tracing_jaeger_endpoint_port
       }
     }
 

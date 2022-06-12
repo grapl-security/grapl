@@ -1,11 +1,18 @@
-use crate::graplinc::grapl::api::schema_manager::v1beta1::messages::{DeployModelRequest, DeployModelResponse, GetEdgeSchemaRequest, GetEdgeSchemaResponse};
-use crate::protocol::status::Status;
-use crate::SerDeError;
-use crate::protobufs::graplinc::grapl::api::schema_manager::v1beta1::schema_manager_service_client::{
-    SchemaManagerServiceClient as SchemaManagerServiceClientProto,
+use crate::{
+    graplinc::grapl::api::schema_manager::v1beta1::messages::{
+        DeployModelRequest,
+        DeployModelResponse,
+        GetEdgeSchemaRequest,
+        GetEdgeSchemaResponse,
+    },
+    protobufs::graplinc::grapl::api::schema_manager::v1beta1::{
+        schema_manager_service_client::SchemaManagerServiceClient as SchemaManagerServiceClientProto,
+        DeployModelRequest as DeployModelRequestProto,
+        GetEdgeSchemaRequest as GetEdgeSchemaRequestProto,
+    },
+    protocol::status::Status,
+    SerDeError,
 };
-use crate::protobufs::graplinc::grapl::api::schema_manager::v1beta1::DeployModelRequest as DeployModelRequestProto;
-use crate::protobufs::graplinc::grapl::api::schema_manager::v1beta1::GetEdgeSchemaRequest as GetEdgeSchemaRequestProto;
 
 #[derive(thiserror::Error, Debug)]
 pub enum SchemaManagerClientError {
@@ -24,9 +31,9 @@ pub struct SchemaManagerClient {
 
 impl SchemaManagerClient {
     pub async fn connect<T>(endpoint: T) -> Result<Self, SchemaManagerClientError>
-        where
-            T: TryInto<tonic::transport::Endpoint>,
-            T::Error: std::error::Error + Send + Sync + 'static,
+    where
+        T: TryInto<tonic::transport::Endpoint>,
+        T::Error: std::error::Error + Send + Sync + 'static,
     {
         Ok(SchemaManagerClient {
             inner: SchemaManagerServiceClientProto::connect(endpoint)

@@ -1,5 +1,3 @@
-#![allow(warnings)]
-
 use crate::{
     graplinc::grapl::api::graph::v1beta1::NodeProperty,
     protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{

@@ -59,9 +59,9 @@ pub trait SchemaManagerApi {
 
 #[tonic::async_trait]
 impl<T, E> SchemaManagerServiceProto for T
-    where
-        T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     /// Create Node allocates a new node in the graph, returning the uid of the new node.
     async fn deploy_model(
@@ -97,9 +97,9 @@ impl<T, E> SchemaManagerServiceProto for T
 
 /// A server construct that drives the SchemaManagerApi implementation.
 pub struct SchemaManagerServiceServer<T, E>
-    where
-        T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     server: SchemaManagerServiceServerProto<T>,
     addr: SocketAddr,
@@ -107,9 +107,9 @@ pub struct SchemaManagerServiceServer<T, E>
 }
 
 impl<T, E> SchemaManagerServiceServer<T, E>
-    where
-        T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     pub fn builder(
         service: T,
@@ -125,7 +125,7 @@ impl<T, E> SchemaManagerServiceServer<T, E>
                 || async { Ok(HealthcheckStatus::Serving) },
                 std::time::Duration::from_millis(500),
             )
-                .await;
+            .await;
 
         let listener = TcpListener::bind(self.addr)
             .await
@@ -157,9 +157,9 @@ impl<T, E> SchemaManagerServiceServer<T, E>
 }
 
 pub struct SchemaManagerServiceServerBuilder<T, E>
-    where
-        T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     server: SchemaManagerServiceServerProto<T>,
     addr: SocketAddr,
@@ -167,9 +167,9 @@ pub struct SchemaManagerServiceServerBuilder<T, E>
 }
 
 impl<T, E> SchemaManagerServiceServerBuilder<T, E>
-    where
-        T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     /// Create a new builder for a SchemaManagerServiceServer,
     /// taking the required arguments upfront.

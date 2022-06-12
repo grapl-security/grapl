@@ -3,7 +3,6 @@ use std::sync::Arc;
 use rust_proto_new::{
     graplinc::grapl::api::{
         graph::v1beta1::{
-            Edge,
             Property,
         },
         graph_mutation::v1beta1::{
@@ -194,7 +193,7 @@ impl GraphMutationManager {
         property_value: i64,
     ) -> Result<(), Box<dyn std::error::Error>> {
         // todo: We should only prepare statements once
-        let mut statement = self
+        let statement = self
             .prepared_statements
             .prepare_imm_i64(&self.scylla_client, tenant_keyspace)
             .await?;
@@ -217,7 +216,7 @@ impl GraphMutationManager {
         property_value: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
         // todo: Should we only prepare statements once?
-        let mut statement = self
+        let statement = self
             .prepared_statements
             .prepare_imm_string(&self.scylla_client, tenant_keyspace)
             .await?;
@@ -416,11 +415,14 @@ impl GraphMutationApi for GraphMutationManager {
             dest_node_type,
         } = request;
 
-        let reverse_edge_name = self.reverse_edge_resolver.resolve_reverse_edge(
-            tenant_id,
-            source_node_type.value.clone(),
-            edge_name.value.clone(),
-        ).await?;
+        let reverse_edge_name = self
+            .reverse_edge_resolver
+            .resolve_reverse_edge(
+                tenant_id,
+                source_node_type.value.clone(),
+                edge_name.value.clone(),
+            )
+            .await?;
 
         self.upsert_edges(
             tenant_id,
@@ -430,7 +432,8 @@ impl GraphMutationApi for GraphMutationManager {
             reverse_edge_name,
             source_node_type.value,
             dest_node_type.value,
-        ).await?;
+        )
+        .await?;
 
         Ok(CreateEdgeResponse {
             // todo: At this point we can't tell if the update was redundant

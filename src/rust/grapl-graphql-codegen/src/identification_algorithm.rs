@@ -27,15 +27,15 @@ impl IdentificationAlgorithm {
             .iter()
             .find_map(|(arg_name, arg)| match (arg_name.as_str(), arg) {
                 ("identity_algorithm", graphql_parser::schema::Value::String(s))
-                if s == SESSION_ALGORITHM =>
-                    {
-                        Some(Self::Session)
-                    }
+                    if s == SESSION_ALGORITHM =>
+                {
+                    Some(Self::Session)
+                }
                 ("identity_algorithm", graphql_parser::schema::Value::String(s))
-                if s == STATIC_ALGORITHM =>
-                    {
-                        Some(Self::Static)
-                    }
+                    if s == STATIC_ALGORITHM =>
+                {
+                    Some(Self::Static)
+                }
                 (_, _) => None,
             })
     }

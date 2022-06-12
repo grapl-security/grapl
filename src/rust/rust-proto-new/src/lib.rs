@@ -50,13 +50,12 @@ pub(crate) mod protobufs {
                     }
                 }
 
-
                 #[cfg(feature = "model-plugin-deployer")]
                 pub(crate) mod model_plugin_deployer {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.api.model_plugin_deployer.v1.rs"
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.model_plugin_deployer.v1.rs"
                         ));
                     }
                 }
@@ -112,8 +111,8 @@ pub(crate) mod protobufs {
                 pub(crate) mod schema_manager {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.api.schema_manager.v1beta1.rs"
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.schema_manager.v1beta1.rs"
                         ));
                     }
                 }
@@ -169,9 +168,7 @@ pub mod graplinc {
             }
 
             #[cfg(feature = "model-plugin-deployer")]
-            pub mod model_plugin_deployer {
-
-            }
+            pub mod model_plugin_deployer {}
 
             pub mod pipeline_ingress {
                 pub mod v1beta1;

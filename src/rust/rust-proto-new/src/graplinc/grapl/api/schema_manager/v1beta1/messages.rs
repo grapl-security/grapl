@@ -1,12 +1,16 @@
-use crate::protobufs::graplinc::grapl::api::schema_manager::v1beta1::{
-    SchemaType as SchemaTypeProto,
-    EdgeCardinality as EdgeCardinalityProto,
-    DeployModelRequest as DeployModelRequestProto,
-    DeployModelResponse as DeployModelResponseProto,
-    GetEdgeSchemaRequest as GetEdgeSchemaRequestProto,
-    GetEdgeSchemaResponse as GetEdgeSchemaResponseProto,
+use crate::{
+    protobufs::graplinc::grapl::api::schema_manager::v1beta1::{
+        DeployModelRequest as DeployModelRequestProto,
+        DeployModelResponse as DeployModelResponseProto,
+        EdgeCardinality as EdgeCardinalityProto,
+        GetEdgeSchemaRequest as GetEdgeSchemaRequestProto,
+        GetEdgeSchemaResponse as GetEdgeSchemaResponseProto,
+        SchemaType as SchemaTypeProto,
+    },
+    serde_impl,
+    type_url,
+    SerDeError,
 };
-use crate::{serde_impl, SerDeError, type_url};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SchemaType {
@@ -36,7 +40,6 @@ impl type_url::TypeUrl for SchemaType {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.SchemaType";
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DeployModelRequest {
@@ -92,7 +95,6 @@ impl type_url::TypeUrl for DeployModelRequest {
 impl serde_impl::ProtobufSerializable for DeployModelRequest {
     type ProtobufMessage = DeployModelRequestProto;
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DeployModelResponse {}
@@ -229,7 +231,6 @@ impl type_url::TypeUrl for GetEdgeSchemaResponse {
 impl serde_impl::ProtobufSerializable for GetEdgeSchemaResponse {
     type ProtobufMessage = GetEdgeSchemaResponseProto;
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum EdgeCardinality {
