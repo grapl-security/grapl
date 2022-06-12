@@ -238,6 +238,8 @@ impl GraphMutationManager {
         to_uid: Uid,
         f_edge_name: String,
         r_edge_name: String,
+        source_node_type: String,
+        dest_node_type: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
         // todo: Should we only prepare statements once?
         let f_statement = self
@@ -260,8 +262,17 @@ impl GraphMutationManager {
                         f_edge_name.clone(),
                         r_edge_name.clone(),
                         to_uid.as_i64(),
+                        source_node_type.clone(),
+                        dest_node_type.clone(),
                     ),
-                    (to_uid.as_i64(), r_edge_name, f_edge_name, from_uid.as_i64()),
+                    (
+                        to_uid.as_i64(),
+                        r_edge_name,
+                        f_edge_name,
+                        from_uid.as_i64(),
+                        dest_node_type.clone(),
+                        source_node_type.clone(),
+                    ),
                 ),
             )
             .await?;
@@ -404,13 +415,28 @@ impl GraphMutationApi for GraphMutationManager {
             source_node_type,
             dest_node_type,
         } = request;
-        // let reverse_edge_name = self.reverse_edge_resolver.resolve_reverse_edges(
-        //     vec![
-        //         Edge {
-        //
-        //         }
-        //     ]
-        // );
-        todo!()
+
+        let reverse_edge_name = self.reverse_edge_resolver.resolve_reverse_edge(
+            tenant_id,
+            source_node_type.value.clone(),
+            edge_name.value.clone(),
+        ).await?;
+
+        self.upsert_edges(
+            tenant_id,
+            from_uid,
+            to_uid,
+            edge_name.value,
+            reverse_edge_name,
+            source_node_type.value,
+            dest_node_type.value,
+        ).await?;
+
+        Ok(CreateEdgeResponse {
+            // todo: At this point we can't tell if the update was redundant
+            //       but it is always safe (albeit suboptimal) to assume that
+            //       it was not.
+            was_redundant: false,
+        })
     }
 }

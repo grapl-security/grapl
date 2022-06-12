@@ -64,8 +64,10 @@ fn raw_edge_prepare_statement(tenant_id: uuid::Uuid) -> String {
                 f_edge_name,
                 r_edge_name,
                 destination_uid,
+                source_node_type,
+                destination_node_type,
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             ",
     )
 }
