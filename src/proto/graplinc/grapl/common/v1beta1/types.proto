@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package graplinc.grapl.common.v1beta1.types;
+
+import "graplinc/common/v1beta1/types.proto";
+
+// A wrapper type for property names
+message PropertyName {
+  // The property name must:
+  // - Be non-empty
+  // - Snake case, `^[a-z]+(_[a-z]+)*$`
+  // - Less than 32 characters
+  string value = 1;
+}
+
+// A wrapper type for edge names
+message EdgeName {
+  // The edge name must:
+  // - Be non-empty
+  // - Snake case, `^[a-z]+(_[a-z]+)*$`
+  // - Less than 32 characters
+  string value = 1;
+}
+
+// A wrapper type for node type names
+message NodeType {
+  // The node type must:
+  // - Be non-empty
+  // - PascalCase, `^([A-Z][a-z]+)+$`
+  // - Less than 32 characters
+  string value = 1;
+}
+
+// A wrapper type for a node's uid
+message Uid {
+  // Can never be 0
+  uint64 value = 1;
+}

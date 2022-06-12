@@ -4,41 +4,13 @@ package graplinc.grapl.api.graph_mutation.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/api/graph/v1beta1/types.proto";
-
-message PropertyName {
-  // The property name must:
-  // - Be non-empty
-  // - Snake case, `^[a-z]+(_[a-z]+)*$`
-  // - Less than 32 characters
-  string value = 1;
-}
-
-message EdgeName {
-  // The edge name must:
-  // - Be non-empty
-  // - Snake case, `^[a-z]+(_[a-z]+)*$`
-  // - Less than 32 characters
-  string value = 1;
-}
-
-message NodeType {
-  // The node type must:
-  // - Be non-empty
-  // - PascalCase, `^([A-Z][a-z]+)+$`
-  // - Less than 32 characters
-  string value = 1;
-}
-
-message Uid {
-  // Can never be 0
-  uint64 value = 1;
-}
+import "graplinc/grapl/common/v1beta1/types.proto";
 
 message SetNodePropertyRequest {
   graplinc.common.v1beta1.Uuid tenant_id = 1;
-  Uid uid = 2;
-  NodeType node_type = 3;
-  PropertyName property_name = 4;
+  graplinc.grapl.common.v1beta1.types.Uid uid = 2;
+  graplinc.grapl.common.v1beta1.types.NodeType node_type = 3;
+  graplinc.grapl.common.v1beta1.types.PropertyName property_name = 4;
   graplinc.grapl.api.graph.v1beta1.NodeProperty property = 5;
 }
 
@@ -48,12 +20,12 @@ message SetNodePropertyResponse {
 }
 
 message CreateEdgeRequest {
-  EdgeName edge_name = 1;
+  graplinc.grapl.common.v1beta1.types.EdgeName edge_name = 1;
   graplinc.common.v1beta1.Uuid tenant_id = 2;
-  Uid from_uid = 3;
-  Uid to_uid = 4;
-  NodeType source_node_type = 5;
-  NodeType dest_node_type = 6;
+  graplinc.grapl.common.v1beta1.types.Uid from_uid = 3;
+  graplinc.grapl.common.v1beta1.types.Uid to_uid = 4;
+  graplinc.grapl.common.v1beta1.types.NodeType source_node_type = 5;
+  graplinc.grapl.common.v1beta1.types.NodeType dest_node_type = 6;
 }
 
 message CreateEdgeResponse {
@@ -65,12 +37,12 @@ message CreateNodeRequest {
   // The tenant id to create the node under
   graplinc.common.v1beta1.Uuid tenant_id = 1;
   // The type of the node to request
-  NodeType node_type = 2;
+  graplinc.grapl.common.v1beta1.types.NodeType node_type = 2;
 }
 
 message CreateNodeResponse {
   // The uid of the newly allocated node
-  Uid uid = 1;
+  graplinc.grapl.common.v1beta1.types.Uid uid = 1;
 }
 
 service GraphMutationService {

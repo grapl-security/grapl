@@ -12,7 +12,7 @@ sqlx = { version = "0.5", features = [
   "runtime-tokio-rustls",
   "postgres",
   "time",
-  #    "offline",
+  "offline",
   "uuid",
   "migrate",
 ] }

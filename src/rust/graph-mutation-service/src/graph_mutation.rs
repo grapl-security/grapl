@@ -1,21 +1,23 @@
 use std::sync::Arc;
 
 use rust_proto_new::{
-    graplinc::grapl::api::{
-        graph::v1beta1::Property,
-        graph_mutation::v1beta1::{
-            messages::{
-                CreateEdgeRequest,
-                CreateEdgeResponse,
-                CreateNodeRequest,
-                CreateNodeResponse,
-                SetNodePropertyRequest,
-                SetNodePropertyResponse,
-                Uid,
+    graplinc::grapl::{
+        api::{
+            graph::v1beta1::Property,
+            graph_mutation::v1beta1::{
+                messages::{
+                    CreateEdgeRequest,
+                    CreateEdgeResponse,
+                    CreateNodeRequest,
+                    CreateNodeResponse,
+                    SetNodePropertyRequest,
+                    SetNodePropertyResponse,
+                },
+                server::GraphMutationApi,
             },
-            server::GraphMutationApi,
+            uid_allocator::v1beta1::client::UidAllocatorServiceClientError,
         },
-        uid_allocator::v1beta1::client::UidAllocatorServiceClientError,
+        common::v1beta1::types::Uid,
     },
     protocol::status::Status,
 };
@@ -58,8 +60,8 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: &str,
-        property_name: &str,
+        node_type: String,
+        property_name: String,
         property_value: u64,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.write_dropper
@@ -94,8 +96,8 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: &str,
-        property_name: &str,
+        node_type: String,
+        property_name: String,
         property_value: u64,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.write_dropper
@@ -130,8 +132,8 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: &str,
-        property_name: &str,
+        node_type: String,
+        property_name: String,
         property_value: u64,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.write_dropper
@@ -167,8 +169,8 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: &str,
-        property_name: &str,
+        node_type: String,
+        property_name: String,
         property_value: i64,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.write_dropper
@@ -202,8 +204,8 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: &str,
-        property_name: &str,
+        node_type: String,
+        property_name: String,
         property_value: i64,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.write_dropper
@@ -237,8 +239,8 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: &str,
-        property_name: &str,
+        node_type: String,
+        property_name: String,
         property_value: i64,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.write_dropper
@@ -269,8 +271,8 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: &str,
-        property_name: &str,
+        node_type: String,
+        property_name: String,
         property_value: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.write_dropper
@@ -332,19 +334,19 @@ impl GraphMutationManager {
                             (
                                 (
                                     from_uid.as_i64(),
-                                    f_edge_name.clone(),
-                                    r_edge_name.clone(),
+                                    &f_edge_name,
+                                    &r_edge_name,
                                     to_uid.as_i64(),
-                                    source_node_type.clone(),
-                                    dest_node_type.clone(),
+                                    &source_node_type,
+                                    &dest_node_type,
                                 ),
                                 (
                                     to_uid.as_i64(),
-                                    r_edge_name,
-                                    f_edge_name,
+                                    &r_edge_name,
+                                    &f_edge_name,
                                     from_uid.as_i64(),
-                                    dest_node_type.clone(),
-                                    source_node_type.clone(),
+                                    &dest_node_type,
+                                    &source_node_type,
                                 ),
                             ),
                         )
@@ -374,9 +376,9 @@ impl GraphMutationApi for GraphMutationManager {
         self.upsert_immutable_string(
             request.tenant_id,
             uid,
-            &request.node_type.value,
-            "node_type",
             request.node_type.value.clone(),
+            "node_type".to_owned(),
+            request.node_type.value,
         )
         .await?;
 
@@ -399,70 +401,70 @@ impl GraphMutationApi for GraphMutationManager {
         match property.property {
             Property::IncrementOnlyUintProp(property) => {
                 self.upsert_max_u64(
-                    tenant_id.into(),
+                    tenant_id,
                     uid,
-                    &node_type.value,
-                    &property_name.value,
+                    node_type.value,
+                    property_name.value,
                     property.prop,
                 )
                 .await?;
             }
             Property::DecrementOnlyUintProp(property) => {
                 self.upsert_min_u64(
-                    tenant_id.into(),
+                    tenant_id,
                     uid,
-                    &node_type.value,
-                    &property_name.value,
+                    node_type.value,
+                    property_name.value,
                     property.prop,
                 )
                 .await?;
             }
             Property::ImmutableUintProp(property) => {
                 self.upsert_immutable_u64(
-                    tenant_id.into(),
+                    tenant_id,
                     uid,
-                    &node_type.value,
-                    &property_name.value,
+                    node_type.value,
+                    property_name.value,
                     property.prop,
                 )
                 .await?;
             }
             Property::IncrementOnlyIntProp(property) => {
                 self.upsert_max_i64(
-                    tenant_id.into(),
+                    tenant_id,
                     uid,
-                    &node_type.value,
-                    &property_name.value,
+                    node_type.value,
+                    property_name.value,
                     property.prop,
                 )
                 .await?;
             }
             Property::DecrementOnlyIntProp(property) => {
                 self.upsert_min_i64(
-                    tenant_id.into(),
+                    tenant_id,
                     uid,
-                    &node_type.value,
-                    &property_name.value,
+                    node_type.value,
+                    property_name.value,
                     property.prop,
                 )
                 .await?;
             }
             Property::ImmutableIntProp(property) => {
                 self.upsert_immutable_i64(
-                    tenant_id.into(),
+                    tenant_id,
                     uid,
-                    &node_type.value,
-                    &property_name.value,
+                    node_type.value,
+                    property_name.value,
                     property.prop,
                 )
                 .await?;
             }
             Property::ImmutableStrProp(property) => {
                 self.upsert_immutable_string(
-                    tenant_id.into(),
+                    tenant_id,
                     uid,
-                    &node_type.value,
-                    &property_name.value,
+                    node_type.value,
+                    property_name.value,
                     property.prop,
                 )
                 .await?;

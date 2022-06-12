@@ -30,6 +30,18 @@ pub(crate) mod protobufs {
         }
 
         pub(crate) mod grapl {
+
+            pub(crate) mod common {
+                pub(crate) mod v1beta1 {
+                    pub(crate) mod types {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.common.v1beta1.types.rs"
+                        ));
+                    }
+                }
+            }
+
             pub(crate) mod api {
                 pub(crate) mod graph {
                     pub(crate) mod v1beta1 {
@@ -157,6 +169,12 @@ pub mod graplinc {
     }
 
     pub mod grapl {
+        pub mod common {
+            pub mod v1beta1 {
+                pub mod types;
+            }
+        }
+
         pub mod api {
             pub mod graph {
                 pub mod v1beta1;
