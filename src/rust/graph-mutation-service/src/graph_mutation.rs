@@ -25,6 +25,7 @@ use uid_allocator::client::CachingUidAllocatorServiceClient as UidAllocatorClien
 use crate::{
     prepared_statements::PreparedStatements,
     reverse_edge_resolver::ReverseEdgeResolver,
+    write_dropper::WriteDropper,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -48,6 +49,7 @@ struct GraphMutationManager {
     prepared_statements: PreparedStatements,
     uid_allocator_client: UidAllocatorClient,
     reverse_edge_resolver: ReverseEdgeResolver,
+    write_dropper: WriteDropper,
 }
 
 impl GraphMutationManager {
@@ -60,22 +62,32 @@ impl GraphMutationManager {
         property_name: &str,
         property_value: u64,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let property_value = property_value as i64;
-        // Create a prepared statement, and then execute it
-        let mut statement = self
-            .prepared_statements
-            .prepare_max_u64(&self.scylla_client, tenant_keyspace)
-            .await?;
+        self.write_dropper
+            .check_max_u64(
+                tenant_keyspace,
+                node_type.to_owned(),
+                property_name.to_owned(),
+                property_value,
+                || async move {
+                    let property_value = property_value as i64;
+                    // Create a prepared statement, and then execute it
+                    let mut statement = self
+                        .prepared_statements
+                        .prepare_max_u64(&self.scylla_client, tenant_keyspace)
+                        .await?;
 
-        statement.set_timestamp(Some(property_value));
+                    statement.set_timestamp(Some(property_value));
 
-        self.scylla_client
-            .execute(
-                &statement,
-                (uid.as_i64(), node_type, property_name, property_value),
+                    self.scylla_client
+                        .execute(
+                            &statement,
+                            (uid.as_i64(), node_type, property_name, property_value),
+                        )
+                        .await?;
+                    Ok(())
+                },
             )
-            .await?;
-        Ok(())
+            .await
     }
 
     async fn upsert_min_u64(
@@ -86,22 +98,32 @@ impl GraphMutationManager {
         property_name: &str,
         property_value: u64,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let property_value = property_value as i64;
-        // Create a prepared statement, and then execute it
-        let mut statement = self
-            .prepared_statements
-            .prepare_min_u64(&self.scylla_client, tenant_keyspace)
-            .await?;
+        self.write_dropper
+            .check_min_u64(
+                tenant_keyspace,
+                node_type.to_owned(),
+                property_name.to_owned(),
+                property_value,
+                || async move {
+                    let property_value = property_value as i64;
+                    // Create a prepared statement, and then execute it
+                    let mut statement = self
+                        .prepared_statements
+                        .prepare_min_u64(&self.scylla_client, tenant_keyspace)
+                        .await?;
 
-        statement.set_timestamp(Some(property_value * -1));
+                    statement.set_timestamp(Some(property_value * -1));
 
-        self.scylla_client
-            .execute(
-                &statement,
-                (uid.as_i64(), node_type, property_name, property_value),
+                    self.scylla_client
+                        .execute(
+                            &statement,
+                            (uid.as_i64(), node_type, property_name, property_value),
+                        )
+                        .await?;
+                    Ok(())
+                },
             )
-            .await?;
-        Ok(())
+            .await
     }
 
     async fn upsert_immutable_u64(
@@ -112,23 +134,32 @@ impl GraphMutationManager {
         property_name: &str,
         property_value: u64,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let property_value = property_value as i64;
-        // todo: We should only prepare statements once
-        let mut statement = self
-            .prepared_statements
-            .prepare_imm_u64(&self.scylla_client, tenant_keyspace)
-            .await?;
+        self.write_dropper
+            .check_imm_u64(
+                tenant_keyspace,
+                node_type.to_owned(),
+                property_name.to_owned(),
+                || async move {
+                    let property_value = property_value as i64;
+                    // todo: We should only prepare statements once
+                    let mut statement = self
+                        .prepared_statements
+                        .prepare_imm_u64(&self.scylla_client, tenant_keyspace)
+                        .await?;
 
-        // Immutable values can never be overwritten
-        statement.set_timestamp(Some(1i64));
+                    // Immutable values can never be overwritten
+                    statement.set_timestamp(Some(1i64));
 
-        self.scylla_client
-            .execute(
-                &statement,
-                (uid.as_i64(), node_type, property_name, property_value),
+                    self.scylla_client
+                        .execute(
+                            &statement,
+                            (uid.as_i64(), node_type, property_name, property_value),
+                        )
+                        .await?;
+                    Ok(())
+                },
             )
-            .await?;
-        Ok(())
+            .await
     }
 
     #[tracing::instrument(skip(self), err)]
@@ -140,21 +171,31 @@ impl GraphMutationManager {
         property_name: &str,
         property_value: i64,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // Create a prepared statement, and then execute it
-        let mut statement = self
-            .prepared_statements
-            .prepare_max_i64(&self.scylla_client, tenant_keyspace)
-            .await?;
+        self.write_dropper
+            .check_max_i64(
+                tenant_keyspace,
+                node_type.to_owned(),
+                property_name.to_owned(),
+                property_value,
+                || async move {
+                    // Create a prepared statement, and then execute it
+                    let mut statement = self
+                        .prepared_statements
+                        .prepare_max_i64(&self.scylla_client, tenant_keyspace)
+                        .await?;
 
-        statement.set_timestamp(Some(property_value));
+                    statement.set_timestamp(Some(property_value));
 
-        self.scylla_client
-            .execute(
-                &statement,
-                (uid.as_i64(), node_type, property_name, property_value),
+                    self.scylla_client
+                        .execute(
+                            &statement,
+                            (uid.as_i64(), node_type, property_name, property_value),
+                        )
+                        .await?;
+                    Ok(())
+                },
             )
-            .await?;
-        Ok(())
+            .await
     }
 
     async fn upsert_min_i64(
@@ -165,21 +206,31 @@ impl GraphMutationManager {
         property_name: &str,
         property_value: i64,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // Create a prepared statement, and then execute it
-        let mut statement = self
-            .prepared_statements
-            .prepare_min_i64(&self.scylla_client, tenant_keyspace)
-            .await?;
+        self.write_dropper
+            .check_min_i64(
+                tenant_keyspace,
+                node_type.to_owned(),
+                property_name.to_owned(),
+                property_value,
+                || async move {
+                    // Create a prepared statement, and then execute it
+                    let mut statement = self
+                        .prepared_statements
+                        .prepare_min_i64(&self.scylla_client, tenant_keyspace)
+                        .await?;
 
-        statement.set_timestamp(Some(property_value * -1));
+                    statement.set_timestamp(Some(property_value * -1));
 
-        self.scylla_client
-            .execute(
-                &statement,
-                (uid.as_i64(), node_type, property_name, property_value),
+                    self.scylla_client
+                        .execute(
+                            &statement,
+                            (uid.as_i64(), node_type, property_name, property_value),
+                        )
+                        .await?;
+                    Ok(())
+                },
             )
-            .await?;
-        Ok(())
+            .await
     }
 
     async fn upsert_immutable_i64(
@@ -190,19 +241,28 @@ impl GraphMutationManager {
         property_name: &str,
         property_value: i64,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // todo: We should only prepare statements once
-        let statement = self
-            .prepared_statements
-            .prepare_imm_i64(&self.scylla_client, tenant_keyspace)
-            .await?;
+        self.write_dropper
+            .check_imm_i64(
+                tenant_keyspace,
+                node_type.to_owned(),
+                property_name.to_owned(),
+                || async move {
+                    // todo: We should only prepare statements once
+                    let statement = self
+                        .prepared_statements
+                        .prepare_imm_i64(&self.scylla_client, tenant_keyspace)
+                        .await?;
 
-        self.scylla_client
-            .execute(
-                &statement,
-                (uid.as_i64(), node_type, property_name, property_value),
+                    self.scylla_client
+                        .execute(
+                            &statement,
+                            (uid.as_i64(), node_type, property_name, property_value),
+                        )
+                        .await?;
+                    Ok(())
+                },
             )
-            .await?;
-        Ok(())
+            .await
     }
 
     async fn upsert_immutable_string(
@@ -213,19 +273,28 @@ impl GraphMutationManager {
         property_name: &str,
         property_value: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // todo: Should we only prepare statements once?
-        let statement = self
-            .prepared_statements
-            .prepare_imm_string(&self.scylla_client, tenant_keyspace)
-            .await?;
+        self.write_dropper
+            .check_imm_string(
+                tenant_keyspace,
+                node_type.to_owned(),
+                property_name.to_owned(),
+                || async move {
+                    // todo: Should we only prepare statements once?
+                    let statement = self
+                        .prepared_statements
+                        .prepare_imm_string(&self.scylla_client, tenant_keyspace)
+                        .await?;
 
-        self.scylla_client
-            .execute(
-                &statement,
-                (uid.as_i64(), node_type, property_name, property_value),
+                    self.scylla_client
+                        .execute(
+                            &statement,
+                            (uid.as_i64(), node_type, property_name, property_value),
+                        )
+                        .await?;
+                    Ok(())
+                },
             )
-            .await?;
-        Ok(())
+            .await
     }
 
     async fn upsert_edges(
@@ -238,42 +307,52 @@ impl GraphMutationManager {
         source_node_type: String,
         dest_node_type: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // todo: Should we only prepare statements once?
-        let f_statement = self
-            .prepared_statements
-            .prepare_edge(&self.scylla_client, tenant_keyspace)
-            .await?;
-        let r_statement = f_statement.clone();
+        self.write_dropper
+            .check_edges(
+                tenant_keyspace,
+                from_uid.as_u64(),
+                to_uid.as_u64(),
+                f_edge_name.clone(),
+                r_edge_name.clone(),
+                || async move {
+                    let f_statement = self
+                        .prepared_statements
+                        .prepare_edge(&self.scylla_client, tenant_keyspace)
+                        .await?;
+                    let r_statement = f_statement.clone();
 
-        let mut batch: scylla::batch::Batch = Default::default();
-        batch.append_statement(f_statement);
-        batch.append_statement(r_statement);
-        batch.set_is_idempotent(true);
+                    let mut batch: scylla::batch::Batch = Default::default();
+                    batch.append_statement(f_statement);
+                    batch.append_statement(r_statement);
+                    batch.set_is_idempotent(true);
 
-        self.scylla_client
-            .batch(
-                &batch,
-                (
-                    (
-                        from_uid.as_i64(),
-                        f_edge_name.clone(),
-                        r_edge_name.clone(),
-                        to_uid.as_i64(),
-                        source_node_type.clone(),
-                        dest_node_type.clone(),
-                    ),
-                    (
-                        to_uid.as_i64(),
-                        r_edge_name,
-                        f_edge_name,
-                        from_uid.as_i64(),
-                        dest_node_type.clone(),
-                        source_node_type.clone(),
-                    ),
-                ),
+                    self.scylla_client
+                        .batch(
+                            &batch,
+                            (
+                                (
+                                    from_uid.as_i64(),
+                                    f_edge_name.clone(),
+                                    r_edge_name.clone(),
+                                    to_uid.as_i64(),
+                                    source_node_type.clone(),
+                                    dest_node_type.clone(),
+                                ),
+                                (
+                                    to_uid.as_i64(),
+                                    r_edge_name,
+                                    f_edge_name,
+                                    from_uid.as_i64(),
+                                    dest_node_type.clone(),
+                                    source_node_type.clone(),
+                                ),
+                            ),
+                        )
+                        .await?;
+                    Ok(())
+                },
             )
-            .await?;
-        Ok(())
+            .await
     }
 }
 
