@@ -13,13 +13,13 @@ enum SchemaType {
   SCHEMA_TYPE_GRAPHQL_V0 = 1;
 }
 
-// Input to DeployModel
+// Describes the model to deploy
 message DeployModelRequest {
   // The tenant to deploy the model to.
   graplinc.common.v1beta1.Uuid tenant_id = 1;
   // The actual schema, in whichever format specified by schema_type
   bytes schema = 2;
-  // Indicates the format and semantics for the schemat o be deployed
+  // Indicates the format and semantics for the schema to be deployed
   SchemaType schema_type = 3;
   // The version number of the schema - *must* be greater than the last
   // deployed version
