@@ -162,6 +162,16 @@ variable "plugin_work_queue_db" {
   description = "Vars for plugin-work-queue database"
 }
 
+variable "schema_manager_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for schema-manager database"
+}
+
 variable "uid_allocator_db" {
   type = object({
     hostname = string
@@ -1582,6 +1592,56 @@ job "grapl-core" {
     service {
       name = "graph-mutation-service"
       port = "graph-mutation-service-port"
+      connect {
+        sidecar_service {
+        }
+      }
+    }
+  }
+
+
+  group "schema-manager" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "schema-manager-port" {
+      }
+    }
+
+    task "schema-manager" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["schema-manager"]
+        ports = ["schema-manager-port"]
+      }
+
+      template {
+        data        = var.aws_env_vars_for_local
+        destination = "schema-manager.env"
+        env         = true
+      }
+
+      env {
+        AWS_REGION                      = var.aws_region
+        NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
+        SCHEMA_SERVICE_BIND_ADDRESS     = "0.0.0.0:${NOMAD_PORT_schema-manager-port}"
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        SCHEMA_DB_HOSTNAME              = var.schema_manager_db.hostname
+        SCHEMA_DB_PASSWORD              = var.schema_manager_db.password
+        SCHEMA_DB_PORT                  = var.schema_manager_db.port
+        SCHEMA_DB_USERNAME              = var.schema_manager_db.username
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "schema-manager"
+      port = "schema-manager-port"
       connect {
         sidecar_service {
         }

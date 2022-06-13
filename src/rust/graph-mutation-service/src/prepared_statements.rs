@@ -32,6 +32,12 @@ macro_rules! prepare_statement {
     };
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum PreparedStatementsError {
+    #[error("QueryError: {0}")]
+    QueryError(#[from] QueryError),
+}
+
 #[derive(Clone)]
 pub(crate) struct PreparedInsert {
     pub max_i64: PreparedStatement,
@@ -41,10 +47,20 @@ pub(crate) struct PreparedInsert {
     pub min_u64: PreparedStatement,
     pub imm_u64: PreparedStatement,
     pub imm_string: PreparedStatement,
+    pub node_type: PreparedStatement,
     pub edges: PreparedStatement,
 }
 
-// todo: Consider adding the node_type to the prepared statement
+fn raw_node_typeprepare_statement(tenant_id: uuid::Uuid) -> String {
+    let tenant_urn = tenant_id.to_urn();
+    format!(
+        r"
+            INSERT INTO tenant_keyspace_{tenant_urn}.node_type (uid, node_type)
+            VALUES (?, ?)
+            "
+    )
+}
+
 fn raw_property_prepare_statement(tenant_id: uuid::Uuid, table_name: &str) -> String {
     let tenant_urn = tenant_id.to_urn();
     format!(
@@ -77,7 +93,7 @@ impl PreparedInsert {
     pub(crate) async fn prepare(
         scylla_client: &Session,
         tenant_id: uuid::Uuid,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    ) -> Result<Self, PreparedStatementsError> {
         let max_i64 = prepare_upsert(
             scylla_client,
             raw_property_prepare_statement(tenant_id, MAX_I_64_TABLE_NAME),
@@ -120,6 +136,9 @@ impl PreparedInsert {
         )
         .await?;
 
+        let node_type =
+            prepare_upsert(scylla_client, raw_node_typeprepare_statement(tenant_id)).await?;
+
         let edges = prepare_upsert(scylla_client, raw_edge_prepare_statement(tenant_id)).await?;
 
         Ok(Self {
@@ -130,6 +149,7 @@ impl PreparedInsert {
             min_u64,
             imm_u64,
             imm_string,
+            node_type,
             edges,
         })
     }
@@ -163,7 +183,7 @@ impl PreparedStatements {
         &self,
         scylla_client: &Session,
         tenant_id: uuid::Uuid,
-    ) -> Result<PreparedStatement, Box<dyn std::error::Error>> {
+    ) -> Result<PreparedStatement, PreparedStatementsError> {
         prepare_statement!(self.tenant_statements, scylla_client, tenant_id, max_i64)
     }
 
@@ -171,7 +191,7 @@ impl PreparedStatements {
         &self,
         scylla_client: &Session,
         tenant_id: uuid::Uuid,
-    ) -> Result<PreparedStatement, Box<dyn std::error::Error>> {
+    ) -> Result<PreparedStatement, PreparedStatementsError> {
         prepare_statement!(self.tenant_statements, scylla_client, tenant_id, min_i64)
     }
 
@@ -179,7 +199,7 @@ impl PreparedStatements {
         &self,
         scylla_client: &Session,
         tenant_id: uuid::Uuid,
-    ) -> Result<PreparedStatement, Box<dyn std::error::Error>> {
+    ) -> Result<PreparedStatement, PreparedStatementsError> {
         prepare_statement!(self.tenant_statements, scylla_client, tenant_id, imm_i64)
     }
 
@@ -187,7 +207,7 @@ impl PreparedStatements {
         &self,
         scylla_client: &Session,
         tenant_id: uuid::Uuid,
-    ) -> Result<PreparedStatement, Box<dyn std::error::Error>> {
+    ) -> Result<PreparedStatement, PreparedStatementsError> {
         prepare_statement!(self.tenant_statements, scylla_client, tenant_id, max_u64)
     }
 
@@ -195,7 +215,7 @@ impl PreparedStatements {
         &self,
         scylla_client: &Session,
         tenant_id: uuid::Uuid,
-    ) -> Result<PreparedStatement, Box<dyn std::error::Error>> {
+    ) -> Result<PreparedStatement, PreparedStatementsError> {
         prepare_statement!(self.tenant_statements, scylla_client, tenant_id, min_u64)
     }
 
@@ -203,7 +223,7 @@ impl PreparedStatements {
         &self,
         scylla_client: &Session,
         tenant_id: uuid::Uuid,
-    ) -> Result<PreparedStatement, Box<dyn std::error::Error>> {
+    ) -> Result<PreparedStatement, PreparedStatementsError> {
         prepare_statement!(self.tenant_statements, scylla_client, tenant_id, imm_u64)
     }
 
@@ -211,22 +231,23 @@ impl PreparedStatements {
         &self,
         scylla_client: &Session,
         tenant_id: uuid::Uuid,
-    ) -> Result<PreparedStatement, Box<dyn std::error::Error>> {
+    ) -> Result<PreparedStatement, PreparedStatementsError> {
         prepare_statement!(self.tenant_statements, scylla_client, tenant_id, imm_string)
+    }
+
+    pub(crate) async fn prepare_node_type(
+        &self,
+        scylla_client: &Session,
+        tenant_id: uuid::Uuid,
+    ) -> Result<PreparedStatement, PreparedStatementsError> {
+        prepare_statement!(self.tenant_statements, scylla_client, tenant_id, node_type)
     }
 
     pub(crate) async fn prepare_edge(
         &self,
         scylla_client: &Session,
         tenant_id: uuid::Uuid,
-    ) -> Result<PreparedStatement, Box<dyn std::error::Error>> {
-        match self.tenant_statements.entry(tenant_id) {
-            dashmap::mapref::entry::Entry::Occupied(entry) => Ok(entry.get().edges.clone()),
-            dashmap::mapref::entry::Entry::Vacant(entry) => {
-                PreparedInsert::prepare(scylla_client, tenant_id)
-                    .await
-                    .map(|statement| entry.insert(statement).edges.clone())
-            }
-        }
+    ) -> Result<PreparedStatement, PreparedStatementsError> {
+        prepare_statement!(self.tenant_statements, scylla_client, tenant_id, edges)
     }
 }

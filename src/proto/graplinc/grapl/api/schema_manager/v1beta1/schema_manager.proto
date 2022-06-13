@@ -30,21 +30,29 @@ message DeployModelResponse {
   // Intentionally empty
 }
 
+// The Cardinality of the edge
 enum EdgeCardinality {
+  // Unspecified
   EDGE_CARDINALITY_UNSPECIFIED = 0;
+  // Indicates that the edge points to only one node
   EDGE_CARDINALITY_TO_ONE = 1;
+  // Indicates that the edge points to many nodes
   EDGE_CARDINALITY_TO_MANY = 2;
 }
 
+// GetEdgeSchemaRequest contains the information needed to fetch
+// additional metadata about an edge
 message GetEdgeSchemaRequest {
   // The tenant to deploy the model to.
   graplinc.common.v1beta1.Uuid tenant_id = 1;
-
+  // The name of the node that has this edge
   string node_type = 2;
-
+  // The name of the edge
   string edge_name = 3;
 }
 
+// GetEdgeSchemaResponse contains information about
+// a given edge.
 message GetEdgeSchemaResponse {
   string reverse_edge_name = 1;
   EdgeCardinality cardinality = 2;
@@ -55,6 +63,12 @@ message GetEdgeSchemaResponse {
 // Graph Schema.
 service SchemaManagerService {
   // Deploy a new model to Grapl.
-  rpc DeployModel(DeployModelRequest) returns (DeployModelResponse) {}
-  rpc GetEdgeSchema(GetEdgeSchemaRequest) returns (GetEdgeSchemaResponse) {}
+  rpc DeployModel(DeployModelRequest) returns (DeployModelResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  // GetEdgeSchema returns the schema for a given edge, including cardinality
+  // and the associated "reverse" edge
+  rpc GetEdgeSchema(GetEdgeSchemaRequest) returns (GetEdgeSchemaResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }

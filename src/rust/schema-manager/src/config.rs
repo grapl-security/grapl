@@ -38,7 +38,7 @@ impl SchemaDbConfig {
 pub struct SchemaServiceConfig {
     #[structopt(env)]
     /// The address to bind the schema manager service to
-    pub schema_servicebind_address: SocketAddr,
+    pub schema_service_bind_address: SocketAddr,
 
     #[structopt(flatten)]
     /// Configuration for the Postgres database where we store our tenant-specific schemas

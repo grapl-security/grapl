@@ -33,12 +33,10 @@ pub(crate) mod protobufs {
 
             pub(crate) mod common {
                 pub(crate) mod v1beta1 {
-                    pub(crate) mod types {
-                        include!(concat!(
-                            env!("OUT_DIR"),
-                            "/graplinc.grapl.common.v1beta1.types.rs"
-                        ));
-                    }
+                    include!(concat!(
+                        env!("OUT_DIR"),
+                        "/graplinc.grapl.common.v1beta1.rs"
+                    ));
                 }
             }
 

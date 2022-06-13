@@ -1,8 +1,6 @@
 syntax = "proto3";
 
-package graplinc.grapl.common.v1beta1.types;
-
-import "graplinc/common/v1beta1/types.proto";
+package graplinc.grapl.common.v1beta1;
 
 // A wrapper type for property names
 message PropertyName {

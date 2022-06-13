@@ -13,6 +13,7 @@ use crate::{
         CreateEdgeResponse as CreateEdgeResponseProto,
         CreateNodeRequest as CreateNodeRequestProto,
         CreateNodeResponse as CreateNodeResponseProto,
+        MutationRedundancy as MutationRedundancyProto,
         SetNodePropertyRequest as SetNodePropertyRequestProto,
         SetNodePropertyResponse as SetNodePropertyResponseProto,
     },
@@ -20,6 +21,42 @@ use crate::{
     type_url,
     SerDeError,
 };
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum MutationRedundancy {
+    True,
+    False,
+    Maybe,
+}
+
+impl TryFrom<MutationRedundancyProto> for MutationRedundancy {
+    type Error = SerDeError;
+    fn try_from(v: MutationRedundancyProto) -> Result<MutationRedundancy, Self::Error> {
+        match v {
+            // It should always be specified, but if it isn't we can still safely fall
+            // back to "Maybe"
+            MutationRedundancyProto::Unspecified => Ok(MutationRedundancy::Maybe),
+            MutationRedundancyProto::True => Ok(MutationRedundancy::True),
+            MutationRedundancyProto::False => Ok(MutationRedundancy::False),
+            MutationRedundancyProto::Maybe => Ok(MutationRedundancy::Maybe),
+        }
+    }
+}
+
+impl From<MutationRedundancy> for MutationRedundancyProto {
+    fn from(v: MutationRedundancy) -> MutationRedundancyProto {
+        match v {
+            MutationRedundancy::True => MutationRedundancyProto::True,
+            MutationRedundancy::False => MutationRedundancyProto::False,
+            MutationRedundancy::Maybe => MutationRedundancyProto::Maybe,
+        }
+    }
+}
+
+impl type_url::TypeUrl for MutationRedundancy {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.MutationRedundancy";
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SetNodePropertyRequest {
@@ -77,22 +114,23 @@ impl From<SetNodePropertyRequest> for SetNodePropertyRequestProto {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SetNodePropertyResponse {
-    pub was_redundant: bool,
+    pub mutation_redundancy: MutationRedundancy,
 }
 
 impl TryFrom<SetNodePropertyResponseProto> for SetNodePropertyResponse {
     type Error = SerDeError;
     fn try_from(proto: SetNodePropertyResponseProto) -> Result<Self, Self::Error> {
         Ok(Self {
-            was_redundant: proto.was_redundant,
+            mutation_redundancy: proto.mutation_redundancy().try_into()?,
         })
     }
 }
 
 impl From<SetNodePropertyResponse> for SetNodePropertyResponseProto {
     fn from(value: SetNodePropertyResponse) -> Self {
+        let mutation_redundancy: MutationRedundancyProto = value.mutation_redundancy.into();
         Self {
-            was_redundant: value.was_redundant,
+            mutation_redundancy: mutation_redundancy as i32,
         }
     }
 }
@@ -162,22 +200,23 @@ impl From<CreateEdgeRequest> for CreateEdgeRequestProto {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreateEdgeResponse {
-    pub was_redundant: bool,
+    pub mutation_redundancy: MutationRedundancy,
 }
 
 impl TryFrom<CreateEdgeResponseProto> for CreateEdgeResponse {
     type Error = SerDeError;
     fn try_from(proto: CreateEdgeResponseProto) -> Result<Self, Self::Error> {
         Ok(Self {
-            was_redundant: proto.was_redundant,
+            mutation_redundancy: proto.mutation_redundancy().try_into()?,
         })
     }
 }
 
 impl From<CreateEdgeResponse> for CreateEdgeResponseProto {
     fn from(value: CreateEdgeResponse) -> Self {
+        let mutation_redundancy: MutationRedundancyProto = value.mutation_redundancy.into();
         Self {
-            was_redundant: value.was_redundant,
+            mutation_redundancy: mutation_redundancy as i32,
         }
     }
 }

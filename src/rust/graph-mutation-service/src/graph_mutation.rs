@@ -10,6 +10,7 @@ use rust_proto_new::{
                     CreateEdgeResponse,
                     CreateNodeRequest,
                     CreateNodeResponse,
+                    MutationRedundancy,
                     SetNodePropertyRequest,
                     SetNodePropertyResponse,
                 },
@@ -25,24 +26,49 @@ use scylla::Session;
 use uid_allocator::client::CachingUidAllocatorServiceClient as UidAllocatorClient;
 
 use crate::{
-    prepared_statements::PreparedStatements,
-    reverse_edge_resolver::ReverseEdgeResolver,
+    prepared_statements::{
+        PreparedStatements,
+        PreparedStatementsError,
+    },
+    reverse_edge_resolver::{
+        ReverseEdgeResolver,
+        ReverseEdgeResolverError,
+    },
     write_dropper::WriteDropper,
 };
 
 #[derive(thiserror::Error, Debug)]
 pub enum GraphMutationManagerError {
-    #[error("Unknown {0}")]
-    Error(#[from] Box<dyn std::error::Error>),
     #[error("UidAllocatorServiceClientError {0}")]
     UidAllocatorServiceClientError(#[from] UidAllocatorServiceClientError),
     #[error("Allocated Zero Uid")]
     ZeroUid,
+    #[error("Scylla Error {0}")]
+    ScyllaError(#[from] scylla::transport::errors::QueryError),
+    #[error("PreparedStatementsError {0}")]
+    PreparedStatementsError(#[from] PreparedStatementsError),
+    #[error("ReverseEdgeResolverError {0}")]
+    ReverseEdgeResolverError(#[from] ReverseEdgeResolverError),
 }
 
-impl Into<Status> for GraphMutationManagerError {
-    fn into(self) -> Status {
-        Status::internal(self.to_string())
+impl From<GraphMutationManagerError> for Status {
+    fn from(e: GraphMutationManagerError) -> Self {
+        match e {
+            GraphMutationManagerError::UidAllocatorServiceClientError(
+                UidAllocatorServiceClientError::SerDeError(e),
+            ) => Status::internal(format!(
+                "Failed to deserialize response from UidAllocator {:?}",
+                e
+            )),
+            GraphMutationManagerError::UidAllocatorServiceClientError(
+                UidAllocatorServiceClientError::Status(e),
+            ) => e,
+            GraphMutationManagerError::UidAllocatorServiceClientError(
+                UidAllocatorServiceClientError::ConnectError(e),
+            ) => Status::internal(format!("Failed to connect to UidAllocator {:?}", e)),
+            GraphMutationManagerError::ZeroUid => Status::failed_precondition("Allocated Zero Uid"),
+            e => Status::internal(e.to_string()),
+        }
     }
 }
 
@@ -77,7 +103,7 @@ impl GraphMutationManager {
         node_type: String,
         property_name: String,
         property_value: u64,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_max_u64(
                 tenant_keyspace,
@@ -113,7 +139,7 @@ impl GraphMutationManager {
         node_type: String,
         property_name: String,
         property_value: u64,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_min_u64(
                 tenant_keyspace,
@@ -128,7 +154,7 @@ impl GraphMutationManager {
                         .prepare_min_u64(&self.scylla_client, tenant_keyspace)
                         .await?;
 
-                    statement.set_timestamp(Some(property_value * -1));
+                    statement.set_timestamp(Some(-property_value));
 
                     self.scylla_client
                         .execute(
@@ -149,7 +175,7 @@ impl GraphMutationManager {
         node_type: String,
         property_name: String,
         property_value: u64,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_imm_u64(
                 tenant_keyspace,
@@ -186,7 +212,7 @@ impl GraphMutationManager {
         node_type: String,
         property_name: String,
         property_value: i64,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_max_i64(
                 tenant_keyspace,
@@ -221,7 +247,7 @@ impl GraphMutationManager {
         node_type: String,
         property_name: String,
         property_value: i64,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_min_i64(
                 tenant_keyspace,
@@ -235,7 +261,7 @@ impl GraphMutationManager {
                         .prepare_min_i64(&self.scylla_client, tenant_keyspace)
                         .await?;
 
-                    statement.set_timestamp(Some(property_value * -1));
+                    statement.set_timestamp(Some(-property_value));
 
                     self.scylla_client
                         .execute(
@@ -256,7 +282,7 @@ impl GraphMutationManager {
         node_type: String,
         property_name: String,
         property_value: i64,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_imm_i64(
                 tenant_keyspace,
@@ -281,6 +307,28 @@ impl GraphMutationManager {
             .await
     }
 
+    async fn set_node_type(
+        &self,
+        tenant_keyspace: uuid::Uuid,
+        uid: Uid,
+        node_type: String,
+    ) -> Result<(), GraphMutationManagerError> {
+        self.write_dropper
+            .check_node_type(tenant_keyspace, uid.as_u64(), || async move {
+                // todo: Should we only prepare statements once?
+                let statement = self
+                    .prepared_statements
+                    .prepare_node_type(&self.scylla_client, tenant_keyspace)
+                    .await?;
+
+                self.scylla_client
+                    .execute(&statement, (uid.as_i64(), node_type))
+                    .await?;
+                Ok(())
+            })
+            .await
+    }
+
     async fn upsert_immutable_string(
         &self,
         tenant_keyspace: uuid::Uuid,
@@ -288,7 +336,7 @@ impl GraphMutationManager {
         node_type: String,
         property_name: String,
         property_value: String,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_imm_string(
                 tenant_keyspace,
@@ -322,7 +370,7 @@ impl GraphMutationManager {
         r_edge_name: String,
         source_node_type: String,
         dest_node_type: String,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_edges(
                 tenant_keyspace,
@@ -387,14 +435,8 @@ impl GraphMutationApi for GraphMutationManager {
             .await?;
         let uid = Uid::from_u64(uid).ok_or_else(|| GraphMutationManagerError::ZeroUid)?;
 
-        self.upsert_immutable_string(
-            request.tenant_id,
-            uid,
-            request.node_type.value.clone(),
-            "node_type".to_owned(),
-            request.node_type.value,
-        )
-        .await?;
+        self.set_node_type(request.tenant_id, uid, request.node_type.value)
+            .await?;
 
         Ok(CreateNodeResponse { uid })
     }
@@ -489,7 +531,7 @@ impl GraphMutationApi for GraphMutationManager {
             // todo: At this point we can't tell if the update was redundant
             //       but it is always safe (albeit suboptimal) to assume that
             //       it was not.
-            was_redundant: false,
+            mutation_redundancy: MutationRedundancy::Maybe,
         })
     }
 
@@ -532,7 +574,7 @@ impl GraphMutationApi for GraphMutationManager {
             // todo: At this point we can't tell if the update was redundant
             //       but it is always safe (albeit suboptimal) to assume that
             //       it was not.
-            was_redundant: false,
+            mutation_redundancy: MutationRedundancy::Maybe,
         })
     }
 }

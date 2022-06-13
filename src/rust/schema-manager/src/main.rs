@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (_tx, rx) = tokio::sync::oneshot::channel();
     SchemaManagerServiceServer::builder(
         schema_manager_service,
-        config.schema_servicebind_address,
+        config.schema_service_bind_address,
         rx,
     )
     .build()

@@ -71,6 +71,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "engagement-creator": builder.build_with_tag("engagement-creator"),
         "generator-executor": builder.build_with_tag("generator-executor"),
         "graph-merger": builder.build_with_tag("graph-merger"),
+        "graph-mutation-service": builder.build_with_tag("graph-mutation-service"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
         "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
@@ -83,6 +84,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
         "provisioner": builder.build_with_tag("provisioner"),
+        "schema-manager": builder.build_with_tag("schema-manager"),
         "sysmon-generator": builder.build_with_tag("sysmon-generator"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),
         "uid-allocator": builder.build_with_tag("uid-allocator"),
@@ -350,6 +352,7 @@ def main() -> None:
     organization_management_db: NomadServicePostgresResource
     plugin_registry_db: NomadServicePostgresResource
     plugin_work_queue_db: NomadServicePostgresResource
+    schema_manager_db: NomadServicePostgresResource
     uid_allocator_db: NomadServicePostgresResource
 
     if config.LOCAL_GRAPL:
@@ -380,6 +383,11 @@ def main() -> None:
             port=5532,
         )
 
+        schema_manager_db = LocalPostgresInstance(
+            name="schema-manager-db",
+            port=5832,
+        )
+
         uid_allocator_db = LocalPostgresInstance(
             name="uid-allocator-db",
             port=5732,
@@ -404,6 +412,7 @@ def main() -> None:
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
+            schema_manager_db=schema_manager_db.to_nomad_service_db_args(),
             redis_endpoint=redis_endpoint,
             **nomad_inputs,
         )
@@ -501,6 +510,14 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
+        schema_manager_db = Postgres(
+            name="schema-manager-db",
+            subnet_ids=subnet_ids,
+            vpc_id=vpc_id,
+            availability_zone=availability_zone,
+            nomad_agent_security_group_id=nomad_agent_security_group_id,
+        )
+
         uid_allocator_db = Postgres(
             name="uid-allocator-db",
             subnet_ids=subnet_ids,
@@ -519,6 +536,7 @@ def main() -> None:
             pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+            schema_manager_db=schema_manager_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
             redis_endpoint=cache.endpoint,
             **nomad_inputs,

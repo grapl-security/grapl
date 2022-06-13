@@ -42,6 +42,10 @@ pub enum Code {
 
     /// The request does not have valid authentication credentials
     Unauthenticated,
+
+    /// The operation was aborted, typically due to a concurrency issue such as a
+    /// sequencer check failure or transaction abort.
+    Aborted,
 }
 
 impl Code {
@@ -60,6 +64,7 @@ impl Code {
     pub fn description(&self) -> &'static str {
         match self {
             Code::Ok => "The operation completed successfully",
+            Code::Aborted => "The operation was aborted,",
             Code::Unknown => "Unknown error",
             Code::InvalidArgument => "Client specified an invalid argument",
             Code::NotFound => "Some requested entity was not found",
@@ -88,6 +93,7 @@ impl From<Code> for GrpcCode {
     fn from(code: Code) -> Self {
         match code {
             Code::Ok => GrpcCode::Ok,
+            Code::Aborted => GrpcCode::Aborted,
             Code::Unknown => GrpcCode::Unknown,
             Code::InvalidArgument => GrpcCode::InvalidArgument,
             Code::NotFound => GrpcCode::NotFound,
@@ -115,7 +121,7 @@ impl From<GrpcCode> for Code {
             GrpcCode::PermissionDenied => Code::PermissionDenied,
             GrpcCode::ResourceExhausted => Code::Internal,
             GrpcCode::FailedPrecondition => Code::FailedPrecondition,
-            GrpcCode::Aborted => Code::Internal,
+            GrpcCode::Aborted => Code::Aborted,
             GrpcCode::OutOfRange => Code::Internal,
             GrpcCode::Unimplemented => Code::Unimplemented,
             GrpcCode::Internal => Code::Internal,
@@ -146,6 +152,13 @@ impl Status {
     /// The operation completed successfully.
     pub fn ok(message: impl Into<String>) -> Status {
         Status::new(Code::Ok, message)
+    }
+
+    /// The operation was aborted, typically due to a concurrency issue such as a sequencer check
+    /// failure or transaction abort. See the guidelines above for deciding between
+    /// FAILED_PRECONDITION, ABORTED, and UNAVAILABLE.
+    pub fn aborted(message: impl Into<String>) -> Status {
+        Status::new(Code::Aborted, message)
     }
 
     /// Unknown error. An example of where this error may be returned is if a

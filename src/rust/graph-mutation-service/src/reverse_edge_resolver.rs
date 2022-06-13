@@ -1,10 +1,19 @@
 use rust_proto_new::graplinc::grapl::api::schema_manager::v1beta1::{
-    client::SchemaManagerClient,
+    client::{
+        SchemaManagerClient,
+        SchemaManagerClientError,
+    },
     messages::{
         GetEdgeSchemaRequest,
         GetEdgeSchemaResponse,
     },
 };
+
+#[derive(thiserror::Error, Debug)]
+pub enum ReverseEdgeResolverError {
+    #[error("SchemaManagerClientError {0}")]
+    SchemaManagerClientError(#[from] SchemaManagerClientError),
+}
 
 #[derive(Clone)]
 pub struct ReverseEdgeResolver {
@@ -26,7 +35,7 @@ impl ReverseEdgeResolver {
         tenant_id: uuid::Uuid,
         node_type: String,
         edge_name: String,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    ) -> Result<String, ReverseEdgeResolverError> {
         match self
             .r_edge_cache
             .entry((tenant_id, node_type.clone(), edge_name.clone()))

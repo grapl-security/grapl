@@ -3,6 +3,12 @@ use std::future::Future;
 use dashmap::mapref::entry::Entry;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct NodeTypeKey {
+    tenant_id: uuid::Uuid,
+    uid: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct PropertyKey {
     tenant_id: uuid::Uuid,
     node_type: String,
@@ -26,6 +32,7 @@ pub struct WriteDropper {
     min_u64: dashmap::DashMap<PropertyKey, u64>,
     imm_u64: dashmap::DashSet<PropertyKey>,
     imm_string: dashmap::DashSet<PropertyKey>,
+    node_type: dashmap::DashSet<NodeTypeKey>,
     edges: dashmap::DashSet<EdgeKey>,
 }
 
@@ -210,6 +217,23 @@ impl WriteDropper {
         if !self.imm_string.contains(&key) {
             callback().await?;
             self.imm_string.insert(key);
+        }
+        Ok(())
+    }
+
+    pub async fn check_node_type<T, E, Fut>(
+        &self,
+        tenant_id: uuid::Uuid,
+        uid: u64,
+        callback: impl FnOnce() -> Fut,
+    ) -> Result<(), E>
+    where
+        Fut: Future<Output = Result<T, E>>,
+    {
+        let key = NodeTypeKey { tenant_id, uid };
+        if !self.node_type.contains(&key) {
+            callback().await?;
+            self.node_type.insert(key);
         }
         Ok(())
     }

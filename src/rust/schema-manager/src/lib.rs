@@ -40,7 +40,7 @@ pub async fn deploy_graphql_plugin(
     schema_version: u32,
     pool: &PgPool,
 ) -> Result<(), DeployGraphqlError> {
-    let document: Document<String> = parse_schema(&raw_schema)?;
+    let document: Document<String> = parse_schema(raw_schema)?;
     let document = document.into_static();
 
     let node_types = node_type::parse_into_node_types(document)
@@ -448,103 +448,6 @@ enum StoredPropertyType {
 enum StoredEdgeCardinality {
     ToOne,
     ToMany,
-}
-
-#[cfg(test)]
-mod tests {
-    use sqlx::Row;
-
-    use super::*;
-
-    #[tokio::test]
-    async fn smoketest() -> Result<(), Box<dyn std::error::Error>> {
-        // deploy_graphql_plugin
-        let pool = sqlx::PgPool::connect("postgres://postgres@localhost:5432").await?;
-
-        let schema = std::fs::read_to_string(
-            "../grapl-graphql-codegen/example_schemas/file_schema.graphql",
-        )?;
-
-        deploy_graphql_plugin(uuid::Uuid::new_v4(), &schema, 1, pool.clone()).await?;
-
-        let rows = sqlx::query_as!(
-            NodeIdentityRow,
-            "select identity_algorithm, tenant_id, node_type, schema_version FROM schema_manager.node_identity_algorithm",
-        ).fetch_all(&pool).await?;
-
-        for row in rows {
-            println!("{:?}", row);
-        }
-
-        println!("------------------------------------");
-
-        let rows = sqlx::query_as!(
-            SessionIdentityRow,
-            "select * FROM schema_manager.session_identity_arguments",
-        )
-        .fetch_all(&pool)
-        .await?;
-
-        for row in rows {
-            println!("{:?}", row);
-        }
-
-        println!("------------------------------------");
-
-        let rows = sqlx::query_as!(
-            NodeSchemaRow,
-            r#"select
-             tenant_id, identity_algorithm, node_type, schema_version, deployment_timestamp, schema_type
-             FROM schema_manager.node_schemas"#,
-        ).fetch_all(&pool).await?;
-
-        for row in rows {
-            println!("{:?}", row);
-        }
-
-        println!("------------------------------------");
-
-        let rows = sqlx::query_as!(
-            PropertySchemaRow,
-            r#"select
-                tenant_id,
-                node_type,
-                schema_version,
-                property_name,
-                property_type as "property_type: StoredPropertyType",
-                identity_only
-             FROM schema_manager.property_schemas"#,
-        )
-        .fetch_all(&pool)
-        .await?;
-
-        for row in rows {
-            println!("{:?}", row);
-        }
-
-        println!("------------------------------------");
-
-        let rows = sqlx::query_as!(
-            EdgeSchemaRow,
-            r#"select
-                tenant_id,
-                node_type,
-                schema_version,
-                forward_edge_name,
-                reverse_edge_name,
-                forward_edge_cardinality as "forward_edge_cardinality: StoredEdgeCardinality",
-                reverse_edge_cardinality as "reverse_edge_cardinality: StoredEdgeCardinality"
-             FROM schema_manager.edge_schemas"#,
-        )
-        .fetch_all(&pool)
-        .await?;
-
-        for row in rows {
-            println!("{:?}", row);
-        }
-
-        Ok(())
-    }
 }
 
 #[derive(sqlx::Type, Clone, Debug)]

@@ -1,5 +1,5 @@
 use crate::{
-    protobufs::graplinc::grapl::common::v1beta1::types::{
+    protobufs::graplinc::grapl::common::v1beta1::{
         EdgeName as EdgeNameProto,
         NodeType as NodeTypeProto,
         PropertyName as PropertyNameProto,

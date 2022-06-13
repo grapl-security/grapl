@@ -32,8 +32,8 @@ pub struct SchemaManagerClientConfig {
 #[derive(StructOpt, Debug, Clone)]
 pub struct GraphMutationServiceConfig {
     #[structopt(env)]
-    /// The address to bind the schema manager service to
-    pub schema_service_bind_address: SocketAddr,
+    /// The address to bind the graph mutation service to
+    pub graph_mutation_service_bind_address: SocketAddr,
 
     #[structopt(flatten)]
     pub uid_allocator_client_config: UidAllocatorClientConfig,

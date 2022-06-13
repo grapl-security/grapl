@@ -30,16 +30,16 @@ impl From<SchemaManagerServiceError> for Status {
     fn from(error: SchemaManagerServiceError) -> Self {
         match error {
             SchemaManagerServiceError::NonUtf8GraphQLSchema(e) => {
-                Status::invalid_argument(format!("NonUtf8GraphQLSchema - {}", e.to_string()))
+                Status::invalid_argument(format!("NonUtf8GraphQLSchema - {}", e))
             }
             SchemaManagerServiceError::DeployGraphqlError(
                 crate::DeployGraphqlError::SqlxError(e),
-            ) => Status::internal(format!("SqlError during deployment - {}", e.to_string())),
+            ) => Status::internal(format!("SqlError during deployment - {}", e)),
             SchemaManagerServiceError::DeployGraphqlError(e) => {
-                Status::invalid_argument(format!("DeployGraphqlError - {}", e.to_string()))
+                Status::invalid_argument(format!("DeployGraphqlError - {}", e))
             }
             SchemaManagerServiceError::GetEdgeSchemaSqlxError(e) => {
-                Status::internal(format!("SqlError during deployment - {}", e.to_string()))
+                Status::internal(format!("SqlError during deployment - {}", e))
             }
         }
     }

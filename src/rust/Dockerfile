@@ -382,3 +382,15 @@ FROM rust-dist AS uid-allocator-deploy
 COPY --from=build /outputs/uid-allocator /
 ENTRYPOINT ["/uid-allocator"]
 
+##### schema-manager
+FROM rust-dist AS schema-manager-deploy
+
+COPY --from=build /outputs/schema-manager /
+ENTRYPOINT ["/schema-manager"]
+
+##### uid-allocator
+FROM rust-dist AS graph-mutation-service-deploy
+
+COPY --from=build /outputs/graph-mutation-service /
+ENTRYPOINT ["/graph-mutation-service"]
+

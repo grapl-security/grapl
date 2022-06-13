@@ -1,5 +1,3 @@
-#![allow(warnings)]
-
 use std::sync::Arc;
 
 use graph_mutation_service::{
@@ -7,7 +5,10 @@ use graph_mutation_service::{
     graph_mutation::GraphMutationManager,
     reverse_edge_resolver::ReverseEdgeResolver,
 };
-use rust_proto_new::graplinc::grapl::api::schema_manager::v1beta1::client::SchemaManagerClient;
+use rust_proto_new::graplinc::grapl::api::{
+    graph_mutation::v1beta1::server::GraphMutationServiceServer,
+    schema_manager::v1beta1::client::SchemaManagerClient,
+};
 use structopt::StructOpt;
 use uid_allocator::client::{
     CachingUidAllocatorServiceClient as CachingUidAllocatorClient,
@@ -35,6 +36,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             1000,
         ),
     );
+
+    let (_tx, rx) = tokio::sync::oneshot::channel();
+    GraphMutationServiceServer::builder(
+        graph_mutation_service,
+        config.graph_mutation_service_bind_address,
+        rx,
+    )
+    .build()
+    .serve()
+    .await?;
 
     Ok(())
 }
