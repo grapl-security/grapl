@@ -1,14 +1,17 @@
 use rust_proto_new::{
-    graplinc::grapl::api::schema_manager::v1beta1::{
-        messages::{
-            DeployModelRequest,
-            DeployModelResponse,
-            EdgeCardinality,
-            GetEdgeSchemaRequest,
-            GetEdgeSchemaResponse,
-            SchemaType,
+    graplinc::grapl::{
+        api::schema_manager::v1beta1::{
+            messages::{
+                DeployModelRequest,
+                DeployModelResponse,
+                EdgeCardinality,
+                GetEdgeSchemaRequest,
+                GetEdgeSchemaResponse,
+                SchemaType,
+            },
+            server::SchemaManagerApi,
         },
-        server::SchemaManagerApi,
+        common::v1beta1::types::EdgeName,
     },
     protocol::status::Status,
 };
@@ -24,6 +27,8 @@ pub enum SchemaManagerServiceError {
     DeployGraphqlError(#[from] crate::DeployGraphqlError),
     #[error("GetEdgeSchema sqlx error {0}")]
     GetEdgeSchemaSqlxError(sqlx::Error),
+    #[error("Invalid ReverseEdgeName: {0}")]
+    InvalidReverseEdgeName(&'static str),
 }
 
 impl From<SchemaManagerServiceError> for Status {
@@ -40,6 +45,9 @@ impl From<SchemaManagerServiceError> for Status {
             }
             SchemaManagerServiceError::GetEdgeSchemaSqlxError(e) => {
                 Status::internal(format!("SqlError during deployment - {}", e))
+            }
+            SchemaManagerServiceError::InvalidReverseEdgeName(name) => {
+                Status::internal(format!("InvalidReverseEdgeName - {}", name))
             }
         }
     }
@@ -99,15 +107,16 @@ impl SchemaManagerApi for SchemaManager {
              LIMIT 1;
                  "#,
             tenant_id,
-            node_type,
-            edge_name,
+            node_type.value,
+            edge_name.value,
         )
         .fetch_one(&self.pool)
         .await
         .map_err(SchemaManagerServiceError::GetEdgeSchemaSqlxError)?;
 
         Ok(GetEdgeSchemaResponse {
-            reverse_edge_name: response.reverse_edge_name,
+            reverse_edge_name: EdgeName::try_from(response.reverse_edge_name)
+                .map_err(SchemaManagerServiceError::InvalidReverseEdgeName)?,
             cardinality: response.forward_edge_cardinality.into(),
             reverse_cardinality: response.reverse_edge_cardinality.into(),
         })

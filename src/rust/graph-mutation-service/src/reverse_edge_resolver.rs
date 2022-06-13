@@ -1,11 +1,17 @@
-use rust_proto_new::graplinc::grapl::api::schema_manager::v1beta1::{
-    client::{
-        SchemaManagerClient,
-        SchemaManagerClientError,
+use rust_proto_new::graplinc::grapl::{
+    api::schema_manager::v1beta1::{
+        client::{
+            SchemaManagerClient,
+            SchemaManagerClientError,
+        },
+        messages::{
+            GetEdgeSchemaRequest,
+            GetEdgeSchemaResponse,
+        },
     },
-    messages::{
-        GetEdgeSchemaRequest,
-        GetEdgeSchemaResponse,
+    common::v1beta1::types::{
+        EdgeName,
+        NodeType,
     },
 };
 
@@ -18,7 +24,7 @@ pub enum ReverseEdgeResolverError {
 #[derive(Clone)]
 pub struct ReverseEdgeResolver {
     schema_client: SchemaManagerClient,
-    r_edge_cache: dashmap::DashMap<(uuid::Uuid, String, String), GetEdgeSchemaResponse>,
+    r_edge_cache: dashmap::DashMap<(uuid::Uuid, EdgeName, NodeType), GetEdgeSchemaResponse>,
 }
 
 impl ReverseEdgeResolver {
@@ -33,12 +39,12 @@ impl ReverseEdgeResolver {
     pub async fn resolve_reverse_edge(
         &self,
         tenant_id: uuid::Uuid,
-        node_type: String,
-        edge_name: String,
-    ) -> Result<String, ReverseEdgeResolverError> {
+        node_type: NodeType,
+        edge_name: EdgeName,
+    ) -> Result<EdgeName, ReverseEdgeResolverError> {
         match self
             .r_edge_cache
-            .entry((tenant_id, node_type.clone(), edge_name.clone()))
+            .entry((tenant_id, edge_name.clone(), node_type.clone()))
         {
             dashmap::mapref::entry::Entry::Occupied(entry) => {
                 Ok(entry.get().reverse_edge_name.clone())

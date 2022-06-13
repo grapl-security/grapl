@@ -3,6 +3,7 @@ syntax = "proto3";
 package graplinc.grapl.api.schema_manager.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
+import "graplinc/grapl/common/v1beta1/types.proto";
 
 // Which format of schema are we sending to Model Plugin Deployer?
 enum SchemaType {
@@ -46,16 +47,19 @@ message GetEdgeSchemaRequest {
   // The tenant to deploy the model to.
   graplinc.common.v1beta1.Uuid tenant_id = 1;
   // The name of the node that has this edge
-  string node_type = 2;
+  graplinc.grapl.common.v1beta1.NodeType node_type = 2;
   // The name of the edge
-  string edge_name = 3;
+  graplinc.grapl.common.v1beta1.EdgeName edge_name = 3;
 }
 
 // GetEdgeSchemaResponse contains information about
 // a given edge.
 message GetEdgeSchemaResponse {
-  string reverse_edge_name = 1;
+  // The name of the corresponding reverse edge
+  graplinc.grapl.common.v1beta1.EdgeName reverse_edge_name = 1;
+  // The cardinality of the source edge
   EdgeCardinality cardinality = 2;
+  // The cardinality of the reverse edge
   EdgeCardinality reverse_cardinality = 3;
 }
 

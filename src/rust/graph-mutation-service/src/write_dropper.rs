@@ -1,26 +1,32 @@
 use std::future::Future;
 
 use dashmap::mapref::entry::Entry;
+use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
+    EdgeName,
+    NodeType,
+    PropertyName,
+    Uid,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct NodeTypeKey {
     tenant_id: uuid::Uuid,
-    uid: u64,
+    uid: Uid,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct PropertyKey {
     tenant_id: uuid::Uuid,
-    node_type: String,
-    property_name: String,
+    node_type: NodeType,
+    property_name: PropertyName,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct EdgeKey {
     tenant_id: uuid::Uuid,
-    source_uid: u64,
-    dest_uid: u64,
-    edge_name: String,
+    source_uid: Uid,
+    dest_uid: Uid,
+    edge_name: EdgeName,
 }
 
 #[derive(Default)]
@@ -40,8 +46,8 @@ impl WriteDropper {
     pub async fn check_max_i64<T, E, Fut>(
         &self,
         tenant_id: uuid::Uuid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         value: i64,
         callback: impl FnOnce() -> Fut,
     ) -> Result<(), E>
@@ -70,8 +76,8 @@ impl WriteDropper {
     pub async fn check_min_i64<T, E, Fut>(
         &self,
         tenant_id: uuid::Uuid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         value: i64,
         callback: impl FnOnce() -> Fut,
     ) -> Result<(), E>
@@ -99,8 +105,8 @@ impl WriteDropper {
     pub async fn check_imm_i64<T, E, Fut>(
         &self,
         tenant_id: uuid::Uuid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         callback: impl FnOnce() -> Fut,
     ) -> Result<(), E>
     where
@@ -121,8 +127,8 @@ impl WriteDropper {
     pub async fn check_max_u64<T, E, Fut>(
         &self,
         tenant_id: uuid::Uuid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         value: u64,
         callback: impl FnOnce() -> Fut,
     ) -> Result<(), E>
@@ -151,8 +157,8 @@ impl WriteDropper {
     pub async fn check_min_u64<T, E, Fut>(
         &self,
         tenant_id: uuid::Uuid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         value: u64,
         callback: impl FnOnce() -> Fut,
     ) -> Result<(), E>
@@ -180,8 +186,8 @@ impl WriteDropper {
     pub async fn check_imm_u64<T, E, Fut>(
         &self,
         tenant_id: uuid::Uuid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         callback: impl FnOnce() -> Fut,
     ) -> Result<(), E>
     where
@@ -202,8 +208,8 @@ impl WriteDropper {
     pub async fn check_imm_string<T, E, Fut>(
         &self,
         tenant_id: uuid::Uuid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         callback: impl FnOnce() -> Fut,
     ) -> Result<(), E>
     where
@@ -224,7 +230,7 @@ impl WriteDropper {
     pub async fn check_node_type<T, E, Fut>(
         &self,
         tenant_id: uuid::Uuid,
-        uid: u64,
+        uid: Uid,
         callback: impl FnOnce() -> Fut,
     ) -> Result<(), E>
     where
@@ -241,10 +247,10 @@ impl WriteDropper {
     pub async fn check_edges<T, E, Fut>(
         &self,
         tenant_id: uuid::Uuid,
-        source_uid: u64,
-        dest_uid: u64,
-        f_edge_name: String,
-        r_edge_name: String,
+        source_uid: Uid,
+        dest_uid: Uid,
+        f_edge_name: EdgeName,
+        r_edge_name: EdgeName,
         callback: impl FnOnce() -> Fut,
     ) -> Result<(), E>
     where

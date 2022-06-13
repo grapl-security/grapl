@@ -10,7 +10,7 @@ use crate::{
     SerDeError,
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PropertyName {
     pub value: String,
 }
@@ -36,9 +36,23 @@ impl type_url::TypeUrl for PropertyName {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.common.v1beta1.PropertyName";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EdgeName {
     pub value: String,
+}
+
+impl TryFrom<String> for EdgeName {
+    type Error = &'static str;
+    fn try_from(raw: String) -> Result<Self, Self::Error> {
+        if raw.is_empty() {
+            return Err("EdgeName can not be empty");
+        }
+        if raw.len() > 32 {
+            return Err("EdgeName can not be more than 32 characters");
+        }
+
+        Ok(Self { value: raw })
+    }
 }
 
 impl TryFrom<EdgeNameProto> for EdgeName {
@@ -62,7 +76,7 @@ impl type_url::TypeUrl for EdgeName {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.common.v1beta1.EdgeName";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NodeType {
     pub value: String,
 }
@@ -88,7 +102,7 @@ impl type_url::TypeUrl for NodeType {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.common.v1beta1.NodeType";
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Uid {
     value: u64,
 }

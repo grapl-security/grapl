@@ -18,7 +18,12 @@ use rust_proto_new::{
             },
             uid_allocator::v1beta1::client::UidAllocatorServiceClientError,
         },
-        common::v1beta1::types::Uid,
+        common::v1beta1::types::{
+            EdgeName,
+            NodeType,
+            PropertyName,
+            Uid,
+        },
     },
     protocol::status::Status,
 };
@@ -100,15 +105,15 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         property_value: u64,
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_max_u64(
                 tenant_keyspace,
-                node_type.to_owned(),
-                property_name.to_owned(),
+                node_type.clone(),
+                property_name.clone(),
                 property_value,
                 || async move {
                     let property_value = property_value as i64;
@@ -123,7 +128,12 @@ impl GraphMutationManager {
                     self.scylla_client
                         .execute(
                             &statement,
-                            (uid.as_i64(), node_type, property_name, property_value),
+                            (
+                                uid.as_i64(),
+                                node_type.value,
+                                property_name.value,
+                                property_value,
+                            ),
                         )
                         .await?;
                     Ok(())
@@ -136,15 +146,15 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         property_value: u64,
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_min_u64(
                 tenant_keyspace,
-                node_type.to_owned(),
-                property_name.to_owned(),
+                node_type.clone(),
+                property_name.clone(),
                 property_value,
                 || async move {
                     let property_value = property_value as i64;
@@ -159,7 +169,12 @@ impl GraphMutationManager {
                     self.scylla_client
                         .execute(
                             &statement,
-                            (uid.as_i64(), node_type, property_name, property_value),
+                            (
+                                uid.as_i64(),
+                                node_type.value,
+                                property_name.value,
+                                property_value,
+                            ),
                         )
                         .await?;
                     Ok(())
@@ -172,15 +187,15 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         property_value: u64,
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_imm_u64(
                 tenant_keyspace,
-                node_type.to_owned(),
-                property_name.to_owned(),
+                node_type.clone(),
+                property_name.clone(),
                 || async move {
                     let property_value = property_value as i64;
                     // todo: We should only prepare statements once
@@ -195,7 +210,12 @@ impl GraphMutationManager {
                     self.scylla_client
                         .execute(
                             &statement,
-                            (uid.as_i64(), node_type, property_name, property_value),
+                            (
+                                uid.as_i64(),
+                                node_type.value,
+                                property_name.value,
+                                property_value,
+                            ),
                         )
                         .await?;
                     Ok(())
@@ -209,15 +229,15 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         property_value: i64,
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_max_i64(
                 tenant_keyspace,
-                node_type.to_owned(),
-                property_name.to_owned(),
+                node_type.clone(),
+                property_name.clone(),
                 property_value,
                 || async move {
                     // Create a prepared statement, and then execute it
@@ -231,7 +251,12 @@ impl GraphMutationManager {
                     self.scylla_client
                         .execute(
                             &statement,
-                            (uid.as_i64(), node_type, property_name, property_value),
+                            (
+                                uid.as_i64(),
+                                node_type.value,
+                                property_name.value,
+                                property_value,
+                            ),
                         )
                         .await?;
                     Ok(())
@@ -244,15 +269,15 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         property_value: i64,
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_min_i64(
                 tenant_keyspace,
-                node_type.to_owned(),
-                property_name.to_owned(),
+                node_type.clone(),
+                property_name.clone(),
                 property_value,
                 || async move {
                     // Create a prepared statement, and then execute it
@@ -266,7 +291,12 @@ impl GraphMutationManager {
                     self.scylla_client
                         .execute(
                             &statement,
-                            (uid.as_i64(), node_type, property_name, property_value),
+                            (
+                                uid.as_i64(),
+                                node_type.value,
+                                property_name.value,
+                                property_value,
+                            ),
                         )
                         .await?;
                     Ok(())
@@ -279,15 +309,15 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         property_value: i64,
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_imm_i64(
                 tenant_keyspace,
-                node_type.to_owned(),
-                property_name.to_owned(),
+                node_type.clone(),
+                property_name.clone(),
                 || async move {
                     // todo: We should only prepare statements once
                     let statement = self
@@ -298,7 +328,12 @@ impl GraphMutationManager {
                     self.scylla_client
                         .execute(
                             &statement,
-                            (uid.as_i64(), node_type, property_name, property_value),
+                            (
+                                uid.as_i64(),
+                                node_type.value,
+                                property_name.value,
+                                property_value,
+                            ),
                         )
                         .await?;
                     Ok(())
@@ -311,10 +346,10 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: String,
+        node_type: NodeType,
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
-            .check_node_type(tenant_keyspace, uid.as_u64(), || async move {
+            .check_node_type(tenant_keyspace, uid, || async move {
                 // todo: Should we only prepare statements once?
                 let statement = self
                     .prepared_statements
@@ -322,7 +357,7 @@ impl GraphMutationManager {
                     .await?;
 
                 self.scylla_client
-                    .execute(&statement, (uid.as_i64(), node_type))
+                    .execute(&statement, (uid.as_i64(), node_type.value))
                     .await?;
                 Ok(())
             })
@@ -333,15 +368,15 @@ impl GraphMutationManager {
         &self,
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
-        node_type: String,
-        property_name: String,
+        node_type: NodeType,
+        property_name: PropertyName,
         property_value: String,
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_imm_string(
                 tenant_keyspace,
-                node_type.to_owned(),
-                property_name.to_owned(),
+                node_type.clone(),
+                property_name.clone(),
                 || async move {
                     // todo: Should we only prepare statements once?
                     let statement = self
@@ -352,7 +387,12 @@ impl GraphMutationManager {
                     self.scylla_client
                         .execute(
                             &statement,
-                            (uid.as_i64(), node_type, property_name, property_value),
+                            (
+                                uid.as_i64(),
+                                node_type.value,
+                                property_name.value,
+                                property_value,
+                            ),
                         )
                         .await?;
                     Ok(())
@@ -366,16 +406,16 @@ impl GraphMutationManager {
         tenant_keyspace: uuid::Uuid,
         from_uid: Uid,
         to_uid: Uid,
-        f_edge_name: String,
-        r_edge_name: String,
-        source_node_type: String,
-        dest_node_type: String,
+        f_edge_name: EdgeName,
+        r_edge_name: EdgeName,
+        source_node_type: NodeType,
+        dest_node_type: NodeType,
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_edges(
                 tenant_keyspace,
-                from_uid.as_u64(),
-                to_uid.as_u64(),
+                from_uid,
+                to_uid,
                 f_edge_name.clone(),
                 r_edge_name.clone(),
                 || async move {
@@ -396,19 +436,19 @@ impl GraphMutationManager {
                             (
                                 (
                                     from_uid.as_i64(),
-                                    &f_edge_name,
-                                    &r_edge_name,
+                                    &f_edge_name.value,
+                                    &r_edge_name.value,
                                     to_uid.as_i64(),
-                                    &source_node_type,
-                                    &dest_node_type,
+                                    &source_node_type.value,
+                                    &dest_node_type.value,
                                 ),
                                 (
                                     to_uid.as_i64(),
-                                    &r_edge_name,
-                                    &f_edge_name,
+                                    &r_edge_name.value,
+                                    &f_edge_name.value,
                                     from_uid.as_i64(),
-                                    &dest_node_type,
-                                    &source_node_type,
+                                    &dest_node_type.value,
+                                    &source_node_type.value,
                                 ),
                             ),
                         )
@@ -435,7 +475,7 @@ impl GraphMutationApi for GraphMutationManager {
             .await?;
         let uid = Uid::from_u64(uid).ok_or_else(|| GraphMutationManagerError::ZeroUid)?;
 
-        self.set_node_type(request.tenant_id, uid, request.node_type.value)
+        self.set_node_type(request.tenant_id, uid, request.node_type)
             .await?;
 
         Ok(CreateNodeResponse { uid })
@@ -456,71 +496,35 @@ impl GraphMutationApi for GraphMutationManager {
         } = request;
         match property.property {
             Property::IncrementOnlyUintProp(property) => {
-                self.upsert_max_u64(
-                    tenant_id,
-                    uid,
-                    node_type.value,
-                    property_name.value,
-                    property.prop,
-                )
-                .await?;
+                self.upsert_max_u64(tenant_id, uid, node_type, property_name, property.prop)
+                    .await?;
             }
             Property::DecrementOnlyUintProp(property) => {
-                self.upsert_min_u64(
-                    tenant_id,
-                    uid,
-                    node_type.value,
-                    property_name.value,
-                    property.prop,
-                )
-                .await?;
+                self.upsert_min_u64(tenant_id, uid, node_type, property_name, property.prop)
+                    .await?;
             }
             Property::ImmutableUintProp(property) => {
-                self.upsert_immutable_u64(
-                    tenant_id,
-                    uid,
-                    node_type.value,
-                    property_name.value,
-                    property.prop,
-                )
-                .await?;
+                self.upsert_immutable_u64(tenant_id, uid, node_type, property_name, property.prop)
+                    .await?;
             }
             Property::IncrementOnlyIntProp(property) => {
-                self.upsert_max_i64(
-                    tenant_id,
-                    uid,
-                    node_type.value,
-                    property_name.value,
-                    property.prop,
-                )
-                .await?;
+                self.upsert_max_i64(tenant_id, uid, node_type, property_name, property.prop)
+                    .await?;
             }
             Property::DecrementOnlyIntProp(property) => {
-                self.upsert_min_i64(
-                    tenant_id,
-                    uid,
-                    node_type.value,
-                    property_name.value,
-                    property.prop,
-                )
-                .await?;
+                self.upsert_min_i64(tenant_id, uid, node_type, property_name, property.prop)
+                    .await?;
             }
             Property::ImmutableIntProp(property) => {
-                self.upsert_immutable_i64(
-                    tenant_id,
-                    uid,
-                    node_type.value,
-                    property_name.value,
-                    property.prop,
-                )
-                .await?;
+                self.upsert_immutable_i64(tenant_id, uid, node_type, property_name, property.prop)
+                    .await?;
             }
             Property::ImmutableStrProp(property) => {
                 self.upsert_immutable_string(
                     tenant_id,
                     uid,
-                    node_type.value,
-                    property_name.value,
+                    node_type,
+                    property_name,
                     property.prop,
                 )
                 .await?;
@@ -552,21 +556,17 @@ impl GraphMutationApi for GraphMutationManager {
 
         let reverse_edge_name = self
             .reverse_edge_resolver
-            .resolve_reverse_edge(
-                tenant_id,
-                source_node_type.value.clone(),
-                edge_name.value.clone(),
-            )
+            .resolve_reverse_edge(tenant_id, source_node_type.clone(), edge_name.clone())
             .await?;
 
         self.upsert_edges(
             tenant_id,
             from_uid,
             to_uid,
-            edge_name.value,
+            edge_name,
             reverse_edge_name,
-            source_node_type.value,
-            dest_node_type.value,
+            source_node_type,
+            dest_node_type,
         )
         .await?;
 

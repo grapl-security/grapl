@@ -1,4 +1,8 @@
 use crate::{
+    graplinc::grapl::common::v1beta1::types::{
+        EdgeName,
+        NodeType,
+    },
     protobufs::graplinc::grapl::api::schema_manager::v1beta1::{
         DeployModelRequest as DeployModelRequestProto,
         DeployModelResponse as DeployModelResponseProto,
@@ -127,8 +131,8 @@ impl serde_impl::ProtobufSerializable for DeployModelResponse {
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetEdgeSchemaRequest {
     pub tenant_id: uuid::Uuid,
-    pub node_type: String,
-    pub edge_name: String,
+    pub node_type: NodeType,
+    pub edge_name: EdgeName,
 }
 
 impl TryFrom<GetEdgeSchemaRequestProto> for GetEdgeSchemaRequest {
@@ -140,21 +144,15 @@ impl TryFrom<GetEdgeSchemaRequestProto> for GetEdgeSchemaRequest {
             .ok_or(SerDeError::MissingField("GetEdgeSchemaRequest.tenant_id"))?
             .into();
 
-        let node_type = response_proto.node_type;
-        if node_type.is_empty() {
-            return Err(SerDeError::InvalidField {
-                field_name: "node_type",
-                assertion: "must not be empty".to_owned(),
-            });
-        }
+        let node_type = response_proto
+            .node_type
+            .ok_or(SerDeError::MissingField("GetEdgeSchemaRequest.node_type"))?
+            .try_into()?;
 
-        let edge_name = response_proto.edge_name;
-        if edge_name.is_empty() {
-            return Err(SerDeError::InvalidField {
-                field_name: "edge_name",
-                assertion: "must not be empty".to_owned(),
-            });
-        }
+        let edge_name = response_proto
+            .edge_name
+            .ok_or(SerDeError::MissingField("GetEdgeSchemaRequest.edge_name"))?
+            .try_into()?;
 
         Ok(GetEdgeSchemaRequest {
             tenant_id,
@@ -168,8 +166,8 @@ impl From<GetEdgeSchemaRequest> for GetEdgeSchemaRequestProto {
     fn from(response: GetEdgeSchemaRequest) -> Self {
         GetEdgeSchemaRequestProto {
             tenant_id: Some(response.tenant_id.into()),
-            node_type: response.node_type,
-            edge_name: response.edge_name,
+            node_type: Some(response.node_type.into()),
+            edge_name: Some(response.edge_name.into()),
         }
     }
 }
@@ -185,7 +183,7 @@ impl serde_impl::ProtobufSerializable for GetEdgeSchemaRequest {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetEdgeSchemaResponse {
-    pub reverse_edge_name: String,
+    pub reverse_edge_name: EdgeName,
     pub cardinality: EdgeCardinality,
     pub reverse_cardinality: EdgeCardinality,
 }
@@ -197,13 +195,12 @@ impl TryFrom<GetEdgeSchemaResponseProto> for GetEdgeSchemaResponse {
         let cardinality = response_proto.cardinality().try_into()?;
         let reverse_cardinality = response_proto.reverse_cardinality().try_into()?;
 
-        let reverse_edge_name = response_proto.reverse_edge_name;
-        if reverse_edge_name.is_empty() {
-            return Err(SerDeError::InvalidField {
-                field_name: "reverse_edge_name",
-                assertion: "must not be empty".to_owned(),
-            });
-        }
+        let reverse_edge_name = response_proto
+            .reverse_edge_name
+            .ok_or(SerDeError::MissingField(
+                "GetEdgeSchemaResponse.reverse_edge_name",
+            ))?
+            .try_into()?;
 
         Ok(GetEdgeSchemaResponse {
             reverse_edge_name,
@@ -216,7 +213,7 @@ impl TryFrom<GetEdgeSchemaResponseProto> for GetEdgeSchemaResponse {
 impl From<GetEdgeSchemaResponse> for GetEdgeSchemaResponseProto {
     fn from(response: GetEdgeSchemaResponse) -> Self {
         GetEdgeSchemaResponseProto {
-            reverse_edge_name: response.reverse_edge_name,
+            reverse_edge_name: Some(response.reverse_edge_name.into()),
             cardinality: response.cardinality as i32,
             reverse_cardinality: response.reverse_cardinality as i32,
         }
