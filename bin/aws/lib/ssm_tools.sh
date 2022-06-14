@@ -51,7 +51,7 @@ EOF
         --parameters "${SSM_PARAMETERS}"
 }
 
-ssm_ssh() {
+ssm() {
     readonly SERVER_TYPE=$1
 
     if [ -z "${AWS_PROFILE}" ]; then
