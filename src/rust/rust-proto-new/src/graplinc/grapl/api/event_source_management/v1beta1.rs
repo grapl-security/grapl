@@ -34,7 +34,13 @@ impl TryFrom<proto::CreateEventSourceRequest> for CreateEventSourceRequest {
 
     fn try_from(value: proto::CreateEventSourceRequest) -> Result<Self, Self::Error> {
         let display_name = value.display_name;
+        if display_name.is_empty() {
+            return Err(SerDeError::MissingField("display_name"));
+        }
         let description = value.description;
+        if description.is_empty() {
+            return Err(SerDeError::MissingField("description"));
+        }
         let tenant_id = value
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id"))?
@@ -133,7 +139,13 @@ impl TryFrom<proto::UpdateEventSourceRequest> for UpdateEventSourceRequest {
             .ok_or(SerDeError::MissingField("event_source_id"))?
             .into();
         let display_name = value.display_name;
+        if display_name.is_empty() {
+            return Err(SerDeError::MissingField("display_name"));
+        }
         let description = value.description;
+        if description.is_empty() {
+            return Err(SerDeError::MissingField("description"));
+        }
         let active = value.active;
 
         Ok(Self {
@@ -278,7 +290,14 @@ impl TryFrom<proto::EventSource> for EventSource {
             .into();
 
         let display_name = value.display_name;
+        if display_name.is_empty() {
+            return Err(SerDeError::MissingField("display_name"));
+        }
+
         let description = value.description;
+        if description.is_empty() {
+            return Err(SerDeError::MissingField("description"));
+        }
 
         let created_time = value
             .created_time
