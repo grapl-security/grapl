@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 pub mod client;
-mod server;
+pub mod server;
 
 use crate::{
     graplinc::common::v1beta1::{

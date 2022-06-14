@@ -59,7 +59,7 @@ variable plugin_work_queue_db {
   default = {
     username = "postgres"
     password = "postgres"
-    port     = 5532
+    port     = 5433
   }
 }
 
@@ -73,7 +73,7 @@ variable organization_management_db {
   default = {
     username = "postgres"
     password = "postgres"
-    port     = 5632
+    port     = 5434
   }
 }
 
@@ -87,7 +87,21 @@ variable uid_allocator_db {
   default = {
     username = "postgres"
     password = "postgres"
-    port     = 5732
+    port     = 5435
+  }
+}
+
+variable event_source_db {
+  description = "Connection configuration for the Uid Allocator database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5436
   }
 }
 
