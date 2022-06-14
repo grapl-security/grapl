@@ -179,6 +179,20 @@ mod graph {
         ) {
             check_encode_decode_invariant(merged_graph)
         }
+
+        #[test]
+        fn test_lens_encode_decode(
+            lens in st::lenses()
+        ) {
+            check_encode_decode_invariant(lens)
+        }
+
+        #[test]
+        fn test_execution_hit_encode_decode(
+            execution_hit in st::execution_hits()
+        ) {
+            check_encode_decode_invariant(execution_hit)
+        }
     }
 }
 
@@ -417,6 +431,28 @@ mod plugin_work_queue {
         #[test]
         fn test_put_execute_generator_responses(value in pwq_strats::put_execute_generator_responses()) {
             check_encode_decode_invariant(value)
+        }
+    }
+}
+
+//
+// suspicious svchost analyzer
+//
+
+mod suspicious_svchost_analyzer {
+    use strategies::suspicious_svchost_analyzer as st;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_analyze_request_encode_decode(analyze_request in st::analyze_requests()) {
+            check_encode_decode_invariant(analyze_request)
+        }
+
+        #[test]
+        fn test_analyze_response_encode_decode(analyze_response in st::analyze_responses()) {
+            check_encode_decode_invariant(analyze_response)
         }
     }
 }

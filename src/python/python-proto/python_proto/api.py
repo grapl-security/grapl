@@ -11,6 +11,7 @@ from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
 )
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import Edge as _Edge
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import EdgeList as _EdgeList
+from graplinc.grapl.api.graph.v1beta1.types_pb2 import ExecutionHit as _ExecutionHit
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
     GraphDescription as _GraphDescription,
 )
@@ -34,6 +35,7 @@ from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
     IncrementOnlyUintProp as _IncrementOnlyUintProp,
 )
+from graplinc.grapl.api.graph.v1beta1.types_pb2 import Lens as _Lens
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedEdge as _MergedEdge
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedEdgeList as _MergedEdgeList
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedGraph as _MergedGraph
@@ -44,6 +46,12 @@ from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import NodeProperty as _NodeProperty
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import Session as _Session
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import Static as _Static
+from graplinc.grapl.api.suspicious_svchost_analyzer.v1beta1.suspicious_svchost_analyzer_pb2 import (
+    AnalyzeRequest as _AnalyzeRequest,
+)
+from graplinc.grapl.api.suspicious_svchost_analyzer.v1beta1.suspicious_svchost_analyzer_pb2 import (
+    AnalyzeResponse as _AnalyzeResponse,
+)
 from python_proto import SerDe
 
 
@@ -732,3 +740,131 @@ class MergedGraph(SerDe[_MergedGraph]):
         for k2, v2 in self.edges.items():
             proto_merged_graph.edges[k2].CopyFrom(v2.into_proto())
         return proto_merged_graph
+
+
+@dataclasses.dataclass(frozen=True)
+class AnalyzeRequest(SerDe[_AnalyzeRequest]):
+    merged_graph: MergedGraph
+
+    @staticmethod
+    def deserialize(bytes_: bytes) -> AnalyzeRequest:
+        proto_analyze_request = _AnalyzeRequest()
+        proto_analyze_request.ParseFromString(bytes_)
+        return AnalyzeRequest.from_proto(proto_analyze_request=proto_analyze_request)
+
+    @staticmethod
+    def from_proto(proto_analyze_request: _AnalyzeRequest) -> AnalyzeRequest:
+        return AnalyzeRequest(
+            merged_graph=MergedGraph.from_proto(
+                proto_merged_graph=proto_analyze_request.merged_graph
+            )
+        )
+
+    def into_proto(self) -> AnalyzeRequest:
+        proto_analyze_request = _AnalyzeRequest()
+        proto_analyze_request.merged_graph.CopyFrom(self.merged_graph.into_proto())
+        return proto_analyze_request
+
+
+@dataclasses.dataclass(frozen=True)
+class Lens(SerDe[_Lens]):
+    lens_type: str
+    lens_name: str
+    uid: int
+    score: int
+
+    @staticmethod
+    def deserialize(bytes_: bytes) -> Lens:
+        proto_lens = _Lens()
+        proto_lens.ParseFromString(bytes_)
+        return Lens.from_proto(proto_lens=proto_lens)
+
+    @staticmethod
+    def from_proto(proto_lens: _Lens) -> Lens:
+        return Lens(
+            lens_type=proto_lens.lens_type,
+            lens_name=proto_lens.lens_name,
+            uid=proto_lens.uid,
+            score=proto_lens.score,
+        )
+
+    def into_proto(self) -> _Lens:
+        proto_lens = _Lens()
+        proto_lens.lens_type = self.lens_type
+        proto_lens.lens_name = self.lens_name
+        proto_lens.uid = self.uid
+        proto_lens.score = self.score
+        return proto_lens
+
+
+@dataclasses.dataclass(frozen=True)
+class ExecutionHit(SerDe[_ExecutionHit]):
+    nodes: Mapping[str, MergedNode]
+    edges: Mapping[str, MergedEdgeList]
+    analyzer_name: str
+    risk_score: int
+    lenses: Sequence[Lens]
+    risky_node_keys: Sequence[str]
+
+    @staticmethod
+    def deserialize(bytes_: bytes) -> ExecutionHit:
+        proto_execution_hit = _ExecutionHit()
+        proto_execution_hit.ParseFromString(bytes_)
+        return ExecutionHit.from_proto(proto_execution_hit=proto_execution_hit)
+
+    @staticmethod
+    def from_proto(proto_execution_hit: _ExecutionHit) -> ExecutionHit:
+        return ExecutionHit(
+            nodes={
+                k: MergedNode.from_proto(v)
+                for k, v in proto_execution_hit.nodes.items()
+            },
+            edges={
+                k: MergedEdgeList.from_proto(v)
+                for k, v in proto_execution_hit.edges.items()
+            },
+            analyzer_name=proto_execution_hit.analyzer_name,
+            risk_score=proto_execution_hit.risk_score,
+            lenses=[Lens.from_proto(l) for l in proto_execution_hit.lenses],
+            risky_node_keys=proto_execution_hit.risky_node_keys,
+        )
+
+    def into_proto(self) -> _ExecutionHit:
+        proto_execution_hit = _ExecutionHit()
+        for k1, v1 in self.nodes.items():
+            proto_execution_hit.nodes[k1].CopyFrom(v1.into_proto())
+        for k2, v2 in self.edges.items():
+            proto_execution_hit.edges[k2].CopyFrom(v2.into_proto())
+        proto_execution_hit.analyzer_name = self.analyzer_name
+        proto_execution_hit.risk_score = self.risk_score
+        for lens in self.lenses:
+            proto_execution_hit.lenses.append(lens.into_proto())
+        for risky_node_key in self.risky_node_keys:
+            proto_execution_hit.risky_node_keys.append(risky_node_key)
+        return proto_execution_hit
+
+
+@dataclasses.dataclass(frozen=True)
+class AnalyzeResponse(SerDe[_AnalyzeResponse]):
+    execution_hits: Sequence[ExecutionHit]
+
+    @staticmethod
+    def deserialize(bytes_: bytes) -> AnalyzeResponse:
+        proto_analyze_response = _AnalyzeResponse()
+        proto_analyze_response.ParseFromString(bytes_)
+        return AnalyzeResponse.from_proto(proto_analyze_response=proto_analyze_response)
+
+    @staticmethod
+    def from_proto(proto_analyze_response: _AnalyzeResponse) -> AnalyzeResponse:
+        return AnalyzeResponse(
+            execution_hits=[
+                ExecutionHit.from_proto(h)
+                for h in proto_analyze_response.execution_hits
+            ]
+        )
+
+    def into_proto(self) -> _AnalyzeResponse:
+        proto_analyze_response = _AnalyzeResponse()
+        for execution_hit in self.execution_hits:
+            proto_analyze_response.execution_hits.append(execution_hit.into_proto())
+        return proto_analyze_response

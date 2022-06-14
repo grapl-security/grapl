@@ -134,6 +134,7 @@ pub mod graph {
         DecrementOnlyUintProp,
         Edge,
         EdgeList,
+        ExecutionHit,
         GraphDescription,
         IdStrategy,
         IdentifiedGraph,
@@ -143,6 +144,7 @@ pub mod graph {
         ImmutableUintProp,
         IncrementOnlyIntProp,
         IncrementOnlyUintProp,
+        Lens,
         MergedEdge,
         MergedEdgeList,
         MergedGraph,
@@ -256,6 +258,26 @@ pub mod graph {
     }
 
     //
+    // Lens
+    //
+
+    prop_compose! {
+        pub fn lenses()(
+            lens_type in any::<String>(),
+            lens_name in any::<String>(),
+            uid in any::<u64>(),
+            score in any::<u64>(),
+        ) -> Lens {
+            Lens {
+                lens_type,
+                lens_name,
+                uid,
+                score
+            }
+        }
+    }
+
+    //
     // Edge
     //
 
@@ -283,6 +305,30 @@ pub mod graph {
         ) -> EdgeList {
             EdgeList {
                 edges
+            }
+        }
+    }
+
+    //
+    // ExecutionHit
+    //
+
+    prop_compose! {
+        pub fn execution_hits()(
+            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
+            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
+            analyzer_name in any::<String>(),
+            risk_score in any::<u64>(),
+            lenses in collection::vec(lenses(), 10),
+            risky_node_keys in collection::vec(any::<String>(), 10)
+        ) -> ExecutionHit {
+            ExecutionHit{
+                nodes,
+                edges,
+                analyzer_name,
+                risk_score,
+                lenses,
+                risky_node_keys
             }
         }
     }
@@ -880,5 +926,39 @@ pub mod plugin_work_queue {
     pub fn put_execute_generator_responses(
     ) -> impl Strategy<Value = native::PutExecuteGeneratorResponse> {
         Just(native::PutExecuteGeneratorResponse {})
+    }
+}
+
+pub mod suspicious_svchost_analyzer {
+    use proptest::collection;
+    use rust_proto_new::graplinc::grapl::api::suspicious_svchost_analyzer::v1beta1::{
+        AnalyzeRequest,
+        AnalyzeResponse,
+    };
+
+    use super::*;
+    use crate::strategies::graph::{
+        execution_hits,
+        merged_graphs,
+    };
+
+    prop_compose! {
+        pub fn analyze_requests()(
+            merged_graph in merged_graphs()
+        ) -> AnalyzeRequest {
+            AnalyzeRequest {
+                merged_graph
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn analyze_responses()(
+            execution_hits in collection::vec(execution_hits(), 10)
+        ) -> AnalyzeResponse {
+            AnalyzeResponse {
+                execution_hits
+            }
+        }
     }
 }

@@ -6,6 +6,7 @@ use crate::{
         DecrementOnlyUintProp as DecrementOnlyUintPropProto,
         Edge as EdgeProto,
         EdgeList as EdgeListProto,
+        ExecutionHit as ExecutionHitProto,
         GraphDescription as GraphDescriptionProto,
         IdStrategy as IdStrategyProto,
         IdentifiedGraph as IdentifiedGraphProto,
@@ -15,6 +16,7 @@ use crate::{
         ImmutableUintProp as ImmutableUintPropProto,
         IncrementOnlyIntProp as IncrementOnlyIntPropProto,
         IncrementOnlyUintProp as IncrementOnlyUintPropProto,
+        Lens as LensProto,
         MergedEdge as MergedEdgeProto,
         MergedEdgeList as MergedEdgeListProto,
         MergedGraph as MergedGraphProto,
@@ -1347,6 +1349,48 @@ impl serde_impl::ProtobufSerializable for Edge {
 }
 
 //
+// Lens
+//
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Lens {
+    pub lens_type: String,
+    pub lens_name: String,
+    pub uid: u64,
+    pub score: u64,
+}
+
+impl From<LensProto> for Lens {
+    fn from(lens_proto: LensProto) -> Self {
+        Lens {
+            lens_type: lens_proto.lens_type,
+            lens_name: lens_proto.lens_name,
+            uid: lens_proto.uid,
+            score: lens_proto.score,
+        }
+    }
+}
+
+impl From<Lens> for LensProto {
+    fn from(lens: Lens) -> Self {
+        LensProto {
+            lens_type: lens.lens_type,
+            lens_name: lens.lens_name,
+            uid: lens.uid,
+            score: lens.score,
+        }
+    }
+}
+
+impl type_url::TypeUrl for Lens {
+    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.Lens";
+}
+
+impl serde_impl::ProtobufSerializable for Lens {
+    type ProtobufMessage = LensProto;
+}
+
+//
 // MergedEdge
 //
 
@@ -1428,6 +1472,87 @@ impl type_url::TypeUrl for EdgeList {
 
 impl serde_impl::ProtobufSerializable for EdgeList {
     type ProtobufMessage = EdgeListProto;
+}
+
+//
+// ExecutionHit
+//
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct ExecutionHit {
+    pub nodes: HashMap<String, MergedNode>,
+    pub edges: HashMap<String, MergedEdgeList>,
+    pub analyzer_name: String,
+    pub risk_score: u64,
+    pub lenses: Vec<Lens>,
+    pub risky_node_keys: Vec<String>,
+}
+
+impl TryFrom<ExecutionHitProto> for ExecutionHit {
+    type Error = SerDeError;
+
+    fn try_from(execution_hit_proto: ExecutionHitProto) -> Result<Self, Self::Error> {
+        let mut nodes = HashMap::with_capacity(execution_hit_proto.nodes.len());
+        for (key, merged_node) in execution_hit_proto.nodes {
+            nodes.insert(key, MergedNode::try_from(merged_node)?);
+        }
+
+        let mut edges = HashMap::with_capacity(execution_hit_proto.edges.len());
+        for (key, merged_edge_list) in execution_hit_proto.edges {
+            edges.insert(key, MergedEdgeList::from(merged_edge_list));
+        }
+
+        let mut lenses = Vec::with_capacity(execution_hit_proto.lenses.len());
+        for lens in execution_hit_proto.lenses {
+            lenses.push(Lens::from(lens));
+        }
+
+        Ok(ExecutionHit {
+            nodes,
+            edges,
+            analyzer_name: execution_hit_proto.analyzer_name,
+            risk_score: execution_hit_proto.risk_score,
+            lenses,
+            risky_node_keys: execution_hit_proto.risky_node_keys,
+        })
+    }
+}
+
+impl From<ExecutionHit> for ExecutionHitProto {
+    fn from(execution_hit: ExecutionHit) -> Self {
+        let mut nodes = HashMap::with_capacity(execution_hit.nodes.len());
+        for (key, merged_node) in execution_hit.nodes {
+            nodes.insert(key, MergedNodeProto::from(merged_node));
+        }
+
+        let mut edges = HashMap::with_capacity(execution_hit.edges.len());
+        for (key, merged_edge_list) in execution_hit.edges {
+            edges.insert(key, MergedEdgeListProto::from(merged_edge_list));
+        }
+
+        let mut lenses = Vec::with_capacity(execution_hit.lenses.len());
+        for lens in execution_hit.lenses {
+            lenses.push(LensProto::from(lens));
+        }
+
+        ExecutionHitProto {
+            nodes,
+            edges,
+            analyzer_name: execution_hit.analyzer_name,
+            risk_score: execution_hit.risk_score,
+            lenses,
+            risky_node_keys: execution_hit.risky_node_keys,
+        }
+    }
+}
+
+impl type_url::TypeUrl for ExecutionHit {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.ExecutionHit";
+}
+
+impl serde_impl::ProtobufSerializable for ExecutionHit {
+    type ProtobufMessage = ExecutionHitProto;
 }
 
 //

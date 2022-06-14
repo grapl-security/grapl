@@ -4,10 +4,13 @@ pytest.register_assert_rewrite("python_proto.tests.helpers")
 
 from python_proto.tests.helpers import check_encode_decode_invariant
 from python_proto.tests.strategies import (
+    analyze_requests,
+    analyze_responses,
     decrement_only_int_props,
     decrement_only_uint_props,
     edge_lists,
     edges,
+    execution_hits,
     graph_descriptions,
     id_strategies,
     identified_graphs,
@@ -17,6 +20,7 @@ from python_proto.tests.strategies import (
     immutable_uint_props,
     increment_only_int_props,
     increment_only_uint_props,
+    lenses,
     merged_edge_lists,
     merged_edges,
     merged_graphs,
@@ -26,6 +30,14 @@ from python_proto.tests.strategies import (
     sessions,
     statics,
 )
+
+
+def test_analyze_request_encode_decode() -> None:
+    check_encode_decode_invariant(analyze_requests())
+
+
+def test_analyze_response_encode_decode() -> None:
+    check_encode_decode_invariant(analyze_responses())
 
 
 def test_decrement_only_int_prop_encode_decode() -> None:
@@ -42,6 +54,10 @@ def test_edge_list_encode_decode() -> None:
 
 def test_edge_encode_decode() -> None:
     check_encode_decode_invariant(edges())
+
+
+def test_execution_hit_encode_decode() -> None:
+    check_encode_decode_invariant(execution_hits())
 
 
 def test_graph_description_encode_decode() -> None:
@@ -78,6 +94,10 @@ def test_increment_only_int_prop_encode_decode() -> None:
 
 def test_increment_only_uint_prop_encode_decode() -> None:
     check_encode_decode_invariant(increment_only_uint_props())
+
+
+def test_lens_encode_decode() -> None:
+    check_encode_decode_invariant(lenses())
 
 
 def test_merged_edge_list_encode_decode() -> None:

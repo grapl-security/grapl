@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.suspicious_svchost_analyzer.v1beta1;
+
+import "graplinc/grapl/api/graph/v1beta1/types.proto";
+
+// Analyze a graph fragment!
+message AnalyzeRequest {
+  // Graph fragment to analyze
+  graplinc.grapl.api.graph.v1beta1.MergedGraph merged_graph = 1;
+}
+
+// Result of analyzing a graph fragment
+message AnalyzeResponse {
+  // All the execution hits corresponding to the graph fragment
+  repeated graplinc.grapl.api.graph.v1beta1.ExecutionHit execution_hits = 1;
+}
+
+// RPC service to run the suspicious_svchost_analyzer
+service SuspiciousSvchostAnalyzer {
+  // Execute the suspicious_svchost_analyzer on the given MergedGraph and return
+  // the resulting ExecutionHits (if any occurred).
+  rpc Analyze(AnalyzeRequest) returns (AnalyzeResponse);
+}
