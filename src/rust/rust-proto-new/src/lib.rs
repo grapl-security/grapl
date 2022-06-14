@@ -27,6 +27,15 @@ pub(crate) mod protobufs {
 
         pub(crate) mod grapl {
             pub(crate) mod api {
+                pub(crate) mod event_source {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.event_source.v1beta1.rs"
+                        ));
+                    }
+                }
+
                 pub(crate) mod graph {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -124,6 +133,10 @@ pub mod graplinc {
 
     pub mod grapl {
         pub mod api {
+            pub mod event_source {
+                pub mod v1beta1;
+            }
+
             pub mod graph {
                 pub mod v1beta1;
             }

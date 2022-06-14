@@ -558,6 +558,108 @@ pub mod pipeline_ingress {
     }
 }
 
+pub mod event_source {
+    use rust_proto_new::graplinc::grapl::api::event_source::v1beta1 as native;
+
+    use super::*;
+
+    prop_compose! {
+        pub fn create_event_source_requests()(
+            display_name in string_not_empty(),
+            description in string_not_empty(),
+            tenant_id in uuids(),
+        ) -> native::CreateEventSourceRequest {
+            native::CreateEventSourceRequest {
+                display_name,
+                description,
+                tenant_id,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn create_event_source_responses()(
+            event_source_id in uuids(),
+            created_time in any::<SystemTime>(),
+        ) -> native::CreateEventSourceResponse {
+            native::CreateEventSourceResponse {
+                event_source_id,
+                created_time,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn update_event_source_requests()(
+            event_source_id in uuids(),
+            display_name in string_not_empty(),
+            description in string_not_empty(),
+            active in any::<bool>(),
+        ) -> native::UpdateEventSourceRequest {
+            native::UpdateEventSourceRequest {
+                event_source_id,
+                display_name,
+                description,
+                active,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn update_event_source_responses()(
+            event_source_id in uuids(),
+            last_updated_time in any::<SystemTime>(),
+        ) -> native::UpdateEventSourceResponse {
+            native::UpdateEventSourceResponse {
+                event_source_id,
+                last_updated_time,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn event_sources()(
+            tenant_id in uuids(),
+            event_source_id in uuids(),
+            display_name in string_not_empty(),
+            description in string_not_empty(),
+            created_time in any::<SystemTime>(),
+            last_updated_time in any::<SystemTime>(),
+            active in any::<bool>(),
+        ) -> native::EventSource {
+            native::EventSource {
+                tenant_id,
+                event_source_id,
+                display_name,
+                description,
+                created_time,
+                last_updated_time,
+                active,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn get_event_source_requests()(
+            event_source_id in uuids(),
+        ) -> native::GetEventSourceRequest {
+            native::GetEventSourceRequest {
+                event_source_id,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn get_event_source_responses()(
+            event_source in event_sources(),
+        ) -> native::GetEventSourceResponse {
+            native::GetEventSourceResponse {
+                event_source
+            }
+        }
+    }
+}
+
 pub mod plugin_registry {
     use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
