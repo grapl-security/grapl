@@ -41,6 +41,56 @@ proptest! {
     }
 }
 
+mod event_source_management {
+    use strategies::event_source_management as st;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_encode_decode_create_event_source_request(
+            value in st::create_event_source_requests()
+        ) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_encode_decode_create_event_source_response(
+            value in st::create_event_source_responses()
+        ) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_encode_decode_update_event_source_request(
+            value in st::update_event_source_requests()
+        ) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_encode_decode_update_event_source_response(
+            value in st::update_event_source_responses()
+        ) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_encode_decode_get_event_source_request(
+            value in st::get_event_source_requests()
+        ) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_encode_decode_get_event_source_response(
+            value in st::get_event_source_responses()
+        ) {
+            check_encode_decode_invariant(value)
+        }
+    }
+}
+
 mod graph {
     use strategies::graph as st;
 
