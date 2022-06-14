@@ -41,8 +41,8 @@ proptest! {
     }
 }
 
-mod event_source_management {
-    use strategies::event_source_management as st;
+mod event_source {
+    use strategies::event_source as st;
 
     use super::*;
 
