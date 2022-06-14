@@ -1,4 +1,5 @@
 #![allow(warnings)]
+
 use crate::{
     protobufs::graplinc::grapl::api::lens_subscription::v1beta1::{
         CreateEdge as CreateEdgeProto,
@@ -6,10 +7,11 @@ use crate::{
         CreateNode as CreateNodeProto,
         DeleteNode as DeleteNodeProto,
         Operation as OperationProto,
+        LensUpdate as LensUpdateProto,
         LensSubscription as LensSubscriptionProto,
         SubscribeToLensRequest as SubscribeToLensRequestProto,
         operation::GraphOperations as GraphOperationsProto,
-        // SubscribeToLensResponse as SubscribeToLensResponseProto,
+        SubscribeToLensResponse as SubscribeToLensResponseProto,
     },
     type_url,
     serde_impl,
@@ -226,7 +228,7 @@ impl TryFrom<OperationProto> for Operation {
     }
 }
 
-impl From<Operation> for OperationProto{
+impl From<Operation> for OperationProto {
     fn from(response_proto: Operation) -> Self {
         OperationProto {
             graph_operations: Some(match response_proto {
@@ -246,6 +248,7 @@ impl From<Operation> for OperationProto{
         }
     }
 }
+
 impl type_url::TypeUrl for Operation {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.Operation";
@@ -257,125 +260,174 @@ impl serde_impl::ProtobufSerializable for Operation {
 }
 
 
-
 //
 // LensUpdate
 //
 
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LensUpdate {
+    pub operation: Operation,
+    pub lens_type: String,
+    pub lens_name: String,
+    pub tenant_id: uuid::Uuid,
+}
+
+impl TryFrom<LensUpdateProto> for LensUpdate {
+    type Error = SerDeError;
+
+    fn try_from(response_proto: LensUpdateProto) -> Result<Self, Self::Error> {
+        let tenant_id = response_proto
+            .tenant_id
+            .ok_or(Self::Error::MissingField("LensUpdateProto.tenant_id"))?
+            .into();
+
+        let operation = response_proto
+            .operation
+            .ok_or(SerDeError::MissingField("LensUpdateProto.operaton"))?
+            .try_into()?;
+
+        Ok(Self {
+            operation: operation,
+            lens_type: response_proto.lens_type,
+            lens_name: response_proto.lens_name,
+            tenant_id,
+        })
+    }
+}
+
+impl From<LensUpdate> for LensUpdateProto {
+    fn from(response: LensUpdate) -> Self {
+        LensUpdateProto {
+            operation: Some(response.operation.into()),
+            lens_type: response.lens_type,
+            lens_name: response.lens_name,
+            tenant_id: Some(response.tenant_id.into()),
+        }
+    }
+}
+
+impl type_url::TypeUrl for LensUpdate {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.LensUpdate";
+}
+
+impl serde_impl::ProtobufSerializable for LensUpdate {
+    type ProtobufMessage = LensUpdateProto;
+}
 //
 // LensSubscription
 //
 
-    #[derive(Debug, Clone, PartialEq)]
-    pub struct LensSubscription {
-        pub lens_type: String,
-        pub lens_name: String,
-        pub tenant_id: uuid::Uuid,
-        pub update_id: u64,
+#[derive(Debug, Clone, PartialEq)]
+pub struct LensSubscription {
+    pub lens_type: String,
+    pub lens_name: String,
+    pub tenant_id: uuid::Uuid,
+    pub update_id: u64,
+}
+
+impl TryFrom<LensSubscriptionProto> for LensSubscription {
+    type Error = SerDeError;
+
+    fn try_from(response_proto: LensSubscriptionProto) -> Result<Self, Self::Error> {
+        let tenant_id = response_proto
+            .tenant_id
+            .ok_or(Self::Error::MissingField("LensSubscriptionProto.tenant_id"))?;
+
+        Ok(LensSubscription {
+            lens_type: response_proto.lens_type,
+            lens_name: response_proto.lens_name,
+            tenant_id: tenant_id.into(),
+            update_id: response_proto.update_id,
+        })
     }
+}
 
-    impl TryFrom<LensSubscriptionProto> for LensSubscription {
-        type Error = SerDeError;
-
-        fn try_from(response_proto: LensSubscriptionProto) -> Result<Self, Self::Error> {
-            let tenant_id = response_proto
-                .tenant_id
-                .ok_or(Self::Error::MissingField("LensSubscriptionProto.tenant_id"))?;
-
-            Ok(LensSubscription {
-                lens_type: response_proto.lens_type,
-                lens_name: response_proto.lens_name,
-                tenant_id: tenant_id.into(),
-                update_id: response_proto.update_id,
-            })
+impl From<LensSubscription> for LensSubscriptionProto {
+    fn from(response: LensSubscription) -> Self {
+        LensSubscriptionProto {
+            lens_type: response.lens_type,
+            lens_name: response.lens_name,
+            tenant_id: Some(response.tenant_id.into()),
+            update_id: response.update_id,
         }
     }
+}
 
-    impl From<LensSubscription> for LensSubscriptionProto {
-        fn from(response: LensSubscription) -> Self {
-            LensSubscriptionProto {
-                lens_type: response.lens_type,
-                lens_name: response.lens_name,
-                tenant_id: Some(response.tenant_id.into()),
-                update_id: response.update_id,
-            }
+impl type_url::TypeUrl for LensSubscription {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.LensSubscription";
+}
+
+impl serde_impl::ProtobufSerializable for LensSubscription {
+    type ProtobufMessage = LensSubscriptionProto;
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SubscribeToLensRequest {
+    pub lens_subscription: LensSubscription,
+}
+
+impl TryFrom<SubscribeToLensRequestProto> for SubscribeToLensRequest {
+    type Error = SerDeError;
+
+    fn try_from(response_proto: SubscribeToLensRequestProto) -> Result<Self, Self::Error> {
+        let lens_subscription = response_proto.lens_subscription
+            .ok_or(Self::Error::MissingField("lens_subscription"))?
+            .try_into()?;
+
+        Ok(Self { lens_subscription })
+    }
+}
+
+impl From<SubscribeToLensRequest> for SubscribeToLensRequestProto {
+    fn from(response: SubscribeToLensRequest) -> Self {
+        Self {
+            lens_subscription: Some(response.lens_subscription.into()),
         }
     }
+}
 
-    impl type_url::TypeUrl for LensSubscription {
-        const TYPE_URL: &'static str =
-            "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.LensSubscription";
+impl type_url::TypeUrl for SubscribeToLensRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.LensSubscription";
+}
+
+impl serde_impl::ProtobufSerializable for SubscribeToLensRequest {
+    type ProtobufMessage = SubscribeToLensRequestProto;
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SubscribeToLensResponse {
+    pub operation: LensUpdate,
+}
+
+impl TryFrom<SubscribeToLensResponseProto> for SubscribeToLensResponse {
+    type Error = SerDeError;
+
+    fn try_from(response_proto: SubscribeToLensResponseProto) -> Result<Self, Self::Error> {
+        let operation = response_proto.operation
+            .ok_or(Self::Error::MissingField("operation"))?
+            .try_into()?;
+
+        Ok(Self { operation })
     }
+}
 
-    impl serde_impl::ProtobufSerializable for LensSubscription {
-        type ProtobufMessage = LensSubscriptionProto;
-    }
-
-    #[derive(Debug, Clone, PartialEq)]
-    pub struct SubscribeToLensRequest {
-        pub lens_subscription: LensSubscription,
-    }
-
-    impl TryFrom<SubscribeToLensRequestProto> for SubscribeToLensRequest {
-        type Error = SerDeError;
-
-        fn try_from(response_proto: SubscribeToLensRequestProto) -> Result<Self, Self::Error> {
-            let lens_subscription = response_proto.lens_subscription
-                .ok_or(Self::Error::MissingField("lens_subscription"))?
-                .try_into()?;
-
-            Ok(Self { lens_subscription })
+impl From<SubscribeToLensResponse> for SubscribeToLensResponseProto {
+    fn from(response: SubscribeToLensResponse) -> Self {
+        Self {
+            operation: Some(response.operation.into()),
         }
     }
+}
 
-    impl From<SubscribeToLensRequest> for SubscribeToLensRequestProto {
-        fn from(response: SubscribeToLensRequest) -> Self {
-            Self {
-                lens_subscription: Some(response.lens_subscription.into()),
-            }
-        }
-    }
+impl type_url::TypeUrl for SubscribeToLensResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.SubscribeToLensResponse";
+}
 
-    impl type_url::TypeUrl for SubscribeToLensRequest {
-        const TYPE_URL: &'static str =
-            "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.LensSubscription";
-    }
-
-    impl serde_impl::ProtobufSerializable for SubscribeToLensRequest {
-        type ProtobufMessage = SubscribeToLensRequestProto;
-    }
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct SubscribeToLensResponse {
-//     pub operation: LensUpdate,
-// }
-//
-// impl TryFrom<SubscribeToLensResponseProto> for SubscribeToLensResponse {
-//     type Error = SerDeError;
-//
-//     fn try_from(response_proto: SubscribeToLensResponseProto) -> Result<Self, Self::Error> {
-//         let operation = response_proto
-//             .operation
-//             .ok_or(Self::Error::MissingField("operation"))?
-//             .try_into()?;
-//
-//         Ok(Self {operation})
-//     }
-// }
-//
-// impl From<SubscribeToLensResponse> for SubscribeToLensResponseProto {
-//     fn from(response: SubscribeToLensResponse) -> Self {
-//         Self{
-//             operation: Some(response.operation.into()),
-//         }
-//     }
-// }
-//
-// impl type_url::TypeUrl for SubscribeToLensResponse {
-//     const TYPE_URL: &'static str =
-//         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.SubscribeToLensResponse";
-// }
-//
-// impl serde_impl::ProtobufSerializable for SubscribeToLensResponse {
-//     type ProtobufMessage = SubscribeToLensResponseProto;
-// }
+impl serde_impl::ProtobufSerializable for SubscribeToLensResponse {
+    type ProtobufMessage = SubscribeToLensResponseProto;
+}
