@@ -133,6 +133,12 @@ pub mod graplinc {
 
     pub mod grapl {
         pub mod api {
+            pub mod event_source_management {
+                pub mod v1beta1;
+                mod v1beta1_client;
+                mod v1beta1_server;
+            }
+
             pub mod graph {
                 pub mod v1beta1;
             }

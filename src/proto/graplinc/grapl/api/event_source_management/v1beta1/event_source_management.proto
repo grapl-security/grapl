@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package graplinc.grapl.api.event_source_management.v1beta1;
 
-import "google/protobuf/timestamp.proto";
 import "graplinc/common/v1beta1/types.proto";
 
 message CreateEventSourceRequest {
@@ -21,7 +20,7 @@ message CreateEventSourceResponse {
     graplinc.common.v1beta1.Uuid event_source_id = 1;
 
     // when this event source was first written to the database
-    google.protobuf.Timestamp created_time = 2;
+    graplinc.common.v1beta1.Timestamp created_time = 2;
 }
 
 message UpdateEventSourceRequest {
@@ -43,7 +42,7 @@ message UpdateEventSourceResponse {
     graplinc.common.v1beta1.Uuid event_source_id = 1;
 
     // when this event source's database record was last changed
-    google.protobuf.Timestamp last_updated_time = 2;
+    graplinc.common.v1beta1.Timestamp last_updated_time = 2;
 }
 
 message GetEventSourceRequest {
@@ -65,10 +64,10 @@ message EventSource {
     string description = 4;
 
     // when this event source was first written to the database
-    google.protobuf.Timestamp created_time = 5;
+    graplinc.common.v1beta1.Timestamp created_time = 5;
 
     // when this event source's database record was last changed
-    google.protobuf.Timestamp last_updated_time = 6;
+    graplinc.common.v1beta1.Timestamp last_updated_time = 6;
 
     // whether Grapl should accept data for this event source
     //
