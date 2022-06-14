@@ -5,92 +5,92 @@ package graplinc.grapl.api.event_source.v1beta1;
 import "graplinc/common/v1beta1/types.proto";
 
 message CreateEventSourceRequest {
-    // something to call this event source
-    string display_name = 1;
+  // something to call this event source
+  string display_name = 1;
 
-    // some memorable, witty prose about this event source
-    string description = 2;
+  // some memorable, witty prose about this event source
+  string description = 2;
 
-    // identifier uniquely specifying a tenant (e.g. customer) in Grapl
-    graplinc.common.v1beta1.Uuid tenant_id = 3;
+  // identifier uniquely specifying a tenant (e.g. customer) in Grapl
+  graplinc.common.v1beta1.Uuid tenant_id = 3;
 }
 
 message CreateEventSourceResponse {
-    // identifier uniquely specifying this event source
-    graplinc.common.v1beta1.Uuid event_source_id = 1;
+  // identifier uniquely specifying this event source
+  graplinc.common.v1beta1.Uuid event_source_id = 1;
 
-    // when this event source was first written to the database
-    graplinc.common.v1beta1.Timestamp created_time = 2;
+  // when this event source was first written to the database
+  graplinc.common.v1beta1.Timestamp created_time = 2;
 }
 
 message UpdateEventSourceRequest {
-    // identifier uniquely specifying the event source
-    graplinc.common.v1beta1.Uuid event_source_id = 1;
+  // identifier uniquely specifying the event source
+  graplinc.common.v1beta1.Uuid event_source_id = 1;
 
-    // something (better) to call this event source
-    string display_name = 2;
+  // something (better) to call this event source
+  string display_name = 2;
 
-    // some (more) memorable, witty prose about this event source
-    string description = 3;
+  // some (more) memorable, witty prose about this event source
+  string description = 3;
 
-    // whether Grapl should accept data for this event source
-    bool active = 4;
+  // whether Grapl should accept data for this event source
+  bool active = 4;
 }
 
 message UpdateEventSourceResponse {
-    // identifier uniquely specifying the event source
-    graplinc.common.v1beta1.Uuid event_source_id = 1;
+  // identifier uniquely specifying the event source
+  graplinc.common.v1beta1.Uuid event_source_id = 1;
 
-    // when this event source's database record was last changed
-    graplinc.common.v1beta1.Timestamp last_updated_time = 2;
+  // when this event source's database record was last changed
+  graplinc.common.v1beta1.Timestamp last_updated_time = 2;
 }
 
 message GetEventSourceRequest {
-    // identifier uniquely specifying the event source
-    graplinc.common.v1beta1.Uuid event_source_id = 1;
+  // identifier uniquely specifying the event source
+  graplinc.common.v1beta1.Uuid event_source_id = 1;
 }
 
 message EventSource {
-    // identifier uniquely specifying a tenant (e.g. customer) in Grapl
-    graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // identifier uniquely specifying a tenant (e.g. customer) in Grapl
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
 
-    // identifier uniquely specifying this event source
-    graplinc.common.v1beta1.Uuid event_source_id = 2;
+  // identifier uniquely specifying this event source
+  graplinc.common.v1beta1.Uuid event_source_id = 2;
 
-    // something to call this event source
-    string display_name = 3;
+  // something to call this event source
+  string display_name = 3;
 
-    // some memorable, witty prose about this event source
-    string description = 4;
+  // some memorable, witty prose about this event source
+  string description = 4;
 
-    // when this event source was first written to the database
-    graplinc.common.v1beta1.Timestamp created_time = 5;
+  // when this event source was first written to the database
+  graplinc.common.v1beta1.Timestamp created_time = 5;
 
-    // when this event source's database record was last changed
-    graplinc.common.v1beta1.Timestamp last_updated_time = 6;
+  // when this event source's database record was last changed
+  graplinc.common.v1beta1.Timestamp last_updated_time = 6;
 
-    // whether Grapl should accept data for this event source
-    //
-    // when an event source is created it is in the active state,
-    // but may optionally be deactivated. Our edge services will
-    // drop data for inactive event sources.
-    bool active = 7;
+  // whether Grapl should accept data for this event source
+  //
+  // when an event source is created it is in the active state,
+  // but may optionally be deactivated. Our edge services will
+  // drop data for inactive event sources.
+  bool active = 7;
 }
 
 message GetEventSourceResponse {
-    EventSource event_source = 1;
+  EventSource event_source = 1;
 }
 
 service EventSourceService {
-    // write an event source to the database
-    // returns a response containing the event_source_id
-    rpc CreateEventSource(CreateEventSourceRequest) returns (CreateEventSourceResponse);
+  // write an event source to the database
+  // returns a response containing the event_source_id
+  rpc CreateEventSource(CreateEventSourceRequest) returns (CreateEventSourceResponse);
 
-    // read an event source from the database
-    // returns a response containing details about the event source
-    rpc GetEventSource(GetEventSourceRequest) returns (GetEventSourceResponse);
+  // read an event source from the database
+  // returns a response containing details about the event source
+  rpc GetEventSource(GetEventSourceRequest) returns (GetEventSourceResponse);
 
-    // update the event source in the database
-    // returns a response indicating when the update took place
-    rpc UpdateEventSource(UpdateEventSourceRequest) returns (UpdateEventSourceResponse);
+  // update the event source in the database
+  // returns a response indicating when the update took place
+  rpc UpdateEventSource(UpdateEventSourceRequest) returns (UpdateEventSourceResponse);
 }
