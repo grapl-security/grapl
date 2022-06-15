@@ -45,7 +45,6 @@ pub mod pipeline {
     use rust_proto_new::{
         graplinc::grapl::pipeline::{
             v1beta1::{
-                Envelope as EnvelopeV1,
                 Metadata,
                 RawLog,
             },
@@ -97,20 +96,6 @@ pub mod pipeline {
     //
     // Envelope
     //
-
-    prop_compose! {
-        pub fn v1_envelopes()(
-            metadata in metadatas(),
-            inner_type in any::<String>(),
-            inner_message in bytes(256),
-        ) -> EnvelopeV1 {
-            EnvelopeV1 {
-                metadata,
-                inner_type,
-                inner_message
-            }
-        }
-    }
 
     pub fn envelopes<T>(
         inner_strategy: impl Strategy<Value = T>,

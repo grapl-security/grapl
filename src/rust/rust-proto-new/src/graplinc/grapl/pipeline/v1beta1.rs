@@ -8,7 +8,6 @@ use crate::{
         Uuid,
     },
     protobufs::graplinc::grapl::pipeline::v1beta1::{
-        Envelope as EnvelopeProto,
         Metadata as MetadataProto,
         RawLog as RawLogProto,
     },
@@ -130,53 +129,6 @@ impl type_url::TypeUrl for Metadata {
 
 impl serde_impl::ProtobufSerializable for Metadata {
     type ProtobufMessage = MetadataProto;
-}
-
-//
-// Envelope
-//
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Envelope {
-    pub metadata: Metadata,
-    pub inner_type: String,
-    pub inner_message: Bytes,
-}
-
-impl TryFrom<EnvelopeProto> for Envelope {
-    type Error = SerDeError;
-
-    fn try_from(envelope_proto: EnvelopeProto) -> Result<Self, Self::Error> {
-        let metadata = envelope_proto
-            .metadata
-            .ok_or(SerDeError::MissingField("metadata"))?;
-
-        Ok(Envelope {
-            metadata: metadata.try_into()?,
-            inner_type: envelope_proto.inner_type,
-            inner_message: Bytes::from(envelope_proto.inner_message),
-        })
-    }
-}
-
-impl TryFrom<Envelope> for EnvelopeProto {
-    type Error = SerDeError;
-
-    fn try_from(envelope: Envelope) -> Result<Self, Self::Error> {
-        Ok(EnvelopeProto {
-            metadata: Some(envelope.metadata.try_into()?),
-            inner_type: envelope.inner_type,
-            inner_message: envelope.inner_message.to_vec(),
-        })
-    }
-}
-
-impl type_url::TypeUrl for Envelope {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.pipeline.v1beta1.Envelope";
-}
-
-impl serde_impl::ProtobufSerializable for Envelope {
-    type ProtobufMessage = EnvelopeProto;
 }
 
 //

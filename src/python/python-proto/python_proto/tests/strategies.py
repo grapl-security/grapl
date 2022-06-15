@@ -5,8 +5,6 @@ from typing import Mapping, Sequence, Union
 import hypothesis.strategies as st
 from python_proto import SerDe
 from python_proto.api import (
-    AnalyzeRequest,
-    AnalyzeResponse,
     DecrementOnlyIntProp,
     DecrementOnlyUintProp,
     Edge,
@@ -479,25 +477,6 @@ def execution_hits(
         lenses=lenses,
         risky_node_keys=risky_node_keys,
     )
-
-
-#
-# suspicious_svchost_analyzer
-#
-
-
-def analyze_requests(
-    merged_graphs: st.SearchStrategy[MergedGraph] = merged_graphs(),
-) -> st.SearchStrategy[AnalyzeRequest]:
-    return st.builds(AnalyzeRequest, merged_graph=merged_graphs)
-
-
-def analyze_responses(
-    execution_hits: st.SearchStrategy[Sequence[ExecutionHit]] = st.lists(
-        execution_hits(), max_size=MAX_LIST_SIZE
-    )
-) -> st.SearchStrategy[AnalyzeResponse]:
-    return st.builds(AnalyzeResponse, execution_hits=execution_hits)
 
 
 #

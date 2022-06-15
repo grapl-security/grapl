@@ -213,11 +213,6 @@ mod pipeline {
         }
 
         #[test]
-        fn test_v1_envelope_encode_decode(envelope in st::v1_envelopes()) {
-            check_encode_decode_invariant(envelope)
-        }
-
-        #[test]
         fn test_uuid_envelope_encode_decode(
             envelope in st::envelopes(strategies::uuids())
         ) {

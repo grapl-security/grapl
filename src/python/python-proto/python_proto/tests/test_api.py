@@ -4,8 +4,6 @@ pytest.register_assert_rewrite("python_proto.tests.helpers")
 
 from python_proto.tests.helpers import check_encode_decode_invariant
 from python_proto.tests.strategies import (
-    analyze_requests,
-    analyze_responses,
     decrement_only_int_props,
     decrement_only_uint_props,
     edge_lists,
@@ -30,14 +28,6 @@ from python_proto.tests.strategies import (
     sessions,
     statics,
 )
-
-
-def test_analyze_request_encode_decode() -> None:
-    check_encode_decode_invariant(analyze_requests())
-
-
-def test_analyze_response_encode_decode() -> None:
-    check_encode_decode_invariant(analyze_responses())
 
 
 def test_decrement_only_int_prop_encode_decode() -> None:

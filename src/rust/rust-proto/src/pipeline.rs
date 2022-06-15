@@ -1,5 +1,4 @@
 pub use grapl_pipeline::{
-    Envelope,
     Metadata,
     RawLog,
 };
