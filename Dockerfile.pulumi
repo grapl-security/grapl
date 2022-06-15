@@ -1,4 +1,4 @@
-FROM python:3.7-slim-bullseye as grapl-local-pulumi
+FROM python:3.8-slim-bullseye as grapl-local-pulumi
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
