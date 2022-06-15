@@ -268,12 +268,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 
 [[package]]
-name = "adler32"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aae1277d39aeec15cb388266ecc24b11c80469deae6067e17a1a7aa9e5c1f234"
-
-[[package]]
 name = "aead"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -357,12 +351,6 @@ name = "anyhow"
 version = "1.0.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08f9b8508dccb7687a1d6c4ce66b2b0ecef467c94667de27d8d7fe1f8d2a9cdc"
-
-[[package]]
-name = "arc-swap"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5d78ce20460b82d3fa150275ed9d55e21064fc7951177baacf86a145c4a4b1f"
 
 [[package]]
 name = "argon2"
@@ -877,20 +865,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "combine"
-version = "4.6.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a604e93b79d1808327a6fca85a6f2d69de66461e7620f5a4cbf5fb4d1d7c948"
-dependencies = [
- "bytes",
- "futures-core",
- "memchr",
- "pin-project-lite",
- "tokio",
- "tokio-util 0.7.3",
-]
-
-[[package]]
 name = "concurrent-queue"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1372,12 +1346,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
-name = "dtoa"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56899898ce76aaf4a0f24d914c97ea6ed976d42fec6ad33fcbb0a1103e07b2b0"
-
-[[package]]
 name = "duct"
 version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1753,31 +1721,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
-name = "graph-generator-lib"
-version = "0.1.9"
-dependencies = [
- "base64",
- "chrono",
- "grapl-config",
- "grapl-observe",
- "grapl-service",
- "log",
- "prost 0.9.0",
- "rusoto_core",
- "rusoto_credential",
- "rusoto_s3",
- "rusoto_sqs",
- "rust-proto",
- "serde",
- "serde_json",
- "sha2 0.9.9",
- "sqs-executor",
- "tokio",
- "tracing",
- "zstd",
-]
-
-[[package]]
 name = "graph-merger"
 version = "1.0.0"
 dependencies = [
@@ -1817,18 +1760,8 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2ebc8013b4426d5b81a4364c419a95ed0b404af2b82e2457de52d9348f0e474"
 dependencies = [
- "combine 3.8.1",
+ "combine",
  "thiserror",
-]
-
-[[package]]
-name = "grapl"
-version = "0.3.1"
-dependencies = [
- "derive-dynamic-node",
- "graph-generator-lib",
- "grapl-config",
- "rust-proto",
 ]
 
 [[package]]
@@ -1848,7 +1781,6 @@ dependencies = [
  "rusoto_dynamodb",
  "rusoto_s3",
  "rusoto_sqs",
- "sqs-executor",
  "tokio",
  "tracing",
  "tracing-appender",
@@ -1881,24 +1813,6 @@ dependencies = [
  "pin-project",
  "regex",
  "thiserror",
-]
-
-[[package]]
-name = "grapl-service"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "grapl-config",
- "itertools 0.10.3",
- "libflate",
- "prost 0.9.0",
- "rust-proto",
- "serde",
- "serde_json",
- "sqs-executor",
- "thiserror",
- "tracing",
- "zstd",
 ]
 
 [[package]]
@@ -2324,26 +2238,6 @@ name = "libc"
 version = "0.2.126"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "349d5a591cd28b49e1d1037471617a32ddcda5731b99419008085f72d5a53836"
-
-[[package]]
-name = "libflate"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05605ab2bce11bcfc0e9c635ff29ef8b2ea83f29be257ee7d730cac3ee373093"
-dependencies = [
- "adler32",
- "crc32fast",
- "libflate_lz77",
-]
-
-[[package]]
-name = "libflate_lz77"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39a734c0493409afcd49deee13c006a04e3586b9761a03543c6272c9c51f2f5a"
-dependencies = [
- "rle-decode-fast",
-]
 
 [[package]]
 name = "libz-sys"
@@ -3622,28 +3516,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "redis"
-version = "0.21.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a80b5f38d7f5a020856a0e16e40a9cfabf88ae8f0e4c2dcd8a3114c1e470852"
-dependencies = [
- "arc-swap",
- "async-trait",
- "bytes",
- "combine 4.6.4",
- "dtoa",
- "futures",
- "futures-util",
- "itoa 0.4.8",
- "percent-encoding",
- "pin-project-lite",
- "sha1",
- "tokio",
- "tokio-util 0.6.10",
- "url",
-]
-
-[[package]]
 name = "redox_syscall"
 version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3761,12 +3633,6 @@ dependencies = [
  "web-sys",
  "winapi",
 ]
-
-[[package]]
-name = "rle-decode-fast"
-version = "1.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3582f63211428f83597b51b2ddb88e2a91a9d52d12831f9d08f5e624e8977422"
 
 [[package]]
 name = "rusoto_cloudwatch"
@@ -4199,21 +4065,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha1"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1da05c97445caa12d05e848c4a4fcbbea29e748ac28f7e80e9b010392063770"
-dependencies = [
- "sha1_smol",
-]
-
-[[package]]
-name = "sha1_smol"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae1a47186c03a32177042e55dbc5fd5aee900b8e0069a8d70fba96a9375cd012"
-
-[[package]]
 name = "sha2"
 version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4431,36 +4282,6 @@ dependencies = [
  "once_cell",
  "tokio",
  "tokio-rustls 0.22.0",
-]
-
-[[package]]
-name = "sqs-executor"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "chrono",
- "futures",
- "futures-util",
- "grapl-observe",
- "grapl-utils",
- "hex",
- "itertools 0.10.3",
- "lazy_static",
- "lru",
- "num_cpus",
- "prost 0.9.0",
- "redis",
- "rusoto_core",
- "rusoto_s3",
- "rusoto_sqs",
- "rust-proto",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-futures",
- "uuid",
 ]
 
 [[package]]

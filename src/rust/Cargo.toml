@@ -6,7 +6,6 @@ members = [
   "./generator-dispatcher",
   "./generators/sysmon-generator",
   "./graph-merger",
-  "./grapl",
   "./grapl-config",
   "./grapl-graphql-codegen",
   "./grapl-observe",
@@ -25,7 +24,6 @@ members = [
   "./plugin-work-queue",
   "./rust-proto",
   "./rust-proto-new",
-  "./sqs-executor",
   "./sysmon-parser",
   "./uid-allocator",
 ]
