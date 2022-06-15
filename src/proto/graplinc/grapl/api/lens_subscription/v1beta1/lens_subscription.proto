@@ -50,7 +50,7 @@ message Operation {
 message LensUpdate {
   // Type of Operation
   Operation operation = 1;
-//  Operation operation = 1; // This needs to change to Operation!!!!!
+  //  Operation operation = 1; // This needs to change to Operation!!!!!
   // Type of Lens
   string lens_type = 2;
   // Name of Lens
@@ -63,7 +63,7 @@ message LensUpdate {
 message LensSubscription {
   // Type of Lens
   string lens_type = 1;
-  // Name of Lens
+  // Name of Lens 
   string lens_name = 2;
   // Id of tenant lens belongs to
   graplinc.common.v1beta1.Uuid tenant_id = 3;

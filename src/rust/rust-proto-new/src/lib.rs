@@ -43,8 +43,8 @@ pub(crate) mod protobufs {
                 pub(crate) mod lens_subscription {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.api.lens_subscription.v1beta1.rs"
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.lens_subscription.v1beta1.rs"
                         ));
                     }
                 }

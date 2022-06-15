@@ -2,19 +2,19 @@
 
 use crate::{
     protobufs::graplinc::grapl::api::lens_subscription::v1beta1::{
-        CreateEdge as CreateEdgeProto,
-        DeleteEdge as DeleteEdgeProto,
-        CreateNode as CreateNodeProto,
-        DeleteNode as DeleteNodeProto,
-        Operation as OperationProto,
-        LensUpdate as LensUpdateProto,
-        LensSubscription as LensSubscriptionProto,
-        SubscribeToLensRequest as SubscribeToLensRequestProto,
         operation::GraphOperations as GraphOperationsProto,
+        CreateEdge as CreateEdgeProto,
+        CreateNode as CreateNodeProto,
+        DeleteEdge as DeleteEdgeProto,
+        DeleteNode as DeleteNodeProto,
+        LensSubscription as LensSubscriptionProto,
+        LensUpdate as LensUpdateProto,
+        Operation as OperationProto,
+        SubscribeToLensRequest as SubscribeToLensRequestProto,
         SubscribeToLensResponse as SubscribeToLensResponseProto,
     },
-    type_url,
     serde_impl,
+    type_url,
     SerDeError,
 };
 
@@ -223,7 +223,9 @@ impl TryFrom<OperationProto> for Operation {
             Some(GraphOperationsProto::DeleteNodeOperation(e)) => {
                 Ok(Operation::DeleteNodeOperation(e.try_into()?))
             }
-            _ => Err(SerDeError::UnknownVariant("GraphOperationsProto.graphoperations"))
+            _ => Err(SerDeError::UnknownVariant(
+                "GraphOperationsProto.graphoperations",
+            )),
         }
     }
 }
@@ -254,16 +256,13 @@ impl type_url::TypeUrl for Operation {
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.Operation";
 }
 
-
 impl serde_impl::ProtobufSerializable for Operation {
     type ProtobufMessage = OperationProto;
 }
 
-
 //
 // LensUpdate
 //
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LensUpdate {
@@ -373,7 +372,8 @@ impl TryFrom<SubscribeToLensRequestProto> for SubscribeToLensRequest {
     type Error = SerDeError;
 
     fn try_from(response_proto: SubscribeToLensRequestProto) -> Result<Self, Self::Error> {
-        let lens_subscription = response_proto.lens_subscription
+        let lens_subscription = response_proto
+            .lens_subscription
             .ok_or(Self::Error::MissingField("lens_subscription"))?
             .try_into()?;
 
@@ -407,7 +407,8 @@ impl TryFrom<SubscribeToLensResponseProto> for SubscribeToLensResponse {
     type Error = SerDeError;
 
     fn try_from(response_proto: SubscribeToLensResponseProto) -> Result<Self, Self::Error> {
-        let operation = response_proto.operation
+        let operation = response_proto
+            .operation
             .ok_or(Self::Error::MissingField("operation"))?
             .try_into()?;
 
