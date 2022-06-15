@@ -1,12 +1,12 @@
 use rust_proto_new::protocol::status::Status;
 
-use crate::db::EventSourceDbInitError;
+use crate::db::EventSourceDbError;
 
 /// An example, silly error class
 #[derive(thiserror::Error, Debug)]
 pub enum EventSourceError {
-    #[error("DbInitError")]
-    DbInitError(#[from] EventSourceDbInitError),
+    #[error("DbError")]
+    DbError(#[from] EventSourceDbError),
 }
 
 impl From<EventSourceError> for Status {
