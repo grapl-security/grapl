@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Mapping, Sequence, Type, Union, cast
+from typing import Optional, Mapping, Sequence, Type, Union, cast
 
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
     DecrementOnlyIntProp as _DecrementOnlyIntProp,
@@ -770,8 +770,9 @@ class AnalyzeRequest(SerDe[_AnalyzeRequest]):
 class Lens(SerDe[_Lens]):
     lens_type: str
     lens_name: str
-    uid: int
-    score: int
+    uid: Optional[int] = None
+    score: Optional[int] = None
+    proto_cls: Type[_Lens] = _Lens
 
     @staticmethod
     def deserialize(bytes_: bytes) -> Lens:
@@ -805,6 +806,7 @@ class ExecutionHit(SerDe[_ExecutionHit]):
     risk_score: int
     lenses: Sequence[Lens]
     risky_node_keys: Sequence[str]
+    proto_cls: Type[_ExecutionHit] = _ExecutionHit
 
     @staticmethod
     def deserialize(bytes_: bytes) -> ExecutionHit:

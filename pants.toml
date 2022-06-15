@@ -76,6 +76,7 @@ root_patterns = [
   "/src/python/provisioner",
   "/src/python/python-proto",
   "/src/python/repl",
+  "src/python/suspicious_svchost",
 ]
 
 [python]

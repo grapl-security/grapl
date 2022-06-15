@@ -28,6 +28,7 @@ members = [
   "./rust-proto",
   "./rust-proto-new",
   "./sqs-executor",
+  "./suspicious-svchost-analyzer/",
   "./sysmon-parser",
   "./uid-allocator",
 ]
