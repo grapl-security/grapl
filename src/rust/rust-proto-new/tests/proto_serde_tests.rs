@@ -434,25 +434,3 @@ mod plugin_work_queue {
         }
     }
 }
-
-//
-// suspicious svchost analyzer
-//
-
-mod suspicious_svchost_analyzer {
-    use strategies::suspicious_svchost_analyzer as st;
-
-    use super::*;
-
-    proptest! {
-        #[test]
-        fn test_analyze_request_encode_decode(analyze_request in st::analyze_requests()) {
-            check_encode_decode_invariant(analyze_request)
-        }
-
-        #[test]
-        fn test_analyze_response_encode_decode(analyze_response in st::analyze_responses()) {
-            check_encode_decode_invariant(analyze_response)
-        }
-    }
-}

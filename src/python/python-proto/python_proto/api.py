@@ -46,12 +46,6 @@ from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import NodeProperty as _NodeProperty
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import Session as _Session
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import Static as _Static
-from graplinc.grapl.api.suspicious_svchost_analyzer.v1beta1.suspicious_svchost_analyzer_pb2 import (
-    AnalyzeRequest as _AnalyzeRequest,
-)
-from graplinc.grapl.api.suspicious_svchost_analyzer.v1beta1.suspicious_svchost_analyzer_pb2 import (
-    AnalyzeResponse as _AnalyzeResponse,
-)
 from python_proto import SerDe
 
 
@@ -743,30 +737,6 @@ class MergedGraph(SerDe[_MergedGraph]):
 
 
 @dataclasses.dataclass(frozen=True)
-class AnalyzeRequest(SerDe[_AnalyzeRequest]):
-    merged_graph: MergedGraph
-
-    @staticmethod
-    def deserialize(bytes_: bytes) -> AnalyzeRequest:
-        proto_analyze_request = _AnalyzeRequest()
-        proto_analyze_request.ParseFromString(bytes_)
-        return AnalyzeRequest.from_proto(proto_analyze_request=proto_analyze_request)
-
-    @staticmethod
-    def from_proto(proto_analyze_request: _AnalyzeRequest) -> AnalyzeRequest:
-        return AnalyzeRequest(
-            merged_graph=MergedGraph.from_proto(
-                proto_merged_graph=proto_analyze_request.merged_graph
-            )
-        )
-
-    def into_proto(self) -> AnalyzeRequest:
-        proto_analyze_request = _AnalyzeRequest()
-        proto_analyze_request.merged_graph.CopyFrom(self.merged_graph.into_proto())
-        return proto_analyze_request
-
-
-@dataclasses.dataclass(frozen=True)
 class Lens(SerDe[_Lens]):
     lens_type: str
     lens_name: str
@@ -844,29 +814,3 @@ class ExecutionHit(SerDe[_ExecutionHit]):
         for risky_node_key in self.risky_node_keys:
             proto_execution_hit.risky_node_keys.append(risky_node_key)
         return proto_execution_hit
-
-
-@dataclasses.dataclass(frozen=True)
-class AnalyzeResponse(SerDe[_AnalyzeResponse]):
-    execution_hits: Sequence[ExecutionHit]
-
-    @staticmethod
-    def deserialize(bytes_: bytes) -> AnalyzeResponse:
-        proto_analyze_response = _AnalyzeResponse()
-        proto_analyze_response.ParseFromString(bytes_)
-        return AnalyzeResponse.from_proto(proto_analyze_response=proto_analyze_response)
-
-    @staticmethod
-    def from_proto(proto_analyze_response: _AnalyzeResponse) -> AnalyzeResponse:
-        return AnalyzeResponse(
-            execution_hits=[
-                ExecutionHit.from_proto(h)
-                for h in proto_analyze_response.execution_hits
-            ]
-        )
-
-    def into_proto(self) -> _AnalyzeResponse:
-        proto_analyze_response = _AnalyzeResponse()
-        for execution_hit in self.execution_hits:
-            proto_analyze_response.execution_hits.append(execution_hit.into_proto())
-        return proto_analyze_response

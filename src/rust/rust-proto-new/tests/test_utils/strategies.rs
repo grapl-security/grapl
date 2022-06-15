@@ -928,37 +928,3 @@ pub mod plugin_work_queue {
         Just(native::PutExecuteGeneratorResponse {})
     }
 }
-
-pub mod suspicious_svchost_analyzer {
-    use proptest::collection;
-    use rust_proto_new::graplinc::grapl::api::suspicious_svchost_analyzer::v1beta1::{
-        AnalyzeRequest,
-        AnalyzeResponse,
-    };
-
-    use super::*;
-    use crate::strategies::graph::{
-        execution_hits,
-        merged_graphs,
-    };
-
-    prop_compose! {
-        pub fn analyze_requests()(
-            merged_graph in merged_graphs()
-        ) -> AnalyzeRequest {
-            AnalyzeRequest {
-                merged_graph
-            }
-        }
-    }
-
-    prop_compose! {
-        pub fn analyze_responses()(
-            execution_hits in collection::vec(execution_hits(), 10)
-        ) -> AnalyzeResponse {
-            AnalyzeResponse {
-                execution_hits
-            }
-        }
-    }
-}

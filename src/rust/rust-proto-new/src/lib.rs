@@ -96,15 +96,6 @@ pub(crate) mod protobufs {
                         ));
                     }
                 }
-
-                pub(crate) mod suspicious_svchost_analyzer {
-                    pub(crate) mod v1beta1 {
-                        include!(concat!(
-                            env!("OUT_DIR"),
-                            "/graplinc.grapl.api.suspicious_svchost_analyzer.v1beta1.rs",
-                        ));
-                    }
-                }
             }
 
             pub(crate) mod pipeline {
@@ -173,10 +164,6 @@ pub mod graplinc {
 
             #[cfg(feature = "uid-allocator")]
             pub mod uid_allocator {
-                pub mod v1beta1;
-            }
-
-            pub mod suspicious_svchost_analyzer {
                 pub mod v1beta1;
             }
         }
