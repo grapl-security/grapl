@@ -10,11 +10,12 @@ grapl-utils = { path = "../grapl-utils" }
 tokio = { version = "1.17", features = ["macros", "rt-multi-thread"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }
 sqlx = { version = "0.5", features = [
-  "runtime-tokio-rustls",
-  "postgres",
-  "offline",
-  "uuid",
   "migrate",
+  "offline",
+  "postgres",
+  "runtime-tokio-rustls",
+  "time",
+  "uuid",
 ] }
 tracing-futures = "0.2.5"
 tracing = "0.1.29"

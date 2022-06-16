@@ -46,14 +46,14 @@ pub async fn exec_service(config: EventSourceConfig) -> Result<(), Box<dyn std::
 
 pub struct EventSourceApiImpl {
     pub config: EventSourceConfig,
-    pub db: EventSourceDbClient,
+    pub db_client: EventSourceDbClient,
 }
 
 impl EventSourceApiImpl {
     pub async fn try_from(config: &EventSourceConfig) -> Result<Self, EventSourceError> {
         let config = config.clone();
-        let db = EventSourceDbClient::try_from(config.db_config.clone()).await?;
-        Ok(Self { config, db })
+        let db_client = EventSourceDbClient::try_from(config.db_config.clone()).await?;
+        Ok(Self { config, db_client })
     }
 }
 
@@ -66,8 +66,14 @@ impl EventSourceApi for EventSourceApiImpl {
         &self,
         request: native::CreateEventSourceRequest,
     ) -> Result<native::CreateEventSourceResponse, Self::Error> {
-        let _ = request;
-        unreachable!()
+        let created_row = self
+            .db_client
+            .create_event_source(request.display_name, request.description, request.tenant_id)
+            .await?;
+        Ok(native::CreateEventSourceResponse {
+            event_source_id: created_row.event_source_id,
+            created_time: created_row.created_time.into(),
+        })
     }
 
     #[tracing::instrument(skip(self, request), err)]
@@ -75,8 +81,7 @@ impl EventSourceApi for EventSourceApiImpl {
         &self,
         request: native::UpdateEventSourceRequest,
     ) -> Result<native::UpdateEventSourceResponse, Self::Error> {
-        let _ = request;
-        unreachable!()
+        todo!()
     }
 
     #[tracing::instrument(skip(self, request), err)]
@@ -84,7 +89,19 @@ impl EventSourceApi for EventSourceApiImpl {
         &self,
         request: native::GetEventSourceRequest,
     ) -> Result<native::GetEventSourceResponse, Self::Error> {
-        let _ = request;
-        unreachable!()
+        let row = self
+            .db_client
+            .get_event_source(request.event_source_id)
+            .await?;
+        let event_source = native::EventSource {
+            tenant_id: row.tenant_id,
+            event_source_id: row.event_source_id,
+            display_name: row.display_name,
+            description: row.description,
+            created_time: row.created_time.into(),
+            last_updated_time: row.last_updated_time.into(),
+            active: row.active,
+        };
+        Ok(native::GetEventSourceResponse { event_source })
     }
 }

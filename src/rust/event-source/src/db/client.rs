@@ -6,6 +6,7 @@ use sqlx::{
 use tracing::instrument;
 use uuid::Uuid;
 
+use super::types::EventSourceRow;
 use crate::config::EventSourceDbConfig;
 
 #[derive(Clone, Debug)]
@@ -48,7 +49,7 @@ impl EventSourceDbClient {
         display_name: String,
         description: String,
         tenant_id: Uuid,
-    ) -> Result<(), EventSourceDbError> {
+    ) -> Result<EventSourceRow, EventSourceDbError> {
         let event_source_id = Uuid::new_v4();
         sqlx::query!(
             r"
@@ -67,6 +68,32 @@ impl EventSourceDbClient {
         )
         .execute(&self.pool)
         .await?;
-        Ok(())
+        Ok(self.get_event_source(event_source_id).await?)
+    }
+
+    pub async fn get_event_source(
+        &self,
+        event_source_id: Uuid,
+    ) -> Result<EventSourceRow, EventSourceDbError> {
+        let row = sqlx::query_as!(
+            EventSourceRow,
+            r#"
+            SELECT
+                event_source_id,
+                tenant_id,
+                display_name,
+                description,
+                created_time,
+                last_updated_time,
+                active
+            FROM event_sources
+            WHERE event_source_id = $1
+            ;
+            "#,
+            event_source_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(row)
     }
 }
