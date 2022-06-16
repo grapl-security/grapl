@@ -8,7 +8,7 @@ use crate::{
     protobufs::graplinc::grapl::api::event_source::v1beta1 as proto,
     protocol::{
         status::Status,
-        tls::ClientTlsConfig,
+        tls::ClientTlsConfig, service_client::NamedService,
     },
     SerDeError,
 };
@@ -86,4 +86,10 @@ impl EventSourceServiceClient {
             .await?;
         Ok(response.into_inner().try_into()?)
     }
+}
+
+
+impl NamedService for EventSourceServiceClient {
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.event_source.v1beta1.EventSourceService";
 }

@@ -76,12 +76,21 @@ impl EventSourceApi for EventSourceApiImpl {
         })
     }
 
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn update_event_source(
         &self,
-        _request: native::UpdateEventSourceRequest,
+        request: native::UpdateEventSourceRequest,
     ) -> Result<native::UpdateEventSourceResponse, Self::Error> {
-        todo!()
+        let updated_row = self.db_client.update_event_source(
+            request.event_source_id, 
+            request.display_name, 
+            request.description, 
+            request.active
+        ).await?;
+        Ok(native::UpdateEventSourceResponse {
+            event_source_id: updated_row.event_source_id,
+            last_updated_time: updated_row.last_updated_time.into(),
+        })
     }
 
     #[tracing::instrument(skip(self, request), err)]

@@ -71,6 +71,32 @@ impl EventSourceDbClient {
         self.get_event_source(event_source_id).await
     }
 
+    #[instrument(skip(event_source_id, display_name, description, active), err)]
+    pub async fn update_event_source(
+        &self,
+        event_source_id: Uuid,
+        display_name: String,
+        description: String,
+        active: bool,
+    ) -> Result<EventSourceRow, EventSourceDbError> {
+        sqlx::query!(
+            r#"
+            UPDATE event_sources
+            SET 
+                display_name = $1,
+                description = $2,
+                active = $3
+            WHERE
+                event_source_id = $4
+            "#,
+            display_name,
+            description,
+            active,
+            event_source_id,
+        ).fetch_optional(&self.pool).await?;
+        self.get_event_source(event_source_id).await
+    }
+
     pub async fn get_event_source(
         &self,
         event_source_id: Uuid,

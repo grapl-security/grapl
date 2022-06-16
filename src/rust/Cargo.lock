@@ -1493,6 +1493,7 @@ dependencies = [
  "grapl-utils",
  "rust-proto-new",
  "sqlx",
+ "test-log",
  "thiserror",
  "tokio",
  "tracing",

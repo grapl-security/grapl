@@ -1,5 +1,20 @@
 {
   "db": "PostgreSQL",
+  "6298775aaea234bcb9a936a6e79af3ce6918b6d587bd9fdff47ed008dc3524fb": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Bool",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            UPDATE event_sources\n            SET \n                display_name = $1,\n                description = $2,\n                active = $3\n            WHERE\n                event_source_id = $4\n            "
+  },
   "be000c96537768eae3f02f80ccfee61eb98721da76e754d68083f91d88868e39": {
     "describe": {
       "columns": [

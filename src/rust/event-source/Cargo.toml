@@ -34,6 +34,7 @@ clap = { version = "3.0", default_features = false, features = [
 [build-dependencies]
 
 [dev-dependencies]
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
 
 [features]
 new_integration_tests = []
