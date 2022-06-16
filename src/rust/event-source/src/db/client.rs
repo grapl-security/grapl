@@ -68,7 +68,7 @@ impl EventSourceDbClient {
         )
         .execute(&self.pool)
         .await?;
-        Ok(self.get_event_source(event_source_id).await?)
+        self.get_event_source(event_source_id).await
     }
 
     pub async fn get_event_source(

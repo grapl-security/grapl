@@ -76,10 +76,10 @@ impl EventSourceApi for EventSourceApiImpl {
         })
     }
 
-    #[tracing::instrument(skip(self, request), err)]
+    #[tracing::instrument(skip(self, _request), err)]
     async fn update_event_source(
         &self,
-        request: native::UpdateEventSourceRequest,
+        _request: native::UpdateEventSourceRequest,
     ) -> Result<native::UpdateEventSourceResponse, Self::Error> {
         todo!()
     }

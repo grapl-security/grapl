@@ -26,12 +26,12 @@
         {
           "name": "created_time",
           "ordinal": 4,
-          "type_info": "Timestamp"
+          "type_info": "Timestamptz"
         },
         {
           "name": "last_updated_time",
           "ordinal": 5,
-          "type_info": "Timestamp"
+          "type_info": "Timestamptz"
         },
         {
           "name": "active",
