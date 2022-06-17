@@ -22,23 +22,17 @@ pub async fn exec_service(config: EventSourceConfig) -> Result<(), Box<dyn std::
     let api_implementor = EventSourceApiImpl::try_from(&config).await?;
     let (server, _shutdown_tx) = EventSourceServer::new(
         api_implementor,
-        TcpListener::bind(
-            config
-                .service_config
-                .event_source_service_bind_address
-                .clone(),
-        )
-        .await?,
+        TcpListener::bind(config.service_config.event_source_bind_address.clone()).await?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
         Duration::from_millis(
             config
                 .service_config
-                .event_source_service_healthcheck_polling_interval_ms,
+                .event_source_healthcheck_polling_interval_ms,
         ),
     );
     tracing::info!(
         message = "starting gRPC server",
-        socket_address = %config.service_config.event_source_service_bind_address,
+        socket_address = %config.service_config.event_source_bind_address,
     );
 
     server.serve().await
@@ -81,12 +75,15 @@ impl EventSourceApi for EventSourceApiImpl {
         &self,
         request: native::UpdateEventSourceRequest,
     ) -> Result<native::UpdateEventSourceResponse, Self::Error> {
-        let updated_row = self.db_client.update_event_source(
-            request.event_source_id, 
-            request.display_name, 
-            request.description, 
-            request.active
-        ).await?;
+        let updated_row = self
+            .db_client
+            .update_event_source(
+                request.event_source_id,
+                request.display_name,
+                request.description,
+                request.active,
+            )
+            .await?;
         Ok(native::UpdateEventSourceResponse {
             event_source_id: updated_row.event_source_id,
             last_updated_time: updated_row.last_updated_time.into(),

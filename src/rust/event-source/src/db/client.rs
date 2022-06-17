@@ -93,7 +93,9 @@ impl EventSourceDbClient {
             description,
             active,
             event_source_id,
-        ).fetch_optional(&self.pool).await?;
+        )
+        .fetch_optional(&self.pool)
+        .await?;
         self.get_event_source(event_source_id).await
     }
 

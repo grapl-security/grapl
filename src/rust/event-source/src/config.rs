@@ -21,9 +21,9 @@ impl EventSourceConfig {
 #[derive(Parser, Clone, Debug)]
 pub struct EventSourceServiceConfig {
     #[clap(long, env)]
-    pub event_source_service_bind_address: SocketAddr,
+    pub event_source_bind_address: SocketAddr,
     #[clap(long, env)]
-    pub event_source_service_healthcheck_polling_interval_ms: u64,
+    pub event_source_healthcheck_polling_interval_ms: u64,
 }
 
 #[derive(Parser, Clone, Debug)]

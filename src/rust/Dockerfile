@@ -369,3 +369,8 @@ FROM rust-dist AS generator-dispatcher-deploy
 
 COPY --from=build /outputs/generator-dispatcher /
 ENTRYPOINT ["/generator-dispatcher"]
+
+##### event-source
+FROM rust-dist as event-source-deploy
+COPY --from=build /outputs/event-source /
+ENTRYPOINT ["/event-source"]

@@ -7,8 +7,9 @@ use crate::{
     graplinc::grapl::api::event_source::v1beta1 as native,
     protobufs::graplinc::grapl::api::event_source::v1beta1 as proto,
     protocol::{
+        service_client::NamedService,
         status::Status,
-        tls::ClientTlsConfig, service_client::NamedService,
+        tls::ClientTlsConfig,
     },
     SerDeError,
 };
@@ -88,8 +89,6 @@ impl EventSourceServiceClient {
     }
 }
 
-
 impl NamedService for EventSourceServiceClient {
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.event_source.v1beta1.EventSourceService";
+    const SERVICE_NAME: &'static str = "graplinc.grapl.api.event_source.v1beta1.EventSourceService";
 }

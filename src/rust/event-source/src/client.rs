@@ -2,7 +2,10 @@ use std::time::Duration;
 
 use async_trait;
 use rust_proto_new::{
-    graplinc::grapl::api::{event_source::v1beta1::client::{EventSourceServiceClient, EventSourceServiceClientError}},
+    graplinc::grapl::api::event_source::v1beta1::client::{
+        EventSourceServiceClient,
+        EventSourceServiceClientError,
+    },
     protocol::{
         healthcheck::client::HealthcheckClient,
         service_client::NamedService,
@@ -17,9 +20,7 @@ pub trait FromEnv<T, E> {
 }
 
 #[async_trait::async_trait]
-impl FromEnv<EventSourceServiceClient, EventSourceServiceClientError>
-    for EventSourceServiceClient
-{
+impl FromEnv<EventSourceServiceClient, EventSourceServiceClientError> for EventSourceServiceClient {
     /// Create a client from environment
     async fn from_env() -> Result<EventSourceServiceClient, EventSourceServiceClientError> {
         let endpoint = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
@@ -36,4 +37,3 @@ impl FromEnv<EventSourceServiceClient, EventSourceServiceClientError>
         Self::connect(endpoint, None).await
     }
 }
-
