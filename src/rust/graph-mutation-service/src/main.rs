@@ -28,11 +28,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let graph_mutation_service = GraphMutationManager::new(
         scylla_client,
         CachingUidAllocatorClient::new(
-            UidAllocatorClient::connect(config.uid_allocator_client_config.address).await?,
+            UidAllocatorClient::connect(config.uid_allocator_client_config.uid_allocator_address)
+                .await?,
             100,
         ),
         ReverseEdgeResolver::new(
-            SchemaManagerClient::connect(config.schema_manager_client_config.address).await?,
+            SchemaManagerClient::connect(
+                config.schema_manager_client_config.schema_manager_address,
+            )
+            .await?,
             1000,
         ),
     );
