@@ -342,39 +342,50 @@ job "grapl-local-infra" {
         }
       }
 
-      task "postgres" {
-        driver = "docker"
+      // This is a hack so that the task name can be something dynamic.
+      // (In this case, each task has the same name as the group.)
+      // I do this because otherwise we'd have N logs called 'postgres.stdout'
+      // It is for-each over a list with a single element: [db_desc].
+      dynamic "task" {
+        for_each = [db_desc.value]
+        iterator = db_desc
 
-        config {
-          image = "postgres-ext:${var.image_tag}"
-          ports = ["postgres"]
-        }
+        labels = [db_desc.value.name]
 
-        env {
-          POSTGRES_USER     = "postgres"
-          POSTGRES_PASSWORD = "postgres"
-        }
+        content {
+          driver = "docker"
 
-        service {
-          name = db_desc.value.name
+          config {
+            image = "postgres-ext:${var.image_tag}"
+            ports = ["postgres"]
+          }
 
-          check {
-            type     = "script"
-            name     = "check_postgres"
-            command  = "pg_isready"
-            args     = ["--username", "postgres"]
-            interval = "20s"
-            timeout  = "10s"
+          env {
+            POSTGRES_USER     = "postgres"
+            POSTGRES_PASSWORD = "postgres"
+          }
 
-            check_restart {
-              limit           = 2
-              grace           = "30s"
-              ignore_warnings = false
+          service {
+            name = db_desc.value.name
+
+            check {
+              type     = "script"
+              name     = "check_postgres"
+              command  = "pg_isready"
+              args     = ["--username", "postgres"]
+              interval = "20s"
+              timeout  = "10s"
+
+              check_restart {
+                limit           = 2
+                grace           = "30s"
+                ignore_warnings = false
+              }
             }
           }
         }
       }
-    } # </content>
+    }
   }
 
   group "dnsmasq" {
