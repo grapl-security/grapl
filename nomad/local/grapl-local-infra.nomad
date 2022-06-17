@@ -696,6 +696,11 @@ job "grapl-local-infra" {
 
       }
 
+      env {
+        # This enables username/password auth.
+        AUTHENTICATOR = "CassandraAuthorizer"
+      }
+
       service {
         name = "scylla"
 
