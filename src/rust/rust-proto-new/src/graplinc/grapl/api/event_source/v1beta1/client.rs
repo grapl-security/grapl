@@ -7,6 +7,7 @@ use crate::{
     graplinc::grapl::api::event_source::v1beta1 as native,
     protobufs::graplinc::grapl::api::event_source::v1beta1 as proto,
     protocol::{
+        healthcheck::ConfigurationError,
         service_client::NamedService,
         status::Status,
         tls::ClientTlsConfig,
@@ -16,6 +17,8 @@ use crate::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum EventSourceServiceClientError {
+    #[error("ServiceHealthConfigError {0}")]
+    ServiceHealthConfigError(#[from] ConfigurationError),
     #[error(transparent)]
     TransportError(#[from] tonic::transport::Error),
     #[error("ErrorStatus")]

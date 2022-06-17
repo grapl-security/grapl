@@ -31,8 +31,7 @@ impl FromEnv<EventSourceServiceClient, EventSourceServiceClientError> for EventS
             Duration::from_millis(10000),
             Duration::from_millis(500),
         )
-        .await
-        .expect("plugin-registry never reported healthy");
+        .await?;
 
         Self::connect(endpoint, None).await
     }
