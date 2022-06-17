@@ -2,7 +2,6 @@ use rust_proto_new::protocol::status::Status;
 
 use crate::db::EventSourceDbError;
 
-/// An example, silly error class
 #[derive(thiserror::Error, Debug)]
 pub enum EventSourceError {
     #[error("DbError")]
