@@ -26,7 +26,7 @@ steps:
         command:
           - .buildkite/scripts/ensure_regenerated_constraints.sh
 
-      - label: ":jeans: All files are covered by Pants"
+      - label: ":pants: All files are covered by Pants"
         command:
           - ./pants tailor --check
 
@@ -35,7 +35,7 @@ steps:
     # enforcement, typechecking, etc.
     key: lints
     steps:
-      - label: ":jeans: BUILD Linting"
+      - label: ":pants: BUILD Linting"
         command:
           - make lint-build
 
