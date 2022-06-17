@@ -39,7 +39,7 @@ locals {
   localhost_within_bridge = attr.unique.network.ip-address
   zookeeper_endpoint      = "${local.localhost_within_bridge}:${var.zookeeper_port}"
 
-  # These Postgres connection data must match what's in
+  # These Postgres connection data must match the `LocalPostgresInstance`s in
   # `pulumi/grapl/__main__.py`; sorry for the duplication :(
   database_descriptors = [
     {

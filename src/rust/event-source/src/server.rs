@@ -19,9 +19,12 @@ use crate::{
 };
 
 pub async fn exec_service(config: EventSourceConfig) -> Result<(), Box<dyn std::error::Error>> {
-    let api_implementor = EventSourceApiImpl::try_from(&config).await?;
+    let api_impl = EventSourceApiImpl::try_from(&config).await?;
+    // I haven't quite figured out the right place to put the migrate.
+    // Perhaps when we construct the db client?!
+    api_impl.db_client.migrate().await?;
     let (server, _shutdown_tx) = EventSourceServer::new(
-        api_implementor,
+        api_impl,
         TcpListener::bind(config.service_config.event_source_bind_address.clone()).await?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
         Duration::from_millis(

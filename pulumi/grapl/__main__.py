@@ -303,9 +303,11 @@ def main() -> None:
         # Local Grapl
         ###################################
 
-        # NOTE: The ports for these `LocalPostgresInstance` databases
-        # must match what's in `grapl-local-infra.nomad`. That Nomad
-        # job will be run _before_ this Pulumi project (because it
+        # NOTE: The ports for these `LocalPostgresInstance` databases must
+        # match what's in `grapl-local-infra.nomad`, specifically
+        # local { database_descriptors }. 
+        # 
+        # That Nomad job will be run _before_ this Pulumi project (because it
         # brings up infrastructure this project depends on in the
         # local case).
         #

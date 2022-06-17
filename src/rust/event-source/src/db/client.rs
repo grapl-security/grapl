@@ -16,6 +16,8 @@ pub struct EventSourceDbClient {
 
 #[derive(Debug, thiserror::Error)]
 pub enum EventSourceDbError {
+    #[error("MigrateError {0}")]
+    MigrateError(#[from] sqlx::migrate::MigrateError),
     #[error("Sqlx {0}")]
     Sqlx(#[from] sqlx::Error),
     #[error("Timeout {0}")]
@@ -41,6 +43,10 @@ impl EventSourceDbClient {
             .await??;
 
         Ok(Self::new(pool))
+    }
+
+    pub(crate) async fn migrate(&self) -> Result<(), EventSourceDbError> {
+        Ok(sqlx::migrate!().run(&self.pool).await?)
     }
 
     #[instrument(skip(display_name, description, tenant_id), err)]
@@ -85,7 +91,8 @@ impl EventSourceDbClient {
             SET 
                 display_name = $1,
                 description = $2,
-                active = $3
+                active = $3,
+                last_updated_time = CURRENT_TIMESTAMP
             WHERE
                 event_source_id = $4
             "#,
