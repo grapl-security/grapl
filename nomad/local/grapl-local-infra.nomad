@@ -342,10 +342,10 @@ job "grapl-local-infra" {
         }
       }
 
-      // This is a hack so that the task name can be something dynamic.
-      // (In this case, each task has the same name as the group.)
-      // I do this because otherwise we'd have N logs called 'postgres.stdout'
-      // It is for-each over a list with a single element: [db_desc].
+      # This is a hack so that the task name can be something dynamic.
+      # (In this case, each task has the same name as the group.)
+      # I do this because otherwise we'd have N logs called 'postgres.stdout'
+      # It is for-each over a list with a single element: [db_desc].
       dynamic "task" {
         for_each = [db_desc.value]
         iterator = db_desc
