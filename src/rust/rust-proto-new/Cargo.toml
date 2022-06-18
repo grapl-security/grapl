@@ -36,8 +36,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 default = [
   "uid-allocator-full",
   "graph-mutation-full",
+  "graph-query",
   "model-plugin-deployer",
-  "schema-manager"
+  "schema-manager",
 ]
 uid-allocator = []
 uid-allocator-messages = ["uid-allocator"]
@@ -84,4 +85,16 @@ schema-manager-full = [
   "schema-manager-client",
   "schema-manager-server",
   "schema-manager"
+]
+
+
+graph-query = []
+graph-query-messages = ["graph-query"]
+graph-query-server = ["graph-query-messages", "graph-query"]
+graph-query-client = ["graph-query-messages", "graph-query"]
+graph-query-full = [
+  "graph-query-messages",
+  "graph-query-client",
+  "graph-query-server",
+  "graph-query",
 ]

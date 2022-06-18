@@ -411,7 +411,7 @@ impl_from_for_unit!(
 // IncrementOnlyIntProp
 //
 
-#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct IncrementOnlyIntProp {
     pub prop: i64,
 }
@@ -475,7 +475,7 @@ impl_from_for_unit!(
 // DecrementOnlyIntProp
 //
 
-#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct DecrementOnlyIntProp {
     pub prop: i64,
 }
@@ -538,7 +538,7 @@ impl_from_for_unit!(
 // ImmutableIntProp
 //
 
-#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct ImmutableIntProp {
     pub prop: i64,
 }

@@ -60,6 +60,16 @@ pub(crate) mod protobufs {
                     }
                 }
 
+                #[cfg(feature = "graph-query")]
+                pub(crate) mod graph_query {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.graph_query.v1beta1.rs"
+                        ));
+                    }
+                }
+
                 #[cfg(feature = "model-plugin-deployer")]
                 pub(crate) mod model_plugin_deployer {
                     pub(crate) mod v1beta1 {
@@ -180,6 +190,11 @@ pub mod graplinc {
 
             #[cfg(feature = "graph-mutation")]
             pub mod graph_mutation {
+                pub mod v1beta1;
+            }
+
+            #[cfg(feature = "graph-query")]
+            pub mod graph_query {
                 pub mod v1beta1;
             }
 

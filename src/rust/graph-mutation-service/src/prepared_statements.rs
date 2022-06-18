@@ -88,6 +88,9 @@ fn raw_edge_prepare_statement(tenant_id: uuid::Uuid) -> String {
     )
 }
 
+// TODO: This is all useless, the CachingSession does this all for us -_-
+// todo we should take the `uid` and `property_name` for the statements
+// and cache the statements so that we can use token based load balancing
 impl PreparedInsert {
     /// Construct a PreparedInsert, with an internal PreparedStatement for each table for a tenant
     pub(crate) async fn prepare(

@@ -15,6 +15,49 @@ pub struct PropertyName {
     pub value: String,
 }
 
+impl std::fmt::Display for PropertyName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
+impl PropertyName {
+    pub fn new_unchecked(value: String) -> Self {
+        // todo: debug assertion
+        Self { value }
+    }
+}
+
+impl TryFrom<&'static str> for PropertyName {
+    type Error = SerDeError;
+    fn try_from(raw: &'static str) -> Result<Self, Self::Error> {
+        if raw.is_empty() {
+            return Err(SerDeError::InvalidField {
+                field_name: "PropertyName",
+                assertion: "can not be empty".to_owned(),
+            });
+        }
+        if raw.len() > 32 {
+            return Err(SerDeError::InvalidField {
+                field_name: "PropertyName",
+                assertion: "can not be more than 32 characters".to_owned(),
+            });
+        }
+
+        Ok(Self {
+            value: raw.to_owned(),
+        })
+    }
+}
+
+impl TryFrom<String> for PropertyName {
+    type Error = &'static str;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        // todo: Validate this thing
+        Ok(PropertyName { value })
+    }
+}
+
 impl TryFrom<PropertyNameProto> for PropertyName {
     type Error = SerDeError;
     fn try_from(proto: PropertyNameProto) -> Result<Self, Self::Error> {
@@ -41,6 +84,12 @@ pub struct EdgeName {
     pub value: String,
 }
 
+impl std::fmt::Display for EdgeName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
 impl TryFrom<String> for EdgeName {
     type Error = &'static str;
     fn try_from(raw: String) -> Result<Self, Self::Error> {
@@ -52,6 +101,22 @@ impl TryFrom<String> for EdgeName {
         }
 
         Ok(Self { value: raw })
+    }
+}
+
+impl TryFrom<&'static str> for EdgeName {
+    type Error = &'static str;
+    fn try_from(raw: &'static str) -> Result<Self, Self::Error> {
+        if raw.is_empty() {
+            return Err("EdgeName can not be empty");
+        }
+        if raw.len() > 32 {
+            return Err("EdgeName can not be more than 32 characters");
+        }
+
+        Ok(Self {
+            value: raw.to_owned(),
+        })
     }
 }
 
@@ -79,6 +144,34 @@ impl type_url::TypeUrl for EdgeName {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NodeType {
     pub value: String,
+}
+
+impl std::fmt::Display for NodeType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
+impl TryFrom<&'static str> for NodeType {
+    type Error = SerDeError;
+    fn try_from(raw: &'static str) -> Result<Self, Self::Error> {
+        if raw.is_empty() {
+            return Err(SerDeError::InvalidField {
+                field_name: "EdgeName",
+                assertion: "can not be empty".to_owned(),
+            });
+        }
+        if raw.len() > 32 {
+            return Err(SerDeError::InvalidField {
+                field_name: "EdgeName",
+                assertion: "can not be more than 32 characters".to_owned(),
+            });
+        }
+
+        Ok(Self {
+            value: raw.to_owned(),
+        })
+    }
 }
 
 impl TryFrom<NodeTypeProto> for NodeType {
