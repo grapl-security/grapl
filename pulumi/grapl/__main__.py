@@ -68,6 +68,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "analyzer-executor": builder.build_with_tag("analyzer-executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "engagement-creator": builder.build_with_tag("engagement-creator"),
+        "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
         "generator-executor": builder.build_with_tag("generator-executor"),
         "graph-merger": builder.build_with_tag("graph-merger"),
@@ -295,25 +296,23 @@ def main() -> None:
     plugin_registry_db: NomadServicePostgresResource
     plugin_work_queue_db: NomadServicePostgresResource
     uid_allocator_db: NomadServicePostgresResource
+    event_source_db: NomadServicePostgresResource
 
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
         ###################################
 
-        # NOTE: The ports for these `LocalPostgresInstance` databases
-        # must match what's in `grapl-local-infra.nomad`. That Nomad
-        # job will be run _before_ this Pulumi project (because it
+        # NOTE: The ports for these `LocalPostgresInstance` databases must
+        # match what's in `grapl-local-infra.nomad`, specifically
+        # local { database_descriptors }.
+        #
+        # That Nomad job will be run _before_ this Pulumi project (because it
         # brings up infrastructure this project depends on in the
         # local case).
         #
         # There's not really a great way to deal with this duplication
         # at the moment, sadly.
-        organization_management_db = LocalPostgresInstance(
-            name="organization-management-db",
-            port=5632,
-        )
-
         plugin_registry_db = LocalPostgresInstance(
             name="plugin-registry-db",
             port=5432,
@@ -321,12 +320,22 @@ def main() -> None:
 
         plugin_work_queue_db = LocalPostgresInstance(
             name="plugin-work-queue-db",
-            port=5532,
+            port=5433,
+        )
+
+        organization_management_db = LocalPostgresInstance(
+            name="organization-management-db",
+            port=5434,
         )
 
         uid_allocator_db = LocalPostgresInstance(
             name="uid-allocator-db",
-            port=5732,
+            port=5435,
+        )
+
+        event_source_db = LocalPostgresInstance(
+            name="event-source-db",
+            port=5436,
         )
 
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
@@ -342,6 +351,7 @@ def main() -> None:
         )
 
         local_grapl_core_vars: Final[NomadVars] = dict(
+            event_source_db=event_source_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
@@ -416,36 +426,27 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        organization_management_db = Postgres(
-            name="organization-management",
-            subnet_ids=subnet_ids,
-            vpc_id=vpc_id,
-            availability_zone=availability_zone,
-            nomad_agent_security_group_id=nomad_agent_security_group_id,
-        )
-
-        plugin_registry_db = Postgres(
-            name="plugin-registry",
-            subnet_ids=subnet_ids,
-            vpc_id=vpc_id,
-            availability_zone=availability_zone,
-            nomad_agent_security_group_id=nomad_agent_security_group_id,
-        )
-
-        plugin_work_queue_db = Postgres(
-            name="plugin-work-queue",
-            subnet_ids=subnet_ids,
-            vpc_id=vpc_id,
-            availability_zone=availability_zone,
-            nomad_agent_security_group_id=nomad_agent_security_group_id,
-        )
-
-        uid_allocator_db = Postgres(
-            name="uid-allocator-db",
-            subnet_ids=subnet_ids,
-            vpc_id=vpc_id,
-            availability_zone=availability_zone,
-            nomad_agent_security_group_id=nomad_agent_security_group_id,
+        (
+            organization_management_db,
+            plugin_registry_db,
+            plugin_work_queue_db,
+            uid_allocator_db,
+            event_source_db,
+        ) = (
+            Postgres(
+                name=db_resource_name,
+                subnet_ids=subnet_ids,
+                vpc_id=vpc_id,
+                availability_zone=availability_zone,
+                nomad_agent_security_group_id=nomad_agent_security_group_id,
+            )
+            for db_resource_name in (
+                "organization-management",
+                "plugin-registry",
+                "plugin-work-queue",
+                "uid-allocator-db",
+                "event-source-db",
+            )
         )
 
         pulumi.export("redis-endpoint", cache.endpoint)
@@ -453,6 +454,7 @@ def main() -> None:
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
+            event_source_db=event_source_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),

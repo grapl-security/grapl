@@ -129,6 +129,11 @@ job "integration-tests-new" {
               destination_name = "dgraph-alpha-0-grpc-public"
               local_bind_port  = 1003
             }
+
+            upstreams {
+              destination_name = "event-source"
+              local_bind_port  = 1004
+            }
           }
         }
       }
@@ -158,6 +163,7 @@ job "integration-tests-new" {
 
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
 
+        EVENT_SOURCE_CLIENT_ADDRESS      = "http://${NOMAD_UPSTREAM_ADDR_event-source}"
         PIPELINE_INGRESS_CLIENT_ADDRESS  = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
         PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"

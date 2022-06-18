@@ -1484,6 +1484,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77f3309417938f28bf8228fcff79a4a37103981e3e186d2ccd19c74b38f4eb71"
 
 [[package]]
+name = "event-source"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "clap 3.1.18",
+ "grapl-config",
+ "grapl-utils",
+ "rust-proto-new",
+ "sqlx",
+ "test-log",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-futures",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "eyre"
 version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -63,7 +63,8 @@ BUILD @christophermaier
 /src/rust/consul-connect/ @colin-grapl @wimax-grapl
 /src/rust/derive-dynamic-node/ @colin-grapl
 /src/rust/endpoint-plugin/ @inickles-grapl
-src/rust/generator-dispatcher/ @wimax-grapl
+/src/rust/event-source/ @wimax-grapl
+/src/rust/generator-dispatcher/ @wimax-grapl
 /src/rust/generators/ @inickles-grapl
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl

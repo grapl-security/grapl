@@ -202,7 +202,7 @@ FROM base AS build-test-integration-new
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/new_integration_tests,graph-merger/new_integration_tests,node-identifier/new_integration_tests,pipeline-ingress/new_integration_tests,plugin-registry/new_integration_tests,sysmon-generator/new_integration_tests"
+ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/new_integration_tests,graph-merger/new_integration_tests,node-identifier/new_integration_tests,pipeline-ingress/new_integration_tests,plugin-registry/new_integration_tests,sysmon-generator/new_integration_tests,event-source/new_integration_tests"
 ENV TEST_DIR=/grapl/tests
 
 # This will build the integration test binaries and parse the manifest to find
@@ -369,3 +369,8 @@ FROM rust-dist AS generator-dispatcher-deploy
 
 COPY --from=build /outputs/generator-dispatcher /
 ENTRYPOINT ["/generator-dispatcher"]
+
+##### event-source
+FROM rust-dist as event-source-deploy
+COPY --from=build /outputs/event-source /
+ENTRYPOINT ["/event-source"]
