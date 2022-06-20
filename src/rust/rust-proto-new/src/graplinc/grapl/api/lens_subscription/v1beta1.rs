@@ -1,5 +1,8 @@
 #![allow(warnings)]
 
+pub mod client;
+mod server;
+
 use crate::{
     protobufs::graplinc::grapl::api::lens_subscription::v1beta1::{
         operation::GraphOperations as GraphOperationsProto,

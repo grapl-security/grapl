@@ -31,7 +31,7 @@ test-context = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [features]
-default = ["uid-allocator-full"]
+default = ["uid-allocator-full", "lens-subscription-full"]
 uid-allocator = []
 uid-allocator-messages = ["uid-allocator"]
 uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
@@ -41,4 +41,14 @@ uid-allocator-full = [
   "uid-allocator-client",
   "uid-allocator-server",
   "uid-allocator"
+]
+lens-subscription = []
+lens-subscription-messages = ["lens-subscription"]
+lens-subscription-server = ["lens-subscription-messages", "lens-subscription"]
+lens-subscription-client = ["lens-subscription-messages", "lens-subscription"]
+lens-subscription-full = [
+  "lens-subscription-messages",
+  "lens-subscription-client",
+  "lens-subscription-server",
+  "lens-subscription"
 ]
