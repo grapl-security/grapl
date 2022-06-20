@@ -29,24 +29,39 @@ message Plugin {
   bytes plugin_binary = 4;
 }
 
-message CreatePluginRequest {
+message CreateGeneratorRequest {
   oneof inner {
-    CreatePluginRequestMetadata metadata = 1;
-    // Chunks of the plugin binary
+    CreateGeneratorRequestMetadata metadata = 1;
+    // Chunks of the generator binary
     bytes chunk = 2;
   }
 }
 
-// A request to create a plugin entry
-message CreatePluginRequestMetadata {
-  // Tenant that is deploying this plugin
+message CreateGeneratorRequestMetadata {
+  // Tenant that is deploying this Generator
   graplinc.common.v1beta1.Uuid tenant_id = 1;
 
   // The string value to display to a user, non-empty
   string display_name = 2;
 
-  // The type of the plugin
-  PluginType plugin_type = 3;
+  // The Event Sources that should be input in to this Generator
+  repeated graplinc.common.v1beta1.Uuid event_sources = 3;
+}
+
+message CreateAnalyzerRequest {
+  oneof inner {
+    CreateAnalyzerRequestMetadata metadata = 1;
+    // Chunks of the analyzer binary
+    bytes chunk = 2;
+  }
+}
+
+message CreateAnalyzerRequestMetadata {
+  // Tenant that is deploying this plugin
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+
+  // The string value to display to a user, non-empty
+  string display_name = 2;
 }
 
 // A Response to a plugin entry being created
@@ -114,7 +129,10 @@ message GetAnalyzersForTenantResponse {
 // A service that manages the state of plugins
 service PluginRegistryService {
   // create a new plugin
-  rpc CreatePlugin(stream CreatePluginRequest) returns (CreatePluginResponse);
+  rpc CreateGenerator(stream CreateGeneratorRequest) returns (CreatePluginResponse);
+
+  // create a new plugin
+  rpc CreateAnalyzer(stream CreateAnalyzerRequest) returns (CreatePluginResponse);
 
   // retrieve the plugin corresponding to the given plugin_id
   rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse);

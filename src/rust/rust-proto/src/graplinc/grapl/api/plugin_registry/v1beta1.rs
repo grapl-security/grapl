@@ -1,6 +1,9 @@
 use std::fmt::Debug;
 
-use proto::create_plugin_request;
+use proto::{
+    create_analyzer_request,
+    create_generator_request,
+};
 
 pub use crate::graplinc::grapl::api::plugin_registry::{
     v1beta1_client::{
@@ -18,6 +21,8 @@ use crate::{
     type_url,
     SerDeError,
 };
+
+//////////////////// PluginType ////////////////////
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PluginType {
@@ -55,6 +60,8 @@ impl From<PluginType> for proto::PluginType {
         }
     }
 }
+
+//////////////////// Plugin ////////////////////
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Plugin {
@@ -110,79 +117,87 @@ impl From<Plugin> for proto::Plugin {
     }
 }
 
+//////////////////// CreateGeneratorRequest ////////////////////
+
 #[derive(Debug, Clone, PartialEq)]
-pub enum CreatePluginRequest {
-    Metadata(CreatePluginRequestMetadata),
+pub enum CreateGeneratorRequest {
+    Metadata(CreateGeneratorRequestMetadata),
     Chunk(Vec<u8>),
 }
 
-impl type_url::TypeUrl for CreatePluginRequest {
+impl type_url::TypeUrl for CreateGeneratorRequest {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreatePluginRequest";
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreateGeneratorRequest";
 }
 
-impl TryFrom<proto::CreatePluginRequest> for CreatePluginRequest {
+impl TryFrom<proto::CreateGeneratorRequest> for CreateGeneratorRequest {
     type Error = SerDeError;
 
-    fn try_from(value: proto::CreatePluginRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::CreateGeneratorRequest) -> Result<Self, Self::Error> {
         match value.inner {
-            Some(create_plugin_request::Inner::Metadata(m)) => {
-                Ok(CreatePluginRequest::Metadata(m.try_into()?))
+            Some(create_generator_request::Inner::Metadata(m)) => {
+                Ok(CreateGeneratorRequest::Metadata(m.try_into()?))
             }
-            Some(create_plugin_request::Inner::Chunk(c)) => {
-                Ok(CreatePluginRequest::Chunk(c.try_into()?))
+            Some(create_generator_request::Inner::Chunk(c)) => {
+                Ok(CreateGeneratorRequest::Chunk(c.try_into()?))
             }
-            _ => Err(SerDeError::UnknownVariant("CreatePluginRequest.inner")),
+            _ => Err(SerDeError::UnknownVariant("CreateGeneratorRequest.inner")),
         }
     }
 }
 
-impl From<CreatePluginRequest> for proto::CreatePluginRequest {
-    fn from(value: CreatePluginRequest) -> Self {
-        proto::CreatePluginRequest {
+impl From<CreateGeneratorRequest> for proto::CreateGeneratorRequest {
+    fn from(value: CreateGeneratorRequest) -> Self {
+        proto::CreateGeneratorRequest {
             inner: Some(match value {
-                CreatePluginRequest::Metadata(m) => {
-                    create_plugin_request::Inner::Metadata(m.into())
+                CreateGeneratorRequest::Metadata(m) => {
+                    create_generator_request::Inner::Metadata(m.into())
                 }
-                CreatePluginRequest::Chunk(c) => create_plugin_request::Inner::Chunk(c.into()),
+                CreateGeneratorRequest::Chunk(c) => {
+                    create_generator_request::Inner::Chunk(c.into())
+                }
             }),
         }
     }
 }
 
-impl ProtobufSerializable for CreatePluginRequest {
-    type ProtobufMessage = proto::CreatePluginRequest;
+impl ProtobufSerializable for CreateGeneratorRequest {
+    type ProtobufMessage = proto::CreateGeneratorRequest;
 }
 
+//////////////////// CreateGeneratorRequestMetadata ////////////////////
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct CreatePluginRequestMetadata {
+pub struct CreateGeneratorRequestMetadata {
     /// Tenant that is deploying this plugin
     pub tenant_id: uuid::Uuid,
     /// The string value to display to a user, non-empty
     pub display_name: String,
-    /// The type of the plugin
-    pub plugin_type: PluginType,
+    /// The event sources that would be sent to this generator.
+    pub event_sources: Vec<uuid::Uuid>,
 }
 
-impl type_url::TypeUrl for CreatePluginRequestMetadata {
+impl type_url::TypeUrl for CreateGeneratorRequestMetadata {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreatePluginRequestMetadata";
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreateGeneratorRequestMetadata";
 }
 
-impl TryFrom<proto::CreatePluginRequestMetadata> for CreatePluginRequestMetadata {
+impl TryFrom<proto::CreateGeneratorRequestMetadata> for CreateGeneratorRequestMetadata {
     type Error = SerDeError;
 
-    fn try_from(value: proto::CreatePluginRequestMetadata) -> Result<Self, Self::Error> {
-        let plugin_type = value.plugin_type().try_into()?;
+    fn try_from(value: proto::CreateGeneratorRequestMetadata) -> Result<Self, Self::Error> {
+        let event_sources = value.event_sources.map(uuid::Uuid::try_into);
 
         let tenant_id = value
             .tenant_id
-            .ok_or(SerDeError::MissingField("CreatePluginRequest.tenant_id"))?
+            .ok_or(SerDeError::MissingField("CreateGeneratorRequest.tenant_id"))?
             .into();
         let display_name = value.display_name;
 
         if display_name.is_empty() {
-            return Err(SerDeError::MissingField("CreatePluginRequest.display_name"));
+            return Err(SerDeError::MissingField(
+                "CreateGeneratorRequest.display_name",
+            ));
         }
 
         Ok(Self {
@@ -193,20 +208,123 @@ impl TryFrom<proto::CreatePluginRequestMetadata> for CreatePluginRequestMetadata
     }
 }
 
-impl From<CreatePluginRequestMetadata> for proto::CreatePluginRequestMetadata {
-    fn from(value: CreatePluginRequestMetadata) -> Self {
+impl From<CreateGeneratorRequestMetadata> for proto::CreateGeneratorRequestMetadata {
+    fn from(value: CreateGeneratorRequestMetadata) -> Self {
         let plugin_type: proto::PluginType = value.plugin_type.into();
         Self {
             tenant_id: Some(value.tenant_id.into()),
             display_name: value.display_name,
-            plugin_type: plugin_type as i32,
+            event_sources: value
+                .event_sources
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<Vec<_>, _>>()?,
         }
     }
 }
 
-impl ProtobufSerializable for CreatePluginRequestMetadata {
-    type ProtobufMessage = proto::CreatePluginRequestMetadata;
+impl ProtobufSerializable for CreateGeneratorRequestMetadata {
+    type ProtobufMessage = proto::CreateGeneratorRequestMetadata;
 }
+
+//////////////////// CreateAnalyzerRequest ////////////////////
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CreateAnalyzerRequest {
+    Metadata(CreateAnalyzerRequestMetadata),
+    Chunk(Vec<u8>),
+}
+
+impl type_url::TypeUrl for CreateAnalyzerRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreateAnalyzerRequest";
+}
+
+impl TryFrom<proto::CreateAnalyzerRequest> for CreateAnalyzerRequest {
+    type Error = SerDeError;
+
+    fn try_from(value: proto::CreateAnalyzerRequest) -> Result<Self, Self::Error> {
+        match value.inner {
+            Some(create_analyzer_request::Inner::Metadata(m)) => {
+                Ok(CreateAnalyzerRequest::Metadata(m.try_into()?))
+            }
+            Some(create_analyzer_request::Inner::Chunk(c)) => {
+                Ok(CreateAnalyzerRequest::Chunk(c.try_into()?))
+            }
+            _ => Err(SerDeError::UnknownVariant("CreateAnalyzerRequest.inner")),
+        }
+    }
+}
+
+impl From<CreateAnalyzerRequest> for proto::CreateAnalyzerRequest {
+    fn from(value: CreateAnalyzerRequest) -> Self {
+        proto::CreateAnalyzerRequest {
+            inner: Some(match value {
+                CreateAnalyzerRequest::Metadata(m) => {
+                    create_analyzer_request::Inner::Metadata(m.into())
+                }
+                CreateAnalyzerRequest::Chunk(c) => create_analyzer_request::Inner::Chunk(c.into()),
+            }),
+        }
+    }
+}
+
+impl ProtobufSerializable for CreateAnalyzerRequest {
+    type ProtobufMessage = proto::CreateAnalyzerRequest;
+}
+
+//////////////////// CreateAnalyzerRequestMetadata ////////////////////
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CreateAnalyzerRequestMetadata {
+    /// Tenant that is deploying this plugin
+    pub tenant_id: uuid::Uuid,
+    /// The string value to display to a user, non-empty
+    pub display_name: String,
+}
+
+impl type_url::TypeUrl for CreateAnalyzerRequestMetadata {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreateAnalyzerRequestMetadata";
+}
+
+impl TryFrom<proto::CreateAnalyzerRequestMetadata> for CreateAnalyzerRequestMetadata {
+    type Error = SerDeError;
+
+    fn try_from(value: proto::CreateAnalyzerRequestMetadata) -> Result<Self, Self::Error> {
+        let tenant_id = value
+            .tenant_id
+            .ok_or(SerDeError::MissingField("CreateAnalyzerRequest.tenant_id"))?
+            .into();
+        let display_name = value.display_name;
+
+        if display_name.is_empty() {
+            return Err(SerDeError::MissingField(
+                "CreateAnalyzerRequest.display_name",
+            ));
+        }
+
+        Ok(Self {
+            tenant_id,
+            display_name,
+        })
+    }
+}
+
+impl From<CreateAnalyzerRequestMetadata> for proto::CreateAnalyzerRequestMetadata {
+    fn from(value: CreateAnalyzerRequestMetadata) -> Self {
+        Self {
+            tenant_id: Some(value.tenant_id.into()),
+            display_name: value.display_name,
+        }
+    }
+}
+
+impl ProtobufSerializable for CreateAnalyzerRequestMetadata {
+    type ProtobufMessage = proto::CreateAnalyzerRequestMetadata;
+}
+
+//////////////////// CreatePluginResponse ////////////////////
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreatePluginResponse {
@@ -243,6 +361,9 @@ impl From<CreatePluginResponse> for proto::CreatePluginResponse {
 impl ProtobufSerializable for CreatePluginResponse {
     type ProtobufMessage = proto::CreatePluginResponse;
 }
+
+//////////////////// DeployPluginRequest ////////////////////
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeployPluginRequest {
     pub plugin_id: uuid::Uuid,
@@ -278,6 +399,8 @@ impl ProtobufSerializable for DeployPluginRequest {
     type ProtobufMessage = proto::DeployPluginRequest;
 }
 
+//////////////////// DeployPluginResponse ////////////////////
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeployPluginResponse {}
 
@@ -302,6 +425,8 @@ impl From<DeployPluginResponse> for proto::DeployPluginResponse {
 impl ProtobufSerializable for DeployPluginResponse {
     type ProtobufMessage = proto::DeployPluginResponse;
 }
+
+//////////////////// GetAnalyzersForTenantRequest ////////////////////
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetAnalyzersForTenantRequest {
@@ -340,6 +465,8 @@ impl ProtobufSerializable for GetAnalyzersForTenantRequest {
     type ProtobufMessage = proto::GetAnalyzersForTenantRequest;
 }
 
+//////////////////// GetAnalyzersForTenantResponse ////////////////////
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetAnalyzersForTenantResponse {
     /// The plugin ids for the analyzers belonging to a tenant
@@ -376,6 +503,8 @@ impl From<GetAnalyzersForTenantResponse> for proto::GetAnalyzersForTenantRespons
 impl ProtobufSerializable for GetAnalyzersForTenantResponse {
     type ProtobufMessage = proto::GetAnalyzersForTenantResponse;
 }
+
+//////////////////// GetGeneratorsForEventSourceRequest ////////////////////
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetGeneratorsForEventSourceRequest {
@@ -414,6 +543,8 @@ impl ProtobufSerializable for GetGeneratorsForEventSourceRequest {
     type ProtobufMessage = proto::GetGeneratorsForEventSourceRequest;
 }
 
+//////////////////// GetGeneratorsForEventSourceResponse ////////////////////
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetGeneratorsForEventSourceResponse {
     pub plugin_ids: Vec<uuid::Uuid>,
@@ -450,6 +581,9 @@ impl From<GetGeneratorsForEventSourceResponse> for proto::GetGeneratorsForEventS
 impl ProtobufSerializable for GetGeneratorsForEventSourceResponse {
     type ProtobufMessage = proto::GetGeneratorsForEventSourceResponse;
 }
+
+//////////////////// GetPluginRequest ////////////////////
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginRequest {
     /// The identity of the plugin
@@ -498,6 +632,8 @@ impl ProtobufSerializable for GetPluginRequest {
     type ProtobufMessage = proto::GetPluginRequest;
 }
 
+//////////////////// GetPluginResponse ////////////////////
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginResponse {
     pub plugin: Plugin,
@@ -532,6 +668,8 @@ impl ProtobufSerializable for GetPluginResponse {
     type ProtobufMessage = proto::GetPluginResponse;
 }
 
+//////////////////// TearDownPluginRequest ////////////////////
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TearDownPluginRequest {
     pub plugin_id: uuid::Uuid,
@@ -565,6 +703,8 @@ impl From<TearDownPluginRequest> for proto::TearDownPluginRequest {
 impl ProtobufSerializable for TearDownPluginRequest {
     type ProtobufMessage = proto::TearDownPluginRequest;
 }
+
+//////////////////// TearDownPluginResponse ////////////////////
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TearDownPluginResponse {}
