@@ -1009,6 +1009,7 @@ pub struct QueryGraphWithNodeRequest {
     pub node_uid: Uid,
     pub node_query: NodeQuery,
     pub edge_mapping: HashMap<EdgeName, EdgeName>,
+    // todo: Add the conflict resolution information here for each property
 }
 
 impl TryFrom<QueryGraphWithNodeRequestProto> for QueryGraphWithNodeRequest {
