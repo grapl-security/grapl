@@ -3,12 +3,6 @@ name = "graph-query-service"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-name = "graph_query_service"
-
-[[bin]]
-name = "graph-query-service"
-path = "src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -25,7 +19,6 @@ tracing = "0.1.32"
 tracing-subscriber = {version = "0.3", default-features = false, features = ["env-filter", "fmt"]}
 test-log = { version = "0.2.8", features = ["trace"] }
 env_logger = "0.9.0"
-async-recursion = "1.0.0"
 scylla = "0.4.3"
 rand = "0.8.5"
 futures = "0.3.21"
@@ -33,9 +26,13 @@ itertools = "0.10.3"
 prost = "0.9.0"
 prost-types = "0.9.0"
 tonic = "0.6.1"
-async-trait = "0.1.53"
 thiserror = "1.0.31"
+async-recursion = "1.0.0"
+async-trait = "0.1.56"
+moka = { version = "0.8.5", features = ["future"] }
 
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }
+
+[features]
 

@@ -23,24 +23,15 @@ use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
     PropertyName,
     Uid,
 };
-use scylla::{
-    IntoTypedRows,
-    Session,
-};
+use scylla::{CachingSession, IntoTypedRows, Session};
 
-use crate::{
-    graph_query::{
-        EdgeRow,
-        GraphQuery,
-        StringCmp,
-        StringField,
-    },
-    graph_view::Graph,
-    node_view::Node,
-    visited::Visited,
-};
+use crate::{graph_query::{
+    GraphQuery,
+    StringCmp,
+}, graph_view::Graph, node_view::Node, visited::Visited};
+use crate::property_query::{PropertyQueryExecutor, StringField, EdgeRow};
+use crate::short_circuit::ShortCircuit;
 
-type RcCell<T> = Rc<RefCell<T>>;
 
 #[derive(Clone)]
 pub struct InnerNodeQuery {
@@ -50,6 +41,16 @@ pub struct InnerNodeQuery {
 }
 
 impl InnerNodeQuery {
+    pub fn new(node_type: NodeType) -> Self {
+        let query_id = std::cmp::max(rand::random(), 1);
+
+        Self {
+            query_id,
+            node_type,
+            string_filters: HashMap::new(),
+        }
+    }
+
     pub(crate) fn match_property(
         &self,
         property_name: &PropertyName,
@@ -79,121 +80,72 @@ impl InnerNodeQuery {
         false
     }
 
-
-    fn select_node_properties(&self, uid: Uid, tenant_id: uuid::Uuid) -> Vec<String> {
-        let uid = uid.as_i64();
-        let mut selects = Vec::new();
-        let node_type = &self.node_type;
-        // todo: tenant_id?
-        for prop_name in self.string_filters.keys() {
-            // todo: use prepared statements!
-            let select = format!(
-                r#"
-                SELECT populated_field, value FROM immutable_string_index
-                WHERE uid = {uid} AND node_type = '{node_type}' AND populated_field = '{prop_name}'
-                LIMIT 1
-                ALLOW FILTERING;
-            "#
-            );
-            selects.push(select);
-        }
-        selects
-    }
-
-    #[tracing::instrument(skip(self, session))]
+    #[tracing::instrument(skip(self, property_query_executor))]
     pub async fn fetch_node_properties(
         &self,
         uid: Uid,
         tenant_id: uuid::Uuid,
-        session: Arc<Session>,
+        property_query_executor: PropertyQueryExecutor,
     ) -> Result<Option<Vec<StringField>>, Box<dyn std::error::Error + Send + Sync + 'static>> {
-        let selects = self.select_node_properties(uid, tenant_id);
 
-        let mut rows: Vec<StringField> = vec![];
+        let mut fields = vec![];
+        if !self.string_filters.is_empty() {
+            let mut filter_names: HashSet<_> = self.string_filters.keys().collect();
 
-        for select in selects {
-            println!("selecting: {select}");
-            if let Some(next_rows) = session.query(select, &[]).await?.rows {
-                if next_rows.is_empty() {
-                    return Ok(None);
+            for prop_name in self.string_filters.keys() {
+                let property = property_query_executor.get_immutable_string(
+                    tenant_id,
+                    uid,
+                    &self.node_type,
+                    prop_name,
+                ).await?;
+                match property {
+                    Some(p) => fields.push(p),
+                    None => return Ok(None),
                 }
-                debug_assert_eq!(next_rows.len(), 1);
+                filter_names.remove(prop_name);
+            }
 
-                for row in next_rows.into_typed::<(String, String)>() {
-                    let row = row?;
-                    let row = StringField {
-                        uid,
-                        populated_field: PropertyName::try_from(row.0).expect("todo"),
-                        value: row.1,
-                    };
-                    rows.push(row);
-                }
-            } else {
-                // todo: this is actually an error for SELECT
+
+            if !filter_names.is_empty() {
+                // some values didn't exist, not a match
                 return Ok(None);
             }
         }
 
-        let mut filter_names: HashSet<_> = self.string_filters.keys().collect();
-
-        for row in rows.iter() {
-            filter_names.remove(&row.populated_field);
-        }
-
-        if !filter_names.is_empty() {
-            // some values didn't exist, not a match
-            return Ok(None);
-        }
-
-        Ok(Some(rows))
+        Ok(Some(fields))
     }
 
-    #[tracing::instrument(skip(self, graph_query, session))]
+    #[tracing::instrument(skip(self, graph_query, property_query_executor))]
     pub async fn fetch_edges(
         &self,
         uid: Uid,
         graph_query: &GraphQuery,
         tenant_id: uuid::Uuid,
-        session: Arc<Session>,
+        property_query_executor: PropertyQueryExecutor,
     ) -> Result<
         Option<HashMap<EdgeName, Vec<EdgeRow>>>,
         Box<dyn std::error::Error + Send + Sync + 'static>,
     > {
+
         let mut edge_rows = HashMap::new();
-        for ((src_id, edge_name), edges) in graph_query.edges.iter() {
+        for (src_id, edge_name) in graph_query.edges.keys() {
             if *src_id != self.query_id {
                 continue;
             }
-            let edge_query = format!(
-                r#"
-                SELECT f_edge_name, r_edge_name, destination_uid
-                FROM edge
-                WHERE source_uid = {uid} AND f_edge_name = '{edge_name}'
-                ALLOW FILTERING;
-            "#,
-                uid = uid.as_i64()
-            );
-            let mut rows = vec![];
-            if let Some(next_rows) = session.query(edge_query, &[]).await?.rows {
-                // property is not indexed - no match
-                if next_rows.is_empty() {
-                    return Ok(None);
-                }
-                for row in next_rows.into_typed::<(String, String, i64)>() {
-                    let row = row?;
-                    let row = EdgeRow {
-                        source_uid: uid,
-                        f_edge_name: EdgeName::try_from(row.0).expect("todo"),
-                        r_edge_name: EdgeName::try_from(row.1).expect("todo"),
-                        destination_uid: Uid::from_i64(row.2).expect("todo"),
-                        tenant_id: tenant_id.clone(),
-                    };
-                    rows.push(row);
-                }
-            }
-            if rows.is_empty() {
-                return Ok(None);
-            }
+
+            let rows = property_query_executor.get_edges(
+                tenant_id,
+                uid,
+                edge_name,
+            ).await?;
+
+            let rows = match rows {
+                None => return Ok(None),
+                Some(rows) => rows,
+            };
+            debug_assert!(!rows.is_empty());
+
             println!("edge name {}, rows {:?}", edge_name, rows);
             edge_rows.insert(edge_name.to_owned(), rows);
         }
@@ -201,24 +153,24 @@ impl InnerNodeQuery {
         Ok(Some(edge_rows))
     }
 
-    // todo: Handle cycles
     #[async_recursion]
     pub async fn fetch_node_with_edges(
         &self,
         graph_query: &GraphQuery,
         uid: Uid,
         tenant_id: uuid::Uuid,
-        session: Arc<Session>,
+        property_query_executor: PropertyQueryExecutor,
         visited: Visited,
+        x_short_circuit: ShortCircuit,
     ) -> Result<Option<Graph>, Box<dyn std::error::Error + Send + Sync + 'static>> {
-        if visited.get_short_circuit() {
+        if visited.get_short_circuit() || x_short_circuit.get_short_circuit() {
             return Ok(None);
         }
 
-        let mut node = Node::new(uid, self.query_id);
+        let mut node = Node::new(uid, self.node_type.clone(), self.query_id);
 
         let node_indices = self
-            .fetch_node_properties(uid, tenant_id, session.clone())
+            .fetch_node_properties(uid, tenant_id, property_query_executor.clone())
             .await?;
 
         let node_indices = match node_indices {
@@ -248,14 +200,14 @@ impl InnerNodeQuery {
             message = "Retrieved node indices",
             count = node_indices.len(),
         );
-        assert!(
-            !node_indices.is_empty(),
-            "node_indices should never be empty - this is a bug"
-        );
+
+        if x_short_circuit.get_short_circuit() {
+            return Ok(None);
+        }
 
         // fetch the edges for the uid
         let edges = match self
-            .fetch_edges(uid, graph_query, tenant_id, session.clone())
+            .fetch_edges(uid, graph_query, tenant_id, property_query_executor.clone())
             .await?
         {
             Some(edges) => edges,
@@ -286,18 +238,22 @@ impl InnerNodeQuery {
                     continue;
                 }
 
-                // When we support multiple edge filters we'll add that logic here
+                // When we support 'OR' logic on edges we'll add that logic here
 
                 let mut any = false;
                 for edge_row in edge_rows {
                     // we can do this in parallel
+                    if x_short_circuit.get_short_circuit() {
+                        return Ok(None);
+                    }
                     let neighbors = match edge_query
                         .fetch_node_with_edges(
                             graph_query,
                             edge_row.destination_uid,
                             tenant_id,
-                            session.clone(),
+                            property_query_executor.clone(),
                             visited.clone(),
+                            x_short_circuit.clone(),
                         )
                         .await?
                     {
@@ -323,9 +279,10 @@ impl InnerNodeQuery {
     }
 }
 
+// Note: Different from the rust_proto_new NodeQuery.
 pub struct NodeQuery {
     pub query_id: u64,
-    graph: Option<RcCell<GraphQuery>>,
+    graph: Option<Rc<RefCell<GraphQuery>>>,
 }
 
 impl NodeQuery {
@@ -382,6 +339,48 @@ impl NodeQuery {
             .insert(property_name, comparisons);
     }
 
+    pub fn with_shared_edge(
+        &mut self,
+        edge_name: EdgeName,
+        reverse_edge_name: EdgeName,
+        node: InnerNodeQuery,
+        init_edge: impl FnOnce(&mut Self) -> (),
+    ) -> &mut Self {
+        let neighbor_query_id = node.query_id;
+        {
+            let mut graph = self.graph.as_mut().unwrap();
+            let mut graph = graph.borrow_mut();
+            graph.merge_node(node);
+        }
+        let mut neighbor = Self {
+            query_id: neighbor_query_id,
+            graph: self.graph.clone(),
+        };
+
+        init_edge(&mut neighbor);
+        neighbor.graph = None;
+        {
+            let mut graph = self.graph.as_mut().unwrap();
+            let mut graph = graph.borrow_mut();
+            graph
+                .edges
+                .entry((self.query_id, edge_name.clone()))
+                .or_insert(HashSet::new())
+                .insert(neighbor_query_id);
+            graph
+                .edges
+                .entry((neighbor_query_id, reverse_edge_name.clone()))
+                .or_insert(HashSet::new())
+                .insert(self.query_id);
+            graph
+                .edge_map
+                .insert(edge_name.clone(), reverse_edge_name.clone());
+            graph.edge_map.insert(reverse_edge_name, edge_name);
+        }
+        self
+    }
+
+
     pub fn with_edge_to(
         &mut self,
         edge_name: EdgeName,
@@ -426,10 +425,17 @@ impl NodeQuery {
     }
 
     pub fn build(&mut self) -> GraphQuery {
+        // This will panic if you have not attached this node to a graph ie: it must be attached
+        // to a root node somewhere
         let mut graph = self.graph.take().unwrap();
 
         let graph = Rc::get_mut(&mut graph).unwrap();
-        graph.take()
+        graph.replace(GraphQuery {
+            root_query_id: 0,
+            nodes: Default::default(),
+            edges: Default::default(),
+            edge_map: Default::default()
+        })
     }
 }
 

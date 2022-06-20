@@ -17,11 +17,9 @@ use std::{
         Weak,
     },
 };
+use rust_proto_new::graplinc::grapl::api::graph_query::v1beta1::messages::{GraphView, NodeView};
 
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
-    EdgeName,
-    Uid,
-};
+use rust_proto_new::graplinc::grapl::common::v1beta1::types::{EdgeName, NodeType, Uid};
 
 use crate::node_view::Node;
 
@@ -39,10 +37,10 @@ impl Graph {
         }
     }
 
-    pub fn new_node(&mut self, uid: Uid, query_id: u64) -> &mut Node {
+    pub fn new_node(&mut self, uid: Uid, node_type: NodeType, query_id: u64) -> &mut Node {
         self.nodes
             .entry(uid)
-            .or_insert_with(|| Node::new(uid, query_id))
+            .or_insert_with(|| Node::new(uid, node_type, query_id))
     }
 
     pub fn add_node(&mut self, node: Node) {
@@ -102,5 +100,28 @@ impl Graph {
 
     pub fn get_nodes(&self) -> &HashMap<Uid, Node> {
         &self.nodes
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum GraphViewConvertError {
+
+}
+
+impl From<Graph> for GraphView {
+    fn from(graph: Graph) -> Self {
+        let mut graph_view = GraphView::default();
+
+        for (uid, node) in graph.nodes.into_iter() {
+            let node_view = NodeView {
+                uid,
+                node_type: node.node_type,
+                string_properties: node.string_properties,
+                int_properties: Default::default()
+            };
+            graph_view.add_node(node_view);
+        }
+        graph_view.edges = graph.edges;
+        graph_view
     }
 }

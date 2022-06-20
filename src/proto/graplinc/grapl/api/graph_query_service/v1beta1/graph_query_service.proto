@@ -114,11 +114,31 @@ message EdgeViews {
   repeated EdgeView edge_view_list = 1;
 }
 
+
+message NodeViewEntry {
+  graplinc.grapl.common.v1beta1.Uid uid = 1;
+  NodeView node_view = 2;
+}
+
+message NodeViewMap {
+  repeated NodeViewEntry entries = 1;
+}
+
+message EdgeViewEntry {
+  graplinc.grapl.common.v1beta1.Uid uid = 1;
+  graplinc.grapl.common.v1beta1.EdgeName edge_name = 2;
+  repeated graplinc.grapl.common.v1beta1.Uid neighbors = 3;
+}
+
+message EdgeViewMap {
+  repeated EdgeViewEntry entries = 1;
+}
+
 message GraphView {
   // The nodes in the graph
-  repeated NodeView nodes = 1;
+  NodeViewMap nodes = 1;
   // The edges in the graph
-  map<string, EdgeViews> edges = 2;
+  EdgeViewMap edges = 2;
 }
 
 message QueryGraphWithNodeRequest {

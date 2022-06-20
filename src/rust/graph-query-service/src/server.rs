@@ -23,11 +23,12 @@ use rust_proto_new::{
     },
     protocol::status::Status,
 };
-use scylla::Session;
+use scylla::{CachingSession, Session};
 use tonic::{
     Request,
     Response,
 };
+use rust_proto_new::graplinc::grapl::api::graph_query::v1beta1::messages::{GraphView, NodeView};
 
 use crate::{
     graph_query::{
@@ -37,6 +38,8 @@ use crate::{
     node_query::NodeQuery,
     visited::Visited,
 };
+use crate::property_query::PropertyQueryExecutor;
+use crate::short_circuit::ShortCircuit;
 
 #[derive(thiserror::Error, Debug)]
 pub enum GraphQueryError {
@@ -52,7 +55,7 @@ impl From<GraphQueryError> for Status {
 
 #[derive(Clone)]
 pub struct GraphQueryApiImpl {
-    scylla_client: Arc<Session>,
+    property_query_executor: PropertyQueryExecutor,
 }
 
 #[async_trait::async_trait]
@@ -68,11 +71,20 @@ impl GraphQueryApi for GraphQueryApiImpl {
         let node_query = request.node_query;
         let edge_mapping = request.edge_mapping;
         let graph_query = convert_to_root_query(node_query, &edge_mapping);
-        let f = graph_query
-            .query_graph(node_uid, request.tenant_id, self.scylla_client.clone())
+        let graph = graph_query
+            .query_graph(node_uid, request.tenant_id, self.property_query_executor.clone())
             .await;
 
-        Err(GraphQueryError::Todo(""))
+        let graph = graph.unwrap().unwrap();
+
+        let root_uid  = graph.find_node_by_query_id(graph_query.root_query_id).unwrap().uid;
+
+        let graph_view = GraphView::from(graph);
+
+        Ok(QueryGraphWithNodeResponse {
+            matched_graph: graph_view,
+            root_uid,
+        })
     }
 
     async fn query_graph_from_uid(
@@ -84,21 +96,32 @@ impl GraphQueryApi for GraphQueryApiImpl {
         let node_query = request.node_query;
         let edge_mapping = request.edge_mapping;
         let graph_query = convert_to_root_query(node_query, &edge_mapping);
-        let node_query = &graph_query.nodes[&graph_query.root_query_id];
+        let node_query = &graph_query.nodes.get(&graph_query.root_query_id).unwrap();
+
+
         let visited = Visited::new();
-        node_query
+        let x_short_circuit = ShortCircuit::new();
+        let graph = node_query
             .fetch_node_with_edges(
                 &graph_query,
                 node_uid,
                 request.tenant_id,
-                self.scylla_client.clone(),
+                self.property_query_executor.clone(),
                 visited,
+                x_short_circuit,
             )
             .await
             .expect("error: todo")
             .expect("no match");
 
-        Err(GraphQueryError::Todo(""))
+        let root_uid  = graph.find_node_by_query_id(graph_query.root_query_id).unwrap().uid;
+
+        let graph_view = GraphView::from(graph);
+
+        Ok(QueryGraphFromNodeResponse {
+            matched_graph: graph_view,
+            root_uid,
+        })
     }
 }
 
@@ -136,18 +159,5 @@ fn convert_node_query(
                 },
             );
         }
-
-        // convert_edge_filters(node_query, edge_filters, edge_mapping);
-        // node_query.overwrite_edges(edge_name, reverse_edge_name, edge_filters);
     }
 }
-
-// fn convert_edge_filters(node_query: &mut NodeQuery, edge_filters: EdgeFiltersProto, edge_mapping: &HashMap<String, String>) {
-//     let mut edge_filters = edge_filters.node_queries;
-//
-//     for edge_filter in edge_filters {
-//         node_query.add_
-//         convert_node_query(node_query, edge_filter, edge_mapping);
-//
-//     }
-// }

@@ -12,26 +12,13 @@ use std::{
     marker::PhantomData,
 };
 
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
-    PropertyName,
-    Uid,
-};
+use rust_proto_new::graplinc::grapl::common::v1beta1::types::{NodeType, PropertyName, Uid};
 
 use crate::graph_view::Graph;
 
-// pub struct InnerNode {
-//     pub uid: i64,
-//     pub query_ids: HashSet<u64>,
-//     pub string_properties: HashMap<String, String>,
-// }
-//
-// pub struct GraphView {
-//     nodes: HashMap<i64, InnerNode>,
-//     edges: HashMap<(i64, String), HashSet<i64>>,
-// }
-
 pub struct Node {
     pub uid: Uid,
+    pub node_type: NodeType,
     pub query_ids: HashSet<u64>,
     pub string_properties: HashMap<PropertyName, String>,
 }
@@ -47,9 +34,10 @@ impl Debug for Node {
 }
 
 impl Node {
-    pub fn new(uid: Uid, query_id: u64) -> Self {
+    pub fn new(uid: Uid, node_type: NodeType, query_id: u64) -> Self {
         Self {
             uid,
+            node_type,
             query_ids: HashSet::from([query_id]),
             string_properties: Default::default(),
         }
