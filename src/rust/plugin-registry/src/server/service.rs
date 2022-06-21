@@ -61,9 +61,9 @@ use crate::{
 
 #[derive(clap::Parser, Debug)]
 pub struct PluginRegistryConfig {
-    #[structopt(flatten)]
+    #[clap(flatten)]
     db_config: PluginRegistryDbConfig,
-    #[structopt(flatten)]
+    #[clap(flatten)]
     service_config: PluginRegistryServiceConfig,
 }
 

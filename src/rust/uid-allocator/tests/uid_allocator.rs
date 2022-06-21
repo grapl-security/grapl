@@ -1,14 +1,14 @@
 #![cfg(all(test, feature = "integration"))]
 
+use clap::Parser;
 use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorClient;
 use sqlx::PgPool;
-use structopt::StructOpt;
 use uid_allocator::client::CachingUidAllocatorClient;
 
 #[tokio::test]
 async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
-    let counter_db_config = uid_allocator::config::CounterDbConfig::from_args();
-    let client_config = uid_allocator::config::UidAllocatorClientConfig::from_args();
+    let counter_db_config = uid_allocator::config::CounterDbConfig::parse();
+    let client_config = uid_allocator::config::UidAllocatorClientConfig::parse();
 
     let pool = PgPool::connect(&counter_db_config.to_postgres_url()).await?;
 
