@@ -6,6 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-trait = "0.1.53"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 dashmap = "5.2.0"
 rust-proto-new = { path = "../rust-proto-new", default-features = false, features = [
   "graph-mutation-server",
@@ -22,4 +27,3 @@ uid-allocator = { path = "../uid-allocator", default-features = false, features 
 grapl-utils = { path = "../grapl-utils" }
 lazy_static = "1.4.0"
 lru = "0.7.6"
-structopt = "0.3.26"
