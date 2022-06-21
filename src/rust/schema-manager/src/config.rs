@@ -1,22 +1,20 @@
 use std::net::SocketAddr;
 
-use structopt::StructOpt;
-
-#[derive(StructOpt, Debug, Clone)]
+#[derive(clap::Parser, Debug, Clone)]
 pub struct SchemaDbConfig {
-    #[structopt(env)]
+    #[clap(env)]
     /// The hostname of the counter database
     schema_db_hostname: String,
 
-    #[structopt(env)]
+    #[clap(env)]
     /// The username to use when connecting to the counter database
     schema_db_username: String,
 
-    #[structopt(env)]
+    #[clap(env)]
     /// The password to use when connecting to the counter database
     schema_db_password: String,
 
-    #[structopt(env)]
+    #[clap(env)]
     /// The port to use when connecting to the counter database
     schema_db_port: u16,
 }
@@ -34,13 +32,13 @@ impl SchemaDbConfig {
     }
 }
 
-#[derive(StructOpt, Debug, Clone)]
+#[derive(clap::Parser, Debug, Clone)]
 pub struct SchemaServiceConfig {
-    #[structopt(env)]
+    #[clap(env)]
     /// The address to bind the schema manager service to
     pub schema_service_bind_address: SocketAddr,
 
-    #[structopt(flatten)]
+    #[clap(flatten)]
     /// Configuration for the Postgres database where we store our tenant-specific schemas
     pub schema_db_config: SchemaDbConfig,
 }
