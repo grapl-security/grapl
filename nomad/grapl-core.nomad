@@ -182,6 +182,15 @@ variable "uid_allocator_db" {
   description = "Vars for uid-allocator database"
 }
 
+variable "graph_db" {
+  type = object({
+    addresses = string
+    username  = string
+    password  = string
+  })
+  description = "Vars for graph (scylla) database"
+}
+
 variable "uid_allocator_service_config" {
   type = object({
     default_allocation_size = number
@@ -1584,6 +1593,11 @@ job "grapl-core" {
         GRAPH_MUTATION_SERVICE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-mutation-service-port}"
         RUST_BACKTRACE                      = local.rust_backtrace
         RUST_LOG                            = var.rust_log
+        GRAPH_DB_ADDRESSES                  = var.graph_db.addresses
+        GRAPH_DB_AUTH_PASSWORD              = var.graph_db.password
+        GRAPH_DB_AUTH_USERNAME              = var.graph_db.username
+        SCHEMA_MANAGER_ADDRESS              = "http://${NOMAD_UPSTREAM_ADDR_schema-manager}"
+        UID_ALLOCATOR_ADDRESS               = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
         OTEL_EXPORTER_JAEGER_AGENT_HOST     = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT     = local.tracing_jaeger_endpoint_port
       }
@@ -1594,6 +1608,22 @@ job "grapl-core" {
       port = "graph-mutation-service-port"
       connect {
         sidecar_service {
+          proxy {
+            config {
+              protocol = "grpc"
+            }
+            # It'd be nice to dynamically use ports. Sadly, per https://github.com/hashicorp/nomad/issues/7135 its not
+            # to be. The ports chosen below can be changed at any time
+            upstreams {
+              destination_name = "schema-manager"
+              local_bind_port  = 9999
+            }
+
+            upstreams {
+              destination_name = "uid-allocator"
+              local_bind_port  = 9998
+            }
+          }
         }
       }
     }

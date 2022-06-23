@@ -4,7 +4,7 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug, Clone)]
 pub struct GraphDbConfig {
-    #[structopt(env)]
+    #[structopt(env, long)]
     /// The address of the graph database
     pub graph_db_addresses: Vec<SocketAddr>,
     #[structopt(env)]
@@ -19,14 +19,14 @@ pub struct GraphDbConfig {
 pub struct UidAllocatorClientConfig {
     #[structopt(env)]
     /// The address to connect to for the uid allocator
-    pub address: String,
+    pub uid_allocator_address: String,
 }
 
 #[derive(StructOpt, Debug, Clone)]
 pub struct SchemaManagerClientConfig {
     #[structopt(env)]
-    /// The address to connect to for the uid allocator
-    pub address: String,
+    /// The address to connect to for the schema manager
+    pub schema_manager_address: String,
 }
 
 #[derive(StructOpt, Debug, Clone)]
