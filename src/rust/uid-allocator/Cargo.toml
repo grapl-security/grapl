@@ -8,6 +8,11 @@ rust-proto-new = { path = "../rust-proto-new", default-features = false, feature
   "uid-allocator-full"
 ] }
 chrono = "0.4.19"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 serde = { version = "1.0.136", features = ["derive"] }
 tokio = { version = "1.17.0", features = ["full"] }
 uuid = { version = "0.8.2", features = ["v4"] }
@@ -35,7 +40,6 @@ sqlx = { version = "0.5.11", features = [
 ] }
 thiserror = "1.0.30"
 dashmap = "5.2.0"
-structopt = "0.3.26"
 async-trait = "0.1.53"
 opentelemetry = { version = "0.16", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.15", features = [

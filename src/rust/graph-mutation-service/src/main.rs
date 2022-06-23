@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use clap::Parser;
 
 use graph_mutation_service::{
     config::GraphMutationServiceConfig,
@@ -9,7 +10,6 @@ use rust_proto_new::graplinc::grapl::api::{
     graph_mutation::v1beta1::server::GraphMutationServiceServer,
     schema_manager::v1beta1::client::SchemaManagerClient,
 };
-use structopt::StructOpt;
 use uid_allocator::client::{
     CachingUidAllocatorServiceClient as CachingUidAllocatorClient,
     UidAllocatorServiceClient as UidAllocatorClient,
@@ -17,7 +17,7 @@ use uid_allocator::client::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config = GraphMutationServiceConfig::from_args();
+    let config = GraphMutationServiceConfig::parse();
     let mut scylla_config = scylla::SessionConfig::new();
     scylla_config.add_known_nodes_addr(&config.graph_db_config.graph_db_addresses[..]);
     scylla_config.auth_username = Some(config.graph_db_config.graph_db_auth_username.to_owned());
