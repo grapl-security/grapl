@@ -161,10 +161,7 @@ def main() -> None:
     ]
 
     pipeline_ingress_healthcheck_polling_interval_ms = "5000"
-    pulumi.export(
-        "pipeline-ingress-healthcheck-polling-interval-ms",
-        pipeline_ingress_healthcheck_polling_interval_ms,
-    )
+    organization_management_healthcheck_polling_interval_ms = "5000"
 
     firecracker_s3objs: FirecrackerS3BucketObjectsProtocol = (
         MockFirecrackerS3BucketObjects()
@@ -216,6 +213,7 @@ def main() -> None:
         kafka_credentials=kafka_service_credentials,
         kafka_consumer_groups=kafka_consumer_groups,
         model_plugins_bucket=model_plugins_bucket.bucket,
+        organization_management_healthcheck_polling_interval_ms=organization_management_healthcheck_polling_interval_ms,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
         plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
         plugin_registry_bucket_name=plugin_registry_bucket.bucket,

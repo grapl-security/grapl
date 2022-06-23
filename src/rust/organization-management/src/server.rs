@@ -1,4 +1,4 @@
-use std::convert::TryFrom;
+use std::time::Duration;
 
 use argon2::{
     password_hash::{
@@ -8,31 +8,28 @@ use argon2::{
     PasswordHasher,
 };
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto::organization_management::{
-    organization_management_service_server::{
-        OrganizationManagementService,
-        OrganizationManagementServiceServer,
+use rust_proto_new::{
+    graplinc::grapl::api::organization_management::v1beta1::{
+        server::{
+            ConfigurationError as ServerConfigurationError,
+            OrganizationManagementApi,
+            OrganizationManagementServer,
+        },
+        CreateOrganizationRequest,
+        CreateOrganizationResponse,
+        CreateUserRequest,
+        CreateUserResponse,
     },
-    CreateOrganizationRequest,
-    CreateOrganizationRequestProto,
-    CreateOrganizationResponse,
-    CreateOrganizationResponseProto,
-    CreateUserRequest,
-    CreateUserRequestProto,
-    CreateUserResponse,
-    CreateUserResponseProto,
-    OrganizationManagementDeserializationError,
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        status::Status,
+    },
 };
 use sqlx::{
     postgres::Postgres,
     Pool,
 };
-use tonic::{
-    transport::Server,
-    Request,
-    Response,
-    Status,
-};
+use tokio::net::TcpListener;
 use uuid::Uuid;
 
 use crate::OrganizationManagementServiceConfig;
@@ -41,10 +38,10 @@ use crate::OrganizationManagementServiceConfig;
 pub enum OrganizationManagementServiceError {
     #[error("Sql {0}")]
     Sql(#[from] sqlx::Error),
-    #[error("OrganizationanizationManagementDeserializationError {0}")]
-    OrganizationManagementDeserializationError(#[from] OrganizationManagementDeserializationError),
     #[error("HashError {0}")]
     HashError(String),
+    #[error("ServerError {0}")]
+    ServerError(#[from] ServerConfigurationError),
 }
 
 impl From<argon2::Error> for OrganizationManagementServiceError {
@@ -63,9 +60,6 @@ impl From<OrganizationManagementServiceError> for Status {
     fn from(e: OrganizationManagementServiceError) -> Self {
         match e {
             OrganizationManagementServiceError::Sql(e) => Status::internal(e.to_string()),
-            OrganizationManagementServiceError::OrganizationManagementDeserializationError(e) => {
-                Status::invalid_argument(e.to_string())
-            }
             _ => todo!(),
         }
     }
@@ -90,10 +84,11 @@ impl OrganizationManagement {
 
         Ok(Self {
             pool: sqlx::PgPool::connect(&postgres_address)
-                .timeout(std::time::Duration::from_secs(5))
+                .timeout(Duration::from_secs(5))
                 .await??,
         })
     }
+
     async fn create_organization(
         &self,
         request: CreateOrganizationRequest,
@@ -218,32 +213,36 @@ impl OrganizationManagement {
     }
 }
 
-#[tonic::async_trait]
-impl OrganizationManagementService for OrganizationManagement {
+pub struct ManagementApi {
+    organization_management: OrganizationManagement,
+}
+
+impl ManagementApi {
+    pub fn new(organization_management: OrganizationManagement) -> Self {
+        ManagementApi {
+            organization_management,
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl OrganizationManagementApi for ManagementApi {
+    type Error = OrganizationManagementServiceError;
+
     async fn create_organization(
         &self,
-        request: Request<CreateOrganizationRequestProto>,
-    ) -> Result<Response<CreateOrganizationResponseProto>, Status> {
-        let request: CreateOrganizationRequestProto = request.into_inner();
-        let request = CreateOrganizationRequest::try_from(request)
-            .map_err(OrganizationManagementServiceError::from)?;
-
-        let response = self.create_organization(request).await?;
-        let response: CreateOrganizationResponseProto = response.into();
-        Ok(Response::new(response))
+        request: CreateOrganizationRequest,
+    ) -> Result<CreateOrganizationResponse, Self::Error> {
+        self.organization_management
+            .create_organization(request)
+            .await
     }
 
     async fn create_user(
         &self,
-        request: Request<CreateUserRequestProto>,
-    ) -> Result<Response<CreateUserResponseProto>, Status> {
-        let request: CreateUserRequestProto = request.into_inner();
-        let request = CreateUserRequest::try_from(request)
-            .map_err(OrganizationManagementServiceError::from)?;
-
-        let response = self.create_user(request).await?;
-        let response: CreateUserResponseProto = response.into();
-        Ok(Response::new(response))
+        request: CreateUserRequest,
+    ) -> Result<CreateUserResponse, Self::Error> {
+        self.organization_management.create_user(request).await
     }
 }
 
@@ -258,21 +257,14 @@ pub async fn exec_service(
 
     tracing::info!(message = "Binding service",);
 
-    Server::builder()
-        .trace_fn(|request| {
-            tracing::info_span!(
-                "OrganizationManagement",
-                headers = ?request.headers(),
-                method = ?request.method(),
-                uri = %request.uri(),
-                extensions = ?request.extensions(),
-            )
-        })
-        .add_service(OrganizationManagementServiceServer::new(
-            organization_management,
-        ))
-        .serve(service_config.organization_management_bind_address)
-        .await?;
+    let (server, _shutdown_tx) = OrganizationManagementServer::new(
+        ManagementApi::new(organization_management),
+        TcpListener::bind(service_config.organization_management_bind_address).await?,
+        || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
+        Duration::from_millis(
+            service_config.organization_management_healthcheck_polling_interval_ms,
+        ),
+    );
 
-    Ok(())
+    Ok(server.serve().await?)
 }

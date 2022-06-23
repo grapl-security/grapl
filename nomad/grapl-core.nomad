@@ -103,6 +103,11 @@ variable "organization_management_db" {
   description = "Vars for organization-management database"
 }
 
+variable "organization_management_healthcheck_polling_interval_ms" {
+  type        = string
+  description = "The amount of time to wait between each healthcheck execution."
+}
+
 variable "pipeline_ingress_healthcheck_polling_interval_ms" {
   type        = string
   description = "The amount of time to wait between each healthcheck execution."
@@ -1089,6 +1094,8 @@ job "grapl-core" {
         ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db.username
         OTEL_EXPORTER_JAEGER_AGENT_HOST      = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT      = local.tracing_jaeger_endpoint_port
+
+        ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = var.organization_management_healthcheck_polling_interval_ms
       }
     }
 

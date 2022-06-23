@@ -99,7 +99,7 @@ def main() -> None:
         ),
         "kafka_bootstrap_servers": kafka.bootstrap_servers(),
         "rust_log": log_levels.RUST_LOG_LEVELS,
-        "pipeline_ingress_healthcheck_polling_interval_ms": grapl_stack.pipeline_ingress_healthcheck_polling_interval_ms,
+        "organization_management_db": grapl_stack.organization_management_db,
         "plugin_work_queue_db": grapl_stack.plugin_work_queue_db,
     }
 
@@ -158,12 +158,9 @@ class GraplStack:
         self.plugin_work_queue_db = cast(
             NomadServicePostgresDbArgs, ref.require_output("plugin-work-queue-db")
         )
+
         self.organization_management_db = cast(
             NomadServicePostgresDbArgs, ref.require_output("organization-management-db")
-        )
-
-        self.pipeline_ingress_healthcheck_polling_interval_ms = require_str(
-            "pipeline-ingress-healthcheck-polling-interval-ms"
         )
 
         self.test_user_password_secret_id = require_str("test-user-password-secret-id")

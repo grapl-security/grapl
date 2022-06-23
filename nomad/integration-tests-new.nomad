@@ -31,11 +31,6 @@ variable "kafka_bootstrap_servers" {
   description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
 }
 
-variable "pipeline_ingress_healthcheck_polling_interval_ms" {
-  type        = string
-  description = "The amount of time to wait between each healthcheck execution."
-}
-
 variable "integration_tests_kafka_consumer_group_name" {
   type        = string
   description = "The name of the consumer group the integration test consumers will join."
@@ -60,6 +55,16 @@ variable "dns_server" {
   type        = string
   description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
   default     = ""
+}
+
+variable "organization_management_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for organization-management database"
 }
 
 variable "plugin_work_queue_db" {
@@ -129,6 +134,11 @@ job "integration-tests-new" {
               destination_name = "dgraph-alpha-0-grpc-public"
               local_bind_port  = 1003
             }
+
+            upstreams {
+              destination_name = "organization-management"
+              local_bind_port  = 1004
+            }
           }
         }
       }
@@ -157,6 +167,15 @@ job "integration-tests-new" {
         MG_ALPHAS = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-grpc-public}"
 
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
+
+        ORGANIZATION_MANAGEMENT_BIND_ADDRESS   = "0.0.0.0:1004" # not used but required due to clap
+        ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME    = var.organization_management_db.hostname
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD    = var.organization_management_db.password
+        ORGANIZATION_MANAGEMENT_DB_PORT        = var.organization_management_db.port
+        ORGANIZATION_MANAGEMENT_DB_USERNAME    = var.organization_management_db.username
+
+        ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
         PIPELINE_INGRESS_CLIENT_ADDRESS  = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
         PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"

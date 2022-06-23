@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional, Mapping, Sequence, Type, Union, cast
+from typing import Mapping, Optional, Sequence, Type, Union, cast
 
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
     DecrementOnlyIntProp as _DecrementOnlyIntProp,

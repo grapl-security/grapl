@@ -421,7 +421,7 @@ def merged_graphs(
         keys=st.text(), values=merged_nodes(), max_size=MAX_DICT_SIZE
     ),
     edges: st.SearchStrategy[Mapping[str, MergedEdgeList]] = st.dictionaries(
-        keys=st.text(), values=merged_edge_lists(),max_size=MAX_DICT_SIZE
+        keys=st.text(), values=merged_edge_lists(), max_size=MAX_DICT_SIZE
     ),
 ) -> st.SearchStrategy[MergedGraph]:
     return st.builds(

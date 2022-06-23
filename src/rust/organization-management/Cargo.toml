@@ -11,10 +11,9 @@ name = "organization-management"
 path = "src/main.rs"
 
 [dependencies]
+async-trait = "0.1"
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
-tonic = "0.6"
-prost = "0.9.0"
 tokio = { version = "1.17", features = ["macros", "rt-multi-thread"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }
 sqlx = { version = "0.5", features = [
@@ -30,7 +29,7 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "fmt"
 ] }
-rust-proto = { path = "../rust-proto", version = "*" }
+rust-proto-new = { path = "../rust-proto-new", version = "*" }
 thiserror = "1.0.26"
 argon2 = { version = "0.4", features = ["std"] }
 clap = { version = "3.0", default_features = false, features = [
@@ -39,11 +38,8 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 
-[build-dependencies]
-tonic-build = { version = "0.6.0", features = ["prost"] }
-
 [dev-dependencies]
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
 
 [features]
-integration = []
+new_integration_tests = []
