@@ -2,7 +2,7 @@ use derive_dynamic_node::{
     GraplSessionId,
     NodeDescription,
 };
-use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+use rust_proto::graplinc::grapl::api::graph::v1beta1::{
     IdStrategy,
     NodeDescription,
     NodeProperty,

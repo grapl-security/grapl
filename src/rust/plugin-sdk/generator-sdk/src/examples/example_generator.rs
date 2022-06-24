@@ -7,7 +7,7 @@ use generator_sdk::server::{
     self,
     GeneratorServiceConfig,
 };
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::{
         graph::v1beta1::GraphDescription,
         plugin_sdk::generators::v1beta1::{

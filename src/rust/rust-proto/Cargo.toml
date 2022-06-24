@@ -1,5 +1,5 @@
 [package]
-name = "rust-proto-new"
+name = "rust-proto"
 version = "0.1.0"
 authors = ["Grapl, Inc. <sales@graplsecurity.com>"]
 edition = "2021"

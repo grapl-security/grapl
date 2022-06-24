@@ -1182,7 +1182,7 @@ dependencies = [
  "log",
  "proc-macro2",
  "quote",
- "rust-proto-new",
+ "rust-proto",
  "serde",
  "serde_derive",
  "serde_json",
@@ -1380,7 +1380,7 @@ name = "endpoint-plugin"
 version = "0.1.0"
 dependencies = [
  "derive-dynamic-node",
- "rust-proto-new",
+ "rust-proto",
  "thiserror",
  "uuid",
 ]
@@ -1640,7 +1640,7 @@ dependencies = [
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
  "plugin-work-queue",
- "rust-proto-new",
+ "rust-proto",
  "test-context",
  "tokio",
  "tracing",
@@ -1658,7 +1658,7 @@ dependencies = [
  "clap 3.1.18",
  "consul-connect",
  "moka",
- "rust-proto-new",
+ "rust-proto",
  "serde",
  "thiserror",
  "tokio",
@@ -1742,7 +1742,7 @@ dependencies = [
  "rusoto_core",
  "rusoto_credential",
  "rusoto_dynamodb",
- "rust-proto-new",
+ "rust-proto",
  "serde_json",
  "test-context",
  "thiserror",
@@ -2207,7 +2207,7 @@ dependencies = [
  "clap 3.1.18",
  "futures",
  "rdkafka",
- "rust-proto-new",
+ "rust-proto",
  "thiserror",
  "tracing",
 ]
@@ -2541,7 +2541,7 @@ dependencies = [
  "rusoto_core",
  "rusoto_credential",
  "rusoto_dynamodb",
- "rust-proto-new",
+ "rust-proto",
  "serde",
  "serde_dynamodb",
  "sha2 0.9.9",
@@ -2798,7 +2798,7 @@ dependencies = [
  "clap 3.1.18",
  "grapl-config",
  "grapl-utils",
- "rust-proto-new",
+ "rust-proto",
  "sqlx",
  "test-log",
  "thiserror",
@@ -2961,7 +2961,7 @@ dependencies = [
  "kafka",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
- "rust-proto-new",
+ "rust-proto",
  "test-context",
  "thiserror",
  "tokio",
@@ -3015,7 +3015,7 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
- "rust-proto-new",
+ "rust-proto",
  "thiserror",
  "tokio",
  "tracing",
@@ -3031,7 +3031,7 @@ dependencies = [
  "generator-sdk",
  "grapl-config",
  "plugin-work-queue",
- "rust-proto-new",
+ "rust-proto",
  "tokio",
  "tracing",
 ]
@@ -3050,7 +3050,7 @@ dependencies = [
  "nomad-client-gen",
  "rusoto_core",
  "rusoto_s3",
- "rust-proto-new",
+ "rust-proto",
  "serde_json",
  "sqlx",
  "tempfile",
@@ -3073,7 +3073,7 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
- "rust-proto-new",
+ "rust-proto",
  "sqlx",
  "thiserror",
  "tokio",
@@ -3755,7 +3755,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-proto-new"
+name = "rust-proto"
 version = "0.1.0"
 dependencies = [
  "bytes",
@@ -4330,7 +4330,7 @@ dependencies = [
  "kafka",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
- "rust-proto-new",
+ "rust-proto",
  "sysmon-parser",
  "test-context",
  "thiserror",

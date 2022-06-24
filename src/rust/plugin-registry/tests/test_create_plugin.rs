@@ -2,7 +2,7 @@
 
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::FromEnv;
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreatePluginRequestMetadata,
     GetPluginRequest,
     GetPluginResponse,

@@ -2,7 +2,7 @@ use chrono::{
     DateTime,
     Utc,
 };
-use rust_proto_new::graplinc::grapl::api::graph::v1beta1::GraphDescription;
+use rust_proto::graplinc::grapl::api::graph::v1beta1::GraphDescription;
 use sysmon_parser::{
     EventData,
     SysmonEvent,

@@ -6,7 +6,7 @@ use endpoint_plugin::{
     IProcessNode,
     ProcessNode,
 };
-use rust_proto_new::graplinc::grapl::api::graph::v1beta1::GraphDescription;
+use rust_proto::graplinc::grapl::api::graph::v1beta1::GraphDescription;
 use sysmon_parser::{
     event_data::ProcessCreateEventData,
     System,
@@ -100,7 +100,7 @@ pub(crate) fn generate_process_create_subgraph(
 }
 #[cfg(test)]
 mod tests {
-    use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+    use rust_proto::graplinc::grapl::api::graph::v1beta1::{
         GraphDescription,
         ImmutableUintProp,
         NodeDescription,

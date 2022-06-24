@@ -6,7 +6,7 @@ use plugin_work_queue::client::{
     FromEnv,
     PluginWorkQueueServiceClient,
 };
-use rust_proto_new::graplinc::grapl::api::plugin_work_queue::v1beta1;
+use rust_proto::graplinc::grapl::api::plugin_work_queue::v1beta1;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -1,6 +1,6 @@
 mod test_utils;
 use proptest::prelude::*;
-use rust_proto_new::graplinc::common::v1beta1::{
+use rust_proto::graplinc::common::v1beta1::{
     Duration,
     SystemTime,
 };

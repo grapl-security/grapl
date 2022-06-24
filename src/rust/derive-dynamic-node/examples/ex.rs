@@ -5,7 +5,7 @@ use derive_dynamic_node::{
     NodeDescription,
 };
 use log::info;
-use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+use rust_proto::graplinc::grapl::api::graph::v1beta1::{
     GraphDescription,
     IdStrategy,
     ImmutableStrProp,

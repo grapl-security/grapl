@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use bytes::Bytes;
 use plugin_work_queue::test_utils::PsqlQueueTestExtensions;
-use rust_proto_new::graplinc::grapl::api::pipeline_ingress::v1beta1::PublishRawLogRequest;
+use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::PublishRawLogRequest;
 use test_context::test_context;
 use tracing::Instrument;
 use uuid::Uuid;

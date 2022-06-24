@@ -12,7 +12,7 @@ use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
 };
-use rust_proto_new::graplinc::grapl::{
+use rust_proto::graplinc::grapl::{
     api::graph::v1beta1::GraphDescription,
     pipeline::{
         v1beta1::{

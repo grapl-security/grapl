@@ -27,7 +27,7 @@ use rdkafka::{
     util::Timeout,
     Message,
 };
-use rust_proto_new::{
+use rust_proto::{
     SerDe,
     SerDeError,
 };

@@ -5,7 +5,7 @@ use plugin_registry::{
     client::FromEnv,
     exp_backoff_retry::simple_exponential_backoff_retry,
 };
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreatePluginRequestMetadata,
     DeployPluginRequest,
     PluginRegistryServiceClient,

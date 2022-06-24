@@ -19,7 +19,7 @@ use opentelemetry::{
     sdk::propagation::TraceContextPropagator,
     trace::TraceError,
 };
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::{
         api::pipeline_ingress::v1beta1::{
             server::{

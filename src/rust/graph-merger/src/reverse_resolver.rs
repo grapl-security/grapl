@@ -11,7 +11,7 @@ use rusoto_dynamodb::{
     DynamoDbClient,
     KeysAndAttributes,
 };
-use rust_proto_new::graplinc::grapl::api::graph::v1beta1::Edge;
+use rust_proto::graplinc::grapl::api::graph::v1beta1::Edge;
 
 use crate::service::GraphMergerError;
 

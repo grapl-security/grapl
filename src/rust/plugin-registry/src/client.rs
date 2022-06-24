@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use async_trait;
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginRegistryServiceClient,
     PluginRegistryServiceClientError,
 };

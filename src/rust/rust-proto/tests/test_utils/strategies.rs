@@ -42,7 +42,7 @@ where
 pub mod pipeline {
     use std::fmt::Debug;
 
-    use rust_proto_new::{
+    use rust_proto::{
         graplinc::grapl::pipeline::{
             v1beta1::{
                 Metadata,
@@ -114,7 +114,7 @@ pub mod pipeline {
 
 pub mod graph {
     use proptest::collection;
-    use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+    use rust_proto::graplinc::grapl::api::graph::v1beta1::{
         DecrementOnlyIntProp,
         DecrementOnlyUintProp,
         Edge,
@@ -549,7 +549,7 @@ pub mod graph {
 }
 
 pub mod pipeline_ingress {
-    use rust_proto_new::graplinc::grapl::api::pipeline_ingress::v1beta1::{
+    use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::{
         PublishRawLogRequest,
         PublishRawLogResponse,
     };
@@ -590,7 +590,7 @@ pub mod pipeline_ingress {
 }
 
 pub mod plugin_registry {
-    use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
+    use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
         CreatePluginRequestMetadata,
         CreatePluginResponse,
@@ -757,7 +757,7 @@ pub mod plugin_registry {
 }
 
 pub mod plugin_sdk_generators {
-    use rust_proto_new::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as native;
+    use rust_proto::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as native;
 
     use super::*;
 
@@ -793,7 +793,7 @@ pub mod plugin_sdk_generators {
 }
 
 pub mod plugin_work_queue {
-    use rust_proto_new::graplinc::grapl::api::plugin_work_queue::v1beta1 as native;
+    use rust_proto::graplinc::grapl::api::plugin_work_queue::v1beta1 as native;
 
     use super::*;
 

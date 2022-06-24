@@ -5,7 +5,7 @@ use std::time::Duration;
 use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
 use organization_management::OrganizationManagementServiceConfig;
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::organization_management::v1beta1::{
         client::OrganizationManagementClient,
         CreateOrganizationRequest,

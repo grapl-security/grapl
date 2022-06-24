@@ -8,7 +8,7 @@ use argon2::{
     PasswordHasher,
 };
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::organization_management::v1beta1::{
         server::{
             ConfigurationError as ServerConfigurationError,

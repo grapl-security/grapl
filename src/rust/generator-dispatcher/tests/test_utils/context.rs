@@ -9,7 +9,7 @@ use plugin_work_queue::{
     psql_queue::PsqlQueue,
     PluginWorkQueueDbConfig,
 };
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient,
     protocol::healthcheck::client::HealthcheckClient,
 };

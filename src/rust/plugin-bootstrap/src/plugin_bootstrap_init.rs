@@ -3,7 +3,7 @@ use std::{
     time::Duration,
 };
 
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::plugin_bootstrap::v1beta1::{
         client::PluginBootstrapClient,
         GetBootstrapRequest,

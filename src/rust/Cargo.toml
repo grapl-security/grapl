@@ -22,7 +22,7 @@ members = [
   "./plugin-registry",
   "./plugin-sdk/generator-sdk/",
   "./plugin-work-queue",
-  "./rust-proto-new",
+  "./rust-proto",
   "./sysmon-parser",
   "./uid-allocator",
 ]

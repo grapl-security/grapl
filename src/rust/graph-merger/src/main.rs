@@ -17,7 +17,7 @@ use opentelemetry::{
     sdk::propagation::TraceContextPropagator,
 };
 use rusoto_dynamodb::DynamoDbClient;
-use rust_proto_new::graplinc::grapl::{
+use rust_proto::graplinc::grapl::{
     api::graph::v1beta1::{
         IdentifiedGraph,
         MergedGraph,

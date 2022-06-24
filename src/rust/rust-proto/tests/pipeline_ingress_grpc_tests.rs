@@ -1,5 +1,5 @@
 use futures::channel::oneshot::Sender;
-use rust_proto_new::{
+use rust_proto::{
     graplinc::{
         common::v1beta1::{
             Duration,

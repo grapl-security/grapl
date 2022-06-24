@@ -97,21 +97,21 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
 
         #[derive(Clone, Debug)]
         pub struct #node_name {
-            dynamic_node: rust_proto_new::graplinc::grapl::api::graph::v1beta1::NodeDescription,
+            dynamic_node: rust_proto::graplinc::grapl::api::graph::v1beta1::NodeDescription,
         }
 
         pub trait #node_trait_name {
-            fn get_mut_dynamic_node(&mut self) -> &mut rust_proto_new::graplinc::grapl::api::graph::v1beta1::NodeDescription;
-            fn get_dynamic_node(&self) -> &rust_proto_new::graplinc::grapl::api::graph::v1beta1::NodeDescription;
+            fn get_mut_dynamic_node(&mut self) -> &mut rust_proto::graplinc::grapl::api::graph::v1beta1::NodeDescription;
+            fn get_dynamic_node(&self) -> &rust_proto::graplinc::grapl::api::graph::v1beta1::NodeDescription;
 
             #methods
         }
 
         impl #node_name {
-            pub fn new(strategy: rust_proto_new::graplinc::grapl::api::graph::v1beta1::IdStrategy) -> Self {
+            pub fn new(strategy: rust_proto::graplinc::grapl::api::graph::v1beta1::IdStrategy) -> Self {
                 let mut properties = std::collections::HashMap::with_capacity(1);
 
-                let dynamic_node = rust_proto_new::graplinc::grapl::api::graph::v1beta1::NodeDescription {
+                let dynamic_node = rust_proto::graplinc::grapl::api::graph::v1beta1::NodeDescription {
                     node_type: #struct_name_string .to_owned(),
                     id_strategy: vec![strategy],
                     node_key: uuid::Uuid::new_v4().to_string(),
@@ -134,20 +134,20 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl AsRef<rust_proto_new::graplinc::grapl::api::graph::v1beta1::NodeDescription> for #node_name {
+        impl AsRef<rust_proto::graplinc::grapl::api::graph::v1beta1::NodeDescription> for #node_name {
             fn as_ref(&self) -> &NodeDescription {
                 &self.dynamic_node
             }
         }
 
-        impl AsMut<rust_proto_new::graplinc::grapl::api::graph::v1beta1::NodeDescription> for #node_name {
+        impl AsMut<rust_proto::graplinc::grapl::api::graph::v1beta1::NodeDescription> for #node_name {
             fn as_mut(&mut self) -> &mut NodeDescription {
                 &mut self.dynamic_node
             }
         }
 
-        impl From<#node_name> for rust_proto_new::graplinc::grapl::api::graph::v1beta1::NodeDescription {
-            fn from(n: #node_name) -> rust_proto_new::graplinc::grapl::api::graph::v1beta1::NodeDescription {
+        impl From<#node_name> for rust_proto::graplinc::grapl::api::graph::v1beta1::NodeDescription {
+            fn from(n: #node_name) -> rust_proto::graplinc::grapl::api::graph::v1beta1::NodeDescription {
                 n.dynamic_node
             }
         }
@@ -350,49 +350,49 @@ fn resolvable_type_from(
                 /* underlying struct field type    maps to this type   via this method on NodeProperty */
                 ("String", IMMUTABLE) => (
                     parse_quote!(
-                        rust_proto_new::graplinc::grapl::api::graph::v1beta1::ImmutableStrProp
+                        rust_proto::graplinc::grapl::api::graph::v1beta1::ImmutableStrProp
                     ),
                     parse_quote!(as_immutable_str),
                 ),
                 ("std::string::String", IMMUTABLE) => (
                     parse_quote!(
-                        rust_proto_new::graplinc::grapl::api::graph::v1beta1::ImmutableStrProp
+                        rust_proto::graplinc::grapl::api::graph::v1beta1::ImmutableStrProp
                     ),
                     parse_quote!(as_immutable_str),
                 ),
                 ("u64", IMMUTABLE) => (
                     parse_quote!(
-                        rust_proto_new::graplinc::grapl::api::graph::v1beta1::ImmutableUintProp
+                        rust_proto::graplinc::grapl::api::graph::v1beta1::ImmutableUintProp
                     ),
                     parse_quote!(as_immutable_uint),
                 ),
                 ("u64", INCREMENT) => (
                     parse_quote!(
-                        rust_proto_new::graplinc::grapl::api::graph::v1beta1::IncrementOnlyUintProp
+                        rust_proto::graplinc::grapl::api::graph::v1beta1::IncrementOnlyUintProp
                     ),
                     parse_quote!(as_increment_only_uint),
                 ),
                 ("u64", DECREMENT) => (
                     parse_quote!(
-                        rust_proto_new::graplinc::grapl::api::graph::v1beta1::DecrementOnlyUintProp
+                        rust_proto::graplinc::grapl::api::graph::v1beta1::DecrementOnlyUintProp
                     ),
                     parse_quote!(as_decrement_only_uint),
                 ),
                 ("i64", IMMUTABLE) => (
                     parse_quote!(
-                        rust_proto_new::graplinc::grapl::api::graph::v1beta1::ImmutableIntProp
+                        rust_proto::graplinc::grapl::api::graph::v1beta1::ImmutableIntProp
                     ),
                     parse_quote!(as_immutable_int),
                 ),
                 ("i64", INCREMENT) => (
                     parse_quote!(
-                        rust_proto_new::graplinc::grapl::api::graph::v1beta1::IncrementOnlyIntProp
+                        rust_proto::graplinc::grapl::api::graph::v1beta1::IncrementOnlyIntProp
                     ),
                     parse_quote!(as_increment_only_int),
                 ),
                 ("i64", DECREMENT) => (
                     parse_quote!(
-                        rust_proto_new::graplinc::grapl::api::graph::v1beta1::DecrementOnlyIntProp
+                        rust_proto::graplinc::grapl::api::graph::v1beta1::DecrementOnlyIntProp
                     ),
                     parse_quote!(as_decrement_only_int),
                 ),
@@ -441,8 +441,8 @@ fn identity_prop_setter(field: &Field, property_name: &Ident) -> TS2 {
     quote!(
         let mut self_strategy = &mut mut_self.id_strategy[0].strategy;
         match self_strategy {
-            rust_proto_new::graplinc::grapl::api::graph::v1beta1::Strategy::Session(
-                rust_proto_new::graplinc::grapl::api::graph::v1beta1::Session{ref mut #ident, ..}
+            rust_proto::graplinc::grapl::api::graph::v1beta1::Strategy::Session(
+                rust_proto::graplinc::grapl::api::graph::v1beta1::Session{ref mut #ident, ..}
             ) => {
                 * #ident = #property_name.as_inner().clone();
             }

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use clap::Parser;
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::plugin_sdk::generators::v1beta1::server::{
         GeneratorApi,
         GeneratorServer,

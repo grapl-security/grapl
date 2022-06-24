@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use rust_proto_new::{
+use rust_proto::{
     SerDe,
     SerDeError,
 };
