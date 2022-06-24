@@ -1,10 +1,11 @@
 use std::fmt::Debug;
 
-use event_source_service_client::EventSourceServiceClient as EventSourceServiceClientProto;
-
 use crate::{
     graplinc::grapl::api::event_source::v1beta1 as native,
-    protobufs::graplinc::grapl::api::event_source::v1beta1 as proto,
+    protobufs::graplinc::grapl::api::event_source::v1beta1::{
+        self as proto,
+        event_source_service_client::EventSourceServiceClient as EventSourceServiceClientProto,
+    },
     protocol::{
         healthcheck::ConfigurationError,
         service_client::NamedService,

@@ -1,14 +1,13 @@
 #![cfg(feature = "integration_tests")]
 
 use grapl_utils::future_ext::GraplFutureExt;
-
-use plugin_registry::exp_backoff_retry::simple_exponential_backoff_retry;
-
+use plugin_registry::client::FromEnv;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreatePluginRequestMetadata,
     DeployPluginRequest,
+    PluginRegistryServiceClient,
+    PluginRegistryServiceClientError,
     PluginType,
-    client::PluginRegistryClient
 };
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");

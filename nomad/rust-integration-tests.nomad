@@ -83,7 +83,7 @@ locals {
   dns_servers = [var.dns_server]
 }
 
-job "integration-tests-new" {
+job "rust-integration-tests" {
   datacenters = ["dc1"]
   type        = "batch"
   parameterized {}
@@ -96,7 +96,7 @@ job "integration-tests-new" {
   # Specifies that this job is the most high priority job we have; nothing else should take precedence
   priority = 100
 
-  group "integration-tests-new" {
+  group "rust-integration-tests" {
     restart {
       # Make this a one-shot job
       attempts = 0
@@ -111,7 +111,7 @@ job "integration-tests-new" {
 
     # Enable service discovery
     service {
-      name = "integration-tests-new"
+      name = "rust-integration-tests"
       connect {
         sidecar_service {
           proxy {
@@ -154,11 +154,11 @@ job "integration-tests-new" {
       }
     }
 
-    task "rust-integration-tests-new" {
+    task "rust-integration-tests" {
       driver = "docker"
 
       config {
-        image = var.container_images["rust-integration-tests-new"]
+        image = var.container_images["rust-integration-tests"]
       }
 
       # This writes an env file that gets read by the task automatically

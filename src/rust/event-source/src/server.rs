@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::event_source::{
         v1beta1 as native,
         v1beta1::server::{

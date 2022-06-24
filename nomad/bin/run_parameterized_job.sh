@@ -5,8 +5,8 @@
 # Works on localhost:4646 by default, but that can be overridden with NOMAD_ADDRESS=
 #
 # Example usage:
-#  nomad/bin/run_parameterized_job.sh integration-tests-new 6
-#  NOMAD_ADDRESS=http://cool.domain:4646 nomad/bin/run_parameterized_job.sh integration-tests 7
+#  nomad/bin/run_parameterized_job.sh rust-integration-tests 6
+#  NOMAD_ADDRESS=http://cool.domain:4646 nomad/bin/run_parameterized_job.sh rust-integration-tests 7
 ##########
 
 set -euo pipefail

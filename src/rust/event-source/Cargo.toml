@@ -23,7 +23,7 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "fmt"
 ] }
-rust-proto-new = { path = "../rust-proto-new" }
+rust-proto = { path = "../rust-proto" }
 thiserror = "1.0.26"
 clap = { version = "3.0", default_features = false, features = [
   "std",
@@ -37,4 +37,4 @@ clap = { version = "3.0", default_features = false, features = [
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
 
 [features]
-new_integration_tests = []
+integration_tests = []

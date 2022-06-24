@@ -1430,7 +1430,7 @@ dependencies = [
  "clap 3.1.18",
  "grapl-config",
  "grapl-utils",
- "rust-proto-new",
+ "rust-proto",
  "sqlx",
  "test-log",
  "thiserror",

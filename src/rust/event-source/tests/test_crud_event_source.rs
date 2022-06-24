@@ -1,10 +1,10 @@
-#![cfg(feature = "new_integration_tests")]
+#![cfg(feature = "integration_tests")]
 
 use std::time::SystemTime;
 
 use event_source::client::FromEnv;
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto_new::graplinc::grapl::api::event_source::v1beta1 as es_api;
+use rust_proto::graplinc::grapl::api::event_source::v1beta1 as es_api;
 
 #[test_log::test(tokio::test)]
 async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {

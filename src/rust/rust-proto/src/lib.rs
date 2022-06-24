@@ -12,6 +12,7 @@ use thiserror::Error;
 
 pub mod protocol {
     pub mod healthcheck;
+    pub mod service_client;
     pub mod status;
     pub mod tls;
 }

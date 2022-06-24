@@ -590,7 +590,7 @@ pub mod pipeline_ingress {
 }
 
 pub mod event_source {
-    use rust_proto_new::graplinc::grapl::api::event_source::v1beta1 as native;
+    use rust_proto::graplinc::grapl::api::event_source::v1beta1 as native;
 
     use super::*;
 
