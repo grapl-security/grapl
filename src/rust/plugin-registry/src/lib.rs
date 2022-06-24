@@ -1,4 +1,3 @@
-pub mod client;
 mod db;
 pub mod error;
 pub mod exp_backoff_retry;

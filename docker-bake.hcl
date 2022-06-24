@@ -146,6 +146,8 @@ group "cloudsmith-images" {
 group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
+    "analyzer-dispatcher",
+    "event-source",
     "generator-dispatcher",
     "generator-executor",
     "graph-merger",
@@ -292,6 +294,14 @@ target "grapl-web-ui" {
   target   = "grapl-web-ui-deploy"
   tags = [
     upstream_aware_tag("grapl-web-ui")
+  ]
+}
+
+target "event-source" {
+  inherits = ["_rust-base"]
+  target   = "event-source-deploy"
+  tags = [
+    upstream_aware_tag("event-source")
   ]
 }
 

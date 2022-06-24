@@ -144,6 +144,11 @@ job "integration-tests-new" {
               destination_name = "model-plugin-deployer"
               local_bind_port  = 1005
             }
+
+            upstreams {
+              destination_name = "event-source"
+              local_bind_port  = 1006
+            }
           }
         }
       }
@@ -181,6 +186,8 @@ job "integration-tests-new" {
         ORGANIZATION_MANAGEMENT_DB_USERNAME    = var.organization_management_db.username
 
         ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
+
+        EVENT_SOURCE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_event-source}"
 
         PIPELINE_INGRESS_CLIENT_ADDRESS  = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
         PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"

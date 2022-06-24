@@ -148,6 +148,16 @@ variable "uid_allocator_db" {
   description = "Vars for uid-allocator database"
 }
 
+variable "event_source_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for event-source database"
+}
+
 variable "plugin_registry_bucket_aws_account_id" {
   type        = string
   description = "The account id that owns the bucket where plugins are stored"
@@ -1336,6 +1346,65 @@ job "grapl-core" {
       connect {
         sidecar_service {
         }
+      }
+    }
+  }
+
+  group "event-source" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+
+      port "event-source-port" {
+      }
+    }
+
+    task "event-source" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["event-source"]
+        ports = ["event-source-port"]
+      }
+
+      template {
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
+        env         = true
+      }
+
+      env {
+        EVENT_SOURCE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_event-source-port}"
+        EVENT_SOURCE_DB_HOSTNAME  = var.event_source_db.hostname
+        EVENT_SOURCE_DB_PASSWORD  = var.event_source_db.password
+        EVENT_SOURCE_DB_PORT      = var.event_source_db.port
+        EVENT_SOURCE_DB_USERNAME  = var.event_source_db.username
+        # Hardcoded, but makes little sense to pipe up through Pulumi
+        EVENT_SOURCE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
+
+        # common Rust env vars
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "event-source"
+      port = "event-source-port"
+      connect {
+        sidecar_service {
+        }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "event-source-port"
+        interval = "10s"
+        timeout  = "3s"
       }
     }
   }

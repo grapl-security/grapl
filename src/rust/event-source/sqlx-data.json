@@ -1,0 +1,89 @@
+{
+  "db": "PostgreSQL",
+  "66ece6ff581f63770a22c3b72ee05389a4f39750d1f40f5150ffe9853db79d00": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Bool",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            UPDATE event_sources\n            SET \n                display_name = $1,\n                description = $2,\n                active = $3,\n                last_updated_time = CURRENT_TIMESTAMP\n            WHERE\n                event_source_id = $4\n            "
+  },
+  "be000c96537768eae3f02f80ccfee61eb98721da76e754d68083f91d88868e39": {
+    "describe": {
+      "columns": [
+        {
+          "name": "event_source_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "tenant_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "display_name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "created_time",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "last_updated_time",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "active",
+          "ordinal": 6,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            SELECT\n                event_source_id,\n                tenant_id,\n                display_name,\n                description,\n                created_time,\n                last_updated_time,\n                active\n            FROM event_sources\n            WHERE event_source_id = $1\n            ;\n            "
+  },
+  "f3f571e64e39bd0092889d0c9ba3e9b9049fea32eca75bbf15f9ef71ee0308e7": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Uuid",
+          "Varchar",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO event_sources (\n                event_source_id,\n                tenant_id,\n                display_name,\n                description\n            )\n            VALUES( $1::UUID, $2::UUID, $3, $4 )\n        "
+  }
+}
