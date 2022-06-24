@@ -13,7 +13,7 @@ name = "graph-merger"
 path = "src/main.rs"
 
 [features]
-new_integration_tests = []
+integration_tests = []
 
 [dependencies]
 anyhow = "1.0"

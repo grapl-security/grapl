@@ -209,9 +209,9 @@ steps:
                 - grapl/CODECOV_TOKEN
           - grapl-security/codecov#v0.1.6
 
-  - label: ":hammer: Integration Tests"
+  - label: ":hammer: Python Integration Tests"
     command:
-      - make test-integration
+      - make test-integration-python
     plugins:
       - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
@@ -226,9 +226,9 @@ steps:
       # https://github.com/grapl-security/issue-tracker/issues/894
       - "src/js/engagement_view/source_map_explorer_result.html"
 
-  - label: ':hammer: "New" Integration Tests'
+  - label: ":hammer: Rust Integration Tests"
     command:
-      - make test-integration-new
+      - make test-integration-rust
     plugins:
       - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:

@@ -13,7 +13,7 @@ name = "node-identifier"
 path = "src/main.rs"
 
 [features]
-new_integration_tests = []
+integration_tests = []
 
 [dependencies]
 bytes = "1.1.0"

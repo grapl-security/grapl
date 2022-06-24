@@ -31,11 +31,19 @@ services:
         # Basically: It's mostly harmless.
 
         (
-          cd integration_tests
+          cd python_integration_tests
           # Ideally this stack name would be scoped by organization, but
           # login --local doesn't support organizations
-          pulumi stack init local-grapl-integration-tests --non-interactive
-          pulumi up --yes --skip-preview --stack=local-grapl-integration-tests $$TRACING_ARGS
+          pulumi stack init local-grapl-python-integration-tests --non-interactive
+          pulumi up --yes --skip-preview --stack=local-grapl-python-integration-tests $$TRACING_ARGS
+        )
+
+        (
+          cd rust_integration_tests
+          # Ideally this stack name would be scoped by organization, but
+          # login --local doesn't support organizations
+          pulumi stack init local-grapl-rust-integration-tests --non-interactive
+          pulumi up --yes --skip-preview --stack=local-grapl-rust-integration-tests $$TRACING_ARGS
         )
 
     volumes:

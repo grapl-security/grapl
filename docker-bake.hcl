@@ -139,7 +139,7 @@ group "cloudsmith-images" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "grapl-services",
-    "rust-integration-tests-new"
+    "rust-integration-tests"
   ]
 }
 
@@ -198,19 +198,18 @@ group "local-infrastructure" {
   ]
 }
 
-group "integration-tests" {
+group "python-integration-tests" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "python-integration-tests",
-    "rust-integration-tests"
   ]
 }
 
 group "all-tests" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "integration-tests",
-    "rust-integration-tests-new"
+    "python-integration-tests",
+    "rust-integration-tests"
   ]
 }
 
@@ -445,17 +444,9 @@ target "rust-integration-tests" {
   inherits = ["_rust-base"]
   target   = "integration-tests"
   tags = [
-    local_only_tag("rust-integration-tests")
-  ]
-}
-
-target "rust-integration-tests-new" {
-  inherits = ["_rust-base"]
-  target   = "integration-tests-new"
-  tags = [
     # Yes, we push this up to Cloudsmith to run tests against AWS
     # infrastructure; that's why we use `upstream_aware_tag`.
-    upstream_aware_tag("rust-integration-tests-new")
+    upstream_aware_tag("rust-integration-tests")
   ]
 }
 

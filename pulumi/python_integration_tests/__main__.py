@@ -6,7 +6,7 @@ import os
 from typing import Mapping, Optional, cast
 
 import pulumi_aws as aws
-from infra import config, log_levels
+from infra import config
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
@@ -19,7 +19,7 @@ from infra.path import path_from_root
 import pulumi
 
 
-def _integration_container_images(
+def _python_integration_container_images(
     artifacts: ArtifactGetter,
 ) -> Mapping[str, DockerImageId]:
     """
@@ -32,25 +32,6 @@ def _integration_container_images(
 
     return {
         "python-integration-tests": builder.build_with_tag("python-integration-tests"),
-        "rust-integration-tests": builder.build_with_tag("rust-integration-tests"),
-    }
-
-
-def _integration_new_container_images(
-    artifacts: ArtifactGetter,
-) -> Mapping[str, DockerImageId]:
-    """
-    Build a map of {task name -> docker image identifier}.
-    """
-    builder = DockerImageIdBuilder(
-        container_repository=config.container_repository(),
-        artifacts=artifacts,
-    )
-
-    return {
-        "rust-integration-tests-new": builder.build_with_tag(
-            "rust-integration-tests-new"
-        )
     }
 
 
@@ -83,56 +64,30 @@ def main() -> None:
 
     integration_tests_kafka_credentials = kafka.service_credentials("integration-tests")
 
-    integration_tests_new_job_vars: NomadVars = {
-        "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
-        "aws_region": aws.get_region().name,
-        "container_images": _integration_new_container_images(artifacts),
-        "dns_server": config.CONSUL_DNS_IP,
-        "integration_tests_kafka_consumer_group_name": kafka.consumer_group(
-            "integration-tests"
-        ),
-        "integration_tests_kafka_sasl_username": integration_tests_kafka_credentials.apply(
-            lambda c: c.api_key
-        ),
-        "integration_tests_kafka_sasl_password": integration_tests_kafka_credentials.apply(
-            lambda c: c.api_secret
-        ),
-        "kafka_bootstrap_servers": kafka.bootstrap_servers(),
-        "rust_log": log_levels.RUST_LOG_LEVELS,
-        "organization_management_db": grapl_stack.organization_management_db,
-        "plugin_work_queue_db": grapl_stack.plugin_work_queue_db,
-    }
-
-    integration_tests_new = NomadJob(
-        "integration-tests-new",
-        jobspec=path_from_root("nomad/integration-tests-new.nomad").resolve(),
-        vars=integration_tests_new_job_vars,
-        opts=pulumi.ResourceOptions(provider=nomad_provider),
-    )
-
     if config.LOCAL_GRAPL:
-        # We don't do integration tests in AWS yet, mostly because the current
-        # Python Pants integration test setup is funky and requires an on-disk
-        # Grapl repo.
+        # We don't do Python integration tests in AWS yet, mostly because the
+        # current Python Pants integration test setup is funky and requires an
+        # on-disk Grapl repo.
+        # FIXME: make python integration tests work in AWS.
 
-        integration_test_job_vars: NomadVars = {
+        python_integration_test_job_vars: NomadVars = {
             "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
             "aws_region": aws.get_region().name,
-            "container_images": _integration_container_images(artifacts),
+            "container_images": _python_integration_container_images(artifacts),
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
             "redis_endpoint": grapl_stack.redis_endpoint,
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
             "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
-            "plugin_work_queue_db": grapl_stack.plugin_work_queue_db,
-            "organization_management_db": grapl_stack.organization_management_db,
         }
 
-        integration_tests = NomadJob(
-            "integration-tests",
-            jobspec=path_from_root("nomad/local/integration-tests.nomad").resolve(),
-            vars=integration_test_job_vars,
+        python_integration_tests = NomadJob(
+            "python-integration-tests",
+            jobspec=path_from_root(
+                "nomad/local/python-integration-tests.nomad"
+            ).resolve(),
+            vars=python_integration_test_job_vars,
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
 

@@ -57,26 +57,6 @@ variable "grapl_root" {
   description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
 }
 
-variable "plugin_work_queue_db" {
-  type = object({
-    hostname = string
-    port     = number
-    username = string
-    password = string
-  })
-  description = "Vars for plugin-work-queue database"
-}
-
-variable "organization_management_db" {
-  type = object({
-    hostname = string
-    port     = number
-    username = string
-    password = string
-  })
-  description = "Vars for organization-management database"
-}
-
 locals {
   log_level = "DEBUG"
 
@@ -86,7 +66,7 @@ locals {
   redis_port     = local._redis[1]
 }
 
-job "integration-tests" {
+job "python-integration-tests" {
   datacenters = ["dc1"]
   type        = "batch"
   parameterized {}
@@ -98,101 +78,6 @@ job "integration-tests" {
 
   # Specifies that this job is the most high priority job we have; nothing else should take precedence
   priority = 100
-
-  group "rust-integration-tests" {
-    restart {
-      # Make this a one-shot job
-      attempts = 0
-    }
-
-    network {
-      mode = "bridge"
-    }
-
-    # Enable service discovery
-    service {
-      name = "rust-integration-tests"
-      connect {
-        sidecar_service {
-          proxy {
-            upstreams {
-              # This is a hack, because IDK how to share locals across files
-              destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 9080
-            }
-
-            upstreams {
-              destination_name = "model-plugin-deployer"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1000
-            }
-
-            upstreams {
-              destination_name = "plugin-work-queue"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1001
-            }
-
-            upstreams {
-              destination_name = "organization-management"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1002
-            }
-          }
-        }
-      }
-    }
-
-    task "rust-integration-tests" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["rust-integration-tests"]
-      }
-
-      # This writes an env file that gets read by the task automatically
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        AWS_REGION      = var.aws_region
-        GRAPL_LOG_LEVEL = local.log_level
-        # This is a hack, because IDK how to share locals across files
-        #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
-        MG_ALPHAS      = "localhost:9080"
-        RUST_BACKTRACE = 1
-        RUST_LOG       = local.log_level
-        REDIS_ENDPOINT = var.redis_endpoint
-
-        GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
-        GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
-
-        PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-work-queue}"
-
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME = var.plugin_work_queue_db.hostname
-        PLUGIN_WORK_QUEUE_DB_PORT     = var.plugin_work_queue_db.port
-        PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue_db.username
-        PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue_db.password
-
-        ORGANIZATION_MANAGEMENT_ADDRESS      = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
-        ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
-
-        ORGANIZATION_MANAGEMENT_DB_HOSTNAME = var.organization_management_db.hostname
-        ORGANIZATION_MANAGEMENT_DB_PORT     = var.organization_management_db.port
-        ORGANIZATION_MANAGEMENT_DB_USERNAME = var.organization_management_db.username
-        ORGANIZATION_MANAGEMENT_DB_PASSWORD = var.organization_management_db.password
-
-        NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
-      }
-
-      resources {
-        memory = 1024
-      }
-    }
-  }
 
   group "python-integration-tests" {
     restart {

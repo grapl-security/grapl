@@ -42,4 +42,4 @@ bytes = "1.0"
 test-context = "0.1"
 
 [features]
-new_integration_tests = []
+integration_tests = []

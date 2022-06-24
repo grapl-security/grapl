@@ -49,4 +49,4 @@ async-trait = "0.1.51"
 tonic-build = { version = "0.6.0", features = ["prost"] }
 
 [features]
-new_integration_tests = []
+integration_tests = []

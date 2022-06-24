@@ -1,4 +1,4 @@
-#![cfg(feature = "new_integration_tests")]
+#![cfg(feature = "integration_tests")]
 
 use model_plugin_deployer::client::{
     DeployModelRequest,

@@ -142,7 +142,7 @@ job "integration-tests-new" {
 
             upstreams {
               destination_name = "model-plugin-deployer"
-              local_bind_port = 1005
+              local_bind_port  = 1005
             }
           }
         }

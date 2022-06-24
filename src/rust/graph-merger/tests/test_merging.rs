@@ -1,4 +1,4 @@
-#[cfg(feature = "new_integration_tests")]
+#[cfg(feature = "integration_tests")]
 pub mod test {
     use std::{
         collections::HashMap,

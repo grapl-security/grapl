@@ -55,4 +55,4 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
 ] }
 
 [features]
-new_integration_tests = []
+integration_tests = []
