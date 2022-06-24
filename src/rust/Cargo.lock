@@ -3015,11 +3015,9 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
- "rust-proto",
+ "rust-proto-new",
  "thiserror",
  "tokio",
- "tonic 0.6.2",
- "tonic-health 0.5.0",
  "tracing",
  "uuid",
 ]

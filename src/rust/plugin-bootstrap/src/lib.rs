@@ -1,6 +1,5 @@
 use std::net::SocketAddr;
 
-pub mod client;
 pub mod server;
 
 #[derive(clap::Parser, Debug)]
@@ -11,4 +10,6 @@ pub struct PluginBootstrapServiceConfig {
     pub plugin_binary_path: std::path::PathBuf,
     #[clap(long, env)]
     pub plugin_certificate_path: std::path::PathBuf,
+    #[clap(long, env)]
+    pub plugin_registry_polling_interval_ms: u64,
 }

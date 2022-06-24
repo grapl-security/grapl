@@ -3,26 +3,36 @@ use std::{
     sync::atomic::Ordering,
 };
 
-use rust_proto::plugin_bootstrap::{
-    ClientCertificate,
-    GetBootstrapRequestProto,
-    GetBootstrapResponse,
-    GetBootstrapResponseProto,
-    PluginBootstrapService,
-    PluginBootstrapServiceServer,
-    PluginPayload,
+use rust_proto_new::{
+    graplinc::grapl::api::plugin_bootstrap::v1beta1::{
+        server::{
+            ConfigurationError as ServerConfigurationError,
+            PluginBootstrapApi,
+        },
+        ClientCertificate,
+        GetBootstrapRequest,
+        GetBootstrapResponse,
+        PluginPayload,
+    },
+    protocol::status::Status,
 };
-use tonic::{
-    transport::Server,
-    Status,
-};
+use thiserror::Error;
 
-use crate::PluginBootstrapServiceConfig;
-
-#[derive(Debug, thiserror::Error)]
-pub enum PluginBootstrapperError {
+#[derive(Debug, Error)]
+pub enum PluginBootstrapError {
     #[error("IoError {0}")]
     IoError(#[from] std::io::Error),
+    #[error("ServerError {0}")]
+    ServerError(#[from] ServerConfigurationError),
+}
+
+impl From<PluginBootstrapError> for Status {
+    fn from(e: PluginBootstrapError) -> Self {
+        match e {
+            PluginBootstrapError::IoError(e) => Status::internal(e.to_string()),
+            PluginBootstrapError::ServerError(e) => Status::internal(e.to_string()),
+        }
+    }
 }
 
 pub struct PluginBootstrapper {
@@ -43,7 +53,7 @@ impl PluginBootstrapper {
     pub fn load(
         certificate_path: &std::path::Path,
         plugin_binary_path: &std::path::Path,
-    ) -> Result<Self, PluginBootstrapperError> {
+    ) -> Result<Self, PluginBootstrapError> {
         let certificate_file = std::fs::File::open(certificate_path)?;
         let plugin_binary_file = std::fs::File::open(plugin_binary_path)?;
 
@@ -52,73 +62,58 @@ impl PluginBootstrapper {
 
         let mut reader = std::io::BufReader::new(certificate_file);
         reader.read_to_end(&mut certificate)?;
+
         let mut reader = std::io::BufReader::new(plugin_binary_file);
         reader.read_to_end(&mut plugin_binary)?;
 
-        let plugin_payload = PluginPayload { plugin_binary };
-        let client_certificate = ClientCertificate {
-            client_certificate: certificate,
+        let plugin_payload = PluginPayload {
+            plugin_binary: plugin_binary.into(),
         };
+
+        let client_certificate = ClientCertificate {
+            client_certificate: certificate.into(),
+        };
+
         Ok(PluginBootstrapper::new(client_certificate, plugin_payload))
     }
 
     async fn get_bootstrap(&self) -> GetBootstrapResponse {
         let counter = self.counter.fetch_add(1, Ordering::SeqCst);
+
         if counter != 0 {
             tracing::warn!(
                 message="Bootstrap information has been requested more than once.",
                 count=%counter,
             );
         }
+
         GetBootstrapResponse {
             plugin_payload: self.plugin_payload.clone(),
             client_certificate: self.client_certificate.clone(),
         }
     }
+}
 
-    #[tracing::instrument(skip(self))]
-    pub async fn serve(
-        self,
-        service_config: PluginBootstrapServiceConfig,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
-        health_reporter
-            .set_serving::<PluginBootstrapServiceServer<PluginBootstrapper>>()
-            .await;
+pub struct PluginBootstrap {
+    plugin_bootstrapper: PluginBootstrapper,
+}
 
-        let addr = service_config.plugin_registry_bind_address;
-        tracing::info!(
-            message="Starting PluginBootstrap",
-            addr=?addr,
-        );
-
-        Server::builder()
-            .trace_fn(|request| {
-                tracing::info_span!(
-                    "PluginBootstrap",
-                    headers = ?request.headers(),
-                    method = ?request.method(),
-                    uri = %request.uri(),
-                    extensions = ?request.extensions(),
-                )
-            })
-            .add_service(health_service)
-            .add_service(PluginBootstrapServiceServer::new(self))
-            .serve(addr)
-            .await?;
-
-        Ok(())
+impl PluginBootstrap {
+    pub fn new(plugin_bootstrapper: PluginBootstrapper) -> PluginBootstrap {
+        PluginBootstrap {
+            plugin_bootstrapper,
+        }
     }
 }
 
-#[tonic::async_trait]
-impl PluginBootstrapService for PluginBootstrapper {
-    #[tracing::instrument(skip(self))]
+#[async_trait::async_trait]
+impl PluginBootstrapApi for PluginBootstrap {
+    type Error = PluginBootstrapError;
+
     async fn get_bootstrap(
         &self,
-        _request: tonic::Request<GetBootstrapRequestProto>,
-    ) -> Result<tonic::Response<GetBootstrapResponseProto>, Status> {
-        let response = self.get_bootstrap().await;
-        Ok(tonic::Response::new(response.into()))
+        _request: GetBootstrapRequest,
+    ) -> Result<GetBootstrapResponse, Self::Error> {
+        Ok(self.plugin_bootstrapper.get_bootstrap().await)
     }
 }
