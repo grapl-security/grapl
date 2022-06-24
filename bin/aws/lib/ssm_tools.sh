@@ -1,7 +1,18 @@
 #!/usr/bin/env bash
 
+_get_server_instance() {
+    # shellcheck disable=SC2140
+    SERVER_INSTANCE_ID=$(
+        aws ec2 describe-instances \
+            --filters Name=tag:Name,Values="${SERVER_TYPE}" Name="instance-state-name",Values="running" \
+            --query="Reservations[0].Instances[0].InstanceId" \
+            --output=text
+    )
+    echo "${SERVER_INSTANCE_ID}"
+}
+
 # Inputs
-# Type
+# Server Type
 # Remote Port
 # Local port
 ssm_port_forward() {
@@ -28,13 +39,7 @@ EOF
     echo "Connecting to a ${SERVER_TYPE} in AWS PROFILE: ${AWS_PROFILE} on port ${REMOTE_PORT} and forwarding to ${LOCAL_PORT}"
     echo "To connect to a ${SERVER_TYPE} in a different AWS Account change your AWS_PROFILE environment variable"
 
-    # shellcheck disable=SC2140
-    SERVER_INSTANCE_ID=$(
-        aws ec2 describe-instances \
-            --filters Name=tag:Name,Values="${SERVER_TYPE}" Name="instance-state-name",Values="running" \
-            --query="Reservations[0].Instances[0].InstanceId" \
-            --output=text
-    )
+    SERVER_INSTANCE_ID=$(_get_server_instance)
 
     echo "--- Instance: ${SERVER_INSTANCE_ID}"
 
@@ -44,4 +49,22 @@ EOF
         --target "${SERVER_INSTANCE_ID}" \
         --document-name AWS-StartPortForwardingSession \
         --parameters "${SSM_PARAMETERS}"
+}
+
+ssm() {
+    readonly SERVER_TYPE=$1
+
+    if [ -z "${AWS_PROFILE}" ]; then
+        echo "AWS Profile is not set. Please run 'export AWS_PROFILE=foo' and rerun this script"
+        exit 1
+    fi
+
+    echo "Connecting to a ${SERVER_TYPE} in AWS PROFILE: ${AWS_PROFILE}"
+    echo "To connect to a ${SERVER_TYPE} in a different AWS Account change your AWS_PROFILE environment variable"
+
+    SERVER_INSTANCE_ID=$(_get_server_instance)
+
+    echo "--- Instance: ${SERVER_INSTANCE_ID}"
+
+    aws ssm start-session --target "${SERVER_INSTANCE_ID}"
 }

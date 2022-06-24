@@ -26,7 +26,7 @@ steps:
         command:
           - .buildkite/scripts/ensure_regenerated_constraints.sh
 
-      - label: ":jeans: All files are covered by Pants"
+      - label: ":pants: All files are covered by Pants"
         command:
           - ./pants tailor --check
 
@@ -35,7 +35,7 @@ steps:
     # enforcement, typechecking, etc.
     key: lints
     steps:
-      - label: ":jeans: BUILD Linting"
+      - label: ":pants: BUILD Linting"
         command:
           - make lint-build
 
@@ -56,7 +56,7 @@ steps:
         command:
           - make lint-python
         plugins:
-          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-login#v0.1.3
           - grapl-security/vault-env#v0.1.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -65,7 +65,7 @@ steps:
         command:
           - make typecheck
         plugins:
-          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-login#v0.1.3
           - grapl-security/vault-env#v0.1.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -88,7 +88,7 @@ steps:
         command:
           - make lint-shell
         plugins:
-          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-login#v0.1.3
           - grapl-security/vault-env#v0.1.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -97,7 +97,7 @@ steps:
         command:
           - make lint-docker
         plugins:
-          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-login#v0.1.3
           - grapl-security/vault-env#v0.1.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -179,7 +179,7 @@ steps:
         command:
           - make test-unit-python
         plugins:
-          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-login#v0.1.3
           - grapl-security/vault-env#v0.1.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -190,7 +190,7 @@ steps:
         command:
           - make test-unit-rust-coverage
         plugins:
-          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-login#v0.1.3
           - grapl-security/vault-env#v0.1.0:
               secrets:
                 - grapl/CODECOV_TOKEN
@@ -203,7 +203,7 @@ steps:
         command:
           - make test-unit-js
         plugins:
-          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-login#v0.1.3
           - grapl-security/vault-env#v0.1.0:
               secrets:
                 - grapl/CODECOV_TOKEN
@@ -213,7 +213,7 @@ steps:
     command:
       - make test-integration
     plugins:
-      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-login#v0.1.3
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -230,7 +230,7 @@ steps:
     command:
       - make test-integration-new
     plugins:
-      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-login#v0.1.3
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
