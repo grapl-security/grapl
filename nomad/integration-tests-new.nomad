@@ -139,6 +139,11 @@ job "integration-tests-new" {
               destination_name = "organization-management"
               local_bind_port  = 1004
             }
+
+            upstreams {
+              destination_name = "model-plugin-deployer"
+              local_bind_port = 1005
+            }
           }
         }
       }
@@ -186,6 +191,9 @@ job "integration-tests-new" {
         KAFKA_CONSUMER_GROUP_NAME = var.integration_tests_kafka_consumer_group_name
         # (this is an invalid topic name, so it'd throw an error if consumed)
         KAFKA_CONSUMER_TOPIC = "<replace me at integration test setup>"
+
+        GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
+        GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
 

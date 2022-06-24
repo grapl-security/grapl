@@ -137,7 +137,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="model-plugin-deployer/integration,plugin-work-queue/integration"
+ENV RUST_INTEGRATION_TEST_FEATURES="plugin-work-queue/integration"
 ENV TEST_DIR=/grapl/tests
 
 RUN mkdir --parents "${TEST_DIR}"
@@ -202,7 +202,7 @@ FROM base AS build-test-integration-new
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/new_integration_tests,graph-merger/new_integration_tests,node-identifier/new_integration_tests,pipeline-ingress/new_integration_tests,plugin-registry/new_integration_tests,sysmon-generator/new_integration_tests,organization-management/new_integration_tests"
+ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/new_integration_tests,graph-merger/new_integration_tests,model-plugin-deployer/new_integration_tests,node-identifier/new_integration_tests,pipeline-ingress/new_integration_tests,plugin-registry/new_integration_tests,sysmon-generator/new_integration_tests,organization-management/new_integration_tests"
 ENV TEST_DIR=/grapl/tests
 
 # This will build the integration test binaries and parse the manifest to find
