@@ -327,7 +327,12 @@ mod plugin_registry {
         }
 
         #[test]
-        fn test_serde_create_plugin_requests(value in pr_strats::create_plugin_requests()) {
+        fn test_serde_create_analyzer_requests(value in pr_strats::create_analyzer_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_serde_create_generator_requests(value in pr_strats::create_generator_requests()) {
             check_encode_decode_invariant(value)
         }
 

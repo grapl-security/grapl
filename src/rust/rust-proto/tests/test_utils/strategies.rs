@@ -693,8 +693,10 @@ pub mod event_source {
 
 pub mod plugin_registry {
     use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
-        CreatePluginRequest,
-        CreatePluginRequestMetadata,
+        CreateAnalyzerRequest,
+        CreateAnalyzerRequestMetadata,
+        CreateGeneratorRequest,
+        CreateGeneratorRequestMetadata,
         CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
@@ -737,23 +739,42 @@ pub mod plugin_registry {
         }
     }
 
-    pub fn create_plugin_requests() -> impl Strategy<Value = CreatePluginRequest> {
+    pub fn create_analyzer_requests() -> impl Strategy<Value = CreateAnalyzerRequest> {
         prop_oneof![
-            any::<Vec<u8>>().prop_map(CreatePluginRequest::Chunk),
-            create_plugin_request_metadatas().prop_map(CreatePluginRequest::Metadata)
+            any::<Vec<u8>>().prop_map(CreateAnalyzerRequest::Chunk),
+            create_analyzer_request_metadatas().prop_map(CreateAnalyzerRequest::Metadata)
         ]
     }
 
     prop_compose! {
-        pub fn create_plugin_request_metadatas()(
+        pub fn create_analyzer_request_metadatas()(
             tenant_id in uuids(),
             display_name in string_not_empty(),
-            plugin_type in plugin_types(),
-        ) -> CreatePluginRequestMetadata {
-            CreatePluginRequestMetadata {
+        ) -> CreateAnalyzerRequestMetadata {
+            CreateAnalyzerRequestMetadata {
                 tenant_id,
                 display_name,
-                plugin_type,
+            }
+        }
+    }
+
+    pub fn create_generator_requests() -> impl Strategy<Value = CreateGeneratorRequest> {
+        prop_oneof![
+            any::<Vec<u8>>().prop_map(CreateGeneratorRequest::Chunk),
+            create_generator_request_metadatas().prop_map(CreateGeneratorRequest::Metadata)
+        ]
+    }
+
+    prop_compose! {
+        pub fn create_generator_request_metadatas()(
+            tenant_id in uuids(),
+            display_name in string_not_empty(),
+            event_sources in vec_of_uuids(),
+        ) -> CreateGeneratorRequestMetadata {
+            CreateGeneratorRequestMetadata {
+                tenant_id,
+                display_name,
+                event_sources,
             }
         }
     }

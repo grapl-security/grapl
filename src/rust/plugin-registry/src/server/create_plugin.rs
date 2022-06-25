@@ -13,7 +13,10 @@ use rusoto_s3::{
     UploadPartRequest,
     S3,
 };
-use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::CreatePluginRequest;
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
+    CreateAnalyzerRequest,
+    CreateGeneratorRequest,
+};
 
 use super::service::PluginRegistryServiceConfig;
 use crate::{

@@ -26,7 +26,8 @@ use tonic::{
 use crate::{
     execute_rpc,
     graplinc::grapl::api::plugin_registry::v1beta1::{
-        CreatePluginRequest,
+        CreateAnalyzerRequest,
+        CreateGeneratorRequest,
         CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
@@ -60,9 +61,14 @@ use crate::{
 pub trait PluginRegistryApi {
     type Error: Into<Status>;
 
-    async fn create_plugin(
+    async fn create_analyzer(
         &self,
-        request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
+        request: futures::channel::mpsc::Receiver<CreateAnalyzerRequest>,
+    ) -> Result<CreatePluginResponse, Self::Error>;
+
+    async fn create_generator(
+        &self,
+        request: futures::channel::mpsc::Receiver<CreateGeneratorRequest>,
     ) -> Result<CreatePluginResponse, Self::Error>;
 
     async fn get_plugin(&self, request: GetPluginRequest)
@@ -95,11 +101,15 @@ where
     T: PluginRegistryApi + Send + Sync + 'static,
 {
     #[tracing::instrument(skip(self, request), err)]
-    async fn create_plugin(
+    async fn create_analyzer(
         &self,
-        request: Request<tonic::Streaming<proto::CreatePluginRequest>>,
+        request: Request<tonic::Streaming<proto::CreateAnalyzerRequest>>,
     ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
-        let mut proto_request = request.into_inner();
+        let create_plugin_fn = T::create_analyzer;
+        // !!! Note: This code is heavily shared with create_generator, but
+        // is a tad difficult to genericize right now. Revisit after GATs!
+
+        let mut proto_stream = request.into_inner();
 
         // Spin up two Futures
         // - one converting incoming protobuf requests to Rust-native requests
@@ -110,7 +120,7 @@ where
 
         let proto_to_native_thread = async move {
             ({
-                while let Some(req) = proto_request.next().await {
+                while let Some(req) = proto_stream.next().await {
                     let req = req?.try_into()?;
                     tx.send(req)
                         .await
@@ -121,8 +131,11 @@ where
         };
 
         let api_handler_thread = async move {
-            ({ self.api_server.create_plugin(rx).await.map_err(Into::into) }
-                as Result<CreatePluginResponse, Status>)
+            ({
+                create_plugin_fn(&self.api_server, rx)
+                    .await
+                    .map_err(Into::into)
+            } as Result<CreatePluginResponse, Status>)
         };
 
         let native_response: CreatePluginResponse =
@@ -131,7 +144,56 @@ where
                 Err(err) => Err(err),
             }?;
 
-        let proto_response = native_response.try_into().map_err(SerDeError::from)?;
+        let proto_response = native_response.into();
+
+        Ok(tonic::Response::new(proto_response))
+    }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn create_generator(
+        &self,
+        request: Request<tonic::Streaming<proto::CreateGeneratorRequest>>,
+    ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
+        let create_plugin_fn = T::create_generator;
+        // !!! Note: This code is heavily shared with create_analyzer, but
+        // is a tad difficult to genericize right now. Revisit after GATs!
+
+        let mut proto_stream = request.into_inner();
+
+        // Spin up two Futures
+        // - one converting incoming protobuf requests to Rust-native requests
+        // - one calling the `.create_plugin` handler
+        // (with a tx/rx communicating between the two threads)
+
+        let (mut tx, rx) = futures::channel::mpsc::channel(8);
+
+        let proto_to_native_thread = async move {
+            ({
+                while let Some(req) = proto_stream.next().await {
+                    let req = req?.try_into()?;
+                    tx.send(req)
+                        .await
+                        .map_err(|e| Status::internal(e.to_string()))?;
+                }
+                Ok(())
+            } as Result<(), Status>)
+        };
+
+        let api_handler_thread = async move {
+            ({
+                create_plugin_fn(&self.api_server, rx)
+                    .await
+                    .map_err(Into::into)
+            } as Result<CreatePluginResponse, Status>)
+        };
+
+        let native_response: CreatePluginResponse =
+            match futures::try_join!(proto_to_native_thread, api_handler_thread,) {
+                Ok((_, native_result)) => Ok(native_result),
+                Err(err) => Err(err),
+            }?;
+
+        let proto_response = native_response.into();
 
         Ok(tonic::Response::new(proto_response))
     }

@@ -186,7 +186,11 @@ impl TryFrom<proto::CreateGeneratorRequestMetadata> for CreateGeneratorRequestMe
     type Error = SerDeError;
 
     fn try_from(value: proto::CreateGeneratorRequestMetadata) -> Result<Self, Self::Error> {
-        let event_sources = value.event_sources.map(uuid::Uuid::try_into);
+        let event_sources: Vec<uuid::Uuid> = value
+            .event_sources
+            .into_iter()
+            .map(TryFrom::try_from)
+            .collect::<Result<Vec<_>, _>>()?;
 
         let tenant_id = value
             .tenant_id
@@ -203,22 +207,18 @@ impl TryFrom<proto::CreateGeneratorRequestMetadata> for CreateGeneratorRequestMe
         Ok(Self {
             tenant_id,
             display_name,
-            plugin_type,
+            event_sources,
         })
     }
 }
 
 impl From<CreateGeneratorRequestMetadata> for proto::CreateGeneratorRequestMetadata {
     fn from(value: CreateGeneratorRequestMetadata) -> Self {
-        let plugin_type: proto::PluginType = value.plugin_type.into();
+        let event_sources = value.event_sources.into_iter().map(Into::into).collect();
         Self {
             tenant_id: Some(value.tenant_id.into()),
             display_name: value.display_name,
-            event_sources: value
-                .event_sources
-                .into_iter()
-                .map(TryInto::try_into)
-                .collect::<Result<Vec<_>, _>>()?,
+            event_sources,
         }
     }
 }

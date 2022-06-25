@@ -12,6 +12,7 @@ use rusoto_s3::{
 };
 use rust_proto::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
+        CreateAnalyzerRequest,
         CreatePluginRequest,
         CreatePluginRequestMetadata,
         CreatePluginResponse,
@@ -119,9 +120,9 @@ impl PluginRegistryApi for PluginRegistry {
 
     // TODO: This function is so long I'm gonna split it out into its own file soon.
     #[tracing::instrument(skip(self, request), err)]
-    async fn create_plugin(
+    async fn create_analyzer(
         &self,
-        request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
+        request: futures::channel::mpsc::Receiver<CreateAnalyzerRequest>,
     ) -> Result<CreatePluginResponse, Self::Error> {
         let start_time = std::time::SystemTime::now();
 
@@ -158,7 +159,7 @@ impl PluginRegistryApi for PluginRegistry {
                 .unwrap_or_default();
 
             tracing::info!(
-                message = "CreatePlugin benchmark",
+                message = "CreateAnalyzer benchmark",
                 display_name = ?display_name,
                 duration_millis = ?total_duration.as_millis(),
                 stream_length_bytes = multipart_upload.stream_length,

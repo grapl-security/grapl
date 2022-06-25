@@ -41,39 +41,70 @@ impl PluginRegistryServiceClient {
         })
     }
 
-    /// create a new plugin.
-    /// NOTE: Most consumers will want `create_plugin`, not `create_plugin_raw`.
-    pub async fn create_plugin_raw<S>(
+    async fn create_analyzer_raw<S>(
         &mut self,
         request: S,
     ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError>
     where
-        S: Stream<Item = native::CreatePluginRequest> + Send + 'static,
+        S: Stream<Item = native::CreateAnalyzerRequest> + Send + 'static,
     {
         let response = self
             .proto_client
-            .create_plugin(request.map(proto::CreatePluginRequest::from))
+            .create_analyzer(request.map(proto::CreateAnalyzerRequest::from))
             .await?;
         let response = native::CreatePluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
 
-    /// Simplified wrapper function for create_plugin
-    pub async fn create_plugin(
+    /// Create a new Analyzer plugin.
+    pub async fn create_analyzer(
         &mut self,
-        metadata: native::CreatePluginRequestMetadata,
+        metadata: native::CreateAnalyzerRequestMetadata,
         plugin_artifact: impl Sized + Iterator<Item = u8> + Send + 'static,
     ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
         // Split the artifact up into 5MB chunks
         let plugin_chunks = plugin_artifact.chunks_owned(1024 * 1024 * 5);
         // Send the metadata first followed by N chunks
         let request = futures::stream::iter(std::iter::once(
-            native::CreatePluginRequest::Metadata(metadata),
+            native::CreateAnalyzerRequest::Metadata(metadata),
         ))
         .chain(futures::stream::iter(
-            plugin_chunks.map(native::CreatePluginRequest::Chunk),
+            plugin_chunks.map(native::CreateAnalyzerRequest::Chunk),
         ));
-        self.create_plugin_raw(request).await
+        self.create_analyzer_raw(request).await
+    }
+
+    async fn create_generator_raw<S>(
+        &mut self,
+        request: S,
+    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError>
+    where
+        S: Stream<Item = native::CreateGeneratorRequest> + Send + 'static,
+    {
+        let response = self
+            .proto_client
+            .create_generator(request.map(proto::CreateGeneratorRequest::from))
+            .await?;
+        let response = native::CreatePluginResponse::try_from(response.into_inner())?;
+        Ok(response)
+    }
+
+    /// Create a new Generator plugin.
+    pub async fn create_generator(
+        &mut self,
+        metadata: native::CreateGeneratorRequestMetadata,
+        plugin_artifact: impl Sized + Iterator<Item = u8> + Send + 'static,
+    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
+        // Split the artifact up into 5MB chunks
+        let plugin_chunks = plugin_artifact.chunks_owned(1024 * 1024 * 5);
+        // Send the metadata first followed by N chunks
+        let request = futures::stream::iter(std::iter::once(
+            native::CreateGeneratorRequest::Metadata(metadata),
+        ))
+        .chain(futures::stream::iter(
+            plugin_chunks.map(native::CreateGeneratorRequest::Chunk),
+        ));
+        self.create_generator_raw(request).await
     }
 
     /// retrieve the plugin corresponding to the given plugin_id
