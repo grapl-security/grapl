@@ -1356,8 +1356,8 @@ impl serde_impl::ProtobufSerializable for Edge {
 pub struct Lens {
     pub lens_type: String,
     pub lens_name: String,
-    pub uid: u64,
-    pub score: u64,
+    pub uid: Option<u64>,
+    pub score: Option<u64>,
 }
 
 impl From<LensProto> for Lens {

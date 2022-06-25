@@ -146,7 +146,6 @@ group "cloudsmith-images" {
 group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "analyzer-dispatcher",
     "event-source",
     "generator-dispatcher",
     "generator-executor",

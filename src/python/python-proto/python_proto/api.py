@@ -763,8 +763,10 @@ class Lens(SerDe[_Lens]):
         proto_lens = _Lens()
         proto_lens.lens_type = self.lens_type
         proto_lens.lens_name = self.lens_name
-        proto_lens.uid = self.uid
-        proto_lens.score = self.score
+        if self.uid is not None:
+            proto_lens.uid = self.uid
+        if self.score is not None:
+            proto_lens.score = self.score
         return proto_lens
 
 

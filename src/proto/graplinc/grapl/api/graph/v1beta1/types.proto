@@ -220,9 +220,9 @@ message Lens {
   // name
   string lens_name = 2;
   // uid (absent prior to engagement-creator)
-  uint64 uid = 3;
+  optional uint64 uid = 3;
   // score (absent prior to engagement-creator)
-  uint64 score = 4;
+  optional uint64 score = 4;
 }
 
 // Result computed by an analyzer when it makes a detection.

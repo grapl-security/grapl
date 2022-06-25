@@ -44,7 +44,6 @@ RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         build-essential=12.9 \
         curl=7.74.0-1.3+deb11u1 \
-        protobuf-compiler=3.12.4-1 \
         unzip=6.0-26 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \

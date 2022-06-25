@@ -256,8 +256,8 @@ pub mod graph {
             Lens {
                 lens_type,
                 lens_name,
-                uid,
-                score
+                uid: Some(uid),
+                score: Some(score)
             }
         }
     }
