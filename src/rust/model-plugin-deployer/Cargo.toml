@@ -32,7 +32,6 @@ tonic = "0.6"
 tower = "0.4.11"
 # Tracing support
 tracing = "0.1.29"
-tracing-futures = "0.2.5"
 tracing-subscriber = "0.3.2"
 # Health Checks
 tonic-health = "0.5.0"

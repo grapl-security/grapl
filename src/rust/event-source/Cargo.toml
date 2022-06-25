@@ -17,7 +17,6 @@ sqlx = { version = "0.5", features = [
   "runtime-tokio-rustls",
   "uuid",
 ] }
-tracing-futures = "0.2.5"
 tracing = "0.1.29"
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",

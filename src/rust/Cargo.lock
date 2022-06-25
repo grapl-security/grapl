@@ -1436,7 +1436,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "tracing-futures",
  "tracing-subscriber",
  "uuid",
 ]
@@ -2503,7 +2502,6 @@ dependencies = [
  "tonic-health 0.5.0",
  "tower",
  "tracing",
- "tracing-futures",
  "tracing-subscriber",
 ]
 
@@ -2823,7 +2821,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "tracing-futures",
  "tracing-subscriber",
  "uuid",
 ]
