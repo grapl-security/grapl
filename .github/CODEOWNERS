@@ -43,7 +43,6 @@ BUILD @christophermaier
 /src/js/engagement_view/ @andrea-grapl
 /src/js/graphql_endpoint/ @andrea-grapl
 /src/proto/ @grapl-security/wg-data-infra
-/src/python/analyzer_executor/ @wimax-grapl @grapl-security/wg-data-infra
 /src/python/engagement-creator/ @wimax-grapl @grapl-security/wg-data-infra
 /src/python/graphql_endpoint_tests/ @wimax-grapl
 /src/python/grapl_analyzerlib/ @colin-grapl
@@ -54,7 +53,6 @@ BUILD @christophermaier
 /src/python/provisioner/ @jgrillo-grapl
 /src/python/python-proto/ @grapl-security/wg-data-infra
 /src/sh/ @wimax-grapl @christophermaier
-/src/rust/analyzer-dispatcher/ @grapl-security/wg-data-infra
 /src/rust/bin/ @christophermaier
 /src/rust/.cargo @christophermaier
 /src/rust/.cargo/audit.toml @colin-grapl @inickles-grapl
@@ -69,9 +67,7 @@ BUILD @christophermaier
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
-/src/rust/grapl/ @inickles-grapl
 /src/rust/grapl-observe/ @wimax-grapl
-/src/rust/grapl-service/ @inickles-grapl
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/grapl-web-ui/ @inickles-grapl
 /src/rust/kafka/ @grapl-security/wg-data-infra
@@ -86,9 +82,7 @@ BUILD @christophermaier
 /src/rust/node-identifier/ @grapl-security/wg-data-infra
 /src/rust/nomad-client-gen/ @wimax-grapl
 /src/rust/rust-proto/ @grapl-security/wg-data-infra
-src/rust/rust-proto-new/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain.toml @inickles-grapl
-/src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
 /src/rust/sysmon-parser/ @inickles-grapl
 /src/rust/uid-allocator/ @colin-grapl
 /test/docker-compose* @inickles-grapl @christophermaier
