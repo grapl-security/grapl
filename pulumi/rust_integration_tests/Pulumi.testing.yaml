@@ -1,4 +1,4 @@
 config:
   aws:region: us-east-1
-  integration-tests:cloudsmith-repository-name: grapl/testing
-  integration-tests:confluent-environment-name: "testing"
+  rust-integration-tests:cloudsmith-repository-name: grapl/testing
+  rust-integration-tests:confluent-environment-name: "testing"
