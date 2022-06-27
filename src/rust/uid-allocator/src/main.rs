@@ -1,7 +1,7 @@
+use clap::Parser;
 use opentelemetry::sdk::propagation::TraceContextPropagator;
 use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::server::UidAllocatorServiceServer;
 use sqlx::PgPool;
-use structopt::StructOpt;
 use tracing_subscriber::prelude::*;
 use uid_allocator::{
     allocator::UidAllocator,
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!("logger configured successfully");
     tracing::info!("starting up!");
 
-    let service_config = config::UidAllocatorServiceConfig::from_args();
+    let service_config = config::UidAllocatorServiceConfig::parse();
     service_config.validate()?;
     let pool = PgPool::connect(&service_config.counter_db_config.to_postgres_url()).await?;
 

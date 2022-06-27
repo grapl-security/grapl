@@ -28,6 +28,7 @@ from infra.hashicorp_provider import (
 )
 from infra.kafka import Kafka
 from infra.local.postgres import LocalPostgresInstance
+from infra.local.scylla import LocalScyllaInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
 from infra.path import path_from_root
@@ -393,6 +394,11 @@ def main() -> None:
             port=5732,
         )
 
+        graph_db = LocalScyllaInstance(
+            name="graph-db",
+            port=9042,
+        )
+
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
 
         pulumi.export("redis-endpoint", redis_endpoint)
@@ -406,6 +412,7 @@ def main() -> None:
         )
 
         local_grapl_core_vars: Final[NomadVars] = dict(
+            graph_db=graph_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             pipeline_ingress_kafka_sasl_username="fake",
             pipeline_ingress_kafka_sasl_password="fake",

@@ -91,6 +91,20 @@ variable uid_allocator_db {
   }
 }
 
+variable schema_manager_db {
+  description = "Connection configuration for the Schema Manager database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5832
+  }
+}
+
 locals {
   # This is the equivalent of `localhost` within a bridge network.
   # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
@@ -586,6 +600,49 @@ job "grapl-local-infra" {
     }
   }
 
+  group "schema-manager-db" {
+    network {
+      mode = "bridge"
+      port "postgres" {
+        static = var.schema_manager_db.port
+        to     = 5432
+      }
+    }
+
+    task "schema-manager-db" {
+      driver = "docker"
+
+      config {
+        image = "postgres-ext:${var.image_tag}"
+        ports = ["postgres"]
+      }
+
+      env {
+        POSTGRES_USER     = var.schema_manager_db.username
+        POSTGRES_PASSWORD = var.schema_manager_db.password
+      }
+
+      service {
+        name = "schema-manager-db"
+
+        check {
+          type     = "script"
+          name     = "check_postgres"
+          command  = "pg_isready"
+          args     = ["--username", "${var.schema_manager_db.username}"]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+    }
+  }
+
 
   group "scylla" {
     network {
@@ -637,6 +694,11 @@ job "grapl-local-infra" {
           }
         }
 
+      }
+
+      env {
+        # This enables username/password auth.
+        AUTHENTICATOR = "CassandraAuthorizer"
       }
 
       service {

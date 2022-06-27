@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 rust-proto-new = { path = "../rust-proto-new", default-features = false, features = [
   "schema-manager-server"
 ] }
@@ -21,4 +26,3 @@ uuid = { version = "0.8", default-features = false, features = ["v4"] }
 tokio = { version = "1.19.2", features = ["full"] }
 async-trait = "0.1.56"
 dashmap = "5.3.4"
-structopt = "0.3.26"
