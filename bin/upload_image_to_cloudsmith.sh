@@ -3,7 +3,7 @@
 ########################################################################
 # Example Usage
 #
-# bin/upload_image_to_cloudsmith.sh integration-tests-new:dev
+# bin/upload_image_to_cloudsmith.sh rust-integration-tests:dev
 ########################################################################
 
 set -euo pipefail

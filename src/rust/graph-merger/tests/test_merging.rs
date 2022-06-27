@@ -1,4 +1,4 @@
-#[cfg(feature = "new_integration_tests")]
+#[cfg(feature = "integration_tests")]
 pub mod test {
     use std::{
         collections::HashMap,
@@ -35,7 +35,7 @@ pub mod test {
         Query,
     };
     use graph_merger::upserter::GraphMergeHelper;
-    use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+    use rust_proto::graplinc::grapl::api::graph::v1beta1::{
         IdentifiedGraph,
         IdentifiedNode,
         ImmutableStrProp,

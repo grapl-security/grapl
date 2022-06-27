@@ -17,7 +17,7 @@ opentelemetry-jaeger = { version = "0.15", features = [
   "collector_client",
   "rt-tokio"
 ] }
-rust-proto-new = { path = "../rust-proto-new", version = "*" }
+rust-proto = { path = "../rust-proto", version = "*" }
 tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
 thiserror = "1.0"
 tracing = "0.1"
@@ -33,4 +33,4 @@ test-context = "0.1"
 tokio = { version = "1.17", features = ["macros", "rt"] }
 
 [features]
-new_integration_tests = []
+integration_tests = []

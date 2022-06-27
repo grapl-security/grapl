@@ -18,7 +18,7 @@ futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 kafka = { path = "../kafka", version = "*" }
 plugin-work-queue = { path = "../plugin-work-queue" }
-rust-proto-new = { path = "../rust-proto-new" }
+rust-proto = { path = "../rust-proto" }
 tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
 tracing = "0.1.29"
 uuid = { version = "0.8", features = ["v4"] }
@@ -32,7 +32,7 @@ opentelemetry-jaeger = { version = "0.15", features = [
   "rt-tokio"
 ] }
 plugin-work-queue = { path = "../plugin-work-queue", features = [
-  "new_integration_tests"
+  "integration_tests"
 ] }
 test-context = "0.1"
 tracing-appender = "0.2"
@@ -40,4 +40,4 @@ tracing-opentelemetry = "0.16"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 [features]
-new_integration_tests = []
+integration_tests = []

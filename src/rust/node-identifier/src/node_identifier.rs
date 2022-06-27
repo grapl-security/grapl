@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use failure::Error;
 use grapl_utils::rusoto_ext::dynamodb::GraplDynamoDbClientExt;
-use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+use rust_proto::graplinc::grapl::api::graph::v1beta1::{
     GraphDescription,
     IdentifiedGraph,
     IdentifiedNode,

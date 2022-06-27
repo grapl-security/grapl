@@ -19,7 +19,7 @@ opentelemetry-jaeger = { version = "0.15", features = [
   "collector_client",
   "rt-tokio"
 ] }
-rust-proto-new = { path = "../../rust-proto-new", version = "*" }
+rust-proto = { path = "../../rust-proto", version = "*" }
 sysmon-parser = { path = "../../sysmon-parser/" }
 thiserror = "1.0.30"
 tokio = { version = "1.17", features = [
@@ -42,4 +42,4 @@ bytes = "1.0"
 test-context = "0.1"
 
 [features]
-new_integration_tests = []
+integration_tests = []

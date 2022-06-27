@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::plugin_work_queue::{
         v1beta1,
         v1beta1::{

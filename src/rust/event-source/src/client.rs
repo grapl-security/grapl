@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use async_trait;
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::event_source::v1beta1::client::{
         EventSourceServiceClient,
         EventSourceServiceClientError,

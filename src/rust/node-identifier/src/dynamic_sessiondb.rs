@@ -8,7 +8,7 @@ use failure::{
     Error,
 };
 use rusoto_dynamodb::DynamoDb;
-use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+use rust_proto::graplinc::grapl::api::graph::v1beta1::{
     GraphDescription,
     NodeDescription,
     Session,

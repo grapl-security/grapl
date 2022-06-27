@@ -1,4 +1,4 @@
-#![cfg(feature = "new_integration_tests")]
+#![cfg(feature = "integration_tests")]
 
 use std::time::Duration;
 
@@ -14,7 +14,7 @@ use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
 };
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::{
         api::pipeline_ingress::v1beta1::{
             client::PipelineIngressClient,

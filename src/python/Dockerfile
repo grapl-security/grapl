@@ -20,14 +20,6 @@ USER grapl
 WORKDIR /home/grapl
 ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 
-# analyzer-executor
-################################################################################
-FROM grapl-python-base AS analyzer-executor-deploy
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --from=dist-ctx analyzer-executor.pex .
-CMD ["./analyzer-executor.pex"]
-
 # engagement-creator
 ################################################################################
 FROM grapl-python-base AS engagement-creator-deploy
@@ -52,7 +44,6 @@ RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         build-essential=12.9 \
         curl=7.74.0-1.3+deb11u1 \
-        protobuf-compiler=3.12.4-1 \
         unzip=6.0-26 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \

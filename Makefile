@@ -39,8 +39,8 @@ endif
 # over invoking `docker buildx bake` directly.
 DOCKER_BUILDX_BAKE := docker buildx bake $(buildx_builder_args)
 
-COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
-COMPOSE_PROJECT_INTEGRATION_TESTS_NEW := rust-integration-tests-new
+COMPOSE_PROJECT_PYTHON_INTEGRATION_TESTS := python-integration-tests
+COMPOSE_PROJECT_RUST_INTEGRATION_TESTS := rust-integration-tests
 
 # All the services defined in the docker-compose.check.yml file are
 # run with the same general arguments; just supply the service name to
@@ -114,20 +114,20 @@ help: ## Print this help
 	@printf -- '             (≡)      /____/             /_/            \n'
 	@printf -- '\n'
 	@printf -- '${FMT_BOLD}Useful environment variables (with examples):${FMT_END}\n'
-	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-analyzer-executor typecheck-grapl-common" make typecheck\n'
+	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-grapl-common" make typecheck\n'
 	@printf -- '    to only run a subset of test targets.\n'
 	@printf -- '\n'
-	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration\n'
+	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration-rust\n'
 	@printf -- '    to keep the test environment around after a test suite.\n'
 	@printf -- '\n'
-	@printf -- '  ${FMT_PURPLE}WITH_PULUMI_TRACING=1${FMT_END} makeup \n'
+	@printf -- '  ${FMT_PURPLE}WITH_PULUMI_TRACING=1${FMT_END} make up\n'
 	@printf -- '    to send pulumi traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}WITH_TRACING=1${FMT_END} make build-local-infrastructure \n'
 	@printf -- '    to send docker build traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_BOLD}FUN FACT${FMT_END}: You can also specify these as postfix, like:\n'
-	@printf -- '    make test-something KEEP_TEST_ENV=1\n'
+	@printf -- '    make test-integration-rust KEEP_TEST_ENV=1\n'
 	@printf '\n'
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make ${FMT_BLUE}<target>${FMT_END}\n"} \
 		 /^[a-zA-Z0-9_-]+:.*?##/ { printf "  ${FMT_BLUE}%-46s${FMT_END} %s\n", $$1, $$2 } \
@@ -190,15 +190,15 @@ build-local-infrastructure: build-grapl-service-prerequisites
 	@echo "--- Building the Grapl SaaS service images and local-only images"
 	$(DOCKER_BUILDX_BAKE) local-infrastructure
 
-.PHONY: build-test-integration
-build-test-integration:
-	@echo "--- Building integration test images"
-	$(DOCKER_BUILDX_BAKE) integration-tests
+.PHONY: build-test-integration-rust
+build-test-integration-rust:
+	@echo "--- Building rust integration test images"
+	$(DOCKER_BUILDX_BAKE) rust-integration-tests
 
-.PHONY: build-test-integration-new
-build-test-integration-new:
-	@echo "--- Building \"new\" integration test images"
-	$(DOCKER_BUILDX_BAKE) rust-integration-tests-new
+.PHONY: build-test-integration-python
+build-test-integration-python:
+	@echo "--- Building python integration test images"
+	$(DOCKER_BUILDX_BAKE) python-integration-tests
 
 ########################################################################
 
@@ -289,19 +289,19 @@ test-unit-rust-coverage: ## Run Rust unit tests and gather coverage statistics (
 typecheck: ## Typecheck Python Code
 	./pants check ::
 
-.PHONY: test-integration
-test-integration: build-local-infrastructure
-test-integration: build-test-integration
-test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-test-integration: ## Build and run integration tests
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
+.PHONY: test-integration-python
+test-integration-python: build-local-infrastructure
+test-integration-python: build-test-integration-python
+test-integration-python: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_PYTHON_INTEGRATION_TESTS)
+test-integration-python: ## Build and run python integration tests
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh python-integration-tests 9"
 
-.PHONY: test-integration-new
-test-integration-new: build-local-infrastructure
-test-integration-new: build-test-integration-new
-test-integration-new: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS_NEW)
-test-integration-new: ## Build and run "new" integration tests
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests-new 9"
+.PHONY: test-integration-rust
+test-integration-rust: build-local-infrastructure
+test-integration-rust: build-test-integration-rust
+test-integration-rust: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_RUST_INTEGRATION_TESTS)
+test-integration-rust: ## Build and run rust integration tests
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh rust-integration-tests 9"
 
 # This target is not intended to be used directly from the command line.
 # Think of it as a Context Manager that:
@@ -472,7 +472,8 @@ down: ## docker compose down - both stops and removes the containers
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
 	docker compose $(EVERY_COMPOSE_FILE) down --timeout=0
-	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_RUST_INTEGRATION_TESTS) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_PYTHON_INTEGRATION_TESTS) down --timeout=0
 
 .PHONY: stop
 stop: ## docker compose stop - stops (but preserves) the containers

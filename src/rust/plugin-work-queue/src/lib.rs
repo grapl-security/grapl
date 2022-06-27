@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 pub mod client;
 pub mod psql_queue;
 pub mod server;
-#[cfg(feature = "new_integration_tests")]
+#[cfg(feature = "integration_tests")]
 pub mod test_utils;
 
 #[derive(clap::Parser, Clone, Debug)]

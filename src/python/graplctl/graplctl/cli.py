@@ -16,7 +16,6 @@ from grapl_common.env_helpers import (
 from graplctl import __version__, common
 from graplctl.aws.commands import aws
 from graplctl.common import State
-from graplctl.upload.commands import upload
 
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
@@ -102,4 +101,3 @@ def main(
 
 
 main.add_command(aws)
-main.add_command(upload)

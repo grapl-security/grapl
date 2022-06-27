@@ -22,6 +22,6 @@ rdkafka = { version = "0.28", features = [
   "tokio",
   "zstd"
 ] }
-rust-proto-new = { path = "../rust-proto-new", version = "*" }
+rust-proto = { path = "../rust-proto", version = "*" }
 thiserror = "1.0"
 tracing = "0.1"

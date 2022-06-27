@@ -1,4 +1,4 @@
-use rust_proto_new::protocol::status::Status;
+use rust_proto::protocol::status::Status;
 
 use crate::db::EventSourceDbError;
 

@@ -228,7 +228,7 @@ def _process_one_event(
     incident_graph = json.loads(data)
 
     """
-    The `incident_graph` dict is emitted from analyzer-executor.py#emit_event
+    The `incident_graph` dict was emitted from analyzer-executor.py#emit_event
     """
     analyzer_name = incident_graph["analyzer_name"]
     nodes_raw: Dict[str, Any] = incident_graph[

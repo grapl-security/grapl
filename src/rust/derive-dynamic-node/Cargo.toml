@@ -16,7 +16,7 @@ quote = "1.0.10"
 proc-macro2 = "1.0.32"
 
 [dev-dependencies]
-rust-proto-new = { path = "../rust-proto-new", version = "*" }
+rust-proto = { path = "../rust-proto", version = "*" }
 serde = "1.0.130"
 serde_json = "1.0.72"
 serde_derive = "1.0.130"

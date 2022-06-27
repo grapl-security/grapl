@@ -9,6 +9,7 @@ from python_proto.api import (
     DecrementOnlyUintProp,
     Edge,
     EdgeList,
+    ExecutionHit,
     GraphDescription,
     IdentifiedGraph,
     IdentifiedNode,
@@ -18,6 +19,7 @@ from python_proto.api import (
     ImmutableUintProp,
     IncrementOnlyIntProp,
     IncrementOnlyUintProp,
+    Lens,
     MergedEdge,
     MergedEdgeList,
     MergedGraph,
@@ -62,6 +64,7 @@ DURATION_NANOS_MIN = 0
 DURATION_NANOS_MAX = 10**9 - 1
 
 MAX_LIST_SIZE = 5
+MAX_DICT_SIZE = 5
 
 MIN_LOG_EVENT_SIZE = 0
 MAX_LOG_EVENT_SIZE = 1024
@@ -280,7 +283,7 @@ def node_properties(
 
 def node_descriptions(
     properties: st.SearchStrategy[Mapping[str, NodeProperty]] = st.dictionaries(
-        keys=st.text(), values=node_properties()
+        keys=st.text(), values=node_properties(), max_size=MAX_DICT_SIZE
     ),
     node_keys: st.SearchStrategy[str] = st.text(),
     node_types: st.SearchStrategy[str] = st.text(),
@@ -299,7 +302,7 @@ def node_descriptions(
 
 def identified_nodes(
     properties: st.SearchStrategy[Mapping[str, NodeProperty]] = st.dictionaries(
-        keys=st.text(), values=node_properties()
+        keys=st.text(), values=node_properties(), max_size=MAX_DICT_SIZE
     ),
     node_keys: st.SearchStrategy[str] = st.text(),
     node_types: st.SearchStrategy[str] = st.text(),
@@ -314,7 +317,7 @@ def identified_nodes(
 
 def merged_nodes(
     properties: st.SearchStrategy[Mapping[str, NodeProperty]] = st.dictionaries(
-        keys=st.text(), values=node_properties()
+        keys=st.text(), values=node_properties(), max_size=MAX_DICT_SIZE
     ),
     uids: st.SearchStrategy[int] = st.integers(
         min_value=UINT64_MIN, max_value=UINT64_MAX
@@ -385,10 +388,10 @@ def merged_edge_lists(
 
 def graph_descriptions(
     nodes: st.SearchStrategy[Mapping[str, NodeDescription]] = st.dictionaries(
-        keys=st.text(), values=node_descriptions()
+        keys=st.text(), values=node_descriptions(), max_size=MAX_DICT_SIZE
     ),
     edges: st.SearchStrategy[Mapping[str, EdgeList]] = st.dictionaries(
-        keys=st.text(), values=edge_lists()
+        keys=st.text(), values=edge_lists(), max_size=MAX_DICT_SIZE
     ),
 ) -> st.SearchStrategy[GraphDescription]:
     return st.builds(
@@ -400,10 +403,10 @@ def graph_descriptions(
 
 def identified_graphs(
     nodes: st.SearchStrategy[Mapping[str, IdentifiedNode]] = st.dictionaries(
-        keys=st.text(), values=identified_nodes()
+        keys=st.text(), values=identified_nodes(), max_size=MAX_DICT_SIZE
     ),
     edges: st.SearchStrategy[Mapping[str, EdgeList]] = st.dictionaries(
-        keys=st.text(), values=edge_lists()
+        keys=st.text(), values=edge_lists(), max_size=MAX_DICT_SIZE
     ),
 ) -> st.SearchStrategy[IdentifiedGraph]:
     return st.builds(
@@ -415,16 +418,64 @@ def identified_graphs(
 
 def merged_graphs(
     nodes: st.SearchStrategy[Mapping[str, MergedNode]] = st.dictionaries(
-        keys=st.text(), values=merged_nodes()
+        keys=st.text(), values=merged_nodes(), max_size=MAX_DICT_SIZE
     ),
     edges: st.SearchStrategy[Mapping[str, MergedEdgeList]] = st.dictionaries(
-        keys=st.text(), values=merged_edge_lists()
+        keys=st.text(), values=merged_edge_lists(), max_size=MAX_DICT_SIZE
     ),
 ) -> st.SearchStrategy[MergedGraph]:
     return st.builds(
         MergedGraph,
         nodes=nodes,
         edges=edges,
+    )
+
+
+def lenses(
+    lens_types: st.SearchStrategy[str] = st.text(),
+    lens_names: st.SearchStrategy[str] = st.text(),
+    uids: st.SearchStrategy[int] = st.integers(
+        min_value=UINT64_MIN, max_value=UINT64_MAX
+    ),
+    scores: st.SearchStrategy[int] = st.integers(
+        min_value=UINT64_MIN, max_value=UINT64_MAX
+    ),
+) -> st.SearchStrategy[Lens]:
+    return st.builds(
+        Lens,
+        lens_type=lens_types,
+        lens_name=lens_names,
+        uid=uids,
+        score=scores,
+    )
+
+
+def execution_hits(
+    nodes: st.SearchStrategy[Mapping[str, MergedNode]] = st.dictionaries(
+        keys=st.text(), values=merged_nodes(), max_size=MAX_DICT_SIZE
+    ),
+    edges: st.SearchStrategy[Mapping[str, MergedEdgeList]] = st.dictionaries(
+        keys=st.text(), values=merged_edge_lists(), max_size=MAX_DICT_SIZE
+    ),
+    analyzer_names: st.SearchStrategy[str] = st.text(),
+    risk_scores: st.SearchStrategy[int] = st.integers(
+        min_value=UINT64_MIN, max_value=UINT64_MAX
+    ),
+    lenses: st.SearchStrategy[Sequence[Lens]] = st.lists(
+        lenses(), max_size=MAX_LIST_SIZE
+    ),
+    risky_node_keys: st.SearchStrategy[Sequence[str]] = st.lists(
+        st.text(), max_size=MAX_LIST_SIZE
+    ),
+) -> st.SearchStrategy[ExecutionHit]:
+    return st.builds(
+        ExecutionHit,
+        nodes=nodes,
+        edges=edges,
+        analyzer_name=analyzer_names,
+        risk_score=risk_scores,
+        lenses=lenses,
+        risky_node_keys=risky_node_keys,
     )
 
 

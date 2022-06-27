@@ -12,7 +12,7 @@ path = "src/examples/example_generator.rs"
 async-trait = "0.1"
 consul-connect = { path = "../../consul-connect" }
 moka = { version = "0.7", features = ["future"] }
-rust-proto-new = { path = "../../rust-proto-new" }
+rust-proto = { path = "../../rust-proto" }
 serde = { version = "1.0.136", features = ["derive"] }
 clap = { version = "3.0", default_features = false, features = [
   "std",

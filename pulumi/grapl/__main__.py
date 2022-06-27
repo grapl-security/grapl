@@ -64,8 +64,6 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
     )
 
     return {
-        "analyzer-dispatcher": builder.build_with_tag("analyzer-dispatcher"),
-        "analyzer-executor": builder.build_with_tag("analyzer-executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "engagement-creator": builder.build_with_tag("engagement-creator"),
         "event-source": builder.build_with_tag("event-source"),
@@ -155,22 +153,16 @@ def main() -> None:
         confluent_environment_name=pulumi_config.require("confluent-environment-name"),
     )
 
-    analyzers_bucket = Bucket("analyzers-bucket", sse=True)
-    pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     plugin_registry_bucket = Bucket("plugin-registry-bucket", sse=True)
 
     all_plugin_buckets = [
-        analyzers_bucket,
         model_plugins_bucket,
         plugin_registry_bucket,
     ]
 
     pipeline_ingress_healthcheck_polling_interval_ms = "5000"
-    pulumi.export(
-        "pipeline-ingress-healthcheck-polling-interval-ms",
-        pipeline_ingress_healthcheck_polling_interval_ms,
-    )
+    organization_management_healthcheck_polling_interval_ms = "5000"
 
     firecracker_s3objs: FirecrackerS3BucketObjectsProtocol = (
         MockFirecrackerS3BucketObjects()
@@ -214,7 +206,6 @@ def main() -> None:
 
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
-        analyzer_bucket=analyzers_bucket.bucket,
         aws_env_vars_for_local=aws_env_vars_for_local,
         aws_region=aws.get_region().name,
         container_images=_container_images(artifacts),
@@ -223,6 +214,7 @@ def main() -> None:
         kafka_credentials=kafka_service_credentials,
         kafka_consumer_groups=kafka_consumer_groups,
         model_plugins_bucket=model_plugins_bucket.bucket,
+        organization_management_healthcheck_polling_interval_ms=organization_management_healthcheck_polling_interval_ms,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
         plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
         plugin_registry_bucket_name=plugin_registry_bucket.bucket,
@@ -415,8 +407,6 @@ def main() -> None:
 
         for bucket in all_plugin_buckets:
             bucket.grant_put_permission_to(nomad_agent_role)
-            # Analyzer Dispatcher needs to be able to ListObjects on Analyzers
-            # Analyzer Executor needs to be able to ListObjects on Model Plugins
             bucket.grant_get_and_list_to(nomad_agent_role)
 
         cache = Cache(

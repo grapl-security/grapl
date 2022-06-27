@@ -5,7 +5,7 @@ use rusoto_s3::{
     GetObjectError,
     UploadPartError,
 };
-use rust_proto_new::{
+use rust_proto::{
     protocol::status::Status,
     SerDeError,
 };

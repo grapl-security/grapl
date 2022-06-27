@@ -33,11 +33,6 @@ variable "aws_region" {
   type = string
 }
 
-variable "analyzer_bucket" {
-  type        = string
-  description = "The s3 bucket which the analyzer stores items to analyze"
-}
-
 variable "dgraph_replicas" {
   type    = number
   default = 1
@@ -106,6 +101,11 @@ variable "organization_management_db" {
     password = string
   })
   description = "Vars for organization-management database"
+}
+
+variable "organization_management_healthcheck_polling_interval_ms" {
+  type        = string
+  description = "The amount of time to wait between each healthcheck execution."
 }
 
 variable "pipeline_ingress_healthcheck_polling_interval_ms" {
@@ -817,108 +817,6 @@ job "grapl-core" {
     }
   }
 
-  group "analyzer-dispatcher" {
-
-    task "analyzer-dispatcher" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["analyzer-dispatcher"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        # AWS vars
-        AWS_REGION = var.aws_region
-        # rust vars
-        RUST_LOG       = var.rust_log
-        RUST_BACKTRACE = local.rust_backtrace
-        # service vars
-        GRAPL_ANALYZERS_BUCKET = var.analyzer_bucket
-        DEST_BUCKET_NAME       = "fake"
-        SOURCE_QUEUE_URL       = "fake"
-        DEAD_LETTER_QUEUE_URL  = "fake"
-        # tracing vars
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
-      }
-
-      service {
-        name = "analyzer-dispatcher"
-      }
-
-    }
-
-  }
-
-  group "analyzer-executor" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-    }
-
-    task "analyzer-executor" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["analyzer-executor"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        # AWS vars
-        AWS_DEFAULT_REGION = var.aws_region
-        # python vars
-        GRAPL_LOG_LEVEL = var.py_log_level
-        # dgraph vars
-        MG_ALPHAS = local.alpha_grpc_connect_str
-        # service vars
-        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = "fake"
-        GRAPL_ANALYZERS_BUCKET                  = var.analyzer_bucket
-        GRAPL_MODEL_PLUGINS_BUCKET              = var.model_plugins_bucket
-        SOURCE_QUEUE_URL                        = "fake"
-        GRPC_ENABLE_FORK_SUPPORT                = 1
-        HITCACHE_ADDR                           = local.redis_host
-        HITCACHE_PORT                           = local.redis_port
-        IS_RETRY                                = "False"
-        MESSAGECACHE_ADDR                       = local.redis_host
-        MESSAGECACHE_PORT                       = local.redis_port
-        OTEL_EXPORTER_ZIPKIN_ENDPOINT           = local.tracing_zipkin_endpoint
-      }
-    }
-
-    service {
-      name = "analyzer-executor"
-      connect {
-        sidecar_service {
-          proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
   group "engagement-creator" {
     network {
       mode = "bridge"
@@ -1206,6 +1104,8 @@ job "grapl-core" {
         ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db.username
         OTEL_EXPORTER_JAEGER_AGENT_HOST      = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT      = local.tracing_jaeger_endpoint_port
+
+        ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = var.organization_management_healthcheck_polling_interval_ms
       }
     }
 

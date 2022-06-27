@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
     && apt-get install --yes --no-install-recommends \
         build-essential=12.9 \
         cmake=3.18.4-2+deb11u1 \
-        libssl-dev=1.1.1n-0+deb11u2 \
+        libssl-dev=1.1.1n-0+deb11u3 \
         perl=5.32.1-4+deb11u2 \
         pkg-config=0.29.2-1 \
         tcl=8.6.11+1
@@ -108,7 +108,7 @@ FROM base AS tarpaulin
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tarpaulin-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        libssl-dev=1.1.1n-0+deb11u2 \
+        libssl-dev=1.1.1n-0+deb11u3 \
         pkg-config=0.29.2-1
 
 # For test coverage reports
@@ -137,16 +137,16 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="sqs-executor/integration,model-plugin-deployer/integration,plugin-work-queue/integration,organization-management/integration"
+ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/integration_tests,graph-merger/integration_tests,model-plugin-deployer/integration_tests,node-identifier/integration_tests,pipeline-ingress/integration_tests,plugin-registry/integration_tests,sysmon-generator/integration_tests,organization-management/integration_tests"
 ENV TEST_DIR=/grapl/tests
-
-RUN mkdir --parents "${TEST_DIR}"
 
 # This will build the integration test binaries and parse the manifest to find
 # their paths for copying later.
 #
 # Hadolint is confused again, at the time of this writing, SHELL *does*
 # have -o pipefail set on line 9.
+# hadolint ignore=DL4006
+RUN mkdir --parents "${TEST_DIR}"
 # hadolint ignore=DL4006
 RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
@@ -156,7 +156,7 @@ RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
         --no-run \
         --message-format=json \
         --test "*" | \
-        jq -r "select(.profile.test == true) | .filenames[]" | \
+        jq -r "select((.profile.test == true) and (.features[] | contains(\"integration_tests\"))) | .filenames[]" | \
         xargs \
           --replace="{}" \
           cp "{}" "${TEST_DIR}/"
@@ -179,76 +179,11 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
 # so that it's available to integration test consumers of NomadCli
 COPY --from=build /nomad/nomad /bin
 
-COPY --from=build-test-integration /grapl/tests /tests
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --from=test-ctx ./run/rust-integration-tests.sh /
-ENTRYPOINT [ "/rust-integration-tests.sh" ]
-
-
-# build-test-integration-new
-################################################################################
-FROM base AS build-test-integration-new
-
-# For running integration tests we're going to copy the test binaries to a new
-# container base and run the directly, as opposed to running them via `cargo
-# test`. Cargo will recompile tests if it thinks the test binaries in target/
-# are out of date. Because we're using a mount cache when building the sources
-# this directly won't be available in resulting container images. In the past
-# we've `cp -a` the target directory to preserve it, but this can make for an
-# increasingly large container image size, especially when the mount cache is
-# has not been cleaned in a while. To find the test binaries paths we parse
-# the manifest.json from the cargo build.
-# https://github.com/rust-lang/cargo/issues/1924
-# https://github.com/rust-lang/cargo/issues/3670
-
-ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/new_integration_tests,graph-merger/new_integration_tests,node-identifier/new_integration_tests,pipeline-ingress/new_integration_tests,plugin-registry/new_integration_tests,sysmon-generator/new_integration_tests,event-source/new_integration_tests"
-ENV TEST_DIR=/grapl/tests
-
-# This will build the integration test binaries and parse the manifest to find
-# their paths for copying later.
-#
-# Hadolint is confused again, at the time of this writing, SHELL *does*
-# have -o pipefail set on line 9.
-# hadolint ignore=DL4006
-RUN mkdir --parents "${TEST_DIR}"
-# hadolint ignore=DL4006
-RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
-    --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
-    --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked \
-    cargo test \
-        --features "${RUST_INTEGRATION_TEST_FEATURES}" \
-        --no-run \
-        --message-format=json \
-        --test "*" | \
-        jq -r "select((.profile.test == true) and (.features[] | contains(\"new_integration_tests\"))) | .filenames[]" | \
-        xargs \
-          --replace="{}" \
-          cp "{}" "${TEST_DIR}/"
-
-
-# "new" integration tests distribution
-################################################################################
-# We're unable to use one of the 'distroless' container images as a base here
-# because our integration tests require zlib shared library, but we don't have
-# a way of including that in the base image. With a debian image we can apt
-# install as needed, but the debian image we're using has zlib already.
-FROM debian:bullseye-slim AS integration-tests-new
-
-RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-apt \
-    apt-get update \
-    && apt-get install --yes --no-install-recommends \
-        ca-certificates=20210119
-
-# Put the Nomad binary on PATH
-# so that it's available to integration test consumers of NomadCli
-COPY --from=build /nomad/nomad /bin
-
 # Grab the example generator so we can deploy it in test_deploy_plugin
 RUN mkdir -p /test-fixtures
 COPY --from=build /outputs/example-generator /test-fixtures
 
-COPY --from=build-test-integration-new /grapl/tests /tests
+COPY --from=build-test-integration /grapl/tests /tests
 # Named context support https://github.com/hadolint/hadolint/issues/830
 # hadolint ignore=DL3022
 COPY --from=test-ctx ./run/rust-integration-tests.sh /
@@ -280,12 +215,6 @@ COPY --from=build /outputs/example-generator /
 # through Docker, and then back out to the dist directory in the repository.
 COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /plugin-bootstrap-init/
 COPY rust/plugin-bootstrap/grapl-plugin.service /plugin-bootstrap-init/
-
-##### analyzer-dispatcher
-FROM rust-dist AS analyzer-dispatcher-deploy
-
-COPY --from=build /outputs/analyzer-dispatcher /
-ENTRYPOINT ["/analyzer-dispatcher"]
 
 ##### graph-merger
 FROM rust-dist AS graph-merger-deploy
