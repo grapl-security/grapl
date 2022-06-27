@@ -890,13 +890,13 @@ pub mod uid_allocator {
     use super::*;
 
     prop_compose! {
-        pub fn allocations()(
-            start in 1..(u64::MAX - (u32::MAX as u64)),
-            offset in 1..u32::MAX,
-        ) -> native::Allocation {
-            native::Allocation {
-                start, offset
-        }}}
+    pub fn allocations()(
+        start in 1..(u64::MAX - (u32::MAX as u64)),
+        offset in 1..u32::MAX,
+    ) -> native::Allocation {
+        native::Allocation {
+            start, offset
+    }}}
 
     prop_compose! {
         pub fn allocate_ids_request()(
@@ -919,7 +919,6 @@ pub mod uid_allocator {
             }
         }
     }
-
 }
 
 pub mod lens_manager {

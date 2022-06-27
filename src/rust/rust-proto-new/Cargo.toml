@@ -40,7 +40,6 @@ default = [
   "lens-manager-full",
   "schema-manager-full"
 ]
-
 uid-allocator = []
 uid-allocator-messages = ["uid-allocator"]
 uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
