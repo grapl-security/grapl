@@ -33,11 +33,9 @@ message AndIntFilters {
   repeated IntFilter int_filters = 1;
 }
 
-
 message OrIntFilters {
   repeated AndIntFilters and_int_filters = 1;
 }
-
 
 message StringFilter {
   enum Operation {
@@ -70,24 +68,50 @@ message UidFilter {
 }
 
 message UidFilters {
-    repeated UidFilter uid_filters = 1;
+  repeated UidFilter uid_filters = 1;
 }
 
-message NodeQuery {
-  // The string name of this node's type
+message QueryId {
+  uint64 value = 1;
+}
+
+message NodePropertyQuery {
   graplinc.grapl.common.v1beta1.NodeType node_type = 1;
-  // A map of property name to integer property filters
-  map<string, OrIntFilters> int_filters = 2;
-  // A map of property name to string property filters
+  uint64 query_id = 2;
   map<string, OrStringFilters> string_filters = 3;
-  // A map of property name to associated edge filters
-  map<string, EdgeFilters> edge_filters = 4;
-  // A set of uid filters
-  UidFilters uid_filters = 5;
+  // todo: Add other property types
 }
 
-message EdgeFilters {
-  repeated NodeQuery node_queries = 1;
+// Maps to `Dict[Tuple[QueryId, EdgeName], Set[QueryId]]`
+message EdgeQueryEntry {
+  // Part of the key
+  QueryId query_id = 1;
+  // Part of the key
+  graplinc.grapl.common.v1beta1.EdgeName edge_name = 2;
+  // The value
+  repeated QueryId neighbor_query_ids = 3;
+}
+
+message EdgeQueryMap {
+  repeated EdgeQueryEntry entries = 1;
+}
+
+message EdgeMapEntry {
+  // Key
+  graplinc.grapl.common.v1beta1.EdgeName forward_edge_name = 1;
+  // Value
+  graplinc.grapl.common.v1beta1.EdgeName reverse_edge_name = 2;
+}
+
+message EdgeMap {
+  repeated EdgeMapEntry edge_map_entries = 1;
+}
+
+message GraphQuery {
+  QueryId root_query_id = 1;
+  map<uint64, NodePropertyQuery> node_property_queries = 2;
+  EdgeQueryMap edge_filters = 3;
+  EdgeMap edge_map = 4;
 }
 
 message NodeView {
@@ -113,7 +137,6 @@ message EdgeView {
 message EdgeViews {
   repeated EdgeView edge_view_list = 1;
 }
-
 
 message NodeViewEntry {
   graplinc.grapl.common.v1beta1.Uid uid = 1;
@@ -147,7 +170,7 @@ message QueryGraphWithNodeRequest {
   // The node to parameterize against
   graplinc.grapl.common.v1beta1.Uid node_uid = 2;
   // The query to match
-  NodeQuery node_query = 3;
+  GraphQuery graph_query = 3;
   // Mapping of forward to reverse edges
   map<string, string> edge_mapping = 4;
 }
@@ -167,7 +190,7 @@ message QueryGraphFromNodeRequest {
   // The node to parameterize against
   graplinc.grapl.common.v1beta1.Uid node_uid = 2;
   // The query to match
-  NodeQuery node_query = 3;
+  GraphQuery graph_query = 3;
   // Mapping of forward to reverse edges
   map<string, string> edge_mapping = 4;
 }

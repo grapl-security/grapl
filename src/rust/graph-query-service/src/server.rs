@@ -8,7 +8,9 @@ use rust_proto_new::{
     graplinc::grapl::{
         api::graph_query::v1beta1::{
             messages::{
+                GraphView,
                 NodeQuery as NodeQueryProto,
+                NodeView,
                 OrStringFilters,
                 QueryGraphFromNodeRequest,
                 QueryGraphFromNodeResponse,
@@ -23,12 +25,14 @@ use rust_proto_new::{
     },
     protocol::status::Status,
 };
-use scylla::{CachingSession, Session};
+use scylla::{
+    CachingSession,
+    Session,
+};
 use tonic::{
     Request,
     Response,
 };
-use rust_proto_new::graplinc::grapl::api::graph_query::v1beta1::messages::{GraphView, NodeView};
 
 use crate::{
     graph_query::{
@@ -36,10 +40,10 @@ use crate::{
         StringCmp,
     },
     node_query::NodeQuery,
+    property_query::PropertyQueryExecutor,
+    short_circuit::ShortCircuit,
     visited::Visited,
 };
-use crate::property_query::PropertyQueryExecutor;
-use crate::short_circuit::ShortCircuit;
 
 #[derive(thiserror::Error, Debug)]
 pub enum GraphQueryError {
@@ -68,16 +72,22 @@ impl GraphQueryApi for GraphQueryApiImpl {
     ) -> Result<QueryGraphWithNodeResponse, GraphQueryError> {
         let node_uid = request.node_uid;
 
-        let node_query = request.node_query;
-        let edge_mapping = request.edge_mapping;
-        let graph_query = convert_to_root_query(node_query, &edge_mapping);
+        let graph_query: GraphQuery = todo!();
+
         let graph = graph_query
-            .query_graph(node_uid, request.tenant_id, self.property_query_executor.clone())
+            .query_graph(
+                node_uid,
+                request.tenant_id,
+                self.property_query_executor.clone(),
+            )
             .await;
 
         let graph = graph.unwrap().unwrap();
 
-        let root_uid  = graph.find_node_by_query_id(graph_query.root_query_id).unwrap().uid;
+        let root_uid = graph
+            .find_node_by_query_id(graph_query.root_query_id)
+            .unwrap()
+            .uid;
 
         let graph_view = GraphView::from(graph);
 
@@ -93,11 +103,8 @@ impl GraphQueryApi for GraphQueryApiImpl {
     ) -> Result<QueryGraphFromNodeResponse, GraphQueryError> {
         let node_uid = request.node_uid;
 
-        let node_query = request.node_query;
-        let edge_mapping = request.edge_mapping;
-        let graph_query = convert_to_root_query(node_query, &edge_mapping);
+        let graph_query: GraphQuery = todo!();
         let node_query = &graph_query.nodes.get(&graph_query.root_query_id).unwrap();
-
 
         let visited = Visited::new();
         let x_short_circuit = ShortCircuit::new();
@@ -114,7 +121,10 @@ impl GraphQueryApi for GraphQueryApiImpl {
             .expect("error: todo")
             .expect("no match");
 
-        let root_uid  = graph.find_node_by_query_id(graph_query.root_query_id).unwrap().uid;
+        let root_uid = graph
+            .find_node_by_query_id(graph_query.root_query_id)
+            .unwrap()
+            .uid;
 
         let graph_view = GraphView::from(graph);
 

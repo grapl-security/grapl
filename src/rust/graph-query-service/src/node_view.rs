@@ -12,7 +12,11 @@ use std::{
     marker::PhantomData,
 };
 
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::{NodeType, PropertyName, Uid};
+use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
+    NodeType,
+    PropertyName,
+    Uid,
+};
 
 use crate::graph_view::Graph;
 

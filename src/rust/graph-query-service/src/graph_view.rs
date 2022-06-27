@@ -17,9 +17,18 @@ use std::{
         Weak,
     },
 };
-use rust_proto_new::graplinc::grapl::api::graph_query::v1beta1::messages::{GraphView, NodeView};
 
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::{EdgeName, NodeType, Uid};
+use rust_proto_new::graplinc::grapl::{
+    api::graph_query::v1beta1::messages::{
+        GraphView,
+        NodeView,
+    },
+    common::v1beta1::types::{
+        EdgeName,
+        NodeType,
+        Uid,
+    },
+};
 
 use crate::node_view::Node;
 
@@ -104,9 +113,7 @@ impl Graph {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum GraphViewConvertError {
-
-}
+pub enum GraphViewConvertError {}
 
 impl From<Graph> for GraphView {
     fn from(graph: Graph) -> Self {
@@ -117,7 +124,7 @@ impl From<Graph> for GraphView {
                 uid,
                 node_type: node.node_type,
                 string_properties: node.string_properties,
-                int_properties: Default::default()
+                int_properties: Default::default(),
             };
             graph_view.add_node(node_view);
         }

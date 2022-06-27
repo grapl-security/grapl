@@ -101,6 +101,7 @@ inits = true
 
 [python-protobuf]
 mypy_plugin = true
+infer_runtime_dependency = false
 
 [black]
 lockfile = "3rdparty/python/black.lockfile"

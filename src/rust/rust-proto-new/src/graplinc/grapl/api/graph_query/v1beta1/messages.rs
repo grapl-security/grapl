@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{
+    HashMap,
+    HashSet,
+};
 
 use crate::{
     graplinc::grapl::{
@@ -23,12 +26,16 @@ use crate::{
         AndStringFilters as AndStringFiltersProto,
         EdgeFilters as EdgeFiltersProto,
         EdgeView as EdgeViewProto,
+        EdgeViewEntry as EdgeViewEntryProto,
+        EdgeViewMap as EdgeViewMapProto,
         EdgeViews as EdgeViewsProto,
         GraphView as GraphViewProto,
         IntFilter as IntFilterProto,
         IntegerProperty as IntegerPropertyProto,
         NodeQuery as NodeQueryProto,
         NodeView as NodeViewProto,
+        NodeViewEntry as NodeViewEntryProto,
+        NodeViewMap as NodeViewMapProto,
         OrIntFilters as OrIntFiltersProto,
         OrStringFilters as OrStringFiltersProto,
         QueryGraphFromNodeRequest as QueryGraphFromNodeRequestProto,
@@ -38,10 +45,6 @@ use crate::{
         StringFilter as StringFilterProto,
         UidFilter as UidFilterProto,
         UidFilters as UidFiltersProto,
-        NodeViewEntry as NodeViewEntryProto,
-        NodeViewMap as NodeViewMapProto,
-        EdgeViewEntry as EdgeViewEntryProto,
-        EdgeViewMap as EdgeViewMapProto,
     },
     SerDeError,
 };
@@ -526,7 +529,9 @@ impl NodeQuery {
         filters: impl Into<AndStringFilters>,
     ) -> &mut Self {
         let filters = filters.into();
-        self.string_filters.entry(property_name).or_insert_with(|| OrStringFilters::with_capacity(1))
+        self.string_filters
+            .entry(property_name)
+            .or_insert_with(|| OrStringFilters::with_capacity(1))
             .push(filters);
         self
     }
@@ -534,14 +539,14 @@ impl NodeQuery {
     // Adds a single edge, which will act as an "OR" filter
     // When we support AND on edges we'll add `with_edge_filters` that can take multiple
     // NodeQuery arguments
-    pub fn with_edge_filter(
-        &mut self,
-        edge_name: EdgeName,
-        filter: NodeQuery,
-    ) -> &mut Self {
-        self.edge_filters.entry(edge_name).or_insert_with(|| EdgeFilters {
-            node_queries: Vec::with_capacity(1)
-        }).node_queries.push(filter);
+    pub fn with_edge_filter(&mut self, edge_name: EdgeName, filter: NodeQuery) -> &mut Self {
+        self.edge_filters
+            .entry(edge_name)
+            .or_insert_with(|| EdgeFilters {
+                node_queries: Vec::with_capacity(1),
+            })
+            .node_queries
+            .push(filter);
         self
     }
 }
@@ -642,7 +647,6 @@ impl From<NodeQuery> for NodeQueryProto {
         }
     }
 }
-
 
 // TODO: We should support AND and OR filtering with edges
 // Which will rely on another nested vector
@@ -821,7 +825,6 @@ impl From<EdgeViews> for EdgeViewsProto {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct NodeViewEntry {
     pub uid: Uid,
@@ -832,8 +835,14 @@ impl TryFrom<NodeViewEntryProto> for NodeViewEntry {
     type Error = SerDeError;
     fn try_from(value: NodeViewEntryProto) -> Result<Self, Self::Error> {
         Ok(Self {
-            uid: value.uid.ok_or(SerDeError::MissingField("uid"))?.try_into()?,
-            node_view: value.node_view.ok_or(SerDeError::MissingField("node_view"))?.try_into()?,
+            uid: value
+                .uid
+                .ok_or(SerDeError::MissingField("uid"))?
+                .try_into()?,
+            node_view: value
+                .node_view
+                .ok_or(SerDeError::MissingField("node_view"))?
+                .try_into()?,
         })
     }
 }
@@ -842,7 +851,7 @@ impl From<NodeViewEntry> for NodeViewEntryProto {
     fn from(value: NodeViewEntry) -> Self {
         NodeViewEntryProto {
             uid: Some(value.uid.into()),
-            node_view: Some(value.node_view.into())
+            node_view: Some(value.node_view.into()),
         }
     }
 }
@@ -858,14 +867,18 @@ impl TryFrom<NodeViewMapProto> for NodeViewMap {
         let mut entries = HashMap::with_capacity(value.entries.len());
 
         for entry in value.entries.into_iter() {
-            let uid = entry.uid.ok_or(SerDeError::MissingField("uid"))?.try_into()?;
-            let node_view = entry.node_view.ok_or(SerDeError::MissingField("node_view"))?.try_into()?;
+            let uid = entry
+                .uid
+                .ok_or(SerDeError::MissingField("uid"))?
+                .try_into()?;
+            let node_view = entry
+                .node_view
+                .ok_or(SerDeError::MissingField("node_view"))?
+                .try_into()?;
             entries.insert(uid, node_view);
         }
 
-        Ok(Self {
-            entries,
-        })
+        Ok(Self { entries })
     }
 }
 
@@ -874,20 +887,15 @@ impl From<NodeViewMap> for NodeViewMapProto {
         let mut entries = Vec::with_capacity(value.entries.len());
 
         for (uid, node_view) in value.entries.into_iter() {
-            entries.push(
-                NodeViewEntryProto {
-                    uid: Some(uid.into()),
-                    node_view: Some(node_view.into()),
-                }
-            );
+            entries.push(NodeViewEntryProto {
+                uid: Some(uid.into()),
+                node_view: Some(node_view.into()),
+            });
         }
 
-        Self {
-            entries,
-        }
+        Self { entries }
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct EdgeViewEntry {
@@ -904,9 +912,15 @@ impl TryFrom<EdgeViewEntryProto> for EdgeViewEntry {
             neighbors.insert(neighbor.try_into()?);
         }
         Ok(Self {
-            uid: value.uid.ok_or(SerDeError::MissingField("uid"))?.try_into()?,
-            edge_name: value.edge_name.ok_or(SerDeError::MissingField("edge_name"))?.try_into()?,
-            neighbors
+            uid: value
+                .uid
+                .ok_or(SerDeError::MissingField("uid"))?
+                .try_into()?,
+            edge_name: value
+                .edge_name
+                .ok_or(SerDeError::MissingField("edge_name"))?
+                .try_into()?,
+            neighbors,
         })
     }
 }
@@ -940,9 +954,7 @@ impl TryFrom<EdgeViewMapProto> for EdgeViewMap {
             entries.insert((entry.uid, entry.edge_name), entry.neighbors);
         }
 
-        Ok(Self {
-            entries,
-        })
+        Ok(Self { entries })
     }
 }
 
@@ -953,14 +965,15 @@ impl From<EdgeViewMap> for EdgeViewMapProto {
         for ((uid, edge_name), neighbors) in value.entries.into_iter() {
             entries.push(
                 EdgeViewEntry {
-                    uid, edge_name, neighbors,
-                }.into()
+                    uid,
+                    edge_name,
+                    neighbors,
+                }
+                .into(),
             );
         }
 
-        Self {
-            entries,
-        }
+        Self { entries }
     }
 }
 
@@ -979,10 +992,13 @@ impl GraphView {
 impl TryFrom<GraphViewProto> for GraphView {
     type Error = SerDeError;
     fn try_from(value: GraphViewProto) -> Result<Self, Self::Error> {
-
-        let nodes: NodeViewMap = value.nodes.ok_or(SerDeError::MissingField("nodes"))?
+        let nodes: NodeViewMap = value
+            .nodes
+            .ok_or(SerDeError::MissingField("nodes"))?
             .try_into()?;
-        let edges: EdgeViewMap = value.edges.ok_or(SerDeError::MissingField("edges"))?
+        let edges: EdgeViewMap = value
+            .edges
+            .ok_or(SerDeError::MissingField("edges"))?
             .try_into()?;
 
         Ok(Self {
@@ -994,8 +1010,14 @@ impl TryFrom<GraphViewProto> for GraphView {
 
 impl From<GraphView> for GraphViewProto {
     fn from(value: GraphView) -> Self {
-        let nodes = NodeViewMap { entries: value.nodes}.into();
-        let edges = EdgeViewMap { entries: value.edges}.into();
+        let nodes = NodeViewMap {
+            entries: value.nodes,
+        }
+        .into();
+        let edges = EdgeViewMap {
+            entries: value.edges,
+        }
+        .into();
         Self {
             nodes: Some(nodes),
             edges: Some(edges),

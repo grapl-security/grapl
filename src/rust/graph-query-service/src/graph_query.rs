@@ -26,19 +26,8 @@ use futures::{
     TryFutureExt,
 };
 use itertools::Itertools;
-use scylla::{CachingSession, cql_to_rust::FromCqlVal, FromUserType, IntoTypedRows, IntoUserType, Session};
-
-use crate::{
-    graph_view::Graph,
-    node_query::InnerNodeQuery,
-    node_view::Node,
-    visited::Visited,
-};
-
 // We should not return a Node but instead a Graph
 // And we'll then mark which node in the graph corresponds with the root
-
-
 pub use rust_proto_new::graplinc::grapl::api::graph_query::v1beta1::messages::StringCmp;
 use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
     EdgeName,
@@ -46,8 +35,23 @@ use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
     PropertyName,
     Uid,
 };
-use crate::property_query::PropertyQueryExecutor;
-use crate::short_circuit::ShortCircuit;
+use scylla::{
+    cql_to_rust::FromCqlVal,
+    CachingSession,
+    FromUserType,
+    IntoTypedRows,
+    IntoUserType,
+    Session,
+};
+
+use crate::{
+    graph_view::Graph,
+    node_query::NodePropertiesQuery,
+    node_view::Node,
+    property_query::PropertyQueryExecutor,
+    short_circuit::ShortCircuit,
+    visited::Visited,
+};
 
 #[cfg(test)]
 mod tests {
@@ -61,7 +65,11 @@ mod tests {
     };
 
     use maplit::hashmap;
-    use scylla::{batch::Consistency, CachingSession, SessionBuilder};
+    use scylla::{
+        batch::Consistency,
+        CachingSession,
+        SessionBuilder,
+    };
 
     use super::*;
     use crate::node_query::NodeQuery;
@@ -94,16 +102,20 @@ mod tests {
         r_edge_name: String,
         destination_uid: i64,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
-        session.session
+        session
+            .session
             .query(
-                format!(r#"
+                format!(
+                    r#"
             INSERT INTO tenant_keyspace_{}.edge (
                 source_uid,
                 f_edge_name,
                 r_edge_name,
                 destination_uid
             )
-            VALUES (?, ?, ?, ?)"#, tenant_id.to_simple()),
+            VALUES (?, ?, ?, ?)"#,
+                    tenant_id.to_simple()
+                ),
                 (
                     source_uid.clone(),
                     f_edge_name.clone(),
@@ -113,15 +125,19 @@ mod tests {
             )
             .await?;
 
-        session.session
+        session
+            .session
             .query(
-            format!(r#"INSERT INTO tenant_keyspace_{}.edge (
+                format!(
+                    r#"INSERT INTO tenant_keyspace_{}.edge (
                 source_uid,
                 f_edge_name,
                 r_edge_name,
                 destination_uid
             )
-            VALUES (?, ?, ?, ?)"#, tenant_id.to_simple()),
+            VALUES (?, ?, ?, ?)"#,
+                    tenant_id.to_simple()
+                ),
                 (destination_uid, r_edge_name, f_edge_name, source_uid),
             )
             .await?;
@@ -151,18 +167,24 @@ mod tests {
             &[]
         ).await?;
 
-        session.session
+        session
+            .session
             .query(
-                format!("DROP TABLE IF EXISTS tenant_keyspace_{}.immutable_string_index", tenant_id.to_simple()),
-                &[]
+                format!(
+                    "DROP TABLE IF EXISTS tenant_keyspace_{}.immutable_string_index",
+                    tenant_id.to_simple()
+                ),
+                &[],
             )
             .await?;
         // return Ok(());
         println!("created keyspace");
 
-        session.session
+        session
+            .session
             .query(
-                format!("
+                format!(
+                    "
                 CREATE TABLE IF NOT EXISTS tenant_keyspace_{}.immutable_string_index (
                        uid bigint,
                        node_type text,
@@ -174,16 +196,20 @@ mod tests {
                     'sstable_compression': 'LZ4Compressor',
                     'chunk_length_in_kb': 64
                 }};
-                ", tenant_id.to_simple()),
+                ",
+                    tenant_id.to_simple()
+                ),
                 &[],
             )
             .await?;
 
         println!("created imm");
 
-        session.session
+        session
+            .session
             .query(
-                format!("
+                format!(
+                    "
                 CREATE TABLE IF NOT EXISTS tenant_keyspace_{}.edge (
                        source_uid bigint,
                        f_edge_name text,
@@ -195,7 +221,9 @@ mod tests {
                     'sstable_compression': 'LZ4Compressor',
                     'chunk_length_in_kb': 64
                 }};
-                ", tenant_id.to_simple()),
+                ",
+                    tenant_id.to_simple()
+                ),
                 &[],
             )
             .await?;
@@ -241,7 +269,7 @@ mod tests {
             "file_path".to_string(),
             "some/sorta/path".to_string(),
         )
-            .await?;
+        .await?;
 
         println!("inserted string ix");
 
@@ -263,7 +291,7 @@ mod tests {
             "read_by_processes".into(),
             uid + 234,
         )
-            .await?;
+        .await?;
 
         insert_edge(
             session.clone(),
@@ -273,9 +301,9 @@ mod tests {
             "read_by_processes".into(),
             uid + 234,
         )
-            .await?;
+        .await?;
 
-        let shared_node = InnerNodeQuery::new("File".try_into()?);
+        let shared_node = NodePropertiesQuery::new("File".try_into()?);
 
         let query = NodeQuery::root("Process".try_into()?)
             .with_string_comparisons(
@@ -291,35 +319,40 @@ mod tests {
                         "file_path".try_into().expect("invalid name"),
                         [StringCmp::eq("idk", true)],
                     );
-                }
+                },
             )
             .with_edge_to(
                 "children".try_into()?,
                 "parent".try_into()?,
                 "Process".try_into()?,
                 |neighbor| {
-                    neighbor.with_string_comparisons(
-                        "process_name".try_into().expect("invalid name"),
-                        [StringCmp::eq("chrome.exe", true)],
-                    )
+                    neighbor
+                        .with_string_comparisons(
+                            "process_name".try_into().expect("invalid name"),
+                            [StringCmp::eq("chrome.exe", true)],
+                        )
                         .with_shared_edge(
-                        "read_files".try_into().expect("invalid"),
-                        "read_by_processes".try_into().expect("invalid"),
-                        shared_node,
-                        |neighbor| {
+                            "read_files".try_into().expect("invalid"),
+                            "read_by_processes".try_into().expect("invalid"),
+                            shared_node,
+                            |neighbor| {
                                 neighbor.with_string_comparisons(
                                     "file_path".try_into().expect("invalid name"),
                                     [StringCmp::eq("idk", true)],
                                 );
-                        }
-                    )
-                    ;
+                            },
+                        );
                 },
-            ).build();
+            )
+            .build();
 
         let property_query_executor = PropertyQueryExecutor::new(session);
         let response = query
-            .query_graph(Uid::from_i64(uid + 123).unwrap(), tenant_id, property_query_executor)
+            .query_graph(
+                Uid::from_i64(uid + 123).unwrap(),
+                tenant_id,
+                property_query_executor,
+            )
             .await?;
         if let Some(ref graph) = response {
             println!("node_count: {}", graph.get_nodes().len());
@@ -350,17 +383,16 @@ mod tests {
 #[derive(Clone)]
 pub struct GraphQuery {
     pub root_query_id: u64,
-    pub nodes: HashMap<u64, InnerNodeQuery>,
+    pub nodes: HashMap<u64, NodePropertiesQuery>,
     pub edges: HashMap<(u64, EdgeName), HashSet<u64>>,
     pub edge_map: HashMap<EdgeName, EdgeName>,
 }
 
 impl GraphQuery {
-
     pub fn add_node(&mut self, query_id: u64, node_type: NodeType) {
         self.nodes.insert(
             query_id,
-            InnerNodeQuery {
+            NodePropertiesQuery {
                 query_id,
                 node_type,
                 string_filters: HashMap::new(),
@@ -368,12 +400,8 @@ impl GraphQuery {
         );
     }
 
-    pub fn merge_node(&mut self, inner_node: InnerNodeQuery) {
-        // todo: We should merge if the node exists already
-        self.nodes.insert(
-            inner_node.query_id,
-            inner_node,
-        );
+    pub fn merge_node(&mut self, inner_node: NodePropertiesQuery) {
+        self.nodes.insert(inner_node.query_id, inner_node);
     }
 
     #[tracing::instrument(skip(self, property_query_executor))]
@@ -393,12 +421,20 @@ impl GraphQuery {
             query_handles.push(async move {
                 let visited = Visited::new();
                 match node_query
-                    .fetch_node_with_edges(&self, uid, tenant_id, property_query_executor, visited, x_query_short_circuiter.clone())
-                    .await {
+                    .fetch_node_with_edges(
+                        &self,
+                        uid,
+                        tenant_id,
+                        property_query_executor,
+                        visited,
+                        x_query_short_circuiter.clone(),
+                    )
+                    .await
+                {
                     g @ Ok(Some(_)) => {
                         x_query_short_circuiter.set_short_circuit();
                         g
-                    },
+                    }
                     e => e,
                 }
             });

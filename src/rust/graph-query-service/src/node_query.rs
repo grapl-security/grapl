@@ -23,26 +23,38 @@ use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
     PropertyName,
     Uid,
 };
-use scylla::{CachingSession, IntoTypedRows, Session};
+use scylla::{
+    CachingSession,
+    IntoTypedRows,
+    Session,
+};
 
-use crate::{graph_query::{
-    GraphQuery,
-    StringCmp,
-}, graph_view::Graph, node_view::Node, visited::Visited};
-use crate::property_query::{PropertyQueryExecutor, StringField, EdgeRow};
-use crate::short_circuit::ShortCircuit;
-
+use crate::{
+    graph_query::{
+        GraphQuery,
+        StringCmp,
+    },
+    graph_view::Graph,
+    node_view::Node,
+    property_query::{
+        EdgeRow,
+        PropertyQueryExecutor,
+        StringField,
+    },
+    short_circuit::ShortCircuit,
+    visited::Visited,
+};
 
 #[derive(Clone)]
-pub struct InnerNodeQuery {
+pub struct NodePropertiesQuery {
     pub query_id: u64,
     pub(crate) node_type: NodeType,
     pub string_filters: HashMap<PropertyName, Vec<Vec<StringCmp>>>,
 }
 
-impl InnerNodeQuery {
+impl NodePropertiesQuery {
     pub fn new(node_type: NodeType) -> Self {
-        let query_id = std::cmp::max(rand::random(), 1);
+        let query_id = rand::random::<u64>() | 1;
 
         Self {
             query_id,
@@ -87,25 +99,20 @@ impl InnerNodeQuery {
         tenant_id: uuid::Uuid,
         property_query_executor: PropertyQueryExecutor,
     ) -> Result<Option<Vec<StringField>>, Box<dyn std::error::Error + Send + Sync + 'static>> {
-
         let mut fields = vec![];
         if !self.string_filters.is_empty() {
             let mut filter_names: HashSet<_> = self.string_filters.keys().collect();
 
             for prop_name in self.string_filters.keys() {
-                let property = property_query_executor.get_immutable_string(
-                    tenant_id,
-                    uid,
-                    &self.node_type,
-                    prop_name,
-                ).await?;
+                let property = property_query_executor
+                    .get_immutable_string(tenant_id, uid, &self.node_type, prop_name)
+                    .await?;
                 match property {
                     Some(p) => fields.push(p),
                     None => return Ok(None),
                 }
                 filter_names.remove(prop_name);
             }
-
 
             if !filter_names.is_empty() {
                 // some values didn't exist, not a match
@@ -127,18 +134,15 @@ impl InnerNodeQuery {
         Option<HashMap<EdgeName, Vec<EdgeRow>>>,
         Box<dyn std::error::Error + Send + Sync + 'static>,
     > {
-
         let mut edge_rows = HashMap::new();
         for (src_id, edge_name) in graph_query.edges.keys() {
             if *src_id != self.query_id {
                 continue;
             }
 
-            let rows = property_query_executor.get_edges(
-                tenant_id,
-                uid,
-                edge_name,
-            ).await?;
+            let rows = property_query_executor
+                .get_edges(tenant_id, uid, edge_name)
+                .await?;
 
             let rows = match rows {
                 None => return Ok(None),
@@ -287,8 +291,8 @@ pub struct NodeQuery {
 
 impl NodeQuery {
     pub fn root(node_type: NodeType) -> Self {
-        let query_id = std::cmp::max(rand::random(), 1);
-        let inner_query = InnerNodeQuery {
+        let query_id = rand::random::<u64>() | 1;
+        let inner_query = NodePropertiesQuery {
             query_id,
             node_type,
             string_filters: HashMap::new(),
@@ -343,7 +347,7 @@ impl NodeQuery {
         &mut self,
         edge_name: EdgeName,
         reverse_edge_name: EdgeName,
-        node: InnerNodeQuery,
+        node: NodePropertiesQuery,
         init_edge: impl FnOnce(&mut Self) -> (),
     ) -> &mut Self {
         let neighbor_query_id = node.query_id;
@@ -380,7 +384,6 @@ impl NodeQuery {
         self
     }
 
-
     pub fn with_edge_to(
         &mut self,
         edge_name: EdgeName,
@@ -388,7 +391,7 @@ impl NodeQuery {
         node_type: NodeType,
         init_edge: impl FnOnce(&mut Self) -> (),
     ) -> &mut Self {
-        let new_neighbor_id = std::cmp::max(rand::random(), 1);
+        let new_neighbor_id = rand::random::<u64>() | 1;
 
         {
             let mut graph = self.graph.as_mut().unwrap();
@@ -434,7 +437,7 @@ impl NodeQuery {
             root_query_id: 0,
             nodes: Default::default(),
             edges: Default::default(),
-            edge_map: Default::default()
+            edge_map: Default::default(),
         })
     }
 }

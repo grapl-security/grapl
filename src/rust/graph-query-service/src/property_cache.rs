@@ -1,9 +1,13 @@
-use std::fmt::Debug;
-use std::hash::Hash;
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::Uid;
-use moka::future::{
-    Cache, CacheBuilder,
+use std::{
+    fmt::Debug,
+    hash::Hash,
 };
+
+use moka::future::{
+    Cache,
+    CacheBuilder,
+};
+use rust_proto_new::graplinc::grapl::common::v1beta1::types::Uid;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum CacheMatch {
     Matched,
@@ -11,14 +15,12 @@ pub enum CacheMatch {
     CouldMatch,
 }
 
-
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Key {
     property_name: String,
     uid: Uid,
     tenant_id: uuid::Uuid,
 }
-
 
 #[derive(Clone)]
 pub struct PropertyCache {
@@ -40,5 +42,3 @@ impl PropertyCache {
         }
     }
 }
-
-

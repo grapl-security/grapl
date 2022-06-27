@@ -108,6 +108,15 @@ pub(crate) mod protobufs {
                 }
 
                 pub(crate) mod plugin_sdk {
+                    pub(crate) mod analyzers {
+                        pub(crate) mod v1beta1 {
+                            include!(concat!(
+                                env!("OUT_DIR"),
+                                "/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.rs"
+                            ));
+                        }
+                    }
+
                     pub(crate) mod generators {
                         pub(crate) mod v1beta1 {
                             include!(concat!(
@@ -216,6 +225,9 @@ pub mod graplinc {
             }
 
             pub mod plugin_sdk {
+                pub mod analyzers {
+                    pub mod v1beta1;
+                }
                 pub mod generators {
                     pub mod v1beta1;
                 }
