@@ -890,15 +890,13 @@ pub mod uid_allocator {
     use super::*;
 
     prop_compose! {
-        pub fn allocations()(
-            start in 1..(u64::MAX - (u32::MAX as u64)),
-            offset in 1..u32::MAX,
-        ) -> native::Allocation {
-            native::Allocation {
-                start, offset
-            }
-        }
-    }
+    pub fn allocations()(
+        start in 1..(u64::MAX - (u32::MAX as u64)),
+        offset in 1..u32::MAX,
+    ) -> native::Allocation {
+        native::Allocation {
+            start, offset
+    }}}
 
     prop_compose! {
         pub fn allocate_ids_request()(
@@ -920,5 +918,134 @@ pub mod uid_allocator {
                 allocation
             }
         }
+    }
+}
+
+pub mod lens_manager {
+    use rust_proto_new::graplinc::grapl::api::lens_manager::v1beta1::messages as native;
+
+    use super::*;
+
+    prop_compose! {
+        pub fn create_lens_request()(
+            tenant_id in uuids(),
+            lens_type in string_not_empty(),
+            lens_name in string_not_empty(),
+            is_engagement in any::<bool>(),
+        ) -> native::CreateLensRequest {
+            native::CreateLensRequest {
+                tenant_id,
+                lens_type,
+                lens_name,
+                is_engagement,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn create_lens_response()(
+            lens_uid in any::<u64>(),
+        ) -> native::CreateLensResponse {
+            native::CreateLensResponse {
+                lens_uid,
+            }
+        }
+    }
+
+    pub fn merge_behavior() -> impl Strategy<Value = native::MergeBehavior> {
+        prop_oneof![
+            Just(native::MergeBehavior::Preserve),
+            Just(native::MergeBehavior::Close),
+        ]
+    }
+
+    prop_compose! {
+        pub fn merge_lens_request()(
+            tenant_id in uuids(),
+            source_lens_uid in any::<u64>(),
+            target_lens_uid in any::<u64>(),
+            merge_behavior in merge_behavior(),
+        ) -> native::MergeLensRequest {
+            native::MergeLensRequest {
+                tenant_id,
+                source_lens_uid,
+                target_lens_uid,
+                merge_behavior,
+            }
+        }
+    }
+
+    pub fn merge_lens_response() -> impl Strategy<Value = native::MergeLensResponse> {
+        Just(native::MergeLensResponse {})
+    }
+
+    prop_compose! {
+        pub fn close_lens_request()(
+            tenant_id in uuids(),
+            lens_uid in any::<u64>(),
+        ) -> native::CloseLensRequest {
+            native::CloseLensRequest {
+                tenant_id,
+                lens_uid,
+            }
+        }
+    }
+
+    pub fn close_lens_response() -> impl Strategy<Value = native::CloseLensResponse> {
+        Just(native::CloseLensResponse {})
+    }
+
+    prop_compose! {
+        pub fn add_node_to_scope_request()(
+            tenant_id in uuids(),
+            lens_uid in any::<u64>(),
+            uid in any::<u64>(),
+        ) -> native::AddNodeToScopeRequest {
+            native::AddNodeToScopeRequest {
+                tenant_id,
+                lens_uid,
+                uid,
+            }
+        }
+    }
+
+    pub fn add_node_to_scope_response() -> impl Strategy<Value = native::AddNodeToScopeResponse> {
+        Just(native::AddNodeToScopeResponse {})
+    }
+
+    prop_compose! {
+        pub fn remove_node_from_scope_request()(
+            tenant_id in uuids(),
+            lens_uid in any::<u64>(),
+            uid in any::<u64>(),
+        ) -> native::RemoveNodeFromScopeRequest {
+            native::RemoveNodeFromScopeRequest {
+                tenant_id,
+                lens_uid,
+                uid,
+            }
+        }
+    }
+
+    pub fn remove_node_from_scope_response(
+    ) -> impl Strategy<Value = native::RemoveNodeFromScopeResponse> {
+        Just(native::RemoveNodeFromScopeResponse {})
+    }
+
+    prop_compose! {
+        pub fn remove_node_from_all_scopes_request()(
+            tenant_id in uuids(),
+            uid in any::<u64>(),
+        ) -> native::RemoveNodeFromAllScopesRequest {
+            native::RemoveNodeFromAllScopesRequest {
+                tenant_id,
+                uid,
+            }
+        }
+    }
+
+    pub fn remove_node_from_all_scopes_response(
+    ) -> impl Strategy<Value = native::RemoveNodeFromAllScopesResponse> {
+        Just(native::RemoveNodeFromAllScopesResponse {})
     }
 }
