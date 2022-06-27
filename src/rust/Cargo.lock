@@ -1802,7 +1802,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-appender",
- "tracing-futures",
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
 ]
