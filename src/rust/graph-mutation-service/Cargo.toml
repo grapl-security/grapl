@@ -1,0 +1,29 @@
+[package]
+name = "graph-mutation-service"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+async-trait = "0.1.53"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
+dashmap = "5.2.0"
+rust-proto-new = { path = "../rust-proto-new", default-features = false, features = [
+  "graph-mutation-server",
+  "schema-manager-server"
+] }
+scylla = "0.4.4"
+thiserror = "1.0.30"
+tokio = { version = "1.17.0", features = ["full"] }
+tracing = "0.1.34"
+uuid = { version = "0.8.0", features = ["v4"] }
+uid-allocator = { path = "../uid-allocator", default-features = false, features = [
+  "client"
+] }
+grapl-utils = { path = "../grapl-utils" }
+lazy_static = "1.4.0"
+lru = "0.7.6"

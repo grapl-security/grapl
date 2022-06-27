@@ -7,7 +7,9 @@ description = "Wrapper library for Grapl's protocol buffers"
 license = "MIT"
 
 [dependencies]
+async-trait = "0.1.53"
 bytes = "1.1"
+dashmap = "5.3.3"
 futures = "0.3"
 grapl-utils = { path = "../grapl-utils" }
 prost = "0.10"
@@ -18,7 +20,7 @@ tokio-stream = { version = "0.1.8", features = ["net"] }
 tonic = { version = "0.7", features = ["default", "compression", "tls"] }
 tonic-health = "0.6"
 tracing = "0.1"
-uuid = { version = "0.8.2", features = ["v4"] }
+uuid = { version = "0.8", features = ["v4"] }
 
 [build-dependencies]
 tonic-build = { version = "0.7", features = ["default", "compression"] }
@@ -31,7 +33,14 @@ test-context = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [features]
-default = ["uid-allocator-full", "lens-manager-full"]
+default = [
+  "uid-allocator-full",
+  "graph-mutation-full",
+  "model-plugin-deployer-full",
+  "lens-manager-full",
+  "schema-manager-full"
+]
+
 uid-allocator = []
 uid-allocator-messages = ["uid-allocator"]
 uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
@@ -51,4 +60,40 @@ lens-manager-full = [
   "lens-manager-client",
   "lens-manager-server",
   "lens-manager"
+]
+graph-mutation = []
+graph-mutation-messages = ["graph-mutation"]
+graph-mutation-server = ["graph-mutation-messages", "graph-mutation"]
+graph-mutation-client = ["graph-mutation-messages", "graph-mutation"]
+graph-mutation-full = [
+  "graph-mutation-messages",
+  "graph-mutation-client",
+  "graph-mutation-server",
+  "graph-mutation"
+]
+model-plugin-deployer = []
+model-plugin-deployer-messages = ["model-plugin-deployer"]
+model-plugin-deployer-server = [
+  "model-plugin-deployer-messages",
+  "model-plugin-deployer"
+]
+model-plugin-deployer-client = [
+  "model-plugin-deployer-messages",
+  "model-plugin-deployer"
+]
+model-plugin-deployer-full = [
+  "model-plugin-deployer-messages",
+  "model-plugin-deployer-client",
+  "model-plugin-deployer-server",
+  "model-plugin-deployer"
+]
+schema-manager = []
+schema-manager-messages = ["schema-manager"]
+schema-manager-server = ["schema-manager-messages", "schema-manager"]
+schema-manager-client = ["schema-manager-messages", "schema-manager"]
+schema-manager-full = [
+  "schema-manager-messages",
+  "schema-manager-client",
+  "schema-manager-server",
+  "schema-manager"
 ]

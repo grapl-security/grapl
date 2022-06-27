@@ -162,6 +162,16 @@ variable "plugin_work_queue_db" {
   description = "Vars for plugin-work-queue database"
 }
 
+variable "schema_manager_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for schema-manager database"
+}
+
 variable "uid_allocator_db" {
   type = object({
     hostname = string
@@ -170,6 +180,24 @@ variable "uid_allocator_db" {
     password = string
   })
   description = "Vars for uid-allocator database"
+}
+
+variable "graph_db" {
+  type = object({
+    addresses = string
+    username  = string
+    password  = string
+  })
+  description = "Vars for graph (scylla) database"
+}
+
+variable "uid_allocator_service_config" {
+  type = object({
+    default_allocation_size = number
+    preallocation_size      = number
+    maximum_allocation_size = number
+  })
+  description = "Vars for the uid allocator service"
 }
 
 variable "plugin_registry_bucket_aws_account_id" {
@@ -1517,10 +1545,13 @@ job "grapl-core" {
 
       env {
         UID_ALLOCATOR_BIND_ADDRESS      = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
-        UID_ALLOCATOR_DB_HOSTNAME       = var.uid_allocator_db.hostname
-        UID_ALLOCATOR_DB_PASSWORD       = var.uid_allocator_db.password
-        UID_ALLOCATOR_DB_PORT           = var.uid_allocator_db.port
-        UID_ALLOCATOR_DB_USERNAME       = var.uid_allocator_db.username
+        COUNTER_DB_HOSTNAME             = var.uid_allocator_db.hostname
+        COUNTER_DB_PASSWORD             = var.uid_allocator_db.password
+        COUNTER_DB_PORT                 = var.uid_allocator_db.port
+        COUNTER_DB_USERNAME             = var.uid_allocator_db.username
+        DEFAULT_ALLOCATION_SIZE         = var.uid_allocator_service_config.default_allocation_size
+        PREALLOCATION_SIZE              = var.uid_allocator_service_config.preallocation_size
+        MAXIMUM_ALLOCATION_SIZE         = var.uid_allocator_service_config.maximum_allocation_size
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
@@ -1538,4 +1569,113 @@ job "grapl-core" {
     }
   }
 
+
+  group "graph-mutation-service" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+
+      port "graph-mutation-service-port" {
+      }
+    }
+
+    task "graph-mutation-service" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["graph-mutation-service"]
+        ports = ["graph-mutation-service-port"]
+      }
+
+      env {
+        GRAPH_MUTATION_SERVICE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-mutation-service-port}"
+        RUST_BACKTRACE                      = local.rust_backtrace
+        RUST_LOG                            = var.rust_log
+        GRAPH_DB_ADDRESSES                  = var.graph_db.addresses
+        GRAPH_DB_AUTH_PASSWORD              = var.graph_db.password
+        GRAPH_DB_AUTH_USERNAME              = var.graph_db.username
+        SCHEMA_MANAGER_ADDRESS              = "http://${NOMAD_UPSTREAM_ADDR_schema-manager}"
+        UID_ALLOCATOR_ADDRESS               = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
+        OTEL_EXPORTER_JAEGER_AGENT_HOST     = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT     = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "graph-mutation-service"
+      port = "graph-mutation-service-port"
+      connect {
+        sidecar_service {
+          proxy {
+            config {
+              protocol = "grpc"
+            }
+            # It'd be nice to dynamically use ports. Sadly, per https://github.com/hashicorp/nomad/issues/7135 its not
+            # to be. The ports chosen below can be changed at any time
+            upstreams {
+              destination_name = "schema-manager"
+              local_bind_port  = 9999
+            }
+
+            upstreams {
+              destination_name = "uid-allocator"
+              local_bind_port  = 9998
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+  group "schema-manager" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "schema-manager-port" {
+      }
+    }
+
+    task "schema-manager" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["schema-manager"]
+        ports = ["schema-manager-port"]
+      }
+
+      template {
+        data        = var.aws_env_vars_for_local
+        destination = "schema-manager.env"
+        env         = true
+      }
+
+      env {
+        AWS_REGION                      = var.aws_region
+        NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
+        SCHEMA_SERVICE_BIND_ADDRESS     = "0.0.0.0:${NOMAD_PORT_schema-manager-port}"
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        SCHEMA_DB_HOSTNAME              = var.schema_manager_db.hostname
+        SCHEMA_DB_PASSWORD              = var.schema_manager_db.password
+        SCHEMA_DB_PORT                  = var.schema_manager_db.port
+        SCHEMA_DB_USERNAME              = var.schema_manager_db.username
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "schema-manager"
+      port = "schema-manager-port"
+      connect {
+        sidecar_service {
+        }
+      }
+    }
+  }
 }

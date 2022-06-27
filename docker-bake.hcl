@@ -150,6 +150,7 @@ group "rust-services" {
     "analyzer-dispatcher",
     "generator-executor",
     "graph-merger",
+    "graph-mutation-service",
     "grapl-web-ui",
     "model-plugin-deployer",
     "node-identifier",
@@ -160,6 +161,7 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
+    "schema-manager",
     "sysmon-generator",
     "uid-allocator",
   ]
@@ -293,6 +295,14 @@ target "graph-merger" {
   ]
 }
 
+target "graph-mutation-service" {
+  inherits = ["_rust-base"]
+  target   = "graph-mutation-service-deploy"
+  tags = [
+    upstream_aware_tag("graph-mutation-service")
+  ]
+}
+
 target "grapl-web-ui" {
   inherits = ["_rust-base"]
   target   = "grapl-web-ui-deploy"
@@ -388,6 +398,14 @@ target "generator-executor" {
   target   = "generator-executor-deploy"
   tags = [
     upstream_aware_tag("generator-executor")
+  ]
+}
+
+target "schema-manager" {
+  inherits = ["_rust-base"]
+  target   = "schema-manager-deploy"
+  tags = [
+    upstream_aware_tag("schema-manager")
   ]
 }
 

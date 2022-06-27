@@ -13,6 +13,9 @@ config:
     graph-merger:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
+    graph-mutation-service:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: DEBUG
     model-plugin-deployer:
       GRAPL_LOG_LEVEL: DEBUG
     node-identifier:
@@ -21,7 +24,13 @@ config:
     osquery-generator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
+    schema-manager:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: DEBUG
     sysmon-generator:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: DEBUG
+    uid-allocator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
   grapl:postgres-instance-type: db.t4g.small

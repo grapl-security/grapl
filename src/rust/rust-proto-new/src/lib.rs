@@ -30,6 +30,16 @@ pub(crate) mod protobufs {
         }
 
         pub(crate) mod grapl {
+
+            pub(crate) mod common {
+                pub(crate) mod v1beta1 {
+                    include!(concat!(
+                        env!("OUT_DIR"),
+                        "/graplinc.grapl.common.v1beta1.rs"
+                    ));
+                }
+            }
+
             pub(crate) mod api {
                 pub(crate) mod graph {
                     pub(crate) mod v1beta1 {
@@ -46,6 +56,26 @@ pub(crate) mod protobufs {
                         include!(concat!(
                             env!("OUT_DIR"),
                             "/graplinc.grapl.api.lens_manager.v1beta1.rs"
+                        ));
+                    }
+                }
+
+                #[cfg(feature = "graph-mutation")]
+                pub(crate) mod graph_mutation {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.graph_mutation.v1beta1.rs"
+                        ));
+                    }
+                }
+
+                #[cfg(feature = "model-plugin-deployer")]
+                pub(crate) mod model_plugin_deployer {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.model_plugin_deployer.v1.rs"
                         ));
                     }
                 }
@@ -97,6 +127,16 @@ pub(crate) mod protobufs {
                     }
                 }
 
+                #[cfg(feature = "schema-manager")]
+                pub(crate) mod schema_manager {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.schema_manager.v1beta1.rs"
+                        ));
+                    }
+                }
+
                 #[cfg(feature = "uid-allocator")]
                 pub(crate) mod uid_allocator {
                     pub(crate) mod v1beta1 {
@@ -137,6 +177,12 @@ pub mod graplinc {
     }
 
     pub mod grapl {
+        pub mod common {
+            pub mod v1beta1 {
+                pub mod types;
+            }
+        }
+
         pub mod api {
             pub mod graph {
                 pub mod v1beta1;
@@ -147,9 +193,13 @@ pub mod graplinc {
                 pub mod v1beta1;
             }
 
-            pub mod model_plugin_deployer {
-                pub mod v1;
+            #[cfg(feature = "graph-mutation")]
+            pub mod graph_mutation {
+                pub mod v1beta1;
             }
+
+            #[cfg(feature = "model-plugin-deployer")]
+            pub mod model_plugin_deployer {}
 
             pub mod pipeline_ingress {
                 pub mod v1beta1;
@@ -175,6 +225,15 @@ pub mod graplinc {
                 pub mod v1beta1;
                 mod v1beta1_client;
                 mod v1beta1_server;
+            }
+
+            #[cfg(feature = "schema-manager")]
+            pub mod schema_manager {
+                pub mod v1beta1 {
+                    pub mod client;
+                    pub mod messages;
+                    pub mod server;
+                }
             }
 
             #[cfg(feature = "uid-allocator")]

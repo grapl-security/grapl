@@ -883,6 +883,45 @@ pub mod plugin_work_queue {
     }
 }
 
+pub mod uid_allocator {
+
+    use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::messages as native;
+
+    use super::*;
+
+    prop_compose! {
+        pub fn allocations()(
+            start in 1..(u64::MAX - (u32::MAX as u64)),
+            offset in 1..u32::MAX,
+        ) -> native::Allocation {
+            native::Allocation {
+                start, offset
+        }}}
+
+    prop_compose! {
+        pub fn allocate_ids_request()(
+            count in any::<u32>(),
+            tenant_id in uuids(),
+        ) -> native::AllocateIdsRequest {
+            native::AllocateIdsRequest {
+                count,
+                tenant_id,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn allocate_ids_response()(
+            allocation in allocations(),
+        ) -> native::AllocateIdsResponse {
+            native::AllocateIdsResponse {
+                allocation
+            }
+        }
+    }
+
+}
+
 pub mod lens_manager {
     use rust_proto_new::graplinc::grapl::api::lens_manager::v1beta1::messages as native;
 

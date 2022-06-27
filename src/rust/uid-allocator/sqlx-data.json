@@ -1,0 +1,30 @@
+{
+  "db": "PostgreSQL",
+  "e675c3761e11c7b8eb7f5d93b8b9cc25e24299f4a32eb0c9da53968297db96a1": {
+    "query": "\n            UPDATE counters\n            SET counter = counter + $1\n            FROM (\n                     SELECT counter as prev\n                     FROM counters\n                     WHERE counters.tenant_id = $2\n                     LIMIT 1\n                 ) as c\n            WHERE counters.tenant_id = $2\n            RETURNING counter as new, c.prev\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "new",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 1,
+          "name": "prev",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false
+      ]
+    }
+  }
+}

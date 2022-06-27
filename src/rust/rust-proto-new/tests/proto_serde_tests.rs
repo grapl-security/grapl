@@ -421,6 +421,26 @@ mod plugin_work_queue {
     }
 }
 
+mod uid_allocator {
+
+    use strategies::uid_allocator as uida_strats;
+    #[test]
+    fn test_allocation(value in uida_strats::allocations()) {
+            check_encode_decode_invariant(value)
+    }
+
+    #[test]
+    fn test_allocate_ids_request(value in uida_strats::allocate_ids_request()) {
+        check_encode_decode_invariant(value)
+    }
+
+    #[test]
+    fn test_allocate_ids_response(value in uida_strats::allocate_ids_response()) {
+        check_encode_decode_invariant(value)
+    }
+
+}
+
 mod lens_manager {
     use strategies::lens_manager as lm_strats;
 

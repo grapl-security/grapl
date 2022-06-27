@@ -1,0 +1,195 @@
+{
+  "db": "PostgreSQL",
+  "0f4c29f9c1336b805bc9a7364b01f28928cbb17f7497381e3cb48f831357c6ab": {
+    "query": "\n        INSERT INTO schema_manager.static_identity_arguments (\n            tenant_id,\n            identity_algorithm,\n            node_type,\n            schema_version,\n            static_key_properties\n        )\n        VALUES ($1, $2, $3, $4, $5)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Int2",
+          "TextArray"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "2dd9f418721b7c25626dcbc85180b31fe1588dadd5ba4641f17265f36fd39d87": {
+    "query": "\n        INSERT INTO schema_manager.node_schemas (\n            tenant_id,\n            identity_algorithm,\n            node_type,\n            schema_version,\n            raw_schema,\n            schema_type\n        )\n        VALUES ($1, $2, $3, $4, $5, $6)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Int2",
+          "Bytea",
+          "Text"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "3b1e42bee880a6a1eecae4be6b7913001eeee96926040f0b24105cd775c92104": {
+    "query": "\n        INSERT INTO schema_manager.edge_schemas (\n            tenant_id,\n            node_type,\n            schema_version,\n            forward_edge_name,\n            reverse_edge_name,\n            forward_edge_cardinality,\n            reverse_edge_cardinality\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Int2",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "edge_cardinality",
+              "kind": {
+                "Enum": [
+                  "ToMany",
+                  "ToOne"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "edge_cardinality",
+              "kind": {
+                "Enum": [
+                  "ToMany",
+                  "ToOne"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "5a44ff9c4357103782a27a5b180481b5ebc9b17ddfb79b0eb405e25d19eda37c": {
+    "query": "\n        INSERT INTO schema_manager.node_identity_algorithm (\n            tenant_id,\n            identity_algorithm,\n            node_type,\n            schema_version\n        )\n        VALUES ($1, $2, $3, $4)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Int2"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "937ccbad72f81d2ddd5d5c2f5872a25fb0fc6fb7d7ec6672bfc9b73f4a2008d4": {
+    "query": "\n        INSERT INTO schema_manager.property_schemas (\n            tenant_id,\n            node_type,\n            schema_version,\n            property_name,\n            property_type,\n            identity_only\n        )\n        VALUES ($1, $2, $3, $4, $5, $6)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Int2",
+          "Text",
+          {
+            "Custom": {
+              "name": "property_type",
+              "kind": {
+                "Enum": [
+                  "ImmutableString",
+                  "ImmutableI64",
+                  "MaxI64",
+                  "MinI64",
+                  "ImmutableU64",
+                  "MaxU64",
+                  "MinU64"
+                ]
+              }
+            }
+          },
+          "Bool"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "de50335dce477b67ba5c0e73f4c8c5421509efbcf499c7641531d9946294c1f6": {
+    "query": "select\n                reverse_edge_name,\n                forward_edge_cardinality as \"forward_edge_cardinality: StoredEdgeCardinality\",\n                reverse_edge_cardinality as \"reverse_edge_cardinality: StoredEdgeCardinality\"\n             FROM schema_manager.edge_schemas\n             WHERE\n                 tenant_id = $1 AND\n                 node_type = $2 AND\n                 forward_edge_name = $3\n             ORDER BY schema_version DESC\n             LIMIT 1;\n                 ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "reverse_edge_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 1,
+          "name": "forward_edge_cardinality: StoredEdgeCardinality",
+          "type_info": {
+            "Custom": {
+              "name": "edge_cardinality",
+              "kind": {
+                "Enum": [
+                  "ToMany",
+                  "ToOne"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 2,
+          "name": "reverse_edge_cardinality: StoredEdgeCardinality",
+          "type_info": {
+            "Custom": {
+              "name": "edge_cardinality",
+              "kind": {
+                "Enum": [
+                  "ToMany",
+                  "ToOne"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "f76d98b5b811990ebb7144c0770bd2e5617b175d1d9c6a97ef6926e0f44658fa": {
+    "query": "\n        INSERT INTO schema_manager.session_identity_arguments (\n            tenant_id,\n            identity_algorithm,\n            node_type,\n            schema_version,\n            pseudo_key_properties,\n            negation_key_properties,\n            creation_timestamp_property,\n            last_seen_timestamp_property,\n            termination_timestamp_property\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Int2",
+          "TextArray",
+          "TextArray",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": []
+    }
+  }
+}

@@ -4,6 +4,7 @@ from typing import Any, Mapping, Optional, Union, cast
 
 import pulumi_nomad as nomad
 from infra.config import STACK_NAME
+from infra.local.scylla import NomadServiceScyllaDbArgs
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
 
 import pulumi
@@ -14,6 +15,7 @@ _ValidNomadVarTypes = pulumi.Input[
         _ValidNomadVarTypePrimitives,
         Mapping[str, _ValidNomadVarTypePrimitives],
         NomadServicePostgresDbArgs,  # Upsettingly, this is a Mapping[str, object]
+        NomadServiceScyllaDbArgs,  # Samesies
     ]
 ]
 NomadVars = Mapping[str, Optional[_ValidNomadVarTypes]]
