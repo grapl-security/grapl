@@ -1,3 +1,3 @@
-name: integration-tests
+name: rust-integration-tests
 runtime: python
-description: Deploy integration tests to Nomad
+description: Deploy rust integration tests to Nomad
