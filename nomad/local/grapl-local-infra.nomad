@@ -147,7 +147,7 @@ job "grapl-local-infra" {
       env {
         DEBUG     = 1
         EDGE_PORT = var.localstack_port
-        SERVICES  = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
+        SERVICES  = "dynamodb,ec2,iam,s3,secretsmanager,sns"
 
         # These are used by the health check below; "test" is the
         # default value for these credentials in Localstack.
