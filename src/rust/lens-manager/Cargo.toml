@@ -1,0 +1,10 @@
+[package]
+name = "lens-manager"
+version = "0.1.0"
+authors = ["Grapl, Inc. <contact@graplsecurity.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+rust-proto-new = { path = "../rust-proto-new", version = "*" }
+thiserror = "1.0.26"

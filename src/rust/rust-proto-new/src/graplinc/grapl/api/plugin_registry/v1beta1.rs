@@ -43,7 +43,6 @@ impl TryFrom<proto::PluginType> for PluginType {
             proto::PluginType::Generator => Ok(PluginType::Generator),
             proto::PluginType::Analyzer => Ok(PluginType::Analyzer),
         }
-        // todo!()
     }
 }
 

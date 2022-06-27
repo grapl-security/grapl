@@ -18,6 +18,7 @@ members = [
   "./grapl-web-ui",
   "./grapl-utils",
   "./kafka",
+  "./lens-manager",
   "./model-plugin-deployer",
   "./node-identifier",
   "./nomad-client-gen",

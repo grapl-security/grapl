@@ -1,6 +1,6 @@
 use std::sync::Arc;
-use clap::Parser;
 
+use clap::Parser;
 use graph_mutation_service::{
     config::GraphMutationServiceConfig,
     graph_mutation::GraphMutationManager,

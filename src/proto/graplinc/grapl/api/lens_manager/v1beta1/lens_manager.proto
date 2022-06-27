@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.lens_manager.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+
+// Request to create a lens
+message CreateLensRequest {
+  // The tenant id associated with the to-be-created lens
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The type of the lens (types are essentially namespaces for lenses)
+  string lens_type = 2;
+  // The name of the lens
+  string lens_name = 3;
+  // Engagements are themselves lenses
+  bool is_engagement = 4;
+}
+
+// Response from creating a lens
+message CreateLensResponse {
+  // uid of Lens that was created.
+  // Note that this will be replaced with a custom Uid type in subsequent PRs
+  uint64 lens_uid = 1;
+}
+
+// Request to merge two lenses, attaching the nodes from one lens to the destination lens,
+// and possibly removing the nodes from the source lens (if `close_source` is `true`
+message MergeLensRequest {
+  // Represents possible behaviors for the merge
+  enum MergeBehavior {
+    // An unspecified or unset behavior
+    MERGE_BEHAVIOR_UNSPECIFIED = 0;
+    // 'Preserve' indicates that after the merge the previous lens should be untouched
+    MERGE_BEHAVIOR_PRESERVE = 1;
+    // 'Close' indicates that after the merge the previous lens should be closed
+    MERGE_BEHAVIOR_CLOSE = 2;
+  }
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The uid of the engagement to merge from
+  uint64 source_lens_uid = 2;
+  // The uid of the Lens to merge into
+  uint64 target_lens_uid = 3;
+  // Specifies the behavior of the merge
+  MergeBehavior merge_behavior = 4;
+}
+
+// Response for merging lenses
+message MergeLensResponse {
+  // empty
+}
+
+// Request to close lens
+message CloseLensRequest {
+  // Tenant ID corresponding to the lens
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // UID of lens that is being closed
+  uint64 lens_uid = 2;
+}
+
+// Response from close a lens
+message CloseLensResponse {
+  // empty
+}
+
+// Request to add a node to the scope of a lens
+message AddNodeToScopeRequest {
+  // A grapl tenant id. Both the node and the lens must belong to this tenant.
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The uid of the lens that will have the node attached
+  uint64 lens_uid = 2;
+  // The uid of the node that we will attach to the lens
+  uint64 uid = 3;
+}
+
+// Response from adding a node to scope
+message AddNodeToScopeResponse {
+  // empty
+}
+
+// Request remove node from scope
+message RemoveNodeFromScopeRequest {
+  // A grapl tenant id. Both the node and the lens must belong to this tenant.
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The lens that will have its scope modified
+  uint64 lens_uid = 2;
+  // The uid of the node that we will be removed
+  uint64 uid = 3;
+}
+
+// Response from removing node from a lens's scope
+message RemoveNodeFromScopeResponse {
+  // empty
+}
+
+// A Request to remove a given node from any scopes it may be a part of
+message RemoveNodeFromAllScopesRequest {
+  // The tenant that the node belongs to
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The uid of the node to be cleared from every scope
+  uint64 uid = 2;
+}
+
+// Response from removing all nodes from scope
+message RemoveNodeFromAllScopesResponse {
+  // empty
+}
+
+// The LensManagerService provides a lens-based abstraction into the graph. Lenses are core to a number
+// of features and use cases, such as our engagements.
+service LensManagerService {
+  // Creates a new lens with an empty scope
+  rpc CreateLens(CreateLensRequest) returns (CreateLensResponse);
+  // MergeLens adds the scope of one lens to another
+  rpc MergeLens(MergeLensRequest) returns (MergeLensResponse);
+  // CloseLens will remove a Lens node from the graph, detaching it from its scope
+  rpc CloseLens(CloseLensRequest) returns (CloseLensResponse);
+  // Adds a given entity node to the scope of a lens
+  rpc AddNodeToScope(AddNodeToScopeRequest) returns (AddNodeToScopeResponse);
+  // Remove a node from a given lens's scope
+  rpc RemoveNodeFromScope(RemoveNodeFromScopeRequest) returns (RemoveNodeFromScopeResponse);
+  // Remove a node from all of the lens scopes it is attached to
+  rpc RemoveNodeFromAllScopes(RemoveNodeFromAllScopesRequest) returns (RemoveNodeFromAllScopesResponse);
+}

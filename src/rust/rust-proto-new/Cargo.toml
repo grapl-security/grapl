@@ -36,8 +36,9 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 default = [
   "uid-allocator-full",
   "graph-mutation-full",
-  "model-plugin-deployer",
-  "schema-manager"
+  "model-plugin-deployer-full",
+  "lens-manager-full",
+  "schema-manager-full"
 ]
 uid-allocator = []
 uid-allocator-messages = ["uid-allocator"]
@@ -48,6 +49,16 @@ uid-allocator-full = [
   "uid-allocator-client",
   "uid-allocator-server",
   "uid-allocator"
+]
+lens-manager = []
+lens-manager-messages = ["lens-manager"]
+lens-manager-server = ["lens-manager-messages", "lens-manager"]
+lens-manager-client = ["lens-manager-messages", "lens-manager"]
+lens-manager-full = [
+  "lens-manager-messages",
+  "lens-manager-client",
+  "lens-manager-server",
+  "lens-manager"
 ]
 graph-mutation = []
 graph-mutation-messages = ["graph-mutation"]
