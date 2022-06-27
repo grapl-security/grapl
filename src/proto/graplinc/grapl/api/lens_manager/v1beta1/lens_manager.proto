@@ -3,6 +3,7 @@ syntax = "proto3";
 package graplinc.grapl.api.lens_manager.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
+import "graplinc/grapl/common/v1beta1/types.proto";
 
 // Request to create a lens
 message CreateLensRequest {
@@ -70,6 +71,8 @@ message AddNodeToScopeRequest {
   uint64 lens_uid = 2;
   // The uid of the node that we will attach to the lens
   uint64 uid = 3;
+  // The type of the node to add to the lens's scope
+  graplinc.grapl.common.v1beta1.NodeType node_type = 4;
 }
 
 // Response from adding a node to scope
