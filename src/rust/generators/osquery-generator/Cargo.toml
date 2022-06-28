@@ -8,7 +8,6 @@ edition = "2021"
 async-trait = "0.1"
 endpoint-plugin = { path = "../../endpoint-plugin" }
 futures = "0.3"
-grapl-config = { path = "../../grapl-config", version = "*" }
 opentelemetry = { version = "0.16", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.15", features = [
   "collector_client",
