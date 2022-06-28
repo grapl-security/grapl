@@ -464,6 +464,7 @@ pub mod messages {
         type_url,
         SerDeError,
     };
+    use crate::graplinc::grapl::common::v1beta1::types::NodeType;
 
     //
     // CreateLensRequest
@@ -756,6 +757,7 @@ pub mod messages {
         pub tenant_id: Uuid,
         pub lens_uid: u64,
         pub uid: u64,
+        pub node_type: NodeType,
     }
 
     impl TryFrom<AddNodeToScopeRequestProto> for AddNodeToScopeRequest {
@@ -770,10 +772,16 @@ pub mod messages {
 
             let uid = request_proto.uid;
 
+            let node_type = request_proto
+                .node_type
+                .ok_or(SerDeError::MissingField("GetEdgeSchemaRequest.node_type"))?
+                .try_into()?;
+
             Ok(AddNodeToScopeRequest {
                 tenant_id: tenant_id.into(),
                 lens_uid,
                 uid,
+                node_type,
             })
         }
     }
@@ -784,6 +792,7 @@ pub mod messages {
                 tenant_id: Some(request.tenant_id.into()),
                 lens_uid: request.lens_uid,
                 uid: request.uid.into(),
+                node_type: Some(request.node_type.into()),
             }
         }
     }
