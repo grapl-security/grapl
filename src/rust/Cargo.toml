@@ -6,6 +6,7 @@ members = [
   "./event-source",
   "./generator-dispatcher",
   "./generators/sysmon-generator",
+  "./generators/osquery-generator",
   "./graph-merger",
   "./grapl-config",
   "./grapl-graphql-codegen",
