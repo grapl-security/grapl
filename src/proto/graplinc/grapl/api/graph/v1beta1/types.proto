@@ -212,3 +212,31 @@ message MergedGraph {
   // The mapping of node_key to the EdgeLists
   map<string, MergedEdgeList> edges = 2;
 }
+
+// A Lens.
+message Lens {
+  // type
+  string lens_type = 1;
+  // name
+  string lens_name = 2;
+  // uid (absent prior to engagement-creator)
+  optional uint64 uid = 3;
+  // score (absent prior to engagement-creator)
+  optional uint64 score = 4;
+}
+
+// Result computed by an analyzer when it makes a detection.
+message ExecutionHit {
+  // The mapping of node_key to the MergedNode
+  map<string, graplinc.grapl.api.graph.v1beta1.MergedNode> nodes = 1;
+  // The mapping of node_key to the EdgeLists
+  map<string, graplinc.grapl.api.graph.v1beta1.MergedEdgeList> edges = 2;
+  // The name of the analyzer which made the detection
+  string analyzer_name = 3;
+  // The risk score associated with this detection
+  uint64 risk_score = 4;
+  // Fragmentary lenses (only have type and name set)
+  repeated Lens lenses = 5;
+  // The nodes which contributed to the risk score
+  repeated string risky_node_keys = 6;
+}

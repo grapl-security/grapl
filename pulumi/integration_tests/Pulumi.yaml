@@ -1,3 +1,0 @@
-name: integration-tests
-runtime: python
-description: Deploy integration tests to Nomad

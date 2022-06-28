@@ -2,16 +2,13 @@ use chrono::{
     DateTime,
     Utc,
 };
-use rust_proto::graph_descriptions::*;
+use rust_proto::graplinc::grapl::api::graph::v1beta1::GraphDescription;
 use sysmon_parser::{
     EventData,
     SysmonEvent,
 };
 
-use crate::error::{
-    Result,
-    SysmonGeneratorError,
-};
+use crate::error::SysmonGeneratorError;
 
 mod file;
 mod network;
@@ -20,7 +17,7 @@ mod process;
 #[tracing::instrument(err, skip(sysmon_event))]
 pub(crate) fn generate_graph_from_event(
     sysmon_event: &SysmonEvent,
-) -> Result<Option<GraphDescription>> {
+) -> Result<Option<GraphDescription>, SysmonGeneratorError> {
     let graph = match &sysmon_event.event_data {
         EventData::FileCreate(event_data) => {
             let graph = file::generate_file_create_subgraph(&sysmon_event.system, event_data)?;
@@ -93,7 +90,7 @@ fn get_image_name(image_path: &str) -> String {
 /// Converts a Sysmon UTC string to UNIX Epoch time
 ///
 /// If the provided string is not parseable as a UTC timestamp, an error is returned.
-pub(crate) fn utc_to_epoch(utc: &DateTime<Utc>) -> Result<u64> {
+fn utc_to_epoch(utc: &DateTime<Utc>) -> Result<u64, SysmonGeneratorError> {
     let ts = utc.timestamp_millis();
 
     if ts < 0 {

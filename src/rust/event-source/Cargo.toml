@@ -1,0 +1,39 @@
+[package]
+name = "event-source"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1"
+grapl-config = { path = "../grapl-config" }
+grapl-utils = { path = "../grapl-utils" }
+tokio = { version = "1.17", features = ["macros", "rt-multi-thread"] }
+uuid = { version = "0.8", features = ["serde", "v4"] }
+sqlx = { version = "0.5", features = [
+  "chrono",
+  "migrate",
+  "offline",
+  "postgres",
+  "runtime-tokio-rustls",
+  "uuid",
+] }
+tracing = "0.1.29"
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }
+rust-proto = { path = "../rust-proto" }
+thiserror = "1.0.26"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
+
+[build-dependencies]
+
+[dev-dependencies]
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
+
+[features]
+integration_tests = []

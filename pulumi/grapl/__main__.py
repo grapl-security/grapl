@@ -5,7 +5,7 @@ sys.path.insert(0, "..")
 from typing import List, Mapping, Optional, Set, cast
 
 import pulumi_aws as aws
-from infra import config, dynamodb, emitter, log_levels
+from infra import config, dynamodb, log_levels
 from infra.alarms import OpsAlarms
 from infra.api_gateway import ApiGateway
 from infra.artifacts import ArtifactGetter
@@ -26,7 +26,7 @@ from infra.hashicorp_provider import (
     get_consul_provider_address,
     get_nomad_provider_address,
 )
-from infra.kafka import Kafka
+from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
@@ -37,7 +37,6 @@ from infra.postgres import Postgres
 # web UI.
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
-from infra.service_queue import ServiceQueue
 from infra.upstream_stacks import UpstreamStacks
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
@@ -65,19 +64,17 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
     )
 
     return {
-        "analyzer-dispatcher": builder.build_with_tag("analyzer-dispatcher"),
-        "analyzer-executor": builder.build_with_tag("analyzer-executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "engagement-creator": builder.build_with_tag("engagement-creator"),
+        "event-source": builder.build_with_tag("event-source"),
+        "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
         "generator-executor": builder.build_with_tag("generator-executor"),
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
         "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
         "node-identifier": builder.build_with_tag("node-identifier"),
-        "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
         "organization-management": builder.build_with_tag("organization-management"),
-        "osquery-generator": builder.build_with_tag("osquery-generator"),
         "pipeline-ingress": builder.build_with_tag("pipeline-ingress"),
         "plugin-bootstrap": builder.build_with_tag("plugin-bootstrap"),
         "plugin-registry": builder.build_with_tag("plugin-registry"),
@@ -156,67 +153,16 @@ def main() -> None:
         confluent_environment_name=pulumi_config.require("confluent-environment-name"),
     )
 
-    # TODO: Create these emitters inside the service abstraction if nothing
-    # else uses them (or perhaps even if something else *does* use them)
-    sysmon_log_emitter = emitter.EventEmitter("sysmon-log")
-    osquery_log_emitter = emitter.EventEmitter("osquery-log")
-    unid_subgraphs_generated_emitter = emitter.EventEmitter("unid-subgraphs-generated")
-    subgraphs_generated_emitter = emitter.EventEmitter("subgraphs-generated")
-    subgraphs_merged_emitter = emitter.EventEmitter("subgraphs-merged")
-    dispatched_analyzer_emitter = emitter.EventEmitter("dispatched-analyzer")
-
-    analyzer_matched_emitter = emitter.EventEmitter("analyzer-matched-subgraphs")
-    pulumi.export(
-        "analyzer-matched-subgraphs-bucket", analyzer_matched_emitter.bucket_name
-    )
-
-    all_emitters = [
-        sysmon_log_emitter,
-        osquery_log_emitter,
-        unid_subgraphs_generated_emitter,
-        subgraphs_generated_emitter,
-        subgraphs_merged_emitter,
-        dispatched_analyzer_emitter,
-        analyzer_matched_emitter,
-    ]
-
-    sysmon_generator_queue = ServiceQueue("sysmon-generator")
-    sysmon_generator_queue.subscribe_to_emitter(sysmon_log_emitter)
-
-    osquery_generator_queue = ServiceQueue("osquery-generator")
-    osquery_generator_queue.subscribe_to_emitter(osquery_log_emitter)
-
-    node_identifier_queue = ServiceQueue("node-identifier")
-    node_identifier_queue.subscribe_to_emitter(unid_subgraphs_generated_emitter)
-
-    graph_merger_queue = ServiceQueue("graph-merger")
-    graph_merger_queue.subscribe_to_emitter(subgraphs_generated_emitter)
-
-    analyzer_dispatcher_queue = ServiceQueue("analyzer-dispatcher")
-    analyzer_dispatcher_queue.subscribe_to_emitter(subgraphs_merged_emitter)
-
-    analyzer_executor_queue = ServiceQueue("analyzer-executor")
-    analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
-
-    engagement_creator_queue = ServiceQueue("engagement-creator")
-    engagement_creator_queue.subscribe_to_emitter(analyzer_matched_emitter)
-
-    analyzers_bucket = Bucket("analyzers-bucket", sse=True)
-    pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     plugin_registry_bucket = Bucket("plugin-registry-bucket", sse=True)
 
     all_plugin_buckets = [
-        analyzers_bucket,
         model_plugins_bucket,
         plugin_registry_bucket,
     ]
 
     pipeline_ingress_healthcheck_polling_interval_ms = "5000"
-    pulumi.export(
-        "pipeline-ingress-healthcheck-polling-interval-ms",
-        pipeline_ingress_healthcheck_polling_interval_ms,
-    )
+    organization_management_healthcheck_polling_interval_ms = "5000"
 
     firecracker_s3objs: FirecrackerS3BucketObjectsProtocol = (
         MockFirecrackerS3BucketObjects()
@@ -235,46 +181,53 @@ def main() -> None:
     aws_env_vars_for_local = _get_aws_env_vars_for_local()
     pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
 
+    kafka_services = (
+        "generator-dispatcher",
+        "graph-generator",
+        "graph-merger",
+        "node-identifier",
+        "pipeline-ingress",
+    )
+    kafka_service_credentials = {
+        service: kafka.service_credentials(service).apply(
+            Credential.to_nomad_service_creds
+        )
+        for service in kafka_services
+    }
+    kafka_consumer_services = (
+        "generator-dispatcher",
+        "graph-generator",
+        "graph-merger",
+        "node-identifier",
+    )
+    kafka_consumer_groups = {
+        service: kafka.consumer_group(service) for service in kafka_consumer_services
+    }
+
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
-        analyzer_bucket=analyzers_bucket.bucket,
-        analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket_name,
-        analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
-        analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
-        analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket_name,
-        analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
         aws_env_vars_for_local=aws_env_vars_for_local,
         aws_region=aws.get_region().name,
         container_images=_container_images(artifacts),
         dns_server=config.CONSUL_DNS_IP,
-        engagement_creator_queue=engagement_creator_queue.main_queue_url,
-        graph_merger_queue=graph_merger_queue.main_queue_url,
-        graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
+        kafka_credentials=kafka_service_credentials,
+        kafka_consumer_groups=kafka_consumer_groups,
         model_plugins_bucket=model_plugins_bucket.bucket,
-        node_identifier_queue=node_identifier_queue.main_queue_url,
-        node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
-        node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
-        osquery_generator_queue=osquery_generator_queue.main_queue_url,
-        osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
+        organization_management_healthcheck_polling_interval_ms=organization_management_healthcheck_polling_interval_ms,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
+        plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
+        plugin_registry_bucket_name=plugin_registry_bucket.bucket,
+        plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
+        plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
         py_log_level=log_levels.PY_LOG_LEVEL,
         rust_log=log_levels.RUST_LOG_LEVELS,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
-        subgraphs_merged_bucket=subgraphs_merged_emitter.bucket_name,
-        subgraphs_generated_bucket=subgraphs_generated_emitter.bucket_name,
-        sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
-        sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
         test_user_name=config.GRAPL_TEST_USER_NAME,
-        unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
-        plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
-        plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
-        plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
-        plugin_registry_bucket_name=plugin_registry_bucket.bucket,
     )
 
     provision_vars: Final[NomadVars] = {
@@ -295,17 +248,6 @@ def main() -> None:
     }
 
     nomad_grapl_core_timeout = "5m"
-
-    pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
-
-    pulumi.export(
-        "pipeline-ingress-kafka-sasl-username",
-        pipeline_ingress_kafka_credentials.api_key,
-    )
-    pulumi.export(
-        "pipeline-ingress-kafka-sasl-password",
-        pipeline_ingress_kafka_credentials.api_secret,
-    )
 
     ConsulIntentions(
         "consul-intentions",
@@ -346,25 +288,23 @@ def main() -> None:
     plugin_registry_db: NomadServicePostgresResource
     plugin_work_queue_db: NomadServicePostgresResource
     uid_allocator_db: NomadServicePostgresResource
+    event_source_db: NomadServicePostgresResource
 
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
         ###################################
 
-        # NOTE: The ports for these `LocalPostgresInstance` databases
-        # must match what's in `grapl-local-infra.nomad`. That Nomad
-        # job will be run _before_ this Pulumi project (because it
+        # NOTE: The ports for these `LocalPostgresInstance` databases must
+        # match what's in `grapl-local-infra.nomad`, specifically
+        # local { database_descriptors }.
+        #
+        # That Nomad job will be run _before_ this Pulumi project (because it
         # brings up infrastructure this project depends on in the
         # local case).
         #
         # There's not really a great way to deal with this duplication
         # at the moment, sadly.
-        organization_management_db = LocalPostgresInstance(
-            name="organization-management-db",
-            port=5632,
-        )
-
         plugin_registry_db = LocalPostgresInstance(
             name="plugin-registry-db",
             port=5432,
@@ -372,12 +312,22 @@ def main() -> None:
 
         plugin_work_queue_db = LocalPostgresInstance(
             name="plugin-work-queue-db",
-            port=5532,
+            port=5433,
+        )
+
+        organization_management_db = LocalPostgresInstance(
+            name="organization-management-db",
+            port=5434,
         )
 
         uid_allocator_db = LocalPostgresInstance(
             name="uid-allocator-db",
-            port=5732,
+            port=5435,
+        )
+
+        event_source_db = LocalPostgresInstance(
+            name="event-source-db",
+            port=5436,
         )
 
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
@@ -393,9 +343,8 @@ def main() -> None:
         )
 
         local_grapl_core_vars: Final[NomadVars] = dict(
+            event_source_db=event_source_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
-            pipeline_ingress_kafka_sasl_username="fake",
-            pipeline_ingress_kafka_sasl_password="fake",
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
@@ -458,12 +407,7 @@ def main() -> None:
 
         for bucket in all_plugin_buckets:
             bucket.grant_put_permission_to(nomad_agent_role)
-            # Analyzer Dispatcher needs to be able to ListObjects on Analyzers
-            # Analyzer Executor needs to be able to ListObjects on Model Plugins
             bucket.grant_get_and_list_to(nomad_agent_role)
-        for _emitter in all_emitters:
-            _emitter.grant_write_to(nomad_agent_role)
-            _emitter.grant_read_to(nomad_agent_role)
 
         cache = Cache(
             "main-cache",
@@ -472,36 +416,27 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        organization_management_db = Postgres(
-            name="organization-management",
-            subnet_ids=subnet_ids,
-            vpc_id=vpc_id,
-            availability_zone=availability_zone,
-            nomad_agent_security_group_id=nomad_agent_security_group_id,
-        )
-
-        plugin_registry_db = Postgres(
-            name="plugin-registry",
-            subnet_ids=subnet_ids,
-            vpc_id=vpc_id,
-            availability_zone=availability_zone,
-            nomad_agent_security_group_id=nomad_agent_security_group_id,
-        )
-
-        plugin_work_queue_db = Postgres(
-            name="plugin-work-queue",
-            subnet_ids=subnet_ids,
-            vpc_id=vpc_id,
-            availability_zone=availability_zone,
-            nomad_agent_security_group_id=nomad_agent_security_group_id,
-        )
-
-        uid_allocator_db = Postgres(
-            name="uid-allocator-db",
-            subnet_ids=subnet_ids,
-            vpc_id=vpc_id,
-            availability_zone=availability_zone,
-            nomad_agent_security_group_id=nomad_agent_security_group_id,
+        (
+            organization_management_db,
+            plugin_registry_db,
+            plugin_work_queue_db,
+            uid_allocator_db,
+            event_source_db,
+        ) = (
+            Postgres(
+                name=db_resource_name,
+                subnet_ids=subnet_ids,
+                vpc_id=vpc_id,
+                availability_zone=availability_zone,
+                nomad_agent_security_group_id=nomad_agent_security_group_id,
+            )
+            for db_resource_name in (
+                "organization-management",
+                "plugin-registry",
+                "plugin-work-queue",
+                "uid-allocator-db",
+                "event-source-db",
+            )
         )
 
         pulumi.export("redis-endpoint", cache.endpoint)
@@ -509,9 +444,8 @@ def main() -> None:
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
+            event_source_db=event_source_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
-            pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
-            pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),

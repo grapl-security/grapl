@@ -8,7 +8,7 @@ use moka::future::{
     Cache,
     CacheBuilder,
 };
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::plugin_sdk::generators::v1beta1::{
         client::{
             GeneratorServiceClient,

@@ -3,11 +3,6 @@ config:
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:env_vars:
-    analyzer-dispatcher:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
-    analyzer-executor:
-      GRAPL_LOG_LEVEL: DEBUG
     engagement-creator:
       GRAPL_LOG_LEVEL: DEBUG
     graph-merger:
@@ -16,9 +11,6 @@ config:
     model-plugin-deployer:
       GRAPL_LOG_LEVEL: DEBUG
     node-identifier:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
-    osquery-generator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
     sysmon-generator:

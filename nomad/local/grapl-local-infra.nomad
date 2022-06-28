@@ -33,69 +33,36 @@ variable "zookeeper_port" {
   default     = 2181
 }
 
-# These Postgres connection data must match what's in
-# `pulumi/grapl/__main__.py`; sorry for the duplication :(
-variable plugin_registry_db {
-  description = "Connection configuration for the Plugin Registry database"
-  type = object({
-    username = string
-    password = string
-    port     = number
-  })
-  default = {
-    username = "postgres"
-    password = "postgres"
-    port     = 5432
-  }
-}
-
-variable plugin_work_queue_db {
-  description = "Connection configuration for the Plugin Work Queue database"
-  type = object({
-    username = string
-    password = string
-    port     = number
-  })
-  default = {
-    username = "postgres"
-    password = "postgres"
-    port     = 5532
-  }
-}
-
-variable organization_management_db {
-  description = "Connection configuration for the Organization Management database"
-  type = object({
-    username = string
-    password = string
-    port     = number
-  })
-  default = {
-    username = "postgres"
-    password = "postgres"
-    port     = 5632
-  }
-}
-
-variable uid_allocator_db {
-  description = "Connection configuration for the Uid Allocator database"
-  type = object({
-    username = string
-    password = string
-    port     = number
-  })
-  default = {
-    username = "postgres"
-    password = "postgres"
-    port     = 5732
-  }
-}
-
 locals {
   # This is the equivalent of `localhost` within a bridge network.
   # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
   localhost_within_bridge = attr.unique.network.ip-address
   zookeeper_endpoint      = "${local.localhost_within_bridge}:${var.zookeeper_port}"
+
+  # These Postgres connection data must match the `LocalPostgresInstance`s in
+  # `pulumi/grapl/__main__.py`; sorry for the duplication :(
+  database_descriptors = [
+    {
+      name = "plugin-registry-db",
+      port = 5432,
+    },
+    {
+      name = "plugin-work-queue-db",
+      port = 5433,
+    },
+    {
+      name = "organization-management-db",
+      port = 5434,
+    },
+    {
+      name = "uid-allocator-db",
+      port = 5435
+    },
+    {
+      name = "event-source-db",
+      port = 5436
+    },
+  ]
 }
 
 
@@ -180,7 +147,7 @@ job "grapl-local-infra" {
       env {
         DEBUG     = 1
         EDGE_PORT = var.localstack_port
-        SERVICES  = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
+        SERVICES  = "dynamodb,ec2,iam,s3,secretsmanager,sns"
 
         # These are used by the health check below; "test" is the
         # default value for these credentials in Localstack.
@@ -358,86 +325,63 @@ job "grapl-local-infra" {
     }
   }
 
-  group "plugin-registry-db" {
-    network {
-      mode = "bridge"
-      port "postgres" {
-        static = var.plugin_registry_db.port
-        to     = 5432 # postgres default
-      }
-    }
+  # Construct N groups for each entry in database_descriptors,
+  # each one containing a Postgres task.
+  dynamic "group" {
+    for_each = local.database_descriptors
+    iterator = db_desc
 
-    task "plugin-registry-db" {
-      driver = "docker"
+    labels = [db_desc.value.name]
 
-      config {
-        image = "postgres-ext:${var.image_tag}"
-        ports = ["postgres"]
-      }
-
-      env {
-        POSTGRES_USER     = var.plugin_registry_db.username
-        POSTGRES_PASSWORD = var.plugin_registry_db.password
-      }
-
-      service {
-        name = "plugin-registry-db"
-
-        check {
-          type     = "script"
-          name     = "check_postgres"
-          command  = "pg_isready"
-          args     = ["--username", "${var.plugin_registry_db.username}"]
-          interval = "20s"
-          timeout  = "10s"
-
-          check_restart {
-            limit           = 2
-            grace           = "30s"
-            ignore_warnings = false
-          }
+    content {
+      network {
+        mode = "bridge"
+        port "postgres" {
+          static = db_desc.value.port
+          to     = 5432 # postgres default
         }
       }
-    }
-  }
 
-  group "plugin-work-queue-db" {
-    network {
-      mode = "bridge"
-      port "postgres" {
-        static = var.plugin_work_queue_db.port
-        to     = 5432
-      }
-    }
+      # This is a hack so that the task name can be something dynamic.
+      # (In this case, each task has the same name as the group.)
+      # I do this because otherwise we'd have N logs called 'postgres.stdout'
+      # It is for-each over a list with a single element: [db_desc].
+      dynamic "task" {
+        for_each = [db_desc.value]
+        iterator = db_desc
 
-    task "plugin-work-queue-db" {
-      driver = "docker"
+        labels = [db_desc.value.name]
 
-      config {
-        image = "postgres-ext:${var.image_tag}"
-        ports = ["postgres"]
-      }
+        content {
+          driver = "docker"
 
-      env {
-        POSTGRES_USER     = var.plugin_work_queue_db.username
-        POSTGRES_PASSWORD = var.plugin_work_queue_db.password
-      }
+          config {
+            image = "postgres-ext:${var.image_tag}"
+            ports = ["postgres"]
+          }
 
-      service {
-        name = "plugin-work-queue-db"
+          env {
+            POSTGRES_USER     = "postgres"
+            POSTGRES_PASSWORD = "postgres"
+          }
 
-        check {
-          type     = "script"
-          name     = "check_postgres"
-          command  = "pg_isready"
-          args     = ["--username", "${var.plugin_work_queue_db.username}"]
-          interval = "20s"
-          timeout  = "10s"
+          service {
+            name = db_desc.value.name
 
-          check_restart {
-            limit           = 2
-            grace           = "30s"
-            ignore_warnings = false
+            check {
+              type     = "script"
+              name     = "check_postgres"
+              command  = "pg_isready"
+              args     = ["--username", "postgres"]
+              interval = "20s"
+              timeout  = "10s"
+
+              check_restart {
+                limit           = 2
+                grace           = "30s"
+                ignore_warnings = false
+              }
+            }
           }
         }
       }
@@ -498,94 +442,6 @@ job "grapl-local-infra" {
       }
     }
   }
-
-
-  group "organization-management-db" {
-    network {
-      mode = "bridge"
-      port "postgres" {
-        static = var.organization_management_db.port
-        to     = 5432
-      }
-    }
-
-    task "organization-management-db" {
-      driver = "docker"
-
-      config {
-        image = "postgres-ext:${var.image_tag}"
-        ports = ["postgres"]
-      }
-
-      env {
-        POSTGRES_USER     = var.organization_management_db.username
-        POSTGRES_PASSWORD = var.organization_management_db.password
-      }
-
-      service {
-        name = "organization-management-db"
-
-        check {
-          type     = "script"
-          name     = "check_postgres"
-          command  = "pg_isready"
-          args     = ["--username", "${var.organization_management_db.username}"]
-          interval = "20s"
-          timeout  = "10s"
-
-          check_restart {
-            limit           = 2
-            grace           = "30s"
-            ignore_warnings = false
-          }
-        }
-      }
-    }
-  }
-
-  group "uid-allocator-db" {
-    network {
-      mode = "bridge"
-      port "postgres" {
-        static = var.uid_allocator_db.port
-        to     = 5432
-      }
-    }
-
-    task "uid-allocator-db" {
-      driver = "docker"
-
-      config {
-        image = "postgres-ext:${var.image_tag}"
-        ports = ["postgres"]
-      }
-
-      env {
-        POSTGRES_USER     = var.uid_allocator_db.username
-        POSTGRES_PASSWORD = var.uid_allocator_db.password
-      }
-
-      service {
-        name = "uid-allocator-db"
-
-        check {
-          type     = "script"
-          name     = "check_postgres"
-          command  = "pg_isready"
-          args     = ["--username", "${var.uid_allocator_db.username}"]
-          interval = "20s"
-          timeout  = "10s"
-
-          check_restart {
-            limit           = 2
-            grace           = "30s"
-            ignore_warnings = false
-          }
-        }
-      }
-    }
-  }
-
 
   group "scylla" {
     network {
