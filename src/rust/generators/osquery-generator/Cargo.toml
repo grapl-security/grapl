@@ -1,0 +1,32 @@
+[package]
+name = "osquery-generator"
+version = "0.1.0"
+authors = ["Grapl, Inc. <sales@graplsecurity.com>"]
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1"
+endpoint-plugin = { path = "../../endpoint-plugin" }
+futures = "0.3"
+opentelemetry = { version = "0.16", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.15", features = [
+  "collector_client",
+  "rt-tokio"
+] }
+rust-proto = { path = "../../rust-proto", version = "*" }
+serde = "1.0"
+serde_json = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.17", features = [
+  "fs",
+  "macros",
+  "rt",
+  "rt-multi-thread",
+  "sync",
+  "time",
+] }
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-opentelemetry = "0.16"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid = { version = "0.8", features = ["v4"] }

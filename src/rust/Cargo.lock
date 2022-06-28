@@ -2841,6 +2841,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21326818e99cfe6ce1e524c2a805c189a99b5ae555a35d19f9a284b427d86afa"
 
 [[package]]
+name = "osquery-generator"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "endpoint-plugin",
+ "futures",
+ "opentelemetry 0.16.0",
+ "opentelemetry-jaeger",
+ "rust-proto",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry 0.16.0",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "owo-colors"
 version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
