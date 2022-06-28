@@ -2847,7 +2847,6 @@ dependencies = [
  "async-trait",
  "endpoint-plugin",
  "futures",
- "grapl-config",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
  "rust-proto",
