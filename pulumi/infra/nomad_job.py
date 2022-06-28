@@ -16,7 +16,10 @@ _ValidNomadVarTypes = pulumi.Input[
         Mapping[str, pulumi.Input[_ValidNomadVarTypePrimitives]],
         # Upsettingly, TypedDicts are a Mapping[str, object]
         NomadServicePostgresDbArgs,
-        Mapping[str, pulumi.Input[NomadServiceKafkaCredentials]],
+        Union[
+            pulumi.Input[NomadServiceKafkaCredentials],
+            Mapping[str, pulumi.Input[NomadServiceKafkaCredentials]],
+        ],
     ]
 ]
 NomadVars = Mapping[str, Optional[_ValidNomadVarTypes]]

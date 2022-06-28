@@ -31,19 +31,19 @@ variable "kafka_bootstrap_servers" {
   description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
 }
 
-variable "integration_tests_kafka_consumer_group_name" {
+variable "kafka_consumer_group" {
   type        = string
   description = "The name of the consumer group the integration test consumers will join."
 }
 
-variable "integration_tests_kafka_sasl_username" {
-  type        = string
-  description = "The Confluent Cloud API key to configure integration test consumers with."
-}
-
-variable "integration_tests_kafka_sasl_password" {
-  type        = string
-  description = "The Confluent Cloud API secret to configure integration test consumers with."
+variable "kafka_credentials" {
+  description = "Kafka credentials for the integration tests"
+  type = object({
+    # The username to authenticate with Confluent Cloud cluster.
+    sasl_username = string
+    # The password to authenticate with Confluent Cloud cluster.
+    sasl_password = string
+  })
 }
 
 variable "rust_log" {
@@ -176,8 +176,6 @@ job "rust-integration-tests" {
 
         MG_ALPHAS = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-grpc-public}"
 
-        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
-
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS   = "0.0.0.0:1004" # not used but required due to clap
         ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
         ORGANIZATION_MANAGEMENT_DB_HOSTNAME    = var.organization_management_db.hostname
@@ -193,11 +191,12 @@ job "rust-integration-tests" {
         PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
 
-        KAFKA_SASL_USERNAME       = var.integration_tests_kafka_sasl_username
-        KAFKA_SASL_PASSWORD       = var.integration_tests_kafka_sasl_password
-        KAFKA_CONSUMER_GROUP_NAME = var.integration_tests_kafka_consumer_group_name
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_group
         # (this is an invalid topic name, so it'd throw an error if consumed)
         KAFKA_CONSUMER_TOPIC = "<replace me at integration test setup>"
+        KAFKA_SASL_USERNAME  = var.kafka_credentials.sasl_username
+        KAFKA_SASL_PASSWORD  = var.kafka_credentials.sasl_password
 
         GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
         GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
