@@ -39,6 +39,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .path("/")
                     .secure(true),
             )
+            // Content-Security-Policy
+            .wrap(actix_web::middleware::DefaultHeaders::new()
+                .add((actix_web::http::header::CONTENT_SECURITY_POLICY, "Content-Security-Policy-Report-Only: script-src https://accounts.google.com/gsi/client; frame-src https://accounts.google.com/gsi/; connect-src https://accounts.google.com/gsi/;"))
+            )
             .app_data(web_client)
             .app_data(graphql_endpoint)
             .app_data(model_plugin_deployer_endpoint)

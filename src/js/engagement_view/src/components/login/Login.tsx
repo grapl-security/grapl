@@ -26,7 +26,24 @@ export const LogIn = (_: LoginProps) => {
     });
 
     return (
+        
+
         <div className={classes.loginContainer}>
+            <script src="https://accounts.google.com/gsi/client" async defer></script>
+            <div id="g_id_onload"
+                                data-client_id="340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com"
+                                data-login_uri="/your_login_endpoint"
+                                data-auto_prompt="false">
+                            </div>
+                            <div className="g_id_signin"
+                                data-type="standard"
+                                data-size="large"
+                                data-theme="outline"
+                                data-text="sign_in_with"
+                                data-shape="rectangular"
+                                data-logo_alignment="left">
+                            </div> 
+
             <div className="grapl">
                 <div>
                     <Icon>
@@ -34,6 +51,8 @@ export const LogIn = (_: LoginProps) => {
                     </Icon>
                 </div>
             </div>
+
+            
 
             <div className={classes.formContainer}>
                 <Formik
@@ -90,9 +109,14 @@ export const LogIn = (_: LoginProps) => {
                                     Unsuccessful Login
                                 </div>
                             )}
+                            
                         </Form>
+
+                                               
                     )}
                 </Formik>
+
+                
             </div>
         </div>
     );

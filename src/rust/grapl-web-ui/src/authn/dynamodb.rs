@@ -216,4 +216,5 @@ impl SessionRow {
 pub(crate) struct UserRow {
     pub(crate) grapl_role: GraplRole,
     password_hash: String,
+    pub(crate) organization_id: String,
 }

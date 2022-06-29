@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-actix-web = { version = "4", default_features = false, features = [
+actix-web = { version = "4.1", default_features = false, features = [
   "macros",
   "compress-brotli"
 ] }

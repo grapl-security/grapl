@@ -20,6 +20,10 @@ use crate::authn::{
 pub struct AuthenticatedUser {
     identity: String,
     role: GraplRole,
+    // TODO(inickles): We aren't currently using the organization_id for backend services,
+    // but we plan to soon. When we do we can remove this #[allow(dead_code)].
+    #[allow(dead_code)]
+    organization_id: String,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -55,18 +59,6 @@ impl AuthenticatedUser {
     #[allow(dead_code)]
     pub fn get_role(&self) -> &GraplRole {
         &self.role
-    }
-}
-
-impl AuthenticatedUser {
-    #[allow(dead_code)]
-    #[cfg(test)]
-    /// Used only for constructing tests; should NEVER be used in production code
-    pub fn test_user(identity: &str, role: GraplRole) -> Self {
-        Self {
-            identity: identity.to_string(),
-            role,
-        }
     }
 }
 
@@ -109,6 +101,7 @@ impl FromRequest for AuthenticatedUser {
             let authenticated_user = AuthenticatedUser {
                 identity: session_row.username,
                 role: user_row.grapl_role,
+                organization_id: user_row.organization_id,
             };
 
             Ok(authenticated_user)

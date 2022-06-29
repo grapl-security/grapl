@@ -77,7 +77,7 @@ def _provision_graph(
 
 
 def _create_user(
-    dynamodb: DynamoDBServiceResource, username: str, cleartext: str, role: str
+    dynamodb: DynamoDBServiceResource, username: str, cleartext: str, role: str, org: str,
 ) -> None:
     assert cleartext
     table = dynamodb.Table(os.environ["GRAPL_USER_AUTH_TABLE"])
@@ -86,7 +86,7 @@ def _create_user(
     password_hash = password_hasher.hash(cleartext)
 
     table.put_item(
-        Item={"username": username, "password_hash": password_hash, "grapl_role": role}
+        Item={"username": username, "password_hash": password_hash, "grapl_role": role, "organization_id": org}
     )
 
 
@@ -119,5 +119,6 @@ def provision() -> None:
             username=username,
             cleartext=password,
             role="owner",
+            org="test_org"
         )
         LOGGER.info("created test user")
