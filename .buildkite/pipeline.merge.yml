@@ -105,7 +105,7 @@ steps:
           artifact_file: all_artifacts.json
           stacks:
             - grapl/grapl/testing
-            - grapl/integration-tests/testing
+            - grapl/rust-integration-tests/testing
     env:
       # We're going to be doing some git manipulation, so it's best if
       # we have a clean slate.
