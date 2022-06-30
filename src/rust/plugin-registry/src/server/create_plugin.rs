@@ -79,18 +79,47 @@ impl From<S3MultipartFields> for AbortMultipartUploadRequest {
     }
 }
 
+pub(crate) trait TryToChunk {
+    fn try_into_chunk(self) -> Result<Vec<u8>, PluginRegistryServiceError>;
+}
+
+impl TryToChunk for CreateAnalyzerRequest {
+    fn try_into_chunk(self) -> Result<Vec<u8>, PluginRegistryServiceError> {
+        match self {
+            CreateAnalyzerRequest::Chunk(c) => Ok(c),
+            _ => Err(PluginRegistryServiceError::StreamInputError(
+                "Expected request 1..N to be Chunk",
+            )),
+        }
+    }
+}
+
+impl TryToChunk for CreateGeneratorRequest {
+    fn try_into_chunk(self) -> Result<Vec<u8>, PluginRegistryServiceError> {
+        match self {
+            CreateGeneratorRequest::Chunk(c) => Ok(c),
+            _ => Err(PluginRegistryServiceError::StreamInputError(
+                "Expected request 1..N to be Chunk",
+            )),
+        }
+    }
+}
+
 pub struct UploadStreamMultipartOutput {
     pub stream_length: usize,
     pub completed_parts: Vec<CompletedPart>,
 }
 
 type Error = PluginRegistryServiceError;
-pub async fn upload_stream_multipart_to_s3(
-    request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
+pub(crate) async fn upload_stream_multipart_to_s3<Req>(
+    request: futures::channel::mpsc::Receiver<Req>,
     s3: &S3Client,
     config: &PluginRegistryServiceConfig,
     s3_multipart_fields: S3MultipartFields,
-) -> Result<UploadStreamMultipartOutput, Error> {
+) -> Result<UploadStreamMultipartOutput, Error>
+where
+    Req: TryToChunk,
+{
     let start_time = std::time::SystemTime::now();
     let put_handle = s3
         .create_multipart_upload(s3_multipart_fields.clone().into())
@@ -119,7 +148,7 @@ pub async fn upload_stream_multipart_to_s3(
             tracing::info!(
                 message = "upload_stream_multipart_to_s3 benchmark",
                 duration_millis = ?total_duration.as_millis(),
-                stream_length_bytes = multipart_upload.stream_length,
+                stream_length_bytes = ?out.stream_length,
             );
 
             complete_multipart_upload(
@@ -140,13 +169,16 @@ pub async fn upload_stream_multipart_to_s3(
 
 /// The initial CreateMultipartUpload has happened. Now upload the entire
 /// body stream.
-async fn upload_body(
-    request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
+async fn upload_body<Req>(
+    request: futures::channel::mpsc::Receiver<Req>,
     s3: &S3Client,
     config: &PluginRegistryServiceConfig,
     s3_multipart_fields: S3MultipartFields,
     upload_id: String,
-) -> Result<UploadStreamMultipartOutput, Error> {
+) -> Result<UploadStreamMultipartOutput, Error>
+where
+    Req: TryToChunk,
+{
     let limit_bytes = config.artifact_size_limit_mb.clone() * 1024 * 1024;
     let mut stream_length = 0;
 
@@ -160,10 +192,7 @@ async fn upload_body(
     while let Some((idx, result)) = body_stream.next().await {
         // S3 PartNumber is one-indexed
         let part_number = (idx + 1) as i64;
-        let bytes = match result {
-            CreatePluginRequest::Chunk(c) => Ok(c),
-            _ => Err(Error::StreamInputError("Expected request 1..N to be Chunk")),
-        }?;
+        let bytes: Vec<u8> = result.try_into_chunk()?;
         stream_length += bytes.len();
         if stream_length > limit_bytes {
             Err(Error::StreamInputError("Input exceeds size limit"))?;

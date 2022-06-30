@@ -13,8 +13,8 @@ use rusoto_s3::{
 use rust_proto::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
         CreateAnalyzerRequest,
-        CreateGeneratorRequest,
         CreateAnalyzerRequestMetadata,
+        CreateGeneratorRequest,
         CreateGeneratorRequestMetadata,
         CreatePluginResponse,
         DeployPluginRequest,
@@ -126,12 +126,11 @@ impl PluginRegistryApi for PluginRegistry {
     ) -> Result<CreatePluginResponse, Self::Error> {
         let mut request = request;
 
-        let CreatePluginRequestMetadata {
+        let CreateAnalyzerRequestMetadata {
             tenant_id,
             display_name,
-            plugin_type,
         } = match request.next().await {
-            Some(CreatePluginRequest::Metadata(m)) => m,
+            Some(CreateAnalyzerRequest::Metadata(m)) => m,
             _ => {
                 return Err(Self::Error::StreamInputError(
                     "Expected request 0 to be Metadata",
@@ -139,6 +138,7 @@ impl PluginRegistryApi for PluginRegistry {
             }
         };
 
+        let plugin_type = PluginType::Analyzer;
         let plugin_id = generate_plugin_id();
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
         let s3_multipart_fields = create_plugin::S3MultipartFields {
@@ -147,9 +147,7 @@ impl PluginRegistryApi for PluginRegistry {
             expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
         };
 
-        let multipart_upload =
-            upload_stream_multipart_to_s3(request, &self.s3, &self.config, s3_multipart_fields)
-                .await?;
+        upload_stream_multipart_to_s3(request, &self.s3, &self.config, s3_multipart_fields).await?;
 
         self.db_client
             .create_plugin(
@@ -169,7 +167,7 @@ impl PluginRegistryApi for PluginRegistry {
     #[tracing::instrument(skip(self, request), err)]
     async fn create_generator(
         &self,
-        request: futures::channel::mpsc::Receiver<CreateGeneratorRequest>,
+        _request: futures::channel::mpsc::Receiver<CreateGeneratorRequest>,
     ) -> Result<CreatePluginResponse, Self::Error> {
         unimplemented!()
     }
