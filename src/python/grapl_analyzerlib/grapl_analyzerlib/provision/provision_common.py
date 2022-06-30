@@ -5,7 +5,7 @@ grapl-common is beneath grapl_analyzerlib in the stack, so that's a bad candidat
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, cast
+from typing import TYPE_CHECKING, Any, Dict, cast
 from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.provision.meta_into import meta_into_predicate
 from grapl_analyzerlib.provision.queries import query_dgraph_type

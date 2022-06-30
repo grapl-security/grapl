@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from typing import Tuple
 
 import boto3
 from grapl_common.env_helpers import SecretsManagerClientFactory

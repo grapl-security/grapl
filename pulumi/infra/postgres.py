@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional, cast
+from typing import cast
 
 import pulumi_aws as aws
 import pulumi_random as random

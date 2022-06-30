@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping, Optional
+from typing import Mapping
 
 from infra import config
 

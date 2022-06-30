@@ -4,7 +4,7 @@ import logging
 import sys
 import os.path
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from pathlib import Path
 
 if TYPE_CHECKING:

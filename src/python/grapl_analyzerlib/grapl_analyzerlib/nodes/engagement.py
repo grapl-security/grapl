@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 
-from typing import Any, Dict, List, Tuple, Union, Optional, cast, TypeVar
+from typing import Any, Dict, cast, TypeVar
 
 from grapl_analyzerlib.viewable import traverse_view_iter
 

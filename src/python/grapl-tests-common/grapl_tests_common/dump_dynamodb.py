@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from pprint import pformat as pretty_format
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import boto3
 from grapl_common.env_helpers import DynamoDBResourceFactory

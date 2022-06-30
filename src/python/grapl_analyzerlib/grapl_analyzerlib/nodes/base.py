@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 
-from typing import Any, TypeVar, Set, Type, Optional, List, Dict, Tuple, Union, Callable
+from typing import Any, TypeVar, Callable
 
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.node_types import (

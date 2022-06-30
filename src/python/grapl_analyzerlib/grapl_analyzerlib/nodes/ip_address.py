@@ -2,11 +2,6 @@ from __future__ import annotations
 from typing import (
     Any,
     TypeVar,
-    List,
-    Set,
-    Dict,
-    Tuple,
-    Optional,
     TYPE_CHECKING,
 )
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 import uuid
 import json
 import unittest
-from typing import Dict, Any, Type
+from typing import Any
 
 from grapl_analyzerlib.queryable import V
 from grapl_analyzerlib.grapl_client import GraphClient

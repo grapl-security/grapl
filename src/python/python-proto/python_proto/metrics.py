@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import enum
-from typing import Sequence, Type, Union, cast
+from typing import Sequence, Union, cast
 
 from graplinc.grapl.metrics.v1.metric_types_pb2 import Counter as _Counter
 from graplinc.grapl.metrics.v1.metric_types_pb2 import Gauge as _Gauge

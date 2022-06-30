@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Mapping, Optional, Sequence, TypeVar, cast
+from typing import Any, Mapping, Sequence, TypeVar, cast
 
 from infra import config
 from pulumi.stack_reference import StackReference

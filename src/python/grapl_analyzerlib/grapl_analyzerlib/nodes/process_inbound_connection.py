@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, TypeVar, Set, Dict, Tuple, Optional
+from typing import Any, TypeVar
 
 from grapl_analyzerlib.node_types import (
     EdgeT,

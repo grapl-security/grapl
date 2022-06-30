@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod, abstractstaticmethod
-from typing import Generic, Type, TypeVar
+from typing import Generic, TypeVar
 
 from google.protobuf.message import Message as _Message
 

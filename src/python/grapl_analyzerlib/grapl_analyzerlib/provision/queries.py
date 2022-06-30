@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 
-from typing import Mapping, Any, List
+from typing import Mapping, Any
 
 from grapl_analyzerlib.grapl_client import GraphClient
 

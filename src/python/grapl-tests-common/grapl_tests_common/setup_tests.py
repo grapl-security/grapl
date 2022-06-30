@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from os import environ
-from typing import List
 
 import pytest
 import requests

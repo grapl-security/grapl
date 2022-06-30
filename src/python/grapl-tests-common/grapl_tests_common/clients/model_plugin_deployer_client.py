@@ -7,7 +7,6 @@ import logging
 import os
 from http import HTTPStatus
 from pathlib import Path
-from typing import Dict
 
 import requests
 from grapl_tests_common.clients.common import endpoint_url

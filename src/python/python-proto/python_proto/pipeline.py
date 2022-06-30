@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import uuid
-from typing import Generic, Type, cast
+from typing import Generic, cast
 
 from google.protobuf.any_pb2 import Any as _Any
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Metadata as _Metadata

@@ -10,10 +10,8 @@ from typing import (
     Any,
     ContextManager,
     Dict,
-    Optional,
     Sequence,
     Tuple,
-    Type,
     TypeVar,
     cast,
 )

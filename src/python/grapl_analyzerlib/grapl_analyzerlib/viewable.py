@@ -6,13 +6,9 @@ import sys
 from typing import (
     cast,
     Any,
-    Dict,
     Generic,
     List,
-    Optional,
-    Set,
     TypeVar,
-    Type,
     Union,
     Tuple,
     Iterator,
