@@ -185,6 +185,7 @@ mod tests {
             tenant_id: arbitrary_uuid,
             display_name: "arbitrary".to_owned(),
             plugin_type: "analyzer".to_owned(),
+            event_source_id: None,
             artifact_s3_key: "arbitrary".to_owned(),
         };
         let service_config = arbitrary_service_config();
