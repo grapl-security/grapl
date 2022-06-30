@@ -694,7 +694,6 @@ pub mod event_source {
 pub mod plugin_registry {
     use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
-        CreatePluginRequestMetadata,
         CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
@@ -704,7 +703,7 @@ pub mod plugin_registry {
         GetGeneratorsForEventSourceResponse,
         GetPluginRequest,
         GetPluginResponse,
-        Plugin,
+        PluginMetadata,
         PluginType,
         TearDownPluginRequest,
         TearDownPluginResponse,
@@ -722,17 +721,25 @@ pub mod plugin_registry {
     }
 
     prop_compose! {
-        pub fn plugins()(
-            plugin_id in uuids(),
+        pub fn plugin_metadatas()(
+            tenant_id in uuids(),
             display_name in string_not_empty(),
             plugin_type in plugin_types(),
-            plugin_binary in any::<Vec<u8>>(),
-        ) -> Plugin {
-            Plugin {
-                plugin_id,
-                display_name,
-                plugin_type,
-                plugin_binary,
+            event_source_id in uuids(),
+        ) -> PluginMetadata {
+            match plugin_type {
+                PluginType::Generator => PluginMetadata {
+                    tenant_id,
+                    display_name,
+                    plugin_type,
+                    event_source_id: Some(event_source_id),
+                },
+                _ => PluginMetadata {
+                    tenant_id,
+                    display_name,
+                    plugin_type,
+                    event_source_id: None,
+                }
             }
         }
     }
@@ -740,22 +747,8 @@ pub mod plugin_registry {
     pub fn create_plugin_requests() -> impl Strategy<Value = CreatePluginRequest> {
         prop_oneof![
             any::<Vec<u8>>().prop_map(CreatePluginRequest::Chunk),
-            create_plugin_request_metadatas().prop_map(CreatePluginRequest::Metadata)
+            plugin_metadatas().prop_map(CreatePluginRequest::Metadata)
         ]
-    }
-
-    prop_compose! {
-        pub fn create_plugin_request_metadatas()(
-            tenant_id in uuids(),
-            display_name in string_not_empty(),
-            plugin_type in plugin_types(),
-        ) -> CreatePluginRequestMetadata {
-            CreatePluginRequestMetadata {
-                tenant_id,
-                display_name,
-                plugin_type,
-            }
-        }
     }
 
     prop_compose! {
@@ -835,10 +828,12 @@ pub mod plugin_registry {
 
     prop_compose! {
         pub fn get_plugin_responses()(
-            plugin in plugins(),
+            plugin_id in uuids(),
+            plugin_metadata in plugin_metadatas(),
         ) -> GetPluginResponse {
             GetPluginResponse {
-                plugin
+                plugin_id,
+                plugin_metadata,
             }
         }
     }

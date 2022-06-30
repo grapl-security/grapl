@@ -61,7 +61,7 @@ impl PluginRegistryServiceClient {
     /// Simplified wrapper function for create_plugin
     pub async fn create_plugin(
         &mut self,
-        metadata: native::CreatePluginRequestMetadata,
+        metadata: native::PluginMetadata,
         plugin_artifact: impl Sized + Iterator<Item = u8> + Send + 'static,
     ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
         // Split the artifact up into 5MB chunks
@@ -119,12 +119,17 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::GetGeneratorsForEventSourceRequest,
     ) -> Result<native::GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> {
-        self.proto_client
+        let response = self
+            .proto_client
             .get_generators_for_event_source(proto::GetGeneratorsForEventSourceRequest::from(
                 request,
             ))
             .await?;
-        todo!()
+
+        let response =
+            native::GetGeneratorsForEventSourceResponse::try_from(response.into_inner())?;
+
+        Ok(response)
     }
 
     /// Given information about a tenant, return all analyzers for that tenant

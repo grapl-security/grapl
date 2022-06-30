@@ -320,9 +320,8 @@ mod plugin_registry {
     use super::*;
 
     proptest! {
-        // For the record, codec
         #[test]
-        fn test_serde_plugins(value in pr_strats::plugins()) {
+        fn test_serde_plugin_metadatas(value in pr_strats::plugin_metadatas()) {
             check_encode_decode_invariant(value)
         }
 
@@ -352,8 +351,6 @@ mod plugin_registry {
         fn test_serde_deploy_plugin_responses(value in pr_strats::deploy_plugin_responses()) {
             check_encode_decode_invariant(value)
         }
-
-        //
 
         #[test]
         fn test_serde_get_generators_for_event_source_requests(value in pr_strats::get_generators_for_event_source_requests()) {
