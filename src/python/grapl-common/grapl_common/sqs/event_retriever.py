@@ -20,9 +20,7 @@ class EventRetriever:
         self.queue_url = queue_url
 
     def retrieve(self) -> Iterator[SQSMessage]:
-        """
-        Yield batches of S3Put records from SQS.
-        """
+        """Yield batches of S3Put records from SQS."""
         while True:
             try:
                 sqs = SQSClientFactory(boto3).from_env()

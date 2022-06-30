@@ -11,10 +11,11 @@ class ExecutionHit(object):
         lenses: List[Tuple[str, str]],
         risky_node_keys: Optional[Sequence[str]] = None,
     ) -> None:
-        """
-        When an Analyzer finds a risk, its :py:meth:`~grapl_analyzerlib.analyzer.Analyzer.on_response` method will
-        send ExecutionHit(s) over to EngagementCreator. Basically, an ExecutionHit is a minimal, serializable
-        representation of a future Risk that has yet to be written to the db.
+        """When an Analyzer finds a risk, its
+        :py:meth:`~grapl_analyzerlib.analyzer.Analyzer.on_response` method will
+        send ExecutionHit(s) over to EngagementCreator. Basically, an
+        ExecutionHit is a minimal, serializable representation of a future Risk
+        that has yet to be written to the db.
 
         :param analyzer_name:
         :param node_view:

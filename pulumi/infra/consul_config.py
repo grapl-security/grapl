@@ -7,9 +7,7 @@ import pulumi
 
 
 class ConsulConfig(pulumi.ComponentResource):
-    """
-    Consul config entries
-    """
+    """Consul config entries."""
 
     def __init__(
         self,

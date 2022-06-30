@@ -7,9 +7,7 @@ import pulumi
 
 
 class AlarmSink(pulumi.ComponentResource):
-    """
-    A place for an Alarm to go.
-    """
+    """A place for an Alarm to go."""
 
     def __init__(
         self,
@@ -40,9 +38,10 @@ class AlarmSink(pulumi.ComponentResource):
 
 
 class OpsAlarms(pulumi.ComponentResource):
-    """
-    Alarms meant for the operator of the Grapl stack.
-    That is to say: Grapl Inc (in the Grapl Cloud case), or VeryCool Corp (in the on-prem case).
+    """Alarms meant for the operator of the Grapl stack.
+
+    That is to say: Grapl Inc (in the Grapl Cloud case), or VeryCool
+    Corp (in the on-prem case).
     """
 
     def __init__(

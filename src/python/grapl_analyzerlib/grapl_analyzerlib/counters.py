@@ -40,9 +40,7 @@ class SubgraphCounter(object):
         self.cache = cache
 
     def get_count_for(self, query: Queryable, max_count: int = 4) -> int:
-        """
-        Generic caching for a subgraph query
-        """
+        """Generic caching for a subgraph query."""
 
         count = query.get_count(self.graph_client, first=max_count)
 
@@ -60,9 +58,8 @@ class ParentChildCounter(object):
         child_process_name: Optional[str] = None,
         max_count: int = 4,
     ) -> int:
-        """
-        Given an image name, and optionally a path, return the number of times
-        they occur (alongside one another) in the table.
+        """Given an image name, and optionally a path, return the number of
+        times they occur (alongside one another) in the table.
 
         If no path is provided, just count the process_name.
         """
@@ -106,9 +103,8 @@ class GrandParentGrandChildCounter(object):
         grand_child_process_name: str,
         max_count: int = 4,
     ) -> int:
-        """
-        Given an image name, and optionally a path, return the number of times
-        they occur (alongside one another) in the table.
+        """Given an image name, and optionally a path, return the number of
+        times they occur (alongside one another) in the table.
 
         If no path is provided, just count the process_name.
         """

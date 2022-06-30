@@ -16,9 +16,7 @@ FIRECRACKER_ROOTFS_FILENAME = "firecracker_rootfs.tar.gz"
 
 
 class FirecrackerAssets(pulumi.ComponentResource):
-    """
-    Uploads Firecracker assets from disk-or-Cloudsmith into
-    S3 bucket.
+    """Uploads Firecracker assets from disk-or-Cloudsmith into S3 bucket.
 
     TODO: In prod, should we serve the assets from S3 or Cloudsmith?
     https://github.com/grapl-security/issue-tracker/issues/857

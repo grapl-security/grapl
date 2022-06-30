@@ -8,9 +8,8 @@ import pulumi
 
 
 class ConsulIntentions(pulumi.ComponentResource):
-    """
-    This class takes in a directory of json intention config files, parses them and uses them to create intentions dynamically.
-    """
+    """This class takes in a directory of json intention config files, parses
+    them and uses them to create intentions dynamically."""
 
     def __init__(
         self,

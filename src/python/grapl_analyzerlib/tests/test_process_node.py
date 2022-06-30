@@ -34,7 +34,7 @@ def assert_equal_props(a: Viewable, b: Viewable) -> None:
 
 
 def assert_equal_identity(a: Viewable, b: Viewable) -> None:
-    """Assert these nodes have the same type and uuid"""
+    """Assert these nodes have the same type and uuid."""
     assert a.node_key == b.node_key
 
 
@@ -49,9 +49,7 @@ def get_or_create_process_node_deprecated(
     image_name: str,
     process_name: str,
 ) -> ProcessView:
-    """
-    Deprecated in favor of property_view_strategy.py
-    """
+    """Deprecated in favor of property_view_strategy.py."""
     node_props: Dict[str, Property] = {
         "process_id": process_id,
         "arguments": arguments,

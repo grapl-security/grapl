@@ -66,9 +66,7 @@ def create_edge(
 
 
 def random_key_for_test(test_case: unittest.TestCase) -> str:
-    """
-    The atrociously-named TestCase#id returns things like
-    tests.test_ip_address_node.TestIpAddressQuery.test__single_ip_addr_node__query_by_node_key
-    letting us tie back a node to the test that created it
-    """
+    """The atrociously-named TestCase#id returns things like tests.test_ip_addr
+    ess_node.TestIpAddressQuery.test__single_ip_addr_node__query_by_node_key
+    letting us tie back a node to the test that created it."""
     return "{}{}".format(test_case.id(), uuid.uuid4())

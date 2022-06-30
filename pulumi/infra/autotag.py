@@ -13,11 +13,8 @@ import pulumi
 
 
 def register_auto_tags(auto_tags: Mapping[str, str]) -> None:
-    """Registers a global stack transformation that merges a set of tags
-    with whatever was also explicitly added to the resource
-    definition.
-
-    """
+    """Registers a global stack transformation that merges a set of tags with
+    whatever was also explicitly added to the resource definition."""
     pulumi.runtime.register_stack_transformation(lambda args: auto_tag(args, auto_tags))
 
 
@@ -35,7 +32,8 @@ def auto_tag(
 
 
 def is_taggable(t: str) -> bool:
-    """Returns true if the given resource type is an AWS resource that supports tags."""
+    """Returns true if the given resource type is an AWS resource that supports
+    tags."""
     return t in taggable_resource_types
 
 

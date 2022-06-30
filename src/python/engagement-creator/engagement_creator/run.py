@@ -17,8 +17,8 @@ TRACER = get_tracer(service_name="engagement_creator", module_name=__name__)
 
 
 async def _main() -> None:
-    """
-    Some TODOs to bring this inline with sqs-executor in Rust:
+    """Some TODOs to bring this inline with sqs-executor in Rust:
+
     - add the shortcut-to-DEAD_LETTER_QUEUE_URL case
     """
     with TRACER.start_as_current_span(__name__):

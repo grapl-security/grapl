@@ -59,9 +59,8 @@ class ApiGateway(pulumi.ComponentResource):
         nomad_agents_private_subnet_ids: pulumi.Input[List[str]],
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
-        """
-        Quick diatribe on how this is all hooked up:
-        Incoming request
+        """Quick diatribe on how this is all hooked up: Incoming request.
+
         --> API Gateway Route (snapshotted as a Stage)
         --> API Gateway "integration"
         --> VPCLink

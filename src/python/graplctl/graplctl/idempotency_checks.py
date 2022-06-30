@@ -23,9 +23,9 @@ def is_grapl_provisioned(
 
 
 def _table_is_empty(table: Table) -> bool:
-    """
-    fun fact: some_table.item_count? It's only updated every 6 hours.
-    you have to do a scan.
+    """fun fact: some_table.item_count?
+
+    It's only updated every 6 hours. you have to do a scan.
     """
     items = table.scan()["Items"]
     if items:

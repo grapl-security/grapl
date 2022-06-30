@@ -61,10 +61,8 @@ class NomadJob(pulumi.ComponentResource):
 
     @staticmethod
     def _json_dump_complex_types(vars: NomadVars) -> NomadVars:
-        """
-        Nomad accepts input of lists and maps, but the Nomad/Pulumi plugin doesn't
-        convert them correctly.
-        """
+        """Nomad accepts input of lists and maps, but the Nomad/Pulumi plugin
+        doesn't convert them correctly."""
 
         def escape_str_value(
             val: _ValidNomadVarTypePrimitives,
@@ -87,9 +85,11 @@ class NomadJob(pulumi.ComponentResource):
         }
 
     def _fix_pulumi_preview(self, vars: NomadVars) -> NomadVars:
-        """
-        This is an ugly hack to deal with pulumi preview never resolving Outputs into a real string.
-        Without this, the vars gets unset if there's a single key with an unresolved output
+        """This is an ugly hack to deal with pulumi preview never resolving
+        Outputs into a real string.
+
+        Without this, the vars gets unset if there's a single key with
+        an unresolved output
         """
         if pulumi.runtime.is_dry_run():
             pulumi_preview_replacement_string = "PULUMI_PREVIEW_STRING"

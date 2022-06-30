@@ -17,7 +17,7 @@ def aws(
     graplctl_state: State,
     ctx: click.Context,
 ) -> None:
-    """commands for managing grapl aws resources"""
+    """commands for managing grapl aws resources."""
     pass
 
 
@@ -31,7 +31,7 @@ def aws(
 @pass_graplctl_state
 @click.pass_context
 def wipe_state(ctx: click.Context, graplctl_state: State) -> None:
-    """Wipe dynamodb"""
+    """Wipe dynamodb."""
     assert idempotency_checks.is_grapl_provisioned(
         dynamodb=graplctl_state.dynamodb,
         schema_table=graplctl_state.schema_table,

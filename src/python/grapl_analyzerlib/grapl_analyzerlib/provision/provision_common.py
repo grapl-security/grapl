@@ -1,6 +1,8 @@
-"""
-A note: this should eventually be moved out to a lib on top of `grapl_analyzerlib`.
-grapl-common is beneath grapl_analyzerlib in the stack, so that's a bad candidate.
+"""A note: this should eventually be moved out to a lib on top of
+`grapl_analyzerlib`.
+
+grapl-common is beneath grapl_analyzerlib in the stack, so that's a bad
+candidate.
 """
 
 from __future__ import annotations

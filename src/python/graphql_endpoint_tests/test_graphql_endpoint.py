@@ -21,8 +21,9 @@ GqlLensDict = Dict[str, Any]
 
 @lru_cache(maxsize=1)
 def hacky_memoized_actix_session() -> str:
-    """
-    Doesn't work as a Hypothesis given because we try to evaluate those, even
+    """Doesn't work as a Hypothesis given because we try to evaluate those,
+    even.
+
     for unit tests - despite not having the right env vars for it at unit test
     time.
 

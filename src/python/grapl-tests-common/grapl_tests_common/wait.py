@@ -57,9 +57,7 @@ class WaitForSqsQueue(WaitForResource):
 
 
 class WaitForCondition(WaitForResource):
-    """
-    Retry a Callable until it returns true
-    """
+    """Retry a Callable until it returns true."""
 
     def __init__(self, fn: Callable[[], Optional[bool]]) -> None:
         self.fn = fn
@@ -76,9 +74,7 @@ class WaitForCondition(WaitForResource):
 
 
 class WaitForNoException(WaitForResource):
-    """
-    Retry a Callable until it stops throwing exceptions.
-    """
+    """Retry a Callable until it stops throwing exceptions."""
 
     def __init__(self, fn: Callable) -> None:
         self.fn = fn

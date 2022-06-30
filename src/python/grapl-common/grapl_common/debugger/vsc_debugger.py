@@ -1,8 +1,8 @@
-"""
-This is reasonably well-documented in `vscode_debugger.rst`.
+"""This is reasonably well-documented in `vscode_debugger.rst`.
 
-I arbitrarily chose `debugpy`, the VS Code debugger (formerly known as ptsvd).
-It'd be pretty easy to add the PyCharm/IntelliJ debugger too (which uses pydevd)
+I arbitrarily chose `debugpy`, the VS Code debugger (formerly known as
+ptsvd). It'd be pretty easy to add the PyCharm/IntelliJ debugger too
+(which uses pydevd)
 """
 import os
 import subprocess
@@ -30,10 +30,8 @@ def _install_from_pip(package: str) -> None:
 
 
 def _should_debug_service(service: ServiceIdentifier) -> bool:
-    """
-    When you set
-    DEBUG_SERVICES=grapl_e2e_tests
-    you'll start a debug listener on the `grapl_e2e_tests`
+    """When you set DEBUG_SERVICES=grapl_e2e_tests you'll start a debug
+    listener on the `grapl_e2e_tests`
 
     When you set
     DEBUG_SERVICES=grapl_e2e_tests,some_future_service

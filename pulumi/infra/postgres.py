@@ -32,9 +32,7 @@ class PostgresConfigValues:
 
 
 class Postgres(pulumi.ComponentResource):
-    """
-    A Postgres instance running in RDS.
-    """
+    """A Postgres instance running in RDS."""
 
     def __init__(
         self,

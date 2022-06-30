@@ -55,9 +55,7 @@ def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
 
 
 def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
-    """
-    Build a map of {task name -> docker image identifier}.
-    """
+    """Build a map of {task name -> docker image identifier}."""
     builder = DockerImageIdBuilder(
         container_repository=config.container_repository(),
         artifacts=artifacts,

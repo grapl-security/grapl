@@ -9,12 +9,11 @@ import pulumi
 
 class DynamoDBTable(aws.dynamodb.Table):
     """Specialization of a regular DynamoDB table resource to ensure
-    commonalities across all our tables, make things less verbose, and
-    provide additional functionality.
+    commonalities across all our tables, make things less verbose, and provide
+    additional functionality.
 
-    In particular, all tables have a `PAY_PER_REQUEST` billing mode,
-    as well as an explicitly-set physical name.
-
+    In particular, all tables have a `PAY_PER_REQUEST` billing mode, as
+    well as an explicitly-set physical name.
     """
 
     def __init__(
@@ -114,10 +113,8 @@ class DynamoDB(pulumi.ComponentResource):
 def grant_read_write_on_tables(
     role: aws.iam.Role, tables: Sequence[aws.dynamodb.Table]
 ) -> None:
-    """Rather than granting permissions to each table individually, we
-    grant to multiple tables at once in order to keep overall Role sizes
-    down.
-    """
+    """Rather than granting permissions to each table individually, we grant to
+    multiple tables at once in order to keep overall Role sizes down."""
     aws.iam.RolePolicy(
         f"{role._name}-reads-and-writes-dynamodb-tables",
         role=role.name,
@@ -155,10 +152,8 @@ def grant_read_write_on_tables(
 def grant_read_on_tables(
     role: aws.iam.Role, tables: Sequence[aws.dynamodb.Table]
 ) -> None:
-    """Rather than granting permissions to each table individually, we
-    grant to multiple tables at once in order to keep overall Role sizes
-    down.
-    """
+    """Rather than granting permissions to each table individually, we grant to
+    multiple tables at once in order to keep overall Role sizes down."""
     aws.iam.RolePolicy(
         f"{role._name}-reads-dynamodb-tables",
         role=role.name,

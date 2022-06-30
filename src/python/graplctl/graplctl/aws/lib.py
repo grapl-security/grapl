@@ -11,9 +11,7 @@ LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
 
 def _wipe_dynamodb_table(table: Table) -> None:
-    """
-    Based off https://stackoverflow.com/a/61641725
-    """
+    """Based off https://stackoverflow.com/a/61641725."""
     # get the table keys - assume AttributeName exists
     table_key_names = [str(key["AttributeName"]) for key in table.key_schema]
 

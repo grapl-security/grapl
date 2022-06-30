@@ -7,9 +7,7 @@ import pulumi
 
 
 class Cache(pulumi.ComponentResource):
-    """
-    An ElastiCache cluster instance.
-    """
+    """An ElastiCache cluster instance."""
 
     def __init__(
         self,
@@ -80,8 +78,7 @@ class Cache(pulumi.ComponentResource):
 
     @property
     def endpoint(self) -> pulumi.Output[str]:
-        """
-        Return an endpoint URL for accessing this cache from other services.
+        """Return an endpoint URL for accessing this cache from other services.
 
         Uses the "redis://" protocol.
         """
@@ -95,23 +92,19 @@ class Cache(pulumi.ComponentResource):
 
     @property
     def host(self) -> pulumi.Output[str]:
-        """
-        Returns the host of the first (and only) node in the cluster.
-        """
+        """Returns the host of the first (and only) node in the cluster."""
         return self.cluster.cache_nodes[0].address  # type: ignore[no-any-return]
 
     @property
     def port(self) -> pulumi.Output[int]:
-        """
-        Returns the port of the first (and only) node in the cluster.
-        """
+        """Returns the port of the first (and only) node in the cluster."""
         return self.cluster.cache_nodes[0].port  # type: ignore[no-any-return]
 
     def allow_egress_to_cache_for(
         self, name: str, origin: aws.ec2.SecurityGroup
     ) -> None:
-        """
-        Create an egress rule for the `origin` security group, allowing communication to the cache's port.
+        """Create an egress rule for the `origin` security group, allowing
+        communication to the cache's port.
 
         The security group rule will be a child of the `origin` security group Pulumi resource.
 

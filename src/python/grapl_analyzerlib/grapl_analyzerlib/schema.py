@@ -23,9 +23,7 @@ def default_properties() -> Dict[str, PropType]:
 
 
 class SingletonMeta(type):
-    """
-    The SingletonMeta allows is to construct a class only once, globally.
-    """
+    """The SingletonMeta allows is to construct a class only once, globally."""
 
     _instances = {}
 
@@ -40,12 +38,12 @@ ReturnsViewableType = Callable[[], ViewableType]
 
 
 class Schema(metaclass=SingletonMeta):
-    """
-    Schemas represent an abstract Singleton. Each node type should use a Schema to define itself.
+    """Schemas represent an abstract Singleton. Each node type should use a
+    Schema to define itself.
 
-    We use a Singleton pattern in order to allow for arbitrary patching of the schemas. This is necessary
-    so that plugin nodes can attach new properties and edges to existing schemas.
-
+    We use a Singleton pattern in order to allow for arbitrary patching
+    of the schemas. This is necessary so that plugin nodes can attach
+    new properties and edges to existing schemas.
     """
 
     def __init__(

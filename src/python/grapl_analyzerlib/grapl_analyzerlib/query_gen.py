@@ -100,8 +100,7 @@ def gen_prop_filters(q: "Queryable", var_alloc: VarAllocator) -> Optional[str]:
 
 
 def find_func(q: "Queryable", var_alloc: VarAllocator) -> str:
-    """
-    `find_func` will look for the most optimal filter.
+    """`find_func` will look for the most optimal filter.
 
     * Singular EQ on a unique value
     * Singular eq on a non-unique value
@@ -192,8 +191,8 @@ def into_query_block(
     binding: Optional[str] = None,
     root_node: Optional["Queryable"] = None,
 ) -> Tuple[str, str]:
-    """
-    Returns the property block and the filters
+    """Returns the property block and the filters.
+
     :param q:
     :param var_alloc:
     :return:

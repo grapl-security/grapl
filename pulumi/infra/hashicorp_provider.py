@@ -14,9 +14,11 @@ def get_hashicorp_provider_address(
     stack: pulumi.StackReference,
     additional_configs: Mapping[str, Any] = {},
 ) -> Any:
-    """
-    This supports getting a Provider object with an explicit address set.
-    This will take the address from the pulumi config file if it is set or fall back to the address in the stack refererence. This allows using SSM port tunneling when run from a workstation.
+    """This supports getting a Provider object with an explicit address set.
+    This will take the address from the pulumi config file if it is set or fall
+    back to the address in the stack refererence. This allows using SSM port
+    tunneling when run from a workstation.
+
     :param pulumi_class: Should be one of pulumi_consul or pulumi_nomad
     :param provider_type: One of "consul", "nomad"
     :param stack: The corresponding stack reference

@@ -34,9 +34,8 @@ class SqsTimeoutManager:
         assert self.visibility_timeout > 10
 
     async def keep_alive(self) -> None:
-        """
-        (Visibility timeout means, "if you haven't finished processing a message by then,
-        SQS will put it back on the queue")
+        """(Visibility timeout means, "if you haven't finished processing a
+        message by then, SQS will put it back on the queue")
 
         You grab a message from SQS
         which has, by default, a visibility timeout of 30s
@@ -83,27 +82,26 @@ class SqsTimeoutManager:
         )
 
     def _get_next_sleep(self, loop_i: int) -> int:
-        """
-        so with timeout 30:
+        """so with timeout 30:
+
         20, then 50, then 80
         """
         assert loop_i > 0
         return (self.visibility_timeout * loop_i) - 10
 
     def _get_next_visibility(self, loop_i: int) -> int:
-        """
-        so with timeout 30:
-        (the message is, by default 30; and then:)
-        60, then 90, then 120...
+        """so with timeout 30:
+
+        (the message is, by default 30; and then:) 60, then 90, then
+        120...
         """
         assert loop_i > 0
         return self.visibility_timeout * (loop_i + 1)
 
     def _change_visibility(self, new_visibility: int) -> None:
-        """
-        Worth noting: the message's elapsed timeout resets when you change message visibility;
-        it is as if you'd just popped it off of SQS at 0 seconds.
-        """
+        """Worth noting: the message's elapsed timeout resets when you change
+        message visibility; it is as if you'd just popped it off of SQS at 0
+        seconds."""
         try:
             self.sqs_client.change_message_visibility(
                 QueueUrl=self.queue_url,

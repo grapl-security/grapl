@@ -1,6 +1,4 @@
-"""
-Consolidates various SQS queue policies in one place.
-"""
+"""Consolidates various SQS queue policies in one place."""
 
 import json
 
@@ -10,8 +8,7 @@ import pulumi
 
 
 def consumption_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
-    """
-    Adds an inline policy to `role` for consuming messages from `queue`.
+    """Adds an inline policy to `role` for consuming messages from `queue`.
 
     The resulting `RolePolicy` resource is a child of the role.
     """
@@ -43,10 +40,7 @@ def consumption_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
 
 
 def allow_send_from_topic(queue: aws.sqs.Queue, topic: aws.sns.Topic) -> None:
-    """
-    Set a policy on Queue
-    that allows SendMessages from Topic
-    """
+    """Set a policy on Queue that allows SendMessages from Topic."""
     policy = pulumi.Output.all(queue_arn=queue.arn, topic_arn=topic.arn).apply(
         lambda input: json.dumps(
             {

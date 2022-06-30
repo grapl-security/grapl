@@ -1,6 +1,4 @@
-"""
-Mostly copied from etc/local_grapl/bin/upload_plugin.py
-"""
+"""Mostly copied from etc/local_grapl/bin/upload_plugin.py."""
 from __future__ import annotations
 
 import logging
@@ -71,9 +69,8 @@ class ModelPluginDeployerClient:
         return resp
 
     def _is_valid_deployable_file(self, file_path: str) -> bool:
-        """
-        not exactly the most bulletproof heuristic in the world, feel free to modify it
-        """
+        """not exactly the most bulletproof heuristic in the world, feel free
+        to modify it."""
         if file_path.endswith(".pyc"):
             return False
         if file_path.endswith(".ipynb"):

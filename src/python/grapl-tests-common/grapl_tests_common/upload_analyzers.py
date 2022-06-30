@@ -19,10 +19,8 @@ AnalyzerUpload = NamedTuple(
 def upload_analyzers(
     s3_client: S3Client, analyzers: Sequence[AnalyzerUpload], analyzers_bucket: str
 ) -> None:
-    """
-    Basically reimplementing upload_local_analyzers.sh
-    Janky, since Jesse will have an analyzer-uploader service pretty soon.
-    """
+    """Basically reimplementing upload_local_analyzers.sh Janky, since Jesse
+    will have an analyzer-uploader service pretty soon."""
     for (local_path, s3_key) in analyzers:
         assert s3_key.startswith("analyzers/"), s3_key
         assert s3_key.endswith("/main.py"), s3_key
