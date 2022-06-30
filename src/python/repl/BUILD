@@ -7,5 +7,4 @@ python_sources(
         "3rdparty/python#python-nomad",
         # ^ Don't be afraid to add more dependencies here as-needed!
     ],
-    sources=[],
 )
