@@ -20,7 +20,7 @@ clap = { version = "3.0", default_features = false, features = [
 ] }
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
-rust-proto-new = { path = "../rust-proto-new" }
+rust-proto = { path = "../rust-proto" }
 thiserror = "1.0.30"
 tokio = { version = "1.17", features = ["full"] }
 tonic-health = "0.5.0"
@@ -41,4 +41,4 @@ futures = "0.3"
 tracing-subscriber = "0.3"
 
 [features]
-integration = []
+integration_tests = []

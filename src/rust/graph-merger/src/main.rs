@@ -1,28 +1,44 @@
-use grapl_config::{
-    env_helpers::{
-        s3_event_emitters_from_env,
-        FromEnv,
+use std::sync::Arc;
+
+use clap::Parser;
+use dgraph_tonic::Client as DgraphClient;
+use futures::StreamExt;
+use grapl_config::env_helpers::FromEnv;
+use kafka::{
+    config::{
+        ConsumerConfig,
+        ProducerConfig,
     },
-    event_caches,
+    StreamProcessor,
+    StreamProcessorError,
 };
-use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{
-    decoder::ProtoDecoder,
-    serialization::MergedGraphSerializer,
+use opentelemetry::{
+    global,
+    sdk::propagation::TraceContextPropagator,
 };
 use rusoto_dynamodb::DynamoDbClient;
-use rusoto_sqs::SqsClient;
-use sqs_executor::{
-    make_ten,
-    s3_event_retriever::S3PayloadRetriever,
+use rust_proto::graplinc::grapl::{
+    api::graph::v1beta1::{
+        IdentifiedGraph,
+        MergedGraph,
+    },
+    pipeline::{
+        v1beta1::Metadata,
+        v1beta2::Envelope,
+    },
 };
-use tracing::info;
+use tokio::sync::Mutex;
+use tracing::instrument::WithSubscriber;
+use tracing_subscriber::{
+    prelude::*,
+    EnvFilter,
+};
 
 use crate::{
     reverse_resolver::ReverseEdgeResolver,
     service::{
-        time_based_key_fn,
         GraphMerger,
+        GraphMergerError,
     },
 };
 
@@ -31,64 +47,151 @@ pub mod service;
 pub mod upsert_util;
 pub mod upserter;
 
-#[tracing::instrument]
-async fn handler() -> Result<(), Box<dyn std::error::Error>> {
-    let (env, _guard) = grapl_config::init_grapl_env!();
-    info!("Starting graph-merger");
+#[tokio::main]
+async fn main() -> Result<(), GraphMergerError> {
+    let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
 
-    let sqs_client = SqsClient::from_env();
+    // initialize json logging layer
+    let log_layer = tracing_subscriber::fmt::layer()
+        .json()
+        .with_writer(non_blocking);
 
-    let cache = &mut event_caches(&env).await;
+    // initialize tracing layer
+    global::set_text_map_propagator(TraceContextPropagator::new());
+    let tracer = opentelemetry_jaeger::new_pipeline()
+        .with_service_name("pipeline-ingress")
+        .install_batch(opentelemetry::runtime::Tokio)?;
+
+    // register a subscriber
+    let filter = EnvFilter::from_default_env();
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(log_layer)
+        .with(tracing_opentelemetry::layer().with_tracer(tracer))
+        .init();
+
+    tracing::info!("logger configured successfully");
 
     let mg_alphas = grapl_config::mg_alphas();
+    let dynamo = DynamoDbClient::from_env();
+    let reverse_edge_resolver = ReverseEdgeResolver::new(dynamo, 1000);
 
-    let graph_merger = &mut make_ten(async {
-        let mg_alphas_copy = mg_alphas.clone();
-        tracing::debug!(
-            mg_alphas=?&mg_alphas_copy,
-            "Connecting to mg_alphas"
-        );
-        let dynamo = DynamoDbClient::from_env();
-        let reverse_edge_resolver =
-            ReverseEdgeResolver::new(dynamo, MetricReporter::new(&env.service_name), 1000);
-        GraphMerger::new(mg_alphas_copy, reverse_edge_resolver)
-    })
-    .await;
+    tracing::debug!(
+        mg_alphas =? &mg_alphas,
+        message = "Connecting to mg_alphas"
+    );
 
-    let serializer = &mut make_ten(async { MergedGraphSerializer::default() }).await;
+    let graph_merger = GraphMerger::new(DgraphClient::new(mg_alphas)?, reverse_edge_resolver);
 
-    let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
+    let consumer_config = ConsumerConfig::parse();
+    let producer_config = ProducerConfig::parse();
 
-    let s3_payload_retriever = &mut make_ten(async {
-        S3PayloadRetriever::new(
-            |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            ProtoDecoder::default(),
-            MetricReporter::new(&env.service_name),
-        )
-    })
-    .await;
-
-    info!("Starting process_loop");
-    sqs_executor::process_loop(
-        grapl_config::source_queue_url(),
-        grapl_config::dead_letter_queue_url(),
-        cache,
-        sqs_client.clone(),
-        graph_merger,
-        s3_payload_retriever,
-        s3_emitter,
-        serializer,
-        MetricReporter::new(&env.service_name),
+    handler(
+        Arc::new(Mutex::new(graph_merger)),
+        consumer_config,
+        producer_config,
     )
-    .await;
-
-    info!("Exiting");
-
-    Ok(())
+    .await
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    handler().await?;
+#[tracing::instrument(skip(graph_merger))]
+async fn handler(
+    graph_merger: Arc<Mutex<GraphMerger>>,
+    consumer_config: ConsumerConfig,
+    producer_config: ProducerConfig,
+) -> Result<(), GraphMergerError> {
+    tracing::info!(
+        message = "configuring kafka stream processor",
+        bootstrap_servers = %consumer_config.bootstrap_servers,
+        consumer_group_name = %consumer_config.consumer_group_name,
+        consumer_topic = %consumer_config.topic,
+        producer_topic = %producer_config.topic,
+    );
+
+    // TODO: also construct a stream processor for retries
+
+    let stream_processor: StreamProcessor<Envelope<IdentifiedGraph>, Envelope<MergedGraph>> =
+        StreamProcessor::new(consumer_config, producer_config)?;
+
+    tracing::info!(message = "kafka stream processor configured successfully",);
+
+    let stream = stream_processor.stream::<_, _, StreamProcessorError>(
+        move |event: Result<Envelope<IdentifiedGraph>, StreamProcessorError>| {
+            let graph_merger = graph_merger.clone();
+            async move {
+                let envelope = event?;
+                match graph_merger
+                    .lock()
+                    .await
+                    .handle_event(envelope.inner_message)
+                    .await
+                {
+                    Ok(merged_graph) => Ok(Some(Envelope::new(
+                        Metadata::create_from(envelope.metadata),
+                        merged_graph,
+                    ))),
+                    Err(e) => match e {
+                        Ok((_, e)) => {
+                            match e {
+                                GraphMergerError::Unexpected(ref reason) => {
+                                    tracing::error!(
+                                        message = "unexpected error",
+                                        reason = %reason,
+                                        error = %e,
+                                    );
+                                    // TODO: write message to failed topic here
+                                    Err(StreamProcessorError::from(e))
+                                }
+                                _ => {
+                                    tracing::error!(
+                                        mesage = "unexpected error",
+                                        error = %e,
+                                    );
+                                    // TODO: write message to failed topic here
+                                    Err(StreamProcessorError::from(e))
+                                }
+                            }
+                        }
+                        Err(e) => match e {
+                            GraphMergerError::Unexpected(reason) => {
+                                tracing::warn!(
+                                    message = "unexpected error",
+                                    reason = %reason,
+                                );
+                                Ok(None)
+                            }
+                            _ => {
+                                tracing::error!(
+                                    message = "unknown error",
+                                    error = %e,
+                                );
+                                Err(StreamProcessorError::from(e))
+                            }
+                        },
+                    },
+                }
+            }
+        },
+    )?;
+
+    stream
+        .for_each_concurrent(
+            10, // TODO: make configurable?
+            |res| async move {
+                if let Err(e) = res {
+                    // TODO: retry the message?
+                    tracing::error!(
+                        message = "error processing kafka message",
+                        reason = %e,
+                    );
+                } else {
+                    // TODO: collect some metrics
+                    tracing::debug!(message = "identified graph from graph description");
+                }
+            },
+        )
+        .with_current_subscriber()
+        .await;
+
     Ok(())
 }

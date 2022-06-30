@@ -1,10 +1,12 @@
-#![cfg(feature = "new_integration_tests")]
+#![cfg(feature = "integration_tests")]
 
 use std::time::Duration;
 
 use bytes::Bytes;
+use clap::Parser;
 use futures::StreamExt;
 use kafka::{
+    config::ConsumerConfig,
     Consumer,
     ConsumerError,
 };
@@ -12,7 +14,7 @@ use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
 };
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::{
         api::pipeline_ingress::v1beta1::{
             client::PipelineIngressClient,
@@ -23,12 +25,17 @@ use rust_proto_new::{
             v1beta2::Envelope,
         },
     },
-    protocol::healthcheck::client::HealthcheckClient,
+    protocol::{
+        healthcheck::client::HealthcheckClient,
+        service_client::NamedService,
+    },
 };
 use test_context::{
     test_context,
     AsyncTestContext,
 };
+use tokio::sync::oneshot;
+use tracing::Instrument;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{
     prelude::*,
@@ -36,12 +43,11 @@ use tracing_subscriber::{
 };
 use uuid::Uuid;
 
+static CONSUMER_TOPIC: &'static str = "raw-logs";
+
 struct PipelineIngressTestContext {
     grpc_client: PipelineIngressClient,
-    bootstrap_servers: String,
-    sasl_username: String,
-    sasl_password: String,
-    consumer_group_name: String,
+    consumer_config: ConsumerConfig,
     _guard: WorkerGuard,
 }
 
@@ -75,15 +81,6 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
             .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
 
-        let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
-            .expect("missing environment variable KAFKA_BOOTSTRAP_SERVERS");
-        let sasl_username = std::env::var("INTEGRATION_TESTS_KAFKA_SASL_USERNAME")
-            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_SASL_USERNAME");
-        let sasl_password = std::env::var("INTEGRATION_TESTS_KAFKA_SASL_PASSWORD")
-            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_SASL_PASSWORD");
-        let consumer_group_name = std::env::var("INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME")
-            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME");
-
         tracing::info!(
             message = "waiting 10s for pipeline-ingress to report healthy",
             endpoint = %endpoint,
@@ -91,7 +88,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
 
         HealthcheckClient::wait_until_healthy(
             endpoint.clone(),
-            "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService",
+            PipelineIngressClient::SERVICE_NAME,
             Duration::from_millis(10000),
             Duration::from_millis(500),
         )
@@ -103,12 +100,14 @@ impl AsyncTestContext for PipelineIngressTestContext {
             .await
             .expect("could not configure gRPC client");
 
+        let consumer_config = ConsumerConfig {
+            topic: CONSUMER_TOPIC.to_string(),
+            ..ConsumerConfig::parse()
+        };
+
         PipelineIngressTestContext {
             grpc_client,
-            bootstrap_servers,
-            sasl_username,
-            sasl_password,
-            consumer_group_name,
+            consumer_config,
             _guard,
         }
     }
@@ -121,27 +120,27 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
     let tenant_id = Uuid::new_v4();
     let log_event: Bytes = "test".into();
 
-    let bootstrap_servers = ctx.bootstrap_servers.clone();
-    let sasl_username = ctx.sasl_username.clone();
-    let sasl_password = ctx.sasl_password.clone();
-    let consumer_group_name = ctx.consumer_group_name.clone();
-
     tracing::info!("configuring kafka consumer");
-    let kafka_consumer = Consumer::new(
-        bootstrap_servers,
-        sasl_username,
-        sasl_password,
-        consumer_group_name,
-        "raw-logs".to_string(),
-    )
-    .expect("could not configure kafka consumer");
+
+    let kafka_consumer =
+        Consumer::new(ctx.consumer_config.clone()).expect("could not configure kafka consumer");
+
+    // we'll use this channel to communicate that the consumer is ready to
+    // consume messages
+    let (tx, rx) = oneshot::channel::<()>();
 
     tracing::info!("creating kafka subscriber thread");
     let kafka_subscriber = tokio::task::spawn(async move {
-        let contains_expected = kafka_consumer
+        let stream = kafka_consumer
             .stream()
-            .expect("could not subscribe to the raw-logs topic")
-            .any(|res: Result<Envelope<RawLog>, ConsumerError>| async move {
+            .expect("could not subscribe to the raw-logs topic");
+
+        // notify the consumer that we're ready to receive messages
+        tx.send(())
+            .expect("failed to notify sender that consumer is consuming");
+
+        let contains_expected =
+            stream.any(|res: Result<Envelope<RawLog>, ConsumerError>| async move {
                 let envelope = res.expect("error consuming message from kafka");
                 let metadata = envelope.metadata;
                 let raw_log = envelope.inner_message;
@@ -162,9 +161,10 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
         );
     });
 
-    // we throw in a healthy sleep here to make well sure the kafka consumer is
-    // actually consuming before we throw a message at it
-    tokio::time::sleep(Duration::from_millis(5000)).await;
+    // wait for the kafka consumer to start consuming
+    tracing::info!("waiting for kafka consumer to report ready");
+    rx.await
+        .expect("failed to receive notification that consumer is consuming");
 
     tracing::info!("sending publish_raw_log request");
     ctx.grpc_client
@@ -178,6 +178,7 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
 
     tracing::info!("waiting for kafka_subscriber to complete");
     kafka_subscriber
+        .instrument(tracing::debug_span!("kafka_subscriber"))
         .await
         .expect("could not join kafka subscriber");
 }

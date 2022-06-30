@@ -71,7 +71,8 @@ _validate_stack_name()
 
 LOCAL_GRAPL: Final[bool] = STACK_NAME in (
     "local-grapl",
-    "local-grapl-integration-tests",
+    "local-grapl-python-integration-tests",
+    "local-grapl-rust-integration-tests",
 )
 # (We have a different one for integration tests because `pulumi login --local`
 #  doesn't allow for stack name conflicts, even across projects.)

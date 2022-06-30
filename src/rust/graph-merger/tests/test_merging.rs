@@ -1,4 +1,4 @@
-#[cfg(feature = "integration")]
+#[cfg(feature = "integration_tests")]
 pub mod test {
     use std::{
         collections::HashMap,
@@ -34,8 +34,13 @@ pub mod test {
         Client as DgraphClient,
         Query,
     };
-    use graph_merger_lib::upserter::GraphMergeHelper;
-    use rust_proto::graph_descriptions::*;
+    use graph_merger::upserter::GraphMergeHelper;
+    use rust_proto::graplinc::grapl::api::graph::v1beta1::{
+        IdentifiedGraph,
+        IdentifiedNode,
+        ImmutableStrProp,
+        MergedGraph,
+    };
 
     async fn query_for_uid(dgraph_client: Arc<DgraphClient>, node_key: &str) -> u64 {
         let query_block = QueryBlockBuilder::default()

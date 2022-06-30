@@ -25,19 +25,6 @@ message Metadata {
   graplinc.common.v1beta1.Uuid event_source_id = 6;
 }
 
-// A wrapper message for pipeline data. Includes useful metadata to help
-// services determine what they should do with the inner_message.
-message Envelope {
-  // Metadata about this message
-  Metadata metadata = 1;
-
-  // Fully-qualified name of the protobuf used to serialize the inner_message
-  string inner_type = 2;
-
-  // The serialized bytes of the inner message
-  bytes inner_message = 3;
-}
-
 // This is the inner_message for an Envelope published to the raw-logs topic.
 message RawLog {
   // A raw log event (to be parsed by a generator plugin)

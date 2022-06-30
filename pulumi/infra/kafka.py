@@ -7,8 +7,14 @@ from infra import config
 from pulumi.stack_reference import StackReference
 from pulumi_kafka import Provider
 from pulumi_kafka import Topic as KafkaTopic
+from typing_extensions import TypedDict
 
 import pulumi
+
+
+class NomadServiceKafkaCredentials(TypedDict):
+    sasl_username: str
+    sasl_password: str
 
 
 @dataclasses.dataclass
@@ -23,6 +29,12 @@ class Credential:
             service_account_id=data["service_account_id"],
             api_key=data["api_key"],
             api_secret=data["api_secret"],
+        )
+
+    def to_nomad_service_creds(self) -> NomadServiceKafkaCredentials:
+        return NomadServiceKafkaCredentials(
+            sasl_username=self.api_key,
+            sasl_password=self.api_secret,
         )
 
 

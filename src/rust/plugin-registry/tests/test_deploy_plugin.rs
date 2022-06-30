@@ -1,11 +1,8 @@
-#![cfg(feature = "new_integration_tests")]
+#![cfg(feature = "integration_tests")]
 
 use grapl_utils::future_ext::GraplFutureExt;
-use plugin_registry::{
-    client::FromEnv,
-    exp_backoff_retry::simple_exponential_backoff_retry,
-};
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
+use plugin_registry::client::FromEnv;
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreatePluginRequestMetadata,
     DeployPluginRequest,
     PluginRegistryServiceClient,
@@ -19,20 +16,9 @@ fn get_example_generator() -> Result<Vec<u8>, std::io::Error> {
     std::fs::read("/test-fixtures/example-generator")
 }
 
-async fn get_client() -> Result<PluginRegistryServiceClient, PluginRegistryServiceClientError> {
-    // For some reason, I'm seeing nondeterministic failures when initializing
-    // a client.
-    // Suspicions:
-    // - it's due to creating two clients at exactly the same time
-    //   (these two async tests are concurrent)
-    // - maybe something about warming up a connection pool?
-    // Anyway, I have no evidence, but this seems to do the trick. Weird.
-    simple_exponential_backoff_retry(PluginRegistryServiceClient::from_env).await
-}
-
 #[test_log::test(tokio::test)]
 async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = get_client().await?;
+    let mut client = PluginRegistryServiceClient::from_env().await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 
@@ -74,7 +60,7 @@ fn assert_contains(input: &str, expected_substr: &str) {
 /// So we *expect* this call to fail since it's an arbitrary PluginID that
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = get_client().await?;
+    let mut client = PluginRegistryServiceClient::from_env().await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 

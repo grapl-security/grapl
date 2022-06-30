@@ -6,7 +6,6 @@ import uuid
 from typing import Generic, Type, cast
 
 from google.protobuf.any_pb2 import Any as _Any
-from graplinc.grapl.pipeline.v1beta1.types_pb2 import Envelope as _OldEnvelope
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Metadata as _Metadata
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import RawLog as _RawLog
 from graplinc.grapl.pipeline.v1beta2.types_pb2 import NewEnvelope as _Envelope
@@ -90,34 +89,6 @@ class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
             type_url_prefix=b"graplsecurity.com",
         )
         proto_envelope.inner_message.CopyFrom(inner_message)
-        return proto_envelope
-
-
-@dataclasses.dataclass(frozen=True)
-class OldEnvelope(SerDe[_OldEnvelope]):
-    metadata: Metadata
-    inner_type: str
-    inner_message: bytes
-
-    @staticmethod
-    def deserialize(bytes_: bytes) -> OldEnvelope:
-        proto_envelope = _OldEnvelope()
-        proto_envelope.ParseFromString(bytes_)
-        return OldEnvelope.from_proto(proto_envelope=proto_envelope)
-
-    @staticmethod
-    def from_proto(proto_envelope: _OldEnvelope) -> OldEnvelope:
-        return OldEnvelope(
-            metadata=Metadata.from_proto(proto_envelope.metadata),
-            inner_type="fixme",
-            inner_message=proto_envelope.inner_message,
-        )
-
-    def into_proto(self) -> _OldEnvelope:
-        proto_envelope = _OldEnvelope()
-        proto_envelope.metadata.CopyFrom(self.metadata.into_proto())
-        proto_envelope.inner_message = self.inner_message
-        proto_envelope.inner_type = self.inner_type
         return proto_envelope
 
 

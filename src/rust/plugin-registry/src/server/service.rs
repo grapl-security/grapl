@@ -10,7 +10,7 @@ use rusoto_s3::{
     S3Client,
     S3,
 };
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
         CreatePluginRequestMetadata,

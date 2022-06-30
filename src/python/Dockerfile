@@ -20,14 +20,6 @@ USER grapl
 WORKDIR /home/grapl
 ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 
-# analyzer-executor
-################################################################################
-FROM grapl-python-base AS analyzer-executor-deploy
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --from=dist-ctx analyzer-executor.pex .
-CMD ["./analyzer-executor.pex"]
-
 # engagement-creator
 ################################################################################
 FROM grapl-python-base AS engagement-creator-deploy
@@ -44,32 +36,6 @@ FROM grapl-python-base AS provisioner-deploy
 COPY --from=dist-ctx provisioner.pex .
 CMD [":"]
 
-# e2e tests
-################################################################################
-FROM grapl-python-base AS e2e-tests
-
-# Copy in the contents of `etc` in order to upload them during e2e tests
-RUN mkdir -p /home/grapl/etc
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --chown=grapl --from=etc-ctx local_grapl etc/local_grapl
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --chown=grapl --from=etc-ctx sample_data/ etc/sample_data
-
-# Copy in `graplctl`, which does the actual uploading during e2e
-RUN mkdir -p /home/grapl/bin
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --chown=grapl --from=dist-ctx src.python.graplctl.graplctl/graplctl.pex /home/grapl/bin/graplctl
-
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --chown=grapl --from=dist-ctx e2e-tests.pex .
-CMD ["./e2e-tests.pex"]
-
-ENV PATH=/home/grapl/bin:$PATH
-
 # integration-tests
 ################################################################################
 FROM grapl-python-base AS integration-tests
@@ -78,7 +44,6 @@ RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         build-essential=12.9 \
         curl=7.74.0-1.3+deb11u1 \
-        protobuf-compiler=3.12.4-1 \
         unzip=6.0-26 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \

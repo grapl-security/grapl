@@ -1,13 +1,17 @@
-use std::{
-    fmt::Display,
-    marker::PhantomData,
-};
+pub mod config;
 
+use std::marker::PhantomData;
+
+use config::{
+    ConsumerConfig,
+    ProducerConfig,
+};
 use futures::{
     stream::{
         Stream,
         StreamExt,
     },
+    Future,
     FutureExt,
     TryFutureExt,
     TryStreamExt,
@@ -23,7 +27,7 @@ use rdkafka::{
     util::Timeout,
     Message,
 };
-use rust_proto_new::{
+use rust_proto::{
     SerDe,
     SerDeError,
 };
@@ -113,15 +117,14 @@ where
 /// A producer publishes data to a topic. This producer serializes the data it
 /// is given before publishing.
 impl<T: SerDe> Producer<T> {
-    pub fn new(
-        bootstrap_servers: String,
-        sasl_username: String,
-        sasl_password: String,
-        topic: String,
-    ) -> Result<Producer<T>, ConfigurationError> {
-        Ok(Producer {
-            producer: producer(bootstrap_servers, sasl_username, sasl_password)?,
-            topic,
+    pub fn new(config: ProducerConfig) -> Result<Self, ConfigurationError> {
+        Ok(Self {
+            producer: producer(
+                config.bootstrap_servers,
+                config.sasl_username,
+                config.sasl_password,
+            )?,
+            topic: config.topic,
             _t: PhantomData,
         })
     }
@@ -193,21 +196,15 @@ where
 }
 
 impl<T: SerDe> Consumer<T> {
-    pub fn new(
-        bootstrap_servers: String,
-        sasl_username: String,
-        sasl_password: String,
-        consumer_group_name: String,
-        topic: String,
-    ) -> Result<Consumer<T>, ConfigurationError> {
-        Ok(Consumer {
+    pub fn new(config: ConsumerConfig) -> Result<Self, ConfigurationError> {
+        Ok(Self {
             consumer: consumer(
-                bootstrap_servers,
-                sasl_username,
-                sasl_password,
-                consumer_group_name,
+                config.bootstrap_servers,
+                config.sasl_username,
+                config.sasl_password,
+                config.consumer_group_name,
             )?,
-            topic,
+            topic: config.topic,
             _t: PhantomData,
         })
     }
@@ -262,55 +259,50 @@ where
     producer: Producer<P>,
 }
 
-impl<C: SerDe, P: SerDe> StreamProcessor<C, P> {
+impl<C, P> StreamProcessor<C, P>
+where
+    C: SerDe,
+    P: SerDe,
+{
     pub fn new(
-        bootstrap_servers: String,
-        sasl_username: String,
-        sasl_password: String,
-        consumer_group_name: String,
-        consumer_topic: String,
-        producer_topic: String,
+        consumer_config: ConsumerConfig,
+        producer_config: ProducerConfig,
     ) -> Result<StreamProcessor<C, P>, ConfigurationError> {
         Ok(StreamProcessor {
-            consumer: Consumer::new(
-                bootstrap_servers.clone(),
-                sasl_username.clone(),
-                sasl_password.clone(),
-                consumer_group_name,
-                consumer_topic,
-            )?,
-            producer: Producer::new(
-                bootstrap_servers,
-                sasl_username,
-                sasl_password,
-                producer_topic,
-            )?,
+            consumer: Consumer::new(consumer_config)?,
+            producer: Producer::new(producer_config)?,
         })
     }
 
     #[tracing::instrument(err, skip(self, event_handler))]
-    pub fn stream<'a, F, E>(
+    pub fn stream<'a, F, R, E>(
         &'a self,
         event_handler: F,
-    ) -> Result<impl Stream<Item = Result<(), StreamProcessorError>> + 'a, ConfigurationError>
+    ) -> Result<impl Stream<Item = Result<(), StreamProcessorError>> + '_, ConfigurationError>
     where
-        F: FnMut(Result<C, StreamProcessorError>) -> Result<P, E> + 'a,
-        E: Display,
+        F: FnMut(Result<C, StreamProcessorError>) -> R + 'a,
+        R: Future<Output = Result<Option<P>, E>> + 'a,
+        E: Into<StreamProcessorError> + 'a,
     {
         Ok(self
             .consumer
             .stream()?
             .map_err(StreamProcessorError::from)
-            .map(event_handler)
-            .map_err(|e| StreamProcessorError::EventHandlerError(e.to_string()))
-            .and_then(move |msg| async move {
-                // The underlying FutureProducer::clone() call is inexpensive,
-                // so I think it's acceptable here.
-                self.producer
-                    .clone()
-                    .send(msg)
-                    .map_err(StreamProcessorError::from)
-                    .await
+            .then(event_handler)
+            .then(move |result| async move {
+                match result {
+                    Ok(msg) => match msg {
+                        Some(msg) => {
+                            self.producer
+                                .clone()
+                                .send(msg)
+                                .map_err(StreamProcessorError::from)
+                                .await
+                        }
+                        None => Ok(()),
+                    },
+                    Err(e) => Err(e.into()),
+                }
             }))
     }
 }

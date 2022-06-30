@@ -6,16 +6,13 @@ use endpoint_plugin::{
     IProcessNode,
     ProcessNode,
 };
-use rust_proto::graph_descriptions::*;
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use rust_proto::graplinc::grapl::api::graph::v1beta1::GraphDescription;
+use serde::Deserialize;
 
 use super::from_str;
 use crate::parsers::OSQueryAction;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Deserialize, Debug, Clone, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessEvent {
     host_identifier: String,
@@ -26,7 +23,7 @@ pub struct ProcessEvent {
 }
 
 /// See https://osquery.io/schema/4.5.0/#processes
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Deserialize, Debug, Clone, Hash)]
 pub struct ProcessEventColumns {
     #[serde(deserialize_with = "from_str")]
     pid: u64,

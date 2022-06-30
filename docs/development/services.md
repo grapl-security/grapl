@@ -39,20 +39,6 @@ de-duplicate this process node.
 **Output:** TODO (it looks like exactly the same as node identifier's output,
 just re-encoded?)
 
-### Analyzer Dispatcher
-
-**Work:** Determines which analyzers to execute against recently merged graphs
-
-**Output:** TODO
-
-### Analyzer Executor
-
-**Work:** Executes queries against Dgraph, and - upon a successful query hit -
-determines which lenses and risk nodes to create
-
-**Output:** A JSON dump of risks and lenses to be created by the Engagement
-Creator (see `analyzer_executor.py#emit_event` for specifics)
-
 ### Engagement Creator
 
 **Work:** Simply appends the risks and lenses described in its input to Dgraph.

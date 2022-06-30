@@ -1,30 +1,22 @@
 [package]
 name = "osquery-generator"
 version = "0.1.0"
-authors = ["Nathanial Lattimer <nlattimer@graplsecurity.com>"]
+authors = ["Grapl, Inc. <sales@graplsecurity.com>"]
 edition = "2021"
 
-[lib]
-name = "osquery_generator_lib"
-
-[dev-dependencies]
-criterion = { version = "0.3.5", features = ["async_tokio", "html_reports"] }
-
-[[bench]]
-name = "generator_bench"
-harness = false
-
 [dependencies]
-rust-proto = { path = "../../rust-proto", version = "*" }
+async-trait = "0.1"
 endpoint-plugin = { path = "../../endpoint-plugin" }
-grapl-config = { path = "../../grapl-config", version = "*" }
-grapl-observe = { path = "../../grapl-observe", version = "*" }
-graph-generator-lib = { path = "../graph-generator-lib", version = "*" }
-grapl-service = { path = "../../grapl-service" }
-sqs-executor = { path = "../../sqs-executor/" }
-serde = { version = "1.0.130", features = ["derive"] }
-serde_json = "1.0.72"
-async-trait = "0.1.51"
+futures = "0.3"
+opentelemetry = { version = "0.16", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.15", features = [
+  "collector_client",
+  "rt-tokio"
+] }
+rust-proto = { path = "../../rust-proto", version = "*" }
+serde = "1.0"
+serde_json = "1.0"
+thiserror = "1.0"
 tokio = { version = "1.17", features = [
   "fs",
   "macros",
@@ -33,5 +25,8 @@ tokio = { version = "1.17", features = [
   "sync",
   "time",
 ] }
-thiserror = "1.0.30"
-tracing = "0.1.29"
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-opentelemetry = "0.16"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid = { version = "0.8", features = ["v4"] }
