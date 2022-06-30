@@ -41,9 +41,9 @@ class ModelPluginDeployerClient:
 
         assert len(paths), "expected at least one file to be uploaded"
 
-        plugin_dict: Dict[str, str] = {}
+        plugin_dict: dict[str, str] = {}
         for path in paths:
-            with open(path, "r") as f:
+            with open(path) as f:
                 clean_path = str(path).split("model_plugins/")[-1]
                 contents = f.read()
                 if len(contents) == 0:

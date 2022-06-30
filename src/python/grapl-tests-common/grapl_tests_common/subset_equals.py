@@ -48,7 +48,7 @@ def _list_subset_equals(larger: List, smaller: List, path: str) -> None:
 def _primitive_equals(larger: object, smaller: object, path: str) -> None:
     __tracebackhide__ = True  # hide this helper function's traceback from pytest
     primitives = (int, str, bool, float)
-    if any((isinstance(larger, p) and isinstance(smaller, p) for p in primitives)):
+    if any(isinstance(larger, p) and isinstance(smaller, p) for p in primitives):
         if larger != smaller:
             raise SubsetEqualsException("Not equal:", larger, smaller, path)
     else:
@@ -59,7 +59,7 @@ def _primitive_equals(larger: object, smaller: object, path: str) -> None:
 
 class SubsetEqualsException(AssertionError):
     def __init__(self, message: str, larger: Any, smaller: Any, path: str) -> None:
-        super(SubsetEqualsException, self).__init__(
+        super().__init__(
             f"{message}\n\n{path}\n\n==Larger==\n{pformat(larger)}\n\n==Smaller==\n{pformat(smaller)}"
         )
 

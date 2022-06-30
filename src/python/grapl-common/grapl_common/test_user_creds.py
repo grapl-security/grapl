@@ -10,7 +10,7 @@ from grapl_common.grapl_logger import get_module_grapl_logger
 LOGGER = get_module_grapl_logger(default_log_level="DEBUG")
 
 
-def get_test_user_creds() -> Tuple[str, str]:
+def get_test_user_creds() -> tuple[str, str]:
     username = os.environ["GRAPL_TEST_USER_NAME"]
     password_secret_id = os.environ["GRAPL_TEST_USER_PASSWORD_SECRET_ID"]
     LOGGER.debug(f"Retrieving secret id: {password_secret_id}")

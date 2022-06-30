@@ -75,7 +75,7 @@ class Ec2Instance:
     instance_id: str
     private_ip_address: str
     private_dns_name: str
-    tags: List[Tag]
+    tags: list[Tag]
 
     @classmethod
     def from_boto_instance(cls, instance: ec2_resources.Instance) -> Ec2Instance:
@@ -88,8 +88,8 @@ class Ec2Instance:
 
 
 def get_command_results(
-    ssm: SSMClient, command_id: str, instance_ids: List[str]
-) -> Iterator[Tuple[str, str]]:
+    ssm: SSMClient, command_id: str, instance_ids: list[str]
+) -> Iterator[tuple[str, str]]:
     """Poll until the command result is available for the given command_id.
 
     Yields the tuple (instance_id, result) from each instance.
@@ -160,5 +160,5 @@ class SSMException(Exception):
                 f"TO DEBUG: Try: aws ssm start-session --target {invocation['InstanceId']}",
             ]
         )
-        super(SSMException, self).__init__(msg)
+        super().__init__(msg)
         self.invocation = invocation

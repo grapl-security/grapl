@@ -46,7 +46,7 @@ SchemaDict = Dict[str, Any]
 
 
 def store_schema_properties(table: Table, schema: Schema) -> None:
-    properties: List[SchemaPropertyDict] = [
+    properties: list[SchemaPropertyDict] = [
         {
             "name": prop_name,
             # Special case: treat uids as int
@@ -58,7 +58,7 @@ def store_schema_properties(table: Table, schema: Schema) -> None:
 
     # Don't send over these edges
     denylist_edges = ("in_scope",)
-    edges: List[SchemaPropertyDict] = [
+    edges: list[SchemaPropertyDict] = [
         {
             "name": edge_name,
             "primitive": edge_tuple[
@@ -102,7 +102,7 @@ def store_schema(table: Table, schema: Schema) -> None:
         )
 
 
-def format_schemas(schema_defs: List[BaseSchema]) -> str:
+def format_schemas(schema_defs: list[BaseSchema]) -> str:
     schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])

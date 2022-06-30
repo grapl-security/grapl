@@ -7,13 +7,9 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
 
 
-AnalyzerUpload = NamedTuple(
-    "AnalyzerUpload",
-    (
-        ("local_path", str),
-        ("s3_key", str),
-    ),
-)
+class AnalyzerUpload(NamedTuple):
+    local_path: str
+    s3_key: str
 
 
 def upload_analyzers(

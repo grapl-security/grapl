@@ -6,6 +6,7 @@ backend_packages = [
   "pants.backend.codegen.protobuf.python",
   "pants.backend.docker",
   "pants.backend.docker.lint.hadolint",
+  "pants.backend.experimental.python.lint.pyupgrade",
   "pants.backend.plugin_development",
   "pants.backend.python",
   "pants.backend.python.lint.black",
@@ -180,6 +181,9 @@ version = "ipython==7.20.0"
 
 [flake8]
 config = ".flake8"
+
+[pyupgrade]
+args = ["--py38-plus"]
 
 [shfmt]
 # Indent with 4 spaces

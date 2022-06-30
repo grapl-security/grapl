@@ -40,7 +40,7 @@ def analyze_grapl_core(artifacts_dir: Path, analysis_dir: Path) -> None:
 def analyze_paths(paths: List[Path]) -> str:
     output = []
     for path in paths:
-        with open(path, "r") as file:
+        with open(path) as file:
             lines = file.readlines()
             num_received_messages = get_num_received_messages(lines)
             output.append(f"File {path.name}: received {num_received_messages}")

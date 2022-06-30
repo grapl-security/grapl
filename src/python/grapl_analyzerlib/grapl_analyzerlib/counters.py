@@ -34,7 +34,7 @@ class Seen(OrderedEnum):
     Many = 2
 
 
-class SubgraphCounter(object):
+class SubgraphCounter:
     def __init__(self, graph_client: GraphClient, cache: Any = None) -> None:
         self.graph_client = graph_client
         self.cache = cache
@@ -47,7 +47,7 @@ class SubgraphCounter(object):
         return int(count)
 
 
-class ParentChildCounter(object):
+class ParentChildCounter:
     def __init__(self, graph_client: GraphClient, cache: Any = None) -> None:
         self.graph_client = graph_client
         self.cache = cache
@@ -92,7 +92,7 @@ class ParentChildCounter(object):
         return int(count)
 
 
-class GrandParentGrandChildCounter(object):
+class GrandParentGrandChildCounter:
     def __init__(self, graph_client: GraphClient, cache: Any = None) -> None:
         self.graph_client = graph_client
         self.cache = cache

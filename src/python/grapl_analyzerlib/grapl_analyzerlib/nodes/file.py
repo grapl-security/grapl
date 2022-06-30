@@ -18,7 +18,7 @@ FQ = TypeVar("FQ", bound="FileQuery")
 FV = TypeVar("FV", bound="FileView")
 
 
-def default_file_edges() -> Dict[str, Tuple[EdgeT, str]]:
+def default_file_edges() -> dict[str, tuple[EdgeT, str]]:
     return {
         "spawned_from": (
             EdgeT(ProcessSchema, FileSchema, EdgeRelationship.ManyToOne),
@@ -43,7 +43,7 @@ def default_file_edges() -> Dict[str, Tuple[EdgeT, str]]:
     }
 
 
-def default_file_properties() -> Dict[str, PropType]:
+def default_file_properties() -> dict[str, PropType]:
     return {
         "file_path": PropType(PropPrimitive.Str, False),
         "file_extension": PropType(PropPrimitive.Str, False),
@@ -66,7 +66,7 @@ def default_file_properties() -> Dict[str, PropType]:
 
 class FileSchema(EntitySchema):
     def __init__(self):
-        super(FileSchema, self).__init__(
+        super().__init__(
             default_file_properties(), default_file_edges(), lambda: FileView
         )
 
@@ -83,18 +83,18 @@ class FileQuery(EntityQuery[FV, FQ]):
     def __init__(
         self,
     ) -> None:
-        super(FileQuery, self).__init__()
+        super().__init__()
 
     @with_str_prop("file_path")
     def with_file_path(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -102,12 +102,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_extension(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -115,12 +115,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_mime_type(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -128,12 +128,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_version(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -141,12 +141,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_description(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -154,12 +154,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_product(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -167,12 +167,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_company(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -180,12 +180,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_directory(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -193,12 +193,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_hard_links(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -206,12 +206,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_signed(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -219,12 +219,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_signed_status(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -232,7 +232,7 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_md5_hash(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
+        eq: StrOrNot | None = None,
     ) -> FileQuery:
         return self
 
@@ -240,7 +240,7 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_sha1_hash(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
+        eq: StrOrNot | None = None,
     ) -> FileQuery:
         return self
 
@@ -248,7 +248,7 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_sha256_hash(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
+        eq: StrOrNot | None = None,
     ) -> FileQuery:
         return self
 
@@ -256,12 +256,12 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_path(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> FileQuery:
         return self
 
@@ -269,11 +269,11 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_inode(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ) -> FileQuery:
         return self
 
@@ -281,21 +281,21 @@ class FileQuery(EntityQuery[FV, FQ]):
     def with_file_size(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ) -> FileQuery:
         return self
 
-    def with_spawned_from(self, *spawned_from: Optional["ProcessQuery"]) -> FileQuery:
+    def with_spawned_from(self, *spawned_from: ProcessQuery | None) -> FileQuery:
         return self.with_to_neighbor(
             ProcessQuery, "spawned_from", "bin_file", *spawned_from
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return FileSchema()
 
 
@@ -373,31 +373,31 @@ class FileView(EntityView[FV, FQ]):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        file_path: Optional[str] = None,
-        file_extension: Optional[str] = None,
-        file_mime_type: Optional[str] = None,
-        file_size: Optional[int] = None,
-        file_version: Optional[str] = None,
-        file_description: Optional[str] = None,
-        file_product: Optional[str] = None,
-        file_company: Optional[str] = None,
-        file_directory: Optional[str] = None,
-        file_inode: Optional[int] = None,
-        file_hard_links: Optional[str] = None,
-        signed: Optional[str] = None,
-        signed_status: Optional[str] = None,
-        md5_hash: Optional[str] = None,
-        sha1_hash: Optional[str] = None,
-        sha256_hash: Optional[str] = None,
-        spawned_from: Optional[List["ProcessView"]] = None,
-        creator: Optional["ProcessView"] = None,
-        writers: Optional[List["ProcessView"]] = None,
-        readers: Optional[List["ProcessView"]] = None,
-        deleter: Optional["ProcessView"] = None,
+        node_types: set[str],
+        file_path: str | None = None,
+        file_extension: str | None = None,
+        file_mime_type: str | None = None,
+        file_size: int | None = None,
+        file_version: str | None = None,
+        file_description: str | None = None,
+        file_product: str | None = None,
+        file_company: str | None = None,
+        file_directory: str | None = None,
+        file_inode: int | None = None,
+        file_hard_links: str | None = None,
+        signed: str | None = None,
+        signed_status: str | None = None,
+        md5_hash: str | None = None,
+        sha1_hash: str | None = None,
+        sha256_hash: str | None = None,
+        spawned_from: list[ProcessView] | None = None,
+        creator: ProcessView | None = None,
+        writers: list[ProcessView] | None = None,
+        readers: list[ProcessView] | None = None,
+        deleter: ProcessView | None = None,
         **kwargs,
     ):
-        super(FileView, self).__init__(uid, node_key, graph_client, node_types)
+        super().__init__(uid, node_key, graph_client, node_types)
         self.node_types = set(node_types)
         self.set_predicate("file_path", file_path)
         self.set_predicate("file_extension", file_extension)
@@ -534,13 +534,13 @@ class FileView(EntityView[FV, FQ]):
     ):
         return self.get_int("file_size", cached=cached)
 
-    def get_spawned_from(self, *filters: "ProcessQuery", cached=True):
+    def get_spawned_from(self, *filters: ProcessQuery, cached=True):
         return self.get_neighbor(
             ProcessQuery, "spawned_from", "bin_file", filters, cached=cached
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return FileSchema()
 
 
@@ -548,21 +548,21 @@ from grapl_analyzerlib.nodes.process import ProcessView, ProcessQuery, ProcessSc
 
 
 class FileExtendsProcessQuery(ProcessQuery):
-    def with_bin_file(self, bin_file: Optional[FileQuery] = None):
+    def with_bin_file(self, bin_file: FileQuery | None = None):
         return self.with_to_neighbor(FileQuery, "bin_file", "spawned_from", bin_file)
 
-    def with_created_files(self, *created_files: Optional[FileQuery]) -> "ProcessQuery":
+    def with_created_files(self, *created_files: FileQuery | None) -> ProcessQuery:
         return self.with_to_neighbor(
             FileQuery, "created_files", "creator", created_files
         )
 
-    def with_wrote_files(self, *wrote_files: Optional[FileQuery]) -> "ProcessQuery":
+    def with_wrote_files(self, *wrote_files: FileQuery | None) -> ProcessQuery:
         return self.with_to_neighbor(FileQuery, "wrote_files", "writers", wrote_files)
 
-    def with_read_files(self, *read_files: Optional[FileQuery]) -> "ProcessQuery":
+    def with_read_files(self, *read_files: FileQuery | None) -> ProcessQuery:
         return self.with_to_neighbor(FileQuery, "read_files", "readers", read_files)
 
-    def with_deleted_files(self, *deleted_files: Optional[FileQuery]) -> "ProcessQuery":
+    def with_deleted_files(self, *deleted_files: FileQuery | None) -> ProcessQuery:
         return self.with_to_neighbor(
             FileQuery, "deleted_files", "deleter", deleted_files
         )
@@ -580,12 +580,12 @@ class FileExtendsProcessView(ProcessView):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        bin_file: Optional[FileQuery] = None,
-        created_files: Optional[List[FileQuery]] = None,
-        wrote_files: Optional[List[FileQuery]] = None,
-        read_files: Optional[List[FileQuery]] = None,
-        deleted_files: Optional[List[FileQuery]] = None,
+        node_types: set[str],
+        bin_file: FileQuery | None = None,
+        created_files: list[FileQuery] | None = None,
+        wrote_files: list[FileQuery] | None = None,
+        read_files: list[FileQuery] | None = None,
+        deleted_files: list[FileQuery] | None = None,
         **kwargs,
     ):
         super().__init__(

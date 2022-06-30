@@ -29,7 +29,7 @@ def default_ip_port_properties():
     }
 
 
-def default_ip_port_edges() -> Dict[str, Tuple[EdgeT, str]]:
+def default_ip_port_edges() -> dict[str, tuple[EdgeT, str]]:
     from grapl_analyzerlib.nodes.network_connection import (
         NetworkConnectionSchema,
     )
@@ -44,7 +44,7 @@ def default_ip_port_edges() -> Dict[str, Tuple[EdgeT, str]]:
 
 class IpPortSchema(EntitySchema):
     def __init__(self):
-        super(IpPortSchema, self).__init__(
+        super().__init__(
             default_ip_port_properties(), default_ip_port_edges(), lambda: IpPortView
         )
 
@@ -58,11 +58,11 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
     def with_port(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -70,12 +70,12 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
     def with_ip_address(
         self,
         *,
-        eq: Optional[StrOrNot] = None,
-        contains: Optional[OneOrMany[StrOrNot]] = None,
-        starts_with: Optional[StrOrNot] = None,
-        ends_with: Optional[StrOrNot] = None,
-        regexp: Optional[OneOrMany[StrOrNot]] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ):
         pass
 
@@ -83,11 +83,11 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
     def with_first_seen_timestamp(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -95,11 +95,11 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
     def with_last_seen_timestamp(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -112,7 +112,7 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return IpPortSchema()
 
 
@@ -163,17 +163,15 @@ class IpPortView(EntityView[IPPV, IPPQ]):
         uid: int,
         node_key: str,
         graph_client,
-        node_types: Set[str],
-        port: Optional[int] = None,
-        ip_address: Optional[str] = None,
-        first_seen_timestamp: Optional[int] = None,
-        last_seen_timestamp: Optional[int] = None,
-        network_connections: Optional[List["NetworkConnectionView"]] = None,
+        node_types: set[str],
+        port: int | None = None,
+        ip_address: str | None = None,
+        first_seen_timestamp: int | None = None,
+        last_seen_timestamp: int | None = None,
+        network_connections: list[NetworkConnectionView] | None = None,
         **kwargs,
     ):
-        super(IpPortView, self).__init__(
-            uid, node_key, graph_client, node_types, **kwargs
-        )
+        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
         self.set_predicate("port", port)
         self.set_predicate("ip_address", ip_address)
         self.set_predicate("first_seen_timestamp", first_seen_timestamp)
@@ -202,7 +200,7 @@ class IpPortView(EntityView[IPPV, IPPQ]):
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return IpPortSchema()
 
 

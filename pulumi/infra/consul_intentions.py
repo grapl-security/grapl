@@ -21,7 +21,7 @@ class ConsulIntentions(pulumi.ComponentResource):
         files = list(Path(intention_directory).glob("*.json"))
 
         for file in files:
-            with open(file, "r") as f:
+            with open(file) as f:
                 intention = json.load(f)
                 if intention["Kind"] != "service-intentions":
                     raise Exception(

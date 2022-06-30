@@ -10,7 +10,7 @@ QueryPredicateResult = Mapping[str, Any]
 
 def query_dgraph_type(
     client: GraphClient, type_name: str
-) -> List[QueryPredicateResult]:
+) -> list[QueryPredicateResult]:
     query = f"""
         schema(type: {type_name}) {{ type }}
     """

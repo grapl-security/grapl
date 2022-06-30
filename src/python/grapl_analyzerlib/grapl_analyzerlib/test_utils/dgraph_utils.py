@@ -8,7 +8,7 @@ from grapl_analyzerlib.queryable import V
 from grapl_analyzerlib.grapl_client import GraphClient
 
 
-def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> int:
+def _upsert(client: GraphClient, node_dict: dict[str, Any]) -> int:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]
     query = f"""
@@ -41,9 +41,9 @@ def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> int:
 def upsert(
     client: GraphClient,
     type_name: str,
-    view_type: Type[V],
+    view_type: type[V],
     node_key: str,
-    node_props: Dict[str, Any],
+    node_props: dict[str, Any],
 ) -> V:
     node_props["node_key"] = node_key
     node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
@@ -69,4 +69,4 @@ def random_key_for_test(test_case: unittest.TestCase) -> str:
     """The atrociously-named TestCase#id returns things like tests.test_ip_addr
     ess_node.TestIpAddressQuery.test__single_ip_addr_node__query_by_node_key
     letting us tie back a node to the test that created it."""
-    return "{}{}".format(test_case.id(), uuid.uuid4())
+    return f"{test_case.id()}{uuid.uuid4()}"
