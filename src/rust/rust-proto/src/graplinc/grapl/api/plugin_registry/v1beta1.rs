@@ -19,6 +19,10 @@ use crate::{
     SerDeError,
 };
 
+//
+// PluginType
+//
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PluginType {
     Generator,
@@ -43,7 +47,6 @@ impl TryFrom<proto::PluginType> for PluginType {
             proto::PluginType::Generator => Ok(PluginType::Generator),
             proto::PluginType::Analyzer => Ok(PluginType::Analyzer),
         }
-        // todo!()
     }
 }
 
@@ -56,63 +59,98 @@ impl From<PluginType> for proto::PluginType {
     }
 }
 
+//
+// PluginMetadata
+//
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct Plugin {
-    /// unique identifier for this plugin
-    pub plugin_id: uuid::Uuid,
+pub struct PluginMetadata {
+    /// The platform tenant this plugin belongs to
+    pub tenant_id: uuid::Uuid,
     /// The string value to display to a user, non-empty
     pub display_name: String,
     /// The type of the plugin
     pub plugin_type: PluginType,
-    /// The byte representation of the plugin executable
-    pub plugin_binary: Vec<u8>,
+    /// The event source id associated with this plugin. Present if
+    /// PluginType::Generator, absent otherwise.
+    pub event_source_id: Option<uuid::Uuid>,
 }
 
-impl ProtobufSerializable for Plugin {
-    type ProtobufMessage = proto::Plugin;
-}
-
-impl type_url::TypeUrl for Plugin {
+impl type_url::TypeUrl for PluginMetadata {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.Plugin";
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.PluginMetadata";
 }
 
-impl TryFrom<proto::Plugin> for Plugin {
+impl TryFrom<proto::PluginMetadata> for PluginMetadata {
     type Error = SerDeError;
 
-    fn try_from(value: proto::Plugin) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::PluginMetadata) -> Result<Self, Self::Error> {
         let plugin_type = value.plugin_type().try_into()?;
-        let display_name = value.display_name;
-        let plugin_binary = value.plugin_binary;
-        let plugin_id = value
-            .plugin_id
-            .ok_or(SerDeError::MissingField("Plugin.plugin_id"))?
+
+        let event_source_id = match plugin_type {
+            PluginType::Generator => {
+                if let Some(event_source_id) = value.event_source_id {
+                    Ok(Some(event_source_id.into()))
+                } else {
+                    Err(SerDeError::MissingField("event_source_id"))
+                }
+            }
+            _ => {
+                if value.event_source_id.is_some() {
+                    Err(SerDeError::InvalidField {
+                        field_name: "event_source_id",
+                        assertion: "must be absent when plugin_type is not PluginType::Generator"
+                            .to_string(),
+                    })
+                } else {
+                    Ok(None)
+                }
+            }
+        }?;
+
+        let tenant_id = value
+            .tenant_id
+            .ok_or(SerDeError::MissingField("tenant_id"))?
             .into();
 
+        let display_name = value.display_name;
+
+        if display_name.is_empty() {
+            return Err(SerDeError::MissingField("display_name"));
+        }
+
         Ok(Self {
-            plugin_id,
+            tenant_id,
             display_name,
             plugin_type,
-            plugin_binary,
+            event_source_id,
         })
     }
 }
 
-impl From<Plugin> for proto::Plugin {
-    fn from(value: Plugin) -> Self {
+impl From<PluginMetadata> for proto::PluginMetadata {
+    fn from(value: PluginMetadata) -> Self {
         let plugin_type: proto::PluginType = value.plugin_type.into();
         Self {
-            plugin_id: Some(value.plugin_id.into()),
+            tenant_id: Some(value.tenant_id.into()),
             display_name: value.display_name,
             plugin_type: plugin_type as i32,
-            plugin_binary: value.plugin_binary,
+            event_source_id: value.event_source_id.map(|id| id.into()),
         }
     }
 }
 
+impl ProtobufSerializable for PluginMetadata {
+    type ProtobufMessage = proto::PluginMetadata;
+}
+
+//
+// CreatePluginRequest
+//
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum CreatePluginRequest {
-    Metadata(CreatePluginRequestMetadata),
+    Metadata(PluginMetadata),
     Chunk(Vec<u8>),
 }
 
@@ -154,59 +192,9 @@ impl ProtobufSerializable for CreatePluginRequest {
     type ProtobufMessage = proto::CreatePluginRequest;
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct CreatePluginRequestMetadata {
-    /// Tenant that is deploying this plugin
-    pub tenant_id: uuid::Uuid,
-    /// The string value to display to a user, non-empty
-    pub display_name: String,
-    /// The type of the plugin
-    pub plugin_type: PluginType,
-}
-
-impl type_url::TypeUrl for CreatePluginRequestMetadata {
-    const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreatePluginRequestMetadata";
-}
-
-impl TryFrom<proto::CreatePluginRequestMetadata> for CreatePluginRequestMetadata {
-    type Error = SerDeError;
-
-    fn try_from(value: proto::CreatePluginRequestMetadata) -> Result<Self, Self::Error> {
-        let plugin_type = value.plugin_type().try_into()?;
-
-        let tenant_id = value
-            .tenant_id
-            .ok_or(SerDeError::MissingField("CreatePluginRequest.tenant_id"))?
-            .into();
-        let display_name = value.display_name;
-
-        if display_name.is_empty() {
-            return Err(SerDeError::MissingField("CreatePluginRequest.display_name"));
-        }
-
-        Ok(Self {
-            tenant_id,
-            display_name,
-            plugin_type,
-        })
-    }
-}
-
-impl From<CreatePluginRequestMetadata> for proto::CreatePluginRequestMetadata {
-    fn from(value: CreatePluginRequestMetadata) -> Self {
-        let plugin_type: proto::PluginType = value.plugin_type.into();
-        Self {
-            tenant_id: Some(value.tenant_id.into()),
-            display_name: value.display_name,
-            plugin_type: plugin_type as i32,
-        }
-    }
-}
-
-impl ProtobufSerializable for CreatePluginRequestMetadata {
-    type ProtobufMessage = proto::CreatePluginRequestMetadata;
-}
+//
+// CreatePluginResponse
+//
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreatePluginResponse {
@@ -243,6 +231,11 @@ impl From<CreatePluginResponse> for proto::CreatePluginResponse {
 impl ProtobufSerializable for CreatePluginResponse {
     type ProtobufMessage = proto::CreatePluginResponse;
 }
+
+//
+// DeployPluginRequest
+//
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeployPluginRequest {
     pub plugin_id: uuid::Uuid,
@@ -278,6 +271,10 @@ impl ProtobufSerializable for DeployPluginRequest {
     type ProtobufMessage = proto::DeployPluginRequest;
 }
 
+//
+// DeployPluginResponse
+//
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeployPluginResponse {}
 
@@ -299,9 +296,14 @@ impl From<DeployPluginResponse> for proto::DeployPluginResponse {
         Self {}
     }
 }
+
 impl ProtobufSerializable for DeployPluginResponse {
     type ProtobufMessage = proto::DeployPluginResponse;
 }
+
+//
+// GetAnalyzersForTenantRequest
+//
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetAnalyzersForTenantRequest {
@@ -336,9 +338,14 @@ impl From<GetAnalyzersForTenantRequest> for proto::GetAnalyzersForTenantRequest 
         }
     }
 }
+
 impl ProtobufSerializable for GetAnalyzersForTenantRequest {
     type ProtobufMessage = proto::GetAnalyzersForTenantRequest;
 }
+
+//
+// GetAnalyzersForTenantResponse
+//
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetAnalyzersForTenantResponse {
@@ -373,9 +380,14 @@ impl From<GetAnalyzersForTenantResponse> for proto::GetAnalyzersForTenantRespons
         }
     }
 }
+
 impl ProtobufSerializable for GetAnalyzersForTenantResponse {
     type ProtobufMessage = proto::GetAnalyzersForTenantResponse;
 }
+
+//
+// GetGeneratorsForEventSourceRequest
+//
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetGeneratorsForEventSourceRequest {
@@ -410,9 +422,14 @@ impl From<GetGeneratorsForEventSourceRequest> for proto::GetGeneratorsForEventSo
         }
     }
 }
+
 impl ProtobufSerializable for GetGeneratorsForEventSourceRequest {
     type ProtobufMessage = proto::GetGeneratorsForEventSourceRequest;
 }
+
+//
+// GetGeneratorsForEventSourceResponse
+//
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetGeneratorsForEventSourceResponse {
@@ -450,6 +467,11 @@ impl From<GetGeneratorsForEventSourceResponse> for proto::GetGeneratorsForEventS
 impl ProtobufSerializable for GetGeneratorsForEventSourceResponse {
     type ProtobufMessage = proto::GetGeneratorsForEventSourceResponse;
 }
+
+//
+// GetPluginRequest
+//
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginRequest {
     /// The identity of the plugin
@@ -494,13 +516,19 @@ impl From<GetPluginRequest> for proto::GetPluginRequest {
         }
     }
 }
+
 impl ProtobufSerializable for GetPluginRequest {
     type ProtobufMessage = proto::GetPluginRequest;
 }
 
+//
+// GetPluginResponse
+//
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginResponse {
-    pub plugin: Plugin,
+    pub plugin_id: uuid::Uuid,
+    pub plugin_metadata: PluginMetadata,
 }
 
 impl type_url::TypeUrl for GetPluginResponse {
@@ -512,25 +540,41 @@ impl TryFrom<proto::GetPluginResponse> for GetPluginResponse {
     type Error = SerDeError;
 
     fn try_from(value: proto::GetPluginResponse) -> Result<Self, Self::Error> {
-        let plugin = value
-            .plugin
-            .ok_or(SerDeError::MissingField("GetPluginResponse.plugin"))?
+        let plugin_id = value
+            .plugin_id
+            .ok_or(SerDeError::MissingField("GetPluginResponse.plugin_id"))?
             .try_into()?;
 
-        Ok(Self { plugin })
+        let plugin_metadata = value
+            .plugin_metadata
+            .ok_or(SerDeError::MissingField(
+                "GetPluginResponse.plugin_metadata",
+            ))?
+            .try_into()?;
+
+        Ok(Self {
+            plugin_id,
+            plugin_metadata,
+        })
     }
 }
 
 impl From<GetPluginResponse> for proto::GetPluginResponse {
     fn from(value: GetPluginResponse) -> Self {
         Self {
-            plugin: Some(value.plugin.into()),
+            plugin_id: Some(value.plugin_id.into()),
+            plugin_metadata: Some(value.plugin_metadata.into()),
         }
     }
 }
+
 impl ProtobufSerializable for GetPluginResponse {
     type ProtobufMessage = proto::GetPluginResponse;
 }
+
+//
+// TearDownPluginRequest
+//
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TearDownPluginRequest {
@@ -562,9 +606,14 @@ impl From<TearDownPluginRequest> for proto::TearDownPluginRequest {
         }
     }
 }
+
 impl ProtobufSerializable for TearDownPluginRequest {
     type ProtobufMessage = proto::TearDownPluginRequest;
 }
+
+//
+// TearDownPluginResponse
+//
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TearDownPluginResponse {}
