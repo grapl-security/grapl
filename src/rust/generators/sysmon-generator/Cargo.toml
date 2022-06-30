@@ -34,7 +34,7 @@ tracing = "0.1.29"
 tracing-appender = "0.2"
 tracing-opentelemetry = "0.16"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-uuid = { version = "0.8", features = ["v4"] }
+uuid = { version = "1.0", features = ["v4"] }
 
 [dev-dependencies]
 async-trait = "0.1"
