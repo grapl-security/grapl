@@ -7,7 +7,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Dict, List, cast
 
 from nomad import Nomad
 from nomad.api.exceptions import URLNotFoundNomadException
@@ -137,7 +137,7 @@ class NomadTask:
         return ""
 
 
-JobToAllocDict = dict[str, list[NomadAllocation]]
+JobToAllocDict = Dict[str, List[NomadAllocation]]
 
 
 def _get_allocations(nomad_client: Nomad, parent: NomadNamespace) -> JobToAllocDict:
