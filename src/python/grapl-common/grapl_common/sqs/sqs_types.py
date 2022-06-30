@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 class S3BucketDict(TypedDict):
     name: str
-    ownerIdentity: Dict
+    ownerIdentity: dict
     arn: str
 
 
@@ -28,8 +28,8 @@ class S3DescriptorDict(TypedDict):
     is URL encoded.
     """
 
-    bucket: Dict
-    object: Dict
+    bucket: dict
+    object: dict
 
 
 class S3PutRecordDict(TypedDict):
@@ -42,7 +42,7 @@ class S3PutRecordDict(TypedDict):
 
 
 class SQSMessageBody(TypedDict):
-    Records: List[S3PutRecordDict]
+    Records: list[S3PutRecordDict]
 
 
 SQSReceiptHandle = NewType("SQSReceiptHandle", str)

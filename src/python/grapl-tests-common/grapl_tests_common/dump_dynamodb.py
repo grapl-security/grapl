@@ -31,7 +31,7 @@ def dump_dynamodb() -> None:
             f.write(table_dump)
 
 
-def _dump_dynamodb_table(table: Table) -> Optional[str]:
+def _dump_dynamodb_table(table: Table) -> str | None:
     """
     Outputs a nicely-formatted Python list of all the items in the table.
     (you may need a `from decimal import Decimal` to interact with it, though.)

@@ -39,7 +39,7 @@ def default_ip_connection_properties():
     }
 
 
-def default_ip_connection_edges() -> Dict[str, Tuple[EdgeT, str]]:
+def default_ip_connection_edges() -> dict[str, tuple[EdgeT, str]]:
     return {
         "inbound_ip_connection_to": (
             EdgeT(IpConnectionSchema, IpAddressSchema, EdgeRelationship.ManyToOne),
@@ -50,7 +50,7 @@ def default_ip_connection_edges() -> Dict[str, Tuple[EdgeT, str]]:
 
 class IpConnectionSchema(EntitySchema):
     def __init__(self):
-        super(IpConnectionSchema, self).__init__(
+        super().__init__(
             default_ip_connection_properties(),
             default_ip_connection_edges(),
             lambda: IpConnectionView,
@@ -66,12 +66,12 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_src_ip_address(
         self,
         *,
-        eq: Optional[StrOrNot] = None,
-        contains: Optional[OneOrMany[StrOrNot]] = None,
-        starts_with: Optional[StrOrNot] = None,
-        ends_with: Optional[StrOrNot] = None,
-        regexp: Optional[OneOrMany[StrOrNot]] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> ProcessQuery:
         pass
 
@@ -79,11 +79,11 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_src_port(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -91,12 +91,12 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_dst_ip_address(
         self,
         *,
-        eq: Optional[StrOrNot] = None,
-        contains: Optional[OneOrMany[StrOrNot]] = None,
-        starts_with: Optional[StrOrNot] = None,
-        ends_with: Optional[StrOrNot] = None,
-        regexp: Optional[OneOrMany[StrOrNot]] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> ProcessQuery:
         pass
 
@@ -104,11 +104,11 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_dst_port(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -116,11 +116,11 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_created_timestamp(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -128,11 +128,11 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_terminated_timestamp(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -140,11 +140,11 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_last_seen_timestamp(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -157,7 +157,7 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return IpConnectionSchema()
 
 
@@ -190,7 +190,7 @@ class IpConnectionView(EntityView[IPV, IPQ]):
         uid: int,
         node_key: str,
         graph_client,
-        node_types: Set[str],
+        node_types: set[str],
         src_ip_address=None,
         src_port=None,
         dst_ip_address=None,
@@ -201,9 +201,7 @@ class IpConnectionView(EntityView[IPV, IPQ]):
         inbound_ip_connection_to=None,
         **kwargs,
     ):
-        super(IpConnectionView, self).__init__(
-            uid, node_key, graph_client, node_types, **kwargs
-        )
+        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
 
         self.set_predicate("src_ip_address", src_ip_address)
         self.set_predicate("src_port", src_port)
@@ -245,7 +243,7 @@ class IpConnectionView(EntityView[IPV, IPQ]):
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return IpConnectionSchema()
 
 
@@ -259,7 +257,7 @@ IpConnectionSchema().init_reverse()
 
 
 class IpConnectionExtendsIpAddressQuery(IpAddressQuery):
-    def with_ip_connections_from(self, *ip_connections_from) -> "IpAddressQuery":
+    def with_ip_connections_from(self, *ip_connections_from) -> IpAddressQuery:
         return self.with_to_neighbor(
             IpConnectionQuery,
             "ip_connections_from",
@@ -271,7 +269,7 @@ class IpConnectionExtendsIpAddressQuery(IpAddressQuery):
 class IpConnectionExtendsIpAddressView(IpAddressView):
     def get_ip_connections_from(
         self, *ip_connections_from, cached=False
-    ) -> "IpAddressQuery":
+    ) -> IpAddressQuery:
         return self.get_neighbor(
             IpConnectionQuery,
             "ip_connections_from",

@@ -18,7 +18,7 @@ T = TypeVar("T")
 OneOrMany = Union[List[T], T]
 
 
-def default_asset_properties() -> Dict[str, PropType]:
+def default_asset_properties() -> dict[str, PropType]:
     return {
         "hostname": PropType(
             PropPrimitive.Str,
@@ -27,7 +27,7 @@ def default_asset_properties() -> Dict[str, PropType]:
     }
 
 
-def default_asset_edges() -> Dict[str, Tuple[EdgeT, str]]:
+def default_asset_edges() -> dict[str, tuple[EdgeT, str]]:
     return {
         "asset_ip": (
             EdgeT(AssetSchema, IpAddressSchema, EdgeRelationship.ManyToMany),
@@ -54,7 +54,7 @@ def default_asset_edges() -> Dict[str, Tuple[EdgeT, str]]:
 
 class AssetSchema(EntitySchema):
     def __init__(self):
-        super(AssetSchema, self).__init__(
+        super().__init__(
             default_asset_properties(), default_asset_edges(), view=lambda: AssetView
         )
 
@@ -75,12 +75,12 @@ class AssetQuery(EntityQuery[AV, AQ]):
     def with_hostname(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> AssetQuery:
         self._property_filters["hostname"].extend(
             _str_cmps(
@@ -95,21 +95,21 @@ class AssetQuery(EntityQuery[AV, AQ]):
         )
         return self
 
-    def with_asset_ip(self, *asset_ips: "IpAddressQuery"):
+    def with_asset_ip(self, *asset_ips: IpAddressQuery):
         asset_ips = asset_ips or [IpAddressSchema()]
         self.set_neighbor_filters("asset_ip", [asset_ips])
         for asset_ip in asset_ips:
             asset_ip.set_neighbor_filters("ip_assigned_to", [self])
         return self
 
-    def with_asset_processes(self, *asset_processes: "ProcessQuery"):
+    def with_asset_processes(self, *asset_processes: ProcessQuery):
         asset_processes = asset_processes or [ProcessSchema()]
         self.set_neighbor_filters("asset_processes", [asset_processes])
         for asset_process in asset_processes:
             asset_process.set_neighbor_filters("process_asset", [self])
         return self
 
-    def with_files_on_asset(self, *files_on_asset: "FileQuery"):
+    def with_files_on_asset(self, *files_on_asset: FileQuery):
         files_on_asset = files_on_asset or [FileSchema()]
         self.set_neighbor_filters("files_on_asset", [files_on_asset])
         for file_on_asset in files_on_asset:
@@ -147,11 +147,11 @@ class AssetView(EntityView[AV, AQ]):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        hostname: Optional[str] = None,
-        asset_ip: Optional[List["IpAddressView"]] = None,
-        asset_processes: Optional[List["ProcessView"]] = None,
-        files_on_asset: Optional[List["FileView"]] = None,
+        node_types: set[str],
+        hostname: str | None = None,
+        asset_ip: list[IpAddressView] | None = None,
+        asset_processes: list[ProcessView] | None = None,
+        files_on_asset: list[FileView] | None = None,
         **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, node_types=node_types, **kwargs)
@@ -161,7 +161,7 @@ class AssetView(EntityView[AV, AQ]):
         self.set_predicate("asset_processes", asset_processes)
         self.set_predicate("files_on_asset", files_on_asset)
 
-    def get_hostname(self, cached=True) -> Optional[str]:
+    def get_hostname(self, cached=True) -> str | None:
         return self.get_str("hostname", cached=cached)
 
     def with_asset_ip(self, *asset_ips, cached=True):

@@ -27,7 +27,7 @@ def default_process_outbound_connection_properties():
     }
 
 
-def default_process_outbound_connection_edges() -> Dict[str, Tuple[EdgeT, str]]:
+def default_process_outbound_connection_edges() -> dict[str, tuple[EdgeT, str]]:
     return {
         "connected_over": (
             # The IP + Port that was connected to
@@ -52,7 +52,7 @@ def default_process_outbound_connection_edges() -> Dict[str, Tuple[EdgeT, str]]:
 
 class ProcessOutboundConnectionSchema(EntitySchema):
     def __init__(self):
-        super(ProcessOutboundConnectionSchema, self).__init__(
+        super().__init__(
             default_process_outbound_connection_properties(),
             default_process_outbound_connection_edges(),
             lambda: ProcessOutboundConnectionView,
@@ -68,12 +68,12 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_ip_address(
         self,
         *,
-        eq: Optional[StrOrNot] = None,
-        contains: Optional[OneOrMany[StrOrNot]] = None,
-        starts_with: Optional[StrOrNot] = None,
-        ends_with: Optional[StrOrNot] = None,
-        regexp: Optional[OneOrMany[StrOrNot]] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ):
         pass
 
@@ -81,12 +81,12 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_protocol(
         self,
         *,
-        eq: Optional[StrOrNot] = None,
-        contains: Optional[OneOrMany[StrOrNot]] = None,
-        starts_with: Optional[StrOrNot] = None,
-        ends_with: Optional[StrOrNot] = None,
-        regexp: Optional[OneOrMany[StrOrNot]] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ):
         pass
 
@@ -94,11 +94,11 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_created_timestamp(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -106,11 +106,11 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_terminated_timestamp(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -118,11 +118,11 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_port(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -130,16 +130,16 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_last_seen_timestamp(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return ProcessOutboundConnectionSchema()
 
 
@@ -190,13 +190,13 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        created_timestamp: Optional[int] = None,
-        terminated_timestamp: Optional[int] = None,
-        last_seen_timestamp: Optional[int] = None,
-        port: Optional[int] = None,
-        ip_address: Optional[str] = None,
-        protocol: Optional[str] = None,
+        node_types: set[str],
+        created_timestamp: int | None = None,
+        terminated_timestamp: int | None = None,
+        last_seen_timestamp: int | None = None,
+        port: int | None = None,
+        ip_address: str | None = None,
+        protocol: str | None = None,
         **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
@@ -228,7 +228,7 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
         self.get_int("last_seen_timestamp", cached=cached)
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return ProcessOutboundConnectionSchema()
 
 

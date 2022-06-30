@@ -36,7 +36,7 @@ def hacky_memoized_actix_session() -> str:
 @pytest.mark.integration_test
 class TestGraphqlEndpoint(TestCase):
     def __init__(self, *args, **kwargs) -> None:  # type: ignore
-        super(TestGraphqlEndpoint, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         wait_for_vsc_debugger(service="graphql_endpoint_tests")
 
     @hypothesis.given(

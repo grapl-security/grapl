@@ -6,6 +6,7 @@ backend_packages = [
   "pants.backend.codegen.protobuf.python",
   "pants.backend.docker",
   "pants.backend.docker.lint.hadolint",
+  "pants.backend.experimental.python.lint.pyupgrade",
   "pants.backend.plugin_development",
   "pants.backend.python",
   "pants.backend.python.lint.black",
@@ -206,6 +207,9 @@ known_versions = [
   # https://github.com/pantsbuild/pants/blob/1d828786c3c0f352e7811e29dd80f7877f5e170c/src/python/pants/core/util_rules/external_tool.py#L131
   "v2.10.0|linux_x86_64|8ee6ff537341681f9e91bae2d5da451b15c575691e33980893732d866d3cefc4|2301804"
 ]
+
+[pyupgrade]
+args = ["--py38-plus"]
 
 [tailor]
 ignore_paths = [

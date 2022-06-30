@@ -41,7 +41,7 @@ def meta_into_property(predicate_meta) -> PropType:
 
 def meta_into_predicate(
     schema_table: Table, schema, predicate_meta
-) -> Union[EdgeT, PropType]:
+) -> EdgeT | PropType:
     try:
         if predicate_meta["type"] == "uid":
             return meta_into_edge(schema_table, schema, predicate_meta["predicate"])

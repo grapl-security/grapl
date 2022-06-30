@@ -36,7 +36,7 @@ def _after_tests() -> None:
 
 
 def exec_pytest() -> int:
-    pytest_args: List[str] = []
+    pytest_args: list[str] = []
     if environ.get("PYTEST_EXPRESSION"):
         pytest_args.extend(("-k", environ["PYTEST_EXPRESSION"]))
 

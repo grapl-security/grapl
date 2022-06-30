@@ -18,7 +18,7 @@ PQ = TypeVar("PQ", bound="ProcessQuery")
 PV = TypeVar("PV", bound="ProcessView")
 
 
-def default_process_edges() -> Dict[str, Tuple[EdgeT, str]]:
+def default_process_edges() -> dict[str, tuple[EdgeT, str]]:
     from grapl_analyzerlib.nodes.process_outbound_connection import (
         ProcessOutboundConnectionSchema,
     )
@@ -52,7 +52,7 @@ def default_process_edges() -> Dict[str, Tuple[EdgeT, str]]:
     }
 
 
-def default_process_properties() -> Dict[str, PropType]:
+def default_process_properties() -> dict[str, PropType]:
     return {
         "process_name": PropType(PropPrimitive.Str, False),
         "image_name": PropType(PropPrimitive.Str, False),
@@ -65,7 +65,7 @@ def default_process_properties() -> Dict[str, PropType]:
 
 class ProcessSchema(EntitySchema):
     def __init__(self):
-        super(ProcessSchema, self).__init__(
+        super().__init__(
             default_process_properties(), default_process_edges(), lambda: ProcessView
         )
 
@@ -83,11 +83,11 @@ class ProcessQuery(EntityQuery[PV, PQ]):
     def with_process_id(
         self: PQ,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ) -> PQ:
         return self
 
@@ -95,11 +95,11 @@ class ProcessQuery(EntityQuery[PV, PQ]):
     def with_created_timestamp(
         self: PQ,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ) -> PQ:
         return self
 
@@ -107,11 +107,11 @@ class ProcessQuery(EntityQuery[PV, PQ]):
     def with_terminate_time(
         self: PQ,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ) -> PQ:
         return self
 
@@ -119,12 +119,12 @@ class ProcessQuery(EntityQuery[PV, PQ]):
     def with_process_name(
         self: PQ,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> PQ:
         return self
 
@@ -132,12 +132,12 @@ class ProcessQuery(EntityQuery[PV, PQ]):
     def with_image_name(
         self: PQ,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> PQ:
         return self
 
@@ -145,12 +145,12 @@ class ProcessQuery(EntityQuery[PV, PQ]):
     def with_arguments(
         self: PQ,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> PQ:
         return self
 
@@ -232,15 +232,15 @@ class ProcessView(EntityView[PV, PQ]):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        process_name: Optional[str] = None,
-        image_name: Optional[str] = None,
-        process_id: Optional[int] = None,
-        created_timestamp: Optional[int] = None,
-        terminate_time: Optional[int] = None,
-        arguments: Optional[str] = None,
-        children: Optional[List["ProcessView"]] = None,
-        parent: Optional["ProcessView"] = None,
+        node_types: set[str],
+        process_name: str | None = None,
+        image_name: str | None = None,
+        process_id: int | None = None,
+        created_timestamp: int | None = None,
+        terminate_time: int | None = None,
+        arguments: str | None = None,
+        children: list[ProcessView] | None = None,
+        parent: ProcessView | None = None,
         **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
@@ -254,10 +254,10 @@ class ProcessView(EntityView[PV, PQ]):
         self.set_predicate("children", children or [])
         self.set_predicate("parent", parent)
 
-    def get_image_name(self, cached=True) -> Optional[str]:
+    def get_image_name(self, cached=True) -> str | None:
         return self.get_str("image_name", cached=cached)
 
-    def get_process_name(self, cached=True) -> Optional[str]:
+    def get_process_name(self, cached=True) -> str | None:
         if cached and self.process_name:
             return self.process_name
 
@@ -272,7 +272,7 @@ class ProcessView(EntityView[PV, PQ]):
             self.process_name = self_node.process_name
         return self.process_name
 
-    def get_process_id(self, cached=True) -> Optional[int]:
+    def get_process_id(self, cached=True) -> int | None:
         if cached and self.process_id:
             return self.process_id
 
@@ -287,7 +287,7 @@ class ProcessView(EntityView[PV, PQ]):
             self.process_id = self_node.process_id
         return self.process_id
 
-    def get_created_timestamp(self, cached=True) -> Optional[int]:
+    def get_created_timestamp(self, cached=True) -> int | None:
         if cached and self.created_timestamp:
             return self.created_timestamp
 
@@ -302,7 +302,7 @@ class ProcessView(EntityView[PV, PQ]):
             self.created_timestamp = self_node.created_timestamp
         return self.created_timestamp
 
-    def get_terminate_time(self, cached=True) -> Optional[int]:
+    def get_terminate_time(self, cached=True) -> int | None:
         if cached and self.terminate_time:
             return self.terminate_time
 
@@ -317,7 +317,7 @@ class ProcessView(EntityView[PV, PQ]):
             self.terminate_time = self_node.terminate_time
         return self.terminate_time
 
-    def get_arguments(self, cached=True) -> Optional[str]:
+    def get_arguments(self, cached=True) -> str | None:
         if cached and self.arguments:
             return self.arguments
 
@@ -332,7 +332,7 @@ class ProcessView(EntityView[PV, PQ]):
             self.arguments = self_node.arguments
         return self.arguments
 
-    def get_parent(self, parent=None, cached=True) -> Optional[str]:
+    def get_parent(self, parent=None, cached=True) -> str | None:
         if cached and self.parent:
             return self.parent
 
@@ -347,7 +347,7 @@ class ProcessView(EntityView[PV, PQ]):
             self.parent = self_node.parent
         return self.parent
 
-    def get_children(self, *children: ProcessQuery, cached=True) -> "List[ProcessView]":
+    def get_children(self, *children: ProcessQuery, cached=True) -> list[ProcessView]:
         if cached and self.children:
             return self.children
 
@@ -363,7 +363,7 @@ class ProcessView(EntityView[PV, PQ]):
         return self.children
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return ProcessSchema()
 
 
@@ -390,8 +390,8 @@ class ProcessExtendsProcessOutboundConnectionView(ProcessOutboundConnectionView)
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        connections_from: Optional[List[ProcessView]] = None,
+        node_types: set[str],
+        connections_from: list[ProcessView] | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -437,8 +437,8 @@ class ProcessExtendsProcessInboundConnectionView(ProcessInboundConnectionView):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        bound_by: Optional[List[ProcessView]] = None,
+        node_types: set[str],
+        bound_by: list[ProcessView] | None = None,
         **kwargs,
     ):
         super().__init__(

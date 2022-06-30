@@ -20,7 +20,7 @@ def escape_dgraph_regexp(input: str) -> str:
     return output
 
 
-class Not(object):
+class Not:
     def __init__(self, value: Union[str, int]):
         self.value = value
 
@@ -29,7 +29,7 @@ StrOrNot = Union[str, Not]
 IntOrNot = Union[int, Not]
 
 
-class Has(object):
+class Has:
     def __init__(self, predicate: StrOrNot):
         self.predicate = extract_value(predicate)
         self.negated = isinstance(predicate, Not)
@@ -43,7 +43,7 @@ class Has(object):
         return filter_str
 
 
-class Eq(object):
+class Eq:
     def __init__(self, predicate: str, value: Union[Not, str, int]):
         self.predicate = predicate
         self.value = extract_value(value)
@@ -61,7 +61,7 @@ class Eq(object):
             return filter_str
 
 
-class Gt(object):
+class Gt:
     def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
@@ -79,7 +79,7 @@ class Gt(object):
             return filter_str
 
 
-class Ge(object):
+class Ge:
     def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
@@ -97,7 +97,7 @@ class Ge(object):
             return filter_str
 
 
-class Lt(object):
+class Lt:
     def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
@@ -115,7 +115,7 @@ class Lt(object):
             return filter_str
 
 
-class Le(object):
+class Le:
     def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
@@ -133,7 +133,7 @@ class Le(object):
             return filter_str
 
 
-class Contains(object):
+class Contains:
     def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = re.escape(str(extract_value(value)))
@@ -149,7 +149,7 @@ class Contains(object):
 IntEq = Eq
 
 
-class StartsWith(object):
+class StartsWith:
     def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = re.escape(str(extract_value(value)))
@@ -162,7 +162,7 @@ class StartsWith(object):
             return f"regexp({self.predicate}, /^{self.value}/)"
 
 
-class EndsWith(object):
+class EndsWith:
     def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = re.escape(str(extract_value(value)))
@@ -175,7 +175,7 @@ class EndsWith(object):
             return f"regexp({self.predicate}, /{self.value}$/)"
 
 
-class Rex(object):
+class Rex:
     def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = extract_value(value)
@@ -188,7 +188,7 @@ class Rex(object):
             return f"regexp({self.predicate}, /{self.value}/)"
 
 
-class Distance(object):
+class Distance:
     def __init__(self, predicate: str, value: StrOrNot, distance: int):
         self.predicate = predicate
         self.value = extract_value(value)

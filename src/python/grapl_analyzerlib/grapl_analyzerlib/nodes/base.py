@@ -30,11 +30,11 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 class BaseSchema(Schema):
     def __init__(
         self,
-        properties: Optional[Dict[str, PropType]] = None,
-        edges: Optional[Dict[str, Tuple[EdgeT, str]]] = None,
-        view: Union[Type[Viewable], Callable[[], Type[Viewable]]] = None,
+        properties: dict[str, PropType] | None = None,
+        edges: dict[str, tuple[EdgeT, str]] | None = None,
+        view: type[Viewable] | Callable[[], type[Viewable]] = None,
     ):
-        super(BaseSchema, self).__init__(
+        super().__init__(
             {
                 **(properties or {}),
                 "node_key": PropType(
@@ -103,7 +103,7 @@ class BaseSchema(Schema):
 
 class BaseQuery(Queryable[BV, BQ]):
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return BaseSchema()
 
 
@@ -118,7 +118,7 @@ class BaseView(Viewable[BV, BQ]):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
+        node_types: set[str],
         **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, **kwargs)
@@ -126,7 +126,7 @@ class BaseView(Viewable[BV, BQ]):
         self.uid = uid
         self.node_key = node_key
 
-    def into_view(self, v: Type["V"]) -> Optional["V"]:
+    def into_view(self, v: type[V]) -> V | None:
         if v.node_schema().self_type() in self.node_types:
             self.queryable = v.queryable
             node_types = self.node_types.union(self.predicates.get("node_types", set()))
@@ -142,16 +142,16 @@ class BaseView(Viewable[BV, BQ]):
         return None
 
     @staticmethod
-    def from_node_key(graph_client: GraphClient, node_key: str) -> "Optional[BaseView]":
+    def from_node_key(graph_client: GraphClient, node_key: str) -> BaseView | None:
         self_node = BaseQuery().with_node_key(eq=node_key).query_first(graph_client)
 
         return self_node
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return BaseSchema({}, {}, BaseView)
 
-    def _expand(self, edge_str: Optional[List[str]] = None):
+    def _expand(self, edge_str: list[str] | None = None):
         # get the raw dictionary for this type
         if edge_str:
             edge_filters = " AND " + " AND ".join(edge_str or [])

@@ -25,7 +25,7 @@ def load_plugins(model_plugins_bucket: str, s3: S3Client, path=None) -> None:
     ).retrieve(overwrite=True, path=path)
 
 
-class PluginRetriever(object):
+class PluginRetriever:
     def __init__(
         self,
         plugin_bucket: str,
@@ -36,7 +36,7 @@ class PluginRetriever(object):
         self.s3_client = s3_client
         self.plugin_directory = plugin_directory
 
-    def retrieve(self, overwrite: bool = False, path: Optional[Path] = None) -> None:
+    def retrieve(self, overwrite: bool = False, path: Path | None = None) -> None:
         path = path or "."
         LOGGER.info(f'Writing out plugins to: {os.path.join(path, "model_plugins")}')
 
