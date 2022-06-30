@@ -9,9 +9,8 @@ import pulumi
 
 
 def local_user_item(username: str, cleartext: str) -> Dict[str, Dict[str, str]]:
-    """
-    Creates an "owner" account with the given username and password (cleartext)
-    """
+    """Creates an "owner" account with the given username and password
+    (cleartext)"""
 
     password_hasher = PasswordHasher(time_cost=2, memory_cost=102400, parallelism=8)
     password_hash = password_hasher.hash(cleartext)
@@ -23,7 +22,7 @@ def local_user_item(username: str, cleartext: str) -> Dict[str, Dict[str, str]]:
 
 
 def local_grapl_user(table: aws.dynamodb.Table, username: str, cleartext: str) -> None:
-    """Create a user only for local development uses; NEVER REAL AWS"""
+    """Create a user only for local development uses; NEVER REAL AWS."""
 
     user = aws.dynamodb.TableItem(
         f"{config.STACK_NAME}-user-{username}",

@@ -22,10 +22,10 @@ class S3ObjectDict(TypedDict):
 
 
 class S3DescriptorDict(TypedDict):
-    """
-    The s3 key provides information about the bucket and
-    object involved in the event. The object key name value
-    is URL encoded.
+    """The s3 key provides information about the bucket and object involved in
+    the event.
+
+    The object key name value is URL encoded.
     """
 
     bucket: Dict
@@ -50,9 +50,8 @@ SQSMessageId = NewType("SQSMessageId", str)
 
 
 class SQSMessage:
-    """
-    Apply some more hardened types to MessageTypeDef, and do the json-load on user's behalf.
-    """
+    """Apply some more hardened types to MessageTypeDef, and do the json-load
+    on user's behalf."""
 
     def __init__(self, msg: MessageTypeDef) -> None:
         self.body: SQSMessageBody = json.loads(msg["Body"])

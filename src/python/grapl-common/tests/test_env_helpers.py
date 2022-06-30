@@ -23,9 +23,8 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_throws_FromEnvException_when_config_and_env_vars_absent(
         self,
     ) -> None:
-        """check that the function errors out in the expected
-        way when no aws region is set in the environment and the
-        config object is absent"""
+        """check that the function errors out in the expected way when no aws
+        region is set in the environment and the config object is absent."""
         with patch.dict(os.environ, {}) as environ_mock:
             try:
                 assert os.getenv("AWS_REGION") is None
@@ -48,10 +47,9 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_throws_FromEnvException_when_config_present_and_region_None_and_env_vars_absent(
         self,
     ) -> None:
-        """check that the function errors out in the expected
-        way when no aws region is set in the environment and
-        the config object is present but config.region_name is
-        absent"""
+        """check that the function errors out in the expected way when no aws
+        region is set in the environment and the config object is present but
+        config.region_name is absent."""
         with patch.dict(os.environ, {}) as environ_mock:
             try:
                 assert os.getenv("AWS_REGION") is None
@@ -76,9 +74,9 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_returns_expected_when_config_present_and_env_vars_absent(
         self,
     ) -> None:
-        """check that the function returns the expected value
-        when no aws region is set in the environment and the
-        config object is present with config.region_name set"""
+        """check that the function returns the expected value when no aws
+        region is set in the environment and the config object is present with
+        config.region_name set."""
         with patch.dict(os.environ, {}) as environ_mock:
             assert os.getenv("AWS_REGION") is None
             assert os.getenv("AWS_DEFAULT_REGION") is None
@@ -100,9 +98,8 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_returns_expected_when_config_absent_and_AWS_DEFAULT_REGION_set(
         self,
     ) -> None:
-        """check that the function returns the expected value
-        when AWS_DEFAULT_REGION is set and config object is
-        absent"""
+        """check that the function returns the expected value when
+        AWS_DEFAULT_REGION is set and config object is absent."""
         with patch.dict(
             os.environ, {"AWS_DEFAULT_REGION": "fake-region"}
         ) as environ_mock:
@@ -124,8 +121,8 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_returns_expected_when_config_absent_and_AWS_REGION_set(
         self,
     ) -> None:
-        """check that the function returns the expected value
-        when AWS_REGION is set and config object is absent"""
+        """check that the function returns the expected value when AWS_REGION
+        is set and config object is absent."""
         with patch.dict(os.environ, {"AWS_REGION": "fake-region"}) as environ_mock:
             assert os.getenv("AWS_REGION") == "fake-region"
             assert os.getenv("AWS_DEFAULT_REGION") is None
@@ -145,9 +142,9 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_returns_expected_when_config_present_and_region_absent_and_AWS_DEFAULT_REGION_set(
         self,
     ) -> None:
-        """check that the function returns the expected value
-        when AWS_DEFAULT_REGION is set and config object is
-        present but config.region_name is absent"""
+        """check that the function returns the expected value when
+        AWS_DEFAULT_REGION is set and config object is present but
+        config.region_name is absent."""
         with patch.dict(
             os.environ, {"AWS_DEFAULT_REGION": "fake-region"}
         ) as environ_mock:
@@ -171,9 +168,9 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_returns_expected_when_config_present_and_region_absent_and_AWS_REGION_set(
         self,
     ) -> None:
-        """check that the function returns the expected value
-        when AWS_REGION is set and config object is present but
-        config.region_name is absent"""
+        """check that the function returns the expected value when AWS_REGION
+        is set and config object is present but config.region_name is
+        absent."""
         with patch.dict(os.environ, {"AWS_REGION": "fake-region"}) as environ_mock:
             assert os.getenv("AWS_REGION") == "fake-region"
             assert os.getenv("AWS_DEFAULT_REGION") is None
@@ -195,10 +192,9 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_returns_expected_when_config_present_and_region_absent_and_AWS_REGION_and_AWS_DEFAULT_REGION_set(
         self,
     ) -> None:
-        """check that the function returns the expected value
-        when AWS_REGION and AWS_DEFAULT_REGION are set and
-        config object is present but config.region_name is
-        absent"""
+        """check that the function returns the expected value when AWS_REGION
+        and AWS_DEFAULT_REGION are set and config object is present but
+        config.region_name is absent."""
         with patch.dict(
             os.environ,
             {
@@ -226,9 +222,9 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_returns_expected_when_config_present_and_region_present_and_AWS_REGION_set(
         self,
     ) -> None:
-        """check that the function returns the expected value
-        when AWS_REGION is set and config object is present and
-        config.region_name is present"""
+        """check that the function returns the expected value when AWS_REGION
+        is set and config object is present and config.region_name is
+        present."""
         with patch.dict(os.environ, {"AWS_REGION": "fake-region"}) as environ_mock:
             assert os.getenv("AWS_REGION") == "fake-region"
             assert os.getenv("AWS_DEFAULT_REGION") is None
@@ -250,9 +246,9 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_returns_expected_when_config_present_and_region_present_and_AWS_DEFAULT_REGION_set(
         self,
     ) -> None:
-        """check that the function returns the expected value
-        when AWS_DEFAULT_REGION is set and config object is
-        present and config.region_name is present"""
+        """check that the function returns the expected value when
+        AWS_DEFAULT_REGION is set and config object is present and
+        config.region_name is present."""
         with patch.dict(
             os.environ, {"AWS_DEFAULT_REGION": "fake-region"}
         ) as environ_mock:
@@ -276,10 +272,9 @@ class TestEnvHelpers(unittest.TestCase):
     def test_client_get_returns_expected_when_config_present_and_region_present_and_AWS_DEFAULT_REGION_and_AWS_REGION_set(
         self,
     ) -> None:
-        """check that the function returns the expected value
-        when AWS_REGION and AWS_DEFAULT_REGION are set and
-        config object is present and config.region_name is
-        present"""
+        """check that the function returns the expected value when AWS_REGION
+        and AWS_DEFAULT_REGION are set and config object is present and
+        config.region_name is present."""
         with patch.dict(
             os.environ,
             {"AWS_REGION": "fake-region", "AWS_DEFAULT_REGION": "fake-default-region"},

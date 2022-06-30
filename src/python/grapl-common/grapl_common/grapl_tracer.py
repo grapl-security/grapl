@@ -7,8 +7,8 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
 def get_tracer(service_name: str, module_name: str) -> trace.Tracer:
-    """
-    This gets a tracer for instrumenting python apps manually with opentelemetry.
+    """This gets a tracer for instrumenting python apps manually with
+    opentelemetry.
 
     Usage
     set OTEL_EXPORTER_ZIPKIN_ENDPOINT = "http://100.115.92.202:9411/api/v2/spans" as an environment variable

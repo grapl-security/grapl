@@ -38,10 +38,10 @@ def statsd_format(
     sample_rate: float = DEFAULT_SAMPLE_RATE,
     tags: Sequence[TagPair] = (),
 ) -> str:
-    """
-    Mainline `statsd` hasn't chosen a tag syntax yet: https://github.com/statsd/statsd/issues/619
-    However, it looks like they will be supporting the Graphite and DogStatsD formats.
-    I've arbitrarily chosen the DogStatsD format.
+    """Mainline `statsd` hasn't chosen a tag syntax yet:
+    https://github.com/statsd/statsd/issues/619 However, it looks like they
+    will be supporting the Graphite and DogStatsD formats. I've arbitrarily
+    chosen the DogStatsD format.
 
     You can find the spec here:
     https://github.com/b/statsd_spec

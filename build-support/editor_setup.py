@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-"""Encapsulates logic for generating and updating editor
-configuration files to make it easy to work with Grapl code.
+"""Encapsulates logic for generating and updating editor configuration files to
+make it easy to work with Grapl code.
 
-Provided as a self-documenting Click app for discoverability and ease
-of maintenance.
-
+Provided as a self-documenting Click app for discoverability and ease of
+maintenance.
 """
 
 import json
@@ -72,7 +71,6 @@ def src_python_execution_environment() -> Dict[str, Union[str, List[str]]]:
 
     As such, we first filter out what we don't need, and then
     "relativize" the paths, since this is what Pyright need.
-
     """
     pants = toml.load(PANTS_TOML)
     source_roots = pants["source"]["root_patterns"]
@@ -102,7 +100,8 @@ def src_python_execution_environment() -> Dict[str, Union[str, List[str]]]:
 
 
 def write_or_echo(output: str, path: str, write_file: bool) -> None:
-    """Consolidate logic for whether to write `output` to the file at `path`, or to send it to standard output instead."""
+    """Consolidate logic for whether to write `output` to the file at `path`,
+    or to send it to standard output instead."""
     if write_file:
         with click.open_file(path, "w") as f:
             f.write(output)
@@ -122,10 +121,9 @@ def write_or_echo(output: str, path: str, write_file: bool) -> None:
 def generate_pyrightconfig(write_file: bool) -> None:
     """Generate a pyrightconfig.json file from pants.toml.
 
-    Do this if you have no existing pyrightconfig.json file that you
-    are using. If you already have one, on the other hand, please see
-    the `update` command instead.
-
+    Do this if you have no existing pyrightconfig.json file that you are
+    using. If you already have one, on the other hand, please see the
+    `update` command instead.
     """
 
     pyrightconfig = BASE_PYRIGHTCONFIG
@@ -152,7 +150,6 @@ def update_pyrightconfig(write_file: bool) -> None:
 
     Any other changes you may have made to your file will be
     preserved.
-
     """
 
     with click.open_file(PYRIGHTCONFIG_JSON, "r") as f:
@@ -183,8 +180,8 @@ configure_pyright.add_command(update_pyrightconfig)
 
 @click.group()
 def editor_setup() -> None:
-    """A utility for helping to configure IDEs and editors for working
-    with Grapl code."""
+    """A utility for helping to configure IDEs and editors for working with
+    Grapl code."""
 
 
 editor_setup.add_command(configure_pyright)

@@ -46,9 +46,7 @@ def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
 
 
 def repository_path(relative_path: str) -> Path:
-    """
-    Resolve `relative_path` relative to the root of the repository.
-    """
+    """Resolve `relative_path` relative to the root of the repository."""
     return Path(os.path.join(REPOSITORY_ROOT), relative_path).resolve()
 
 
@@ -108,9 +106,7 @@ class ArtifactException(Exception):
 
 
 def _require_env_var(key: str) -> str:
-    """
-    Grab a key from env variables, or fallback to Pulumi.xyz.yaml
-    """
+    """Grab a key from env variables, or fallback to Pulumi.xyz.yaml."""
     value = os.getenv(key) or pulumi.Config().get(key)
     if not value:
         raise KeyError(
@@ -125,7 +121,8 @@ def get_grapl_ops_alarms_email() -> str:
 
 
 def configurable_envvar(service_name: str, var: str) -> str:
-    """Look up the desired environment variable in Pulumi configuration for the given service or return a default value.
+    """Look up the desired environment variable in Pulumi configuration for the
+    given service or return a default value.
 
     Your configuration YAML should look like this:
 
@@ -161,27 +158,25 @@ def configurable_envvar(service_name: str, var: str) -> str:
 
 def configurable_envvars(service_name: str, vars: Sequence[str]) -> Mapping[str, str]:
     """Return a map of environment variable values for the named service,
-    pulled from Pulumi configuration or default values, suitable for
-    splicing into other environment maps for configuring services.
-    """
+    pulled from Pulumi configuration or default values, suitable for splicing
+    into other environment maps for configuring services."""
     return {v: configurable_envvar(service_name, v) for v in vars}
 
 
 # TODO: The verbiage "version" here is a bit restrictive.
 def configured_version_for(artifact_name: str) -> Optional[str]:
-    """Given the name of an artifact, retrieves the version of that
-    artifact from the current stack configuration. Returns `None` if
-    no version has been specified for that artifact.
+    """Given the name of an artifact, retrieves the version of that artifact
+    from the current stack configuration. Returns `None` if no version has been
+    specified for that artifact.
 
     In general, we will have versions specified for all artifacts when
     doing deploys of release candidates to automated testing and
-    production infrastructure. However, individual developers working
-    on features _may_ wish to specify concrete versions for some
-    artifacts, while leaving others unspecified. In the latter case,
-    artifacts built locally from the current code checkout will be
-    used instead. This allows developers to deploy the code they are
-    currently iterating on to their own sandbox environments.
-
+    production infrastructure. However, individual developers working on
+    features _may_ wish to specify concrete versions for some artifacts,
+    while leaving others unspecified. In the latter case, artifacts
+    built locally from the current code checkout will be used instead.
+    This allows developers to deploy the code they are currently
+    iterating on to their own sandbox environments.
     """
     artifacts = pulumi.Config().get_object("artifacts") or {}
     version = artifacts.get(artifact_name)
@@ -200,9 +195,9 @@ def configured_version_for(artifact_name: str) -> Optional[str]:
 
 # This should be (x: str, y: Type[T]) -> T, but: https://github.com/python/mypy/issues/9773
 def require_artifact(artifact_name: str) -> Any:
-    """
-    Given the name of an artifact, retrieves the value of that
-    artifact from the current stack configuration.
+    """Given the name of an artifact, retrieves the value of that artifact from
+    the current stack configuration.
+
     Raise a helpful exception if no entry is found for that artifact.
     """
     artifacts = pulumi.Config().get_object("artifacts") or {}

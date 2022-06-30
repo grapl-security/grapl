@@ -162,25 +162,25 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
 
 
 class IpConnectionView(EntityView[IPV, IPQ]):
-    """
-    .. list-table::
-        :header-rows: 1
+    """.. list-table::
 
-        * - Predicate
-          - Type
-          - Description
-        * - node_key
-          - string
-          - A unique identifier for this node.
-        * - created_timestamp
-          - int
-          - Time of the connection creation (in millis-since-epoch).
-        * - last_seen_timestamp
-          - int
-          - Time the connection was last seen (in millis-since-epoch).
-        * - terminated_timestamp
-          - int
-          - Time connection was terminated (in millis-since-epoch).
+    :header-rows: 1
+
+    * - Predicate
+      - Type
+      - Description
+    * - node_key
+      - string
+      - A unique identifier for this node.
+    * - created_timestamp
+      - int
+      - Time of the connection creation (in millis-since-epoch).
+    * - last_seen_timestamp
+      - int
+      - Time the connection was last seen (in millis-since-epoch).
+    * - terminated_timestamp
+      - int
+      - Time connection was terminated (in millis-since-epoch).
     """
 
     queryable = IpConnectionQuery

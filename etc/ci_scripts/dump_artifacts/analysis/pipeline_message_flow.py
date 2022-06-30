@@ -53,9 +53,7 @@ def analyze_paths(paths: List[Path]) -> str:
 
 
 def get_num_received_messages(lines: List[str]) -> int:
-    """
-    Given a split-lines input, count up all receives.
-    """
+    """Given a split-lines input, count up all receives."""
     total_receives = 0
     for line in lines:
         total_receives += get_receive_count_for_line(line) or 0
@@ -63,9 +61,7 @@ def get_num_received_messages(lines: List[str]) -> int:
 
 
 def get_receive_count_for_line(line: str) -> Optional[int]:
-    """
-    Given a single line, parse for receive-count data.
-    """
+    """Given a single line, parse for receive-count data."""
     # Try different heuristics for the same line depending on which log format
     res = get_receive_count_for_rust_sqs_executor_line(line)
     if res is None:
@@ -98,10 +94,7 @@ PY_SQS_TIMEOUT_MANAGER_PATTERN = re.compile(r"SQS MessageID [0-9a-f\-]+\: Loop 1
 
 
 def get_receive_count_for_py_sqs_timeout_manager(line: str) -> Optional[int]:
-    """
-    Corresponds to logs output from
-    sqs_timeout_manager.py
-    """
+    """Corresponds to logs output from sqs_timeout_manager.py."""
     # Not necessarily the best signal, but since SQS is being deprecated soon
     # due to kafka, it's fine for now
     if re.match(PY_SQS_TIMEOUT_MANAGER_PATTERN, line):

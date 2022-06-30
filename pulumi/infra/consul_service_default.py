@@ -7,8 +7,8 @@ import pulumi
 
 
 class ConsulServiceDefault(pulumi.ComponentResource):
-    """
-    Create a Service Default type of Consul Config Entry.
+    """Create a Service Default type of Consul Config Entry.
+
     This is primarily for setting a non-default protocol
     """
 

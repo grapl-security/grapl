@@ -12,8 +12,8 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def _container_names_by_prefix(prefix: str) -> List[str]:
-    """Return a list of all containers (running or not) whose names begin
-    with `prefix`.
+    """Return a list of all containers (running or not) whose names begin with
+    `prefix`.
 
     Provide a `docker-compose` project name as a prefix to retrieve
     containers associated with that project. (We don't use
@@ -21,7 +21,6 @@ def _container_names_by_prefix(prefix: str) -> List[str]:
     usage of multiple compose files at a time.)
 
     Raises an error if no such containers are found.
-
     """
     result = subprocess.run(
         [
@@ -47,9 +46,7 @@ def _container_names_by_prefix(prefix: str) -> List[str]:
 
 
 def dump_docker_ps(dir: Path) -> None:
-    """
-    run `docker ps` and dump to $DIR/docker_ps.log
-    """
+    """run `docker ps` and dump to $DIR/docker_ps.log."""
     destination = dir / "docker_ps.log"
     LOGGER.debug(f"Dumping 'docker ps' to '{destination}'")
     with open(destination, "wb") as out_stream:
@@ -63,9 +60,7 @@ def dump_docker_ps(dir: Path) -> None:
 
 
 def _dump_docker_log(container_name: str, dir: Path) -> None:
-    """
-    run `docker logs` and dump to $DIR/$CONTAINER_NAME.log
-    """
+    """run `docker logs` and dump to $DIR/$CONTAINER_NAME.log."""
     destination = dir / f"{container_name}.log"
     LOGGER.debug(f"Dumping logs for '{container_name}' container to '{destination}'")
     with open(destination, "wb") as out_stream:

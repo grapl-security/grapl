@@ -48,10 +48,10 @@ class JWTSecret(pulumi.ComponentResource):
         self.register_outputs({})
 
     def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
-        """
-        Grants permission to the given `Role` to read this secret.
+        """Grants permission to the given `Role` to read this secret.
 
-        The name of the resource is formed from the Pulumi name of the `Role`.
+        The name of the resource is formed from the Pulumi name of the
+        `Role`.
         """
         aws.iam.RolePolicy(
             f"{role._name}-reads-jwt-secret",
@@ -116,10 +116,10 @@ class TestUserPassword(pulumi.ComponentResource):
         self.secret_id = self.secret.id
 
     def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
-        """
-        Grants permission to the given `Role` to read this secret.
+        """Grants permission to the given `Role` to read this secret.
 
-        The name of the resource is formed from the Pulumi name of the `Role`.
+        The name of the resource is formed from the Pulumi name of the
+        `Role`.
         """
         aws.iam.RolePolicy(
             f"{role._name}-reads-test-user-password",

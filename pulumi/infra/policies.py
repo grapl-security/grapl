@@ -87,7 +87,6 @@ def attach_policy(
     Prefer this over the direct creation of a `RolePolicyAttachment`
     whenever possible to promote consistency across our
     infrastructure.
-
     """
     return aws.iam.RolePolicyAttachment(
         f"attach-{policy._name}-to-{role._name}",

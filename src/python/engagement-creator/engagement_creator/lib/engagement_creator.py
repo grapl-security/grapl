@@ -188,10 +188,8 @@ def nodes_to_attach_risk_to(
     nodes: Sequence[BaseView],
     risky_node_keys: Optional[Sequence[str]],
 ) -> Sequence[BaseView]:
-    """
-    a None risky_node_keys means 'mark all as risky'
-    a [] risky_node_keys means 'mark none as risky'.
-    """
+    """a None risky_node_keys means 'mark all as risky' a [] risky_node_keys
+    means 'mark none as risky'."""
     if risky_node_keys is None:
         return nodes
     risky_node_keys_set = frozenset(risky_node_keys)

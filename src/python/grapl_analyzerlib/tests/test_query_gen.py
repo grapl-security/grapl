@@ -13,9 +13,8 @@ class TestQueryGen(unittest.TestCase):
         lens_name=hypothesis.strategies.text(max_size=100),
     )
     def test_weird_chars_in_lens_name(self, lens_name: str) -> None:
-        """
-        Roundabout way to ensure some basic properties of filter generation.
-        """
+        """Roundabout way to ensure some basic properties of filter
+        generation."""
         client = GraphClient()
         lens = LensView.get_or_create(
             gclient=client,

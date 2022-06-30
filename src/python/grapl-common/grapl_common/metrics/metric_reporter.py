@@ -15,8 +15,8 @@ from typing_extensions import Protocol
 
 
 class Writeable(Protocol):
-    """
-    Protocol for `stdout`.
+    """Protocol for `stdout`.
+
     Like a TextIO but with less to mock out.
     """
 
@@ -34,8 +34,8 @@ class HistogramUnit(str, Enum):
 
 
 class MetricReporter:
-    """
-    Print metrics to stdout that are picked up by Metric Forwarder later.
+    """Print metrics to stdout that are picked up by Metric Forwarder later.
+
     Prefer MetricReporter.create(my_service_name) to get an instance.
     """
 
@@ -79,9 +79,10 @@ class MetricReporter:
         sample_rate: float = DEFAULT_SAMPLE_RATE,
         tags: Sequence[TagPair] = (),
     ) -> None:
-        """
-        Sort of like a gauge, but with deltas.
-        Metrics sent will increment or decrement the value of the gauge rather than giving its current value.
+        """Sort of like a gauge, but with deltas.
+
+        Metrics sent will increment or decrement the value of the gauge
+        rather than giving its current value.
         """
         self.write_metric(
             metric_name=metric_name,
@@ -97,9 +98,8 @@ class MetricReporter:
         value: Union[int, float],
         tags: Sequence[TagPair] = (),
     ) -> None:
-        """
-        An instantaneous measurement of a value, like the gas gauge in a car.
-        """
+        """An instantaneous measurement of a value, like the gas gauge in a
+        car."""
         self.write_metric(
             metric_name=metric_name,
             value=value,
@@ -114,10 +114,9 @@ class MetricReporter:
         tags: Sequence[TagPair] = (),
         unit: Optional[HistogramUnit] = None,
     ) -> None:
-        """
-        A histogram is a measure of the distribution of timer values over time, calculated at the
-        server. As the data exported for timers and histograms is the same,
-        this is currently an alias for a timer.
+        """A histogram is a measure of the distribution of timer values over
+        time, calculated at the server. As the data exported for timers and
+        histograms is the same, this is currently an alias for a timer.
 
         example: the time to complete rendering of a web page for a user.
         """
@@ -136,10 +135,9 @@ class MetricReporter:
         metric_name: str,
         tags: Sequence[TagPair] = (),
     ) -> Iterator[None]:
-        """
-        A histogram is a measure of the distribution of timer values over time, calculated at the
-        server. As the data exported for timers and histograms is the same,
-        this is currently an alias for a timer.
+        """A histogram is a measure of the distribution of timer values over
+        time, calculated at the server. As the data exported for timers and
+        histograms is the same, this is currently an alias for a timer.
 
         example: the time to complete rendering of a web page for a user.
         """

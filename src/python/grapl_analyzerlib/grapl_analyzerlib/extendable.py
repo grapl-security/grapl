@@ -4,8 +4,8 @@ import abc
 class Extendable(abc.ABC):
     @classmethod
     def extend_self(cls, *types):
-        """
-        extend_self is a method that performs some monkeypatching to allow combinations of types.
+        """extend_self is a method that performs some monkeypatching to allow
+        combinations of types.
 
         :param types: A var arg of types, all of which must implement the Extendable interface
         :return: Returns a new class, which inherits from 'cls' and all passed in types, the returned class

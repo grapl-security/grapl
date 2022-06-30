@@ -8,11 +8,9 @@ import pulumi
 
 
 class ArtifactGetter:
-    """
-    A facade in front of the `artifacts` in Pulumi.stackname.yaml that
+    """A facade in front of the `artifacts` in Pulumi.stackname.yaml that
     abstracts out the "sometimes we don't require that a key exists" aspect
-    that is prevalent in Local Grapl development.
-    """
+    that is prevalent in Local Grapl development."""
 
     def __init__(
         self,
@@ -23,11 +21,11 @@ class ArtifactGetter:
         self.require_artifact = require_artifact
 
     def get(self, key: str) -> Optional[str]:
-        """
-        Try and get the value from artifacts.
-        If no such artifact exists, and require_artifact, throw error
+        """Try and get the value from artifacts. If no such artifact exists,
+        and require_artifact, throw error.
 
-        We generally set `require_artifact=True` for production deployments.
+        We generally set `require_artifact=True` for production
+        deployments.
         """
         artifact_version = self.artifacts.get(key)
         if artifact_version is not None:
@@ -41,8 +39,8 @@ class ArtifactGetter:
 
     @staticmethod
     def from_config(pulumi_config: pulumi.Config) -> ArtifactGetter:
-        """
-        If local-grapl:
+        """If local-grapl:
+
             - We don't require an `artifacts:` field
             - `.get()` can be None
         Else:

@@ -19,8 +19,9 @@ The values can look like, for instance:
 
 
 def _docker_version_tag_from_env() -> str:
-    """
-    If a tag isn't specified in `artifacts:`, fall back to os.environ["TAG"].
+    """If a tag isn't specified in `artifacts:`, fall back to
+    os.environ["TAG"].
+
     Only applicable to local-grapl.
     """
     tag = os.environ["IMAGE_TAG"]
@@ -45,9 +46,7 @@ class DockerImageIdBuilder:
         return DockerImageId(f"{container_repository}{image_name}:{tag}")
 
     def build_with_tag(self, image_name: str) -> DockerImageId:
-        """
-        Automatically grabs the version tag from config's artifacts.
-        """
+        """Automatically grabs the version tag from config's artifacts."""
         artifact_version = self.artifacts.get(image_name)
         if artifact_version:
             return self.build(

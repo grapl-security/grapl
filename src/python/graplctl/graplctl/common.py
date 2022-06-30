@@ -90,10 +90,9 @@ class Ec2Instance:
 def get_command_results(
     ssm: SSMClient, command_id: str, instance_ids: List[str]
 ) -> Iterator[Tuple[str, str]]:
-    """Poll until the command result is available for the given
-    command_id. Yields the tuple (instance_id, result) from each
-    instance.
+    """Poll until the command result is available for the given command_id.
 
+    Yields the tuple (instance_id, result) from each instance.
     """
     LOGGER.info(f"waiting for ssm command {command_id} to complete")
     while 1:
@@ -124,10 +123,11 @@ def get_command_invocation(
     command_id: str,
     instance_id: str,
 ) -> GetCommandInvocationResultTypeDef:
-    """
-    get-command-invocation commonly throws an awfully named exception: InvalidPluginName.
-    The actual meaning? This invocation hasn't become available.
-    This wrapper makes it a bit more sane to use.
+    """get-command-invocation commonly throws an awfully named exception:
+    InvalidPluginName.
+
+    The actual meaning? This invocation hasn't become available. This
+    wrapper makes it a bit more sane to use.
     """
     LOGGER.info(
         f"retrieving invocation metadata for command {command_id} on instance {instance_id}"

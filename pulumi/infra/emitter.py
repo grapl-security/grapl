@@ -9,9 +9,7 @@ import pulumi
 
 
 class EventEmitter(pulumi.ComponentResource):
-    """
-    Buckets that send events to SNS topics.
-    """
+    """Buckets that send events to SNS topics."""
 
     def __init__(
         self, event_name: str, opts: Optional[pulumi.ResourceOptions] = None

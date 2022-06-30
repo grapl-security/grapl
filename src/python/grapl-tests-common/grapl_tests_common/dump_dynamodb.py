@@ -32,9 +32,10 @@ def dump_dynamodb() -> None:
 
 
 def _dump_dynamodb_table(table: Table) -> Optional[str]:
-    """
-    Outputs a nicely-formatted Python list of all the items in the table.
-    (you may need a `from decimal import Decimal` to interact with it, though.)
+    """Outputs a nicely-formatted Python list of all the items in the table.
+
+    (you may need a `from decimal import Decimal` to interact with it,
+    though.)
     """
     items = table.scan()["Items"]
     if not items:
