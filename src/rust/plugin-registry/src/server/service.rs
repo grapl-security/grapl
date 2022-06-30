@@ -40,7 +40,10 @@ use tokio::{
 };
 use tonic::async_trait;
 
-use super::create_plugin::upload_stream_multipart_to_s3;
+use super::create_plugin::{
+    upload_stream_multipart_to_s3,
+    TryIntoMetadata,
+};
 use crate::{
     db::{
         client::{
@@ -129,14 +132,7 @@ impl PluginRegistryApi for PluginRegistry {
         let CreateAnalyzerRequestMetadata {
             tenant_id,
             display_name,
-        } = match request.next().await {
-            Some(CreateAnalyzerRequest::Metadata(m)) => m,
-            _ => {
-                return Err(Self::Error::StreamInputError(
-                    "Expected request 0 to be Metadata",
-                ));
-            }
-        };
+        } = request.next().await.try_into_metadata()?;
 
         let plugin_type = PluginType::Analyzer;
         let plugin_id = generate_plugin_id();
@@ -167,9 +163,44 @@ impl PluginRegistryApi for PluginRegistry {
     #[tracing::instrument(skip(self, request), err)]
     async fn create_generator(
         &self,
-        _request: futures::channel::mpsc::Receiver<CreateGeneratorRequest>,
+        request: futures::channel::mpsc::Receiver<CreateGeneratorRequest>,
     ) -> Result<CreatePluginResponse, Self::Error> {
-        unimplemented!()
+        let mut request = request;
+
+        let CreateGeneratorRequestMetadata {
+            tenant_id,
+            display_name,
+            event_sources,
+        } = request.next().await.try_into_metadata()?;
+
+        let plugin_type = PluginType::Generator;
+        let plugin_id = generate_plugin_id();
+        let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
+        let s3_multipart_fields = create_plugin::S3MultipartFields {
+            bucket: self.config.bucket_name.clone(),
+            key: s3_key.clone(),
+            expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
+        };
+
+        upload_stream_multipart_to_s3(request, &self.s3, &self.config, s3_multipart_fields).await?;
+
+        self.db_client
+            .create_plugin(
+                &plugin_id,
+                DbCreatePluginArgs {
+                    tenant_id,
+                    display_name,
+                    plugin_type,
+                },
+                &s3_key,
+            )
+            .await?;
+
+        // TODO: A DB client call that adds a one-to-many for event sources
+        // that are associated with this Generator
+        let _event_sources = event_sources;
+
+        Ok(CreatePluginResponse { plugin_id })
     }
 
     #[tracing::instrument(skip(self, request), err)]

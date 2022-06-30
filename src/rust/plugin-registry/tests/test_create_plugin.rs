@@ -3,17 +3,16 @@
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::FromEnv;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
-    CreatePluginRequestMetadata,
+    CreateAnalyzerRequestMetadata,
     GetPluginRequest,
     GetPluginResponse,
     PluginRegistryServiceClient,
-    PluginType,
 };
 
 /// For now, this is just a smoke test. This test can and should evolve as
 /// the service matures.
 #[test_log::test(tokio::test)]
-async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_create_analyzer() -> Result<(), Box<dyn std::error::Error>> {
     tracing::debug!(
         env=?std::env::args(),
     );
@@ -23,16 +22,15 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
 
     let display_name = uuid::Uuid::new_v4().to_string();
 
-    let meta = CreatePluginRequestMetadata {
+    let meta = CreateAnalyzerRequestMetadata {
         tenant_id: tenant_id.clone(),
         display_name: display_name.clone(),
-        plugin_type: PluginType::Generator,
     };
 
     let single_chunk = b"dummy vec for now".to_vec();
 
     let response = client
-        .create_plugin(meta, single_chunk.into_iter())
+        .create_analyzer(meta, single_chunk.into_iter())
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
@@ -46,7 +44,6 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
         .timeout(std::time::Duration::from_secs(5))
         .await??;
     assert_eq!(get_response.plugin.plugin_id, plugin_id);
-    assert_eq!(get_response.plugin.plugin_type, PluginType::Generator);
     assert_eq!(get_response.plugin.display_name, display_name);
     Ok(())
 }

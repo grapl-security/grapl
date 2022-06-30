@@ -15,7 +15,9 @@ use rusoto_s3::{
 };
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreateAnalyzerRequest,
+    CreateAnalyzerRequestMetadata,
     CreateGeneratorRequest,
+    CreateGeneratorRequestMetadata,
 };
 
 use super::service::PluginRegistryServiceConfig;
@@ -100,6 +102,36 @@ impl TryToChunk for CreateGeneratorRequest {
             CreateGeneratorRequest::Chunk(c) => Ok(c),
             _ => Err(PluginRegistryServiceError::StreamInputError(
                 "Expected request 1..N to be Chunk",
+            )),
+        }
+    }
+}
+
+pub(crate) trait TryIntoMetadata<T> {
+    fn try_into_metadata(self) -> Result<T, PluginRegistryServiceError>;
+}
+
+impl TryIntoMetadata<CreateAnalyzerRequestMetadata> for Option<CreateAnalyzerRequest> {
+    fn try_into_metadata(
+        self,
+    ) -> Result<CreateAnalyzerRequestMetadata, PluginRegistryServiceError> {
+        match self {
+            Some(CreateAnalyzerRequest::Metadata(m)) => Ok(m),
+            _ => Err(PluginRegistryServiceError::StreamInputError(
+                "Expected request 0 to be Metadata",
+            )),
+        }
+    }
+}
+
+impl TryIntoMetadata<CreateGeneratorRequestMetadata> for Option<CreateGeneratorRequest> {
+    fn try_into_metadata(
+        self,
+    ) -> Result<CreateGeneratorRequestMetadata, PluginRegistryServiceError> {
+        match self {
+            Some(CreateGeneratorRequest::Metadata(m)) => Ok(m),
+            _ => Err(PluginRegistryServiceError::StreamInputError(
+                "Expected request 0 to be Metadata",
             )),
         }
     }

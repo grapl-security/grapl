@@ -3,11 +3,10 @@
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::FromEnv;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
-    CreatePluginRequestMetadata,
+    CreateAnalyzerRequestMetadata,
     DeployPluginRequest,
     PluginRegistryServiceClient,
     PluginRegistryServiceClientError,
-    PluginType,
 };
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");
@@ -17,7 +16,7 @@ fn get_example_generator() -> Result<Vec<u8>, std::io::Error> {
 }
 
 #[test_log::test(tokio::test)]
-async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_deploy_analyzer() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = PluginRegistryServiceClient::from_env().await?;
 
     let tenant_id = uuid::Uuid::new_v4();
@@ -25,14 +24,13 @@ async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
     let create_response = {
         let display_name = uuid::Uuid::new_v4().to_string();
         let artifact = get_example_generator()?;
-        let metadata = CreatePluginRequestMetadata {
+        let metadata = CreateAnalyzerRequestMetadata {
             tenant_id: tenant_id.clone(),
             display_name: display_name.clone(),
-            plugin_type: PluginType::Generator,
         };
 
         client
-            .create_plugin(metadata, artifact.into_iter())
+            .create_analyzer(metadata, artifact.into_iter())
             .timeout(std::time::Duration::from_secs(5))
             .await??
     };
