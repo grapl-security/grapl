@@ -91,13 +91,14 @@ pub async fn upload_stream_multipart_to_s3(
     config: &PluginRegistryServiceConfig,
     s3_multipart_fields: S3MultipartFields,
 ) -> Result<UploadStreamMultipartOutput, Error> {
+    let start_time = std::time::SystemTime::now();
     let put_handle = s3
         .create_multipart_upload(s3_multipart_fields.clone().into())
         .await
         .map_err(S3PutError::from)?;
     let upload_id = put_handle.upload_id.expect("upload id");
     tracing::info!(
-        message = "Create Upload",
+        message = "Uploading to S3",
         upload_id = ?upload_id,
     );
 
@@ -111,6 +112,16 @@ pub async fn upload_stream_multipart_to_s3(
     .await;
     match upload_body_result {
         Ok(out) => {
+            let total_duration = std::time::SystemTime::now()
+                .duration_since(start_time)
+                .unwrap_or_default();
+
+            tracing::info!(
+                message = "upload_stream_multipart_to_s3 benchmark",
+                duration_millis = ?total_duration.as_millis(),
+                stream_length_bytes = multipart_upload.stream_length,
+            );
+
             complete_multipart_upload(
                 s3,
                 s3_multipart_fields,

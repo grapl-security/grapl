@@ -13,8 +13,9 @@ use rusoto_s3::{
 use rust_proto::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
         CreateAnalyzerRequest,
-        CreatePluginRequest,
-        CreatePluginRequestMetadata,
+        CreateGeneratorRequest,
+        CreateAnalyzerRequestMetadata,
+        CreateGeneratorRequestMetadata,
         CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
@@ -118,14 +119,11 @@ pub struct PluginRegistry {
 impl PluginRegistryApi for PluginRegistry {
     type Error = PluginRegistryServiceError;
 
-    // TODO: This function is so long I'm gonna split it out into its own file soon.
     #[tracing::instrument(skip(self, request), err)]
     async fn create_analyzer(
         &self,
         request: futures::channel::mpsc::Receiver<CreateAnalyzerRequest>,
     ) -> Result<CreatePluginResponse, Self::Error> {
-        let start_time = std::time::SystemTime::now();
-
         let mut request = request;
 
         let CreatePluginRequestMetadata {
@@ -152,19 +150,6 @@ impl PluginRegistryApi for PluginRegistry {
         let multipart_upload =
             upload_stream_multipart_to_s3(request, &self.s3, &self.config, s3_multipart_fields)
                 .await?;
-        // Emit some benchmark info
-        {
-            let total_duration = std::time::SystemTime::now()
-                .duration_since(start_time)
-                .unwrap_or_default();
-
-            tracing::info!(
-                message = "CreateAnalyzer benchmark",
-                display_name = ?display_name,
-                duration_millis = ?total_duration.as_millis(),
-                stream_length_bytes = multipart_upload.stream_length,
-            );
-        }
 
         self.db_client
             .create_plugin(
@@ -179,6 +164,14 @@ impl PluginRegistryApi for PluginRegistry {
             .await?;
 
         Ok(CreatePluginResponse { plugin_id })
+    }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn create_generator(
+        &self,
+        request: futures::channel::mpsc::Receiver<CreateGeneratorRequest>,
+    ) -> Result<CreatePluginResponse, Self::Error> {
+        unimplemented!()
     }
 
     #[tracing::instrument(skip(self, request), err)]
