@@ -453,6 +453,10 @@ def main() -> None:
             **nomad_inputs,
         )
 
+        # make it easy to debug nomad var unset issues
+        if pulumi.runtime.is_dry_run():
+            pulumi.export("prod-grapl-core-vars", prod_grapl_core_vars)
+
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
