@@ -67,6 +67,14 @@ variable "RUST_BUILD" {
   default = RELEASE_BUILD ? "release" : "dev-local-grapl"
 }
 
+# This will be incorporated into the base image identifier for our
+# Rust images. In general, it should correspond to the version in
+# `src/rust/rust-toolchain.toml`, which we'll extract in our Makefile
+# and pass in here. If something weird happens in the future where we
+# need to override that for some reason, we can.
+variable "RUST_VERSION" {
+}
+
 # This is the directory that certain artifacts will be deposited into
 variable "DIST_DIR" {
 }
@@ -268,7 +276,8 @@ target "_rust-base" {
   }
   dockerfile = "rust/Dockerfile"
   args = {
-    RUST_BUILD = "${RUST_BUILD}"
+    RUST_BUILD   = "${RUST_BUILD}"
+    RUST_VERSION = "${RUST_VERSION}"
   }
 }
 
