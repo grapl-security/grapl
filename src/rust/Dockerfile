@@ -2,7 +2,9 @@
 # We use the above syntax for here documents:
 # https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#user-content-here-documents
 
-FROM rust:1-slim-bullseye AS base
+ARG RUST_VERSION
+
+FROM rust:${RUST_VERSION}-slim-bullseye AS base
 
 ARG RUST_BUILD=dev-local-grapl
 
