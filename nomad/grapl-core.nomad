@@ -179,11 +179,6 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
-variable "model_plugins_bucket" {
-  type        = string
-  description = "The s3 bucket used for storing plugins"
-}
-
 variable "num_node_identifiers" {
   type        = number
   default     = 1
@@ -929,41 +924,6 @@ job "grapl-core" {
       }
     }
   }
-
-  group "model-plugin-deployer" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-      port "model-plugin-deployer" {
-      }
-    }
-
-    task "model-plugin-deployer" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["model-plugin-deployer"]
-        ports = ["model-plugin-deployer"]
-      }
-
-      env {
-        RUST_LOG                         = var.rust_log
-        RUST_BACKTRACE                   = local.rust_backtrace
-        GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_PORT_model-plugin-deployer}"
-      }
-    }
-
-    service {
-      name = "model-plugin-deployer"
-      port = "model-plugin-deployer"
-      connect {
-        sidecar_service {}
-      }
-    }
-  }
-
 
   group "web-ui" {
     network {

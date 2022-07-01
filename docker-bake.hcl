@@ -159,7 +159,6 @@ group "rust-services" {
     "generator-executor",
     "graph-merger",
     "grapl-web-ui",
-    "model-plugin-deployer",
     "node-identifier",
     "organization-management",
     "pipeline-ingress",
@@ -310,14 +309,6 @@ target "event-source" {
   target   = "event-source-deploy"
   tags = [
     upstream_aware_tag("event-source")
-  ]
-}
-
-target "model-plugin-deployer" {
-  inherits = ["_rust-base"]
-  target   = "model-plugin-deployer"
-  tags = [
-    upstream_aware_tag("model-plugin-deployer")
   ]
 }
 

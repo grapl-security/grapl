@@ -9,4 +9,4 @@ edition = "2021"
 rust-proto = { path = "../rust-proto", version = "*" }
 derive-dynamic-node = { path = "../derive-dynamic-node" }
 uuid = { version = "1.0", features = ["v4"] }
-thiserror = "1.0.30"
+thiserror = "1.0"

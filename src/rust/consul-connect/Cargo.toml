@@ -10,10 +10,10 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
-thiserror = "1.0.30"
+thiserror = "1.0"
 tokio = { version = "1.17", features = ["full"] }
-tracing = "0.1.29"
-trust-dns-resolver = "0.20.3"
+tracing = "0.1"
+trust-dns-resolver = "0.20"
 
 [features]
 client = []

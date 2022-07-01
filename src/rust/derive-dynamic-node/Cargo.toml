@@ -11,14 +11,14 @@ license = "MIT"
 proc-macro = true
 
 [dependencies]
-syn = "1.0.82"
-quote = "1.0.10"
-proc-macro2 = "1.0.32"
+syn = "1.0"
+quote = "1.0"
+proc-macro2 = "1.0"
 
 [dev-dependencies]
 rust-proto = { path = "../rust-proto", version = "*" }
-serde = "1.0.130"
-serde_json = "1.0.72"
-serde_derive = "1.0.130"
-log = "0.4.14"
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+log = "0.4"
 uuid = { version = "1.0", features = ["v4"] }
