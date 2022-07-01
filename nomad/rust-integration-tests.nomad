@@ -141,13 +141,8 @@ job "rust-integration-tests" {
             }
 
             upstreams {
-              destination_name = "model-plugin-deployer"
-              local_bind_port  = 1005
-            }
-
-            upstreams {
               destination_name = "event-source"
-              local_bind_port  = 1006
+              local_bind_port  = 1005
             }
           }
         }
@@ -197,9 +192,6 @@ job "rust-integration-tests" {
         KAFKA_CONSUMER_TOPIC = "<replace me at integration test setup>"
         KAFKA_SASL_USERNAME  = var.kafka_credentials.sasl_username
         KAFKA_SASL_PASSWORD  = var.kafka_credentials.sasl_password
-
-        GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
-        GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
 
