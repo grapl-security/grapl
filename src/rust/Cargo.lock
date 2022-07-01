@@ -3076,7 +3076,6 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
- "tonic-health 0.5.0",
  "tracing",
  "tracing-subscriber",
  "uuid",
@@ -3771,7 +3770,7 @@ dependencies = [
  "tokio-stream",
  "tonic 0.7.2",
  "tonic-build 0.7.2",
- "tonic-health 0.6.0",
+ "tonic-health",
  "tracing",
  "tracing-subscriber",
  "uuid",
@@ -4728,21 +4727,6 @@ dependencies = [
  "prost-build 0.10.4",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "tonic-health"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ae388bee1d4e52c9dc334f0d5918757b07b3ffafafd7953d254c7a0e8605e02"
-dependencies = [
- "async-stream",
- "bytes",
- "prost 0.9.0",
- "tokio",
- "tokio-stream",
- "tonic 0.6.2",
- "tonic-build 0.6.2",
 ]
 
 [[package]]

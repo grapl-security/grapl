@@ -18,29 +18,29 @@ integration_tests = []
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-bytes = "1.1.0"
+bytes = "1.1"
 clap = { version = "3.0", default_features = false, features = ["std", "env"] }
-dgraph_query_lib = "0.1.0"
-dgraph-tonic = { version = "0.10.0", features = ["dgraph-1-1"] }
+dgraph_query_lib = "0.1"
+dgraph-tonic = { version = "0.10", features = ["dgraph-1-1"] }
 futures = "0.3"
 futures-retry = "0.6"
 grapl-config = { path = "../grapl-config", version = "*" }
 grapl-utils = { path = "../grapl-utils" }
 kafka = { path = "../kafka", version = "*" }
-lazy_static = "1.4.0"
+lazy_static = "1.4"
 lru = "0.7"
 opentelemetry = { version = "0.16", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.15", features = [
   "collector_client",
   "rt-tokio"
 ] }
-rusoto_core = { version = "0.47.0", default_features = false, features = [
+rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-rusoto_dynamodb = { version = "0.47.0", default_features = false, features = [
+rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-rusoto_credential = "0.47.0"
+rusoto_credential = "0.47"
 rust-proto = { path = "../rust-proto", version = "*" }
 serde_json = "1.0"
 thiserror = "1.0"
