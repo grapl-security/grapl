@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 
-from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional
+from typing import Any, TypeVar
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -17,14 +17,14 @@ LQ = TypeVar("LQ", bound="LensQuery")
 LV = TypeVar("LV", bound="LensView")
 
 
-def default_lens_properties() -> Dict[str, PropType]:
+def default_lens_properties() -> dict[str, PropType]:
     return {
         "lens_name": PropType(PropPrimitive.Str, False),
         "score": PropType(PropPrimitive.Int, False),
     }
 
 
-def default_lens_edges() -> Dict[str, Tuple[EdgeT, str]]:
+def default_lens_edges() -> dict[str, tuple[EdgeT, str]]:
     from grapl_analyzerlib.nodes.entity import EntitySchema
 
     return {
@@ -37,7 +37,7 @@ def default_lens_edges() -> Dict[str, Tuple[EdgeT, str]]:
 
 class LensSchema(BaseSchema):
     def __init__(self):
-        super(LensSchema, self).__init__(
+        super().__init__(
             default_lens_properties(), default_lens_edges(), lambda: LensView
         )
 
@@ -87,10 +87,10 @@ class LensView(BaseView[LV, LQ]):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        scope: Optional[List["EntityView"]] = None,
-        lens_name: Optional[str] = None,
-        lens_type: Optional[str] = None,
+        node_types: set[str],
+        scope: list[EntityView] | None = None,
+        lens_name: str | None = None,
+        lens_type: str | None = None,
         **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
@@ -100,7 +100,7 @@ class LensView(BaseView[LV, LQ]):
         self.set_predicate("lens_name", lens_name)
         self.set_predicate("lens_type", lens_type)
 
-    def get_lens_name(self, cached=True) -> Optional[str]:
+    def get_lens_name(self, cached=True) -> str | None:
         return self.get_str("lens_name", cached=cached)
 
     def get_scope(self, *scope, cached=False):
@@ -152,7 +152,7 @@ class LensView(BaseView[LV, LQ]):
         return self_lens
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return LensSchema()
 
 

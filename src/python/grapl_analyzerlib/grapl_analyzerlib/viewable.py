@@ -6,13 +6,9 @@ import sys
 from typing import (
     cast,
     Any,
-    Dict,
     Generic,
     List,
-    Optional,
-    Set,
     TypeVar,
-    Type,
     Union,
     Tuple,
     Iterator,
@@ -38,7 +34,7 @@ OneOrMany = Union[List[T], T]
 
 
 class Viewable(Generic[V, Q], Extendable, abc.ABC):
-    queryable: Type[Q] = None  # pytype: disable=not-supported-yet
+    queryable: type[Q] = None  # pytype: disable=not-supported-yet
 
     def __init__(
         self, uid: int, node_key: str, graph_client: GraphClient, **kwargs
@@ -57,12 +53,12 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
     def set_predicate(
         self,
         predicate_name: str,
-        predicate: Union[OneOrMany[Union[str, int, bool]], Viewable],
+        predicate: OneOrMany[str | int | bool] | Viewable,
     ):
         self.predicates[predicate_name] = predicate
         setattr(self, predicate_name, predicate)
 
-    def get_str(self, property_name: str, cached=True) -> Optional[str]:
+    def get_str(self, property_name: str, cached=True) -> str | None:
         if cached and getattr(self, property_name, None) is not None:
             return getattr(self, property_name, None)
 
@@ -78,7 +74,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
 
         return getattr(self, property_name, None)
 
-    def get_int(self, property_name: str, cached=True) -> Optional[int]:
+    def get_int(self, property_name: str, cached=True) -> int | None:
         if cached and getattr(self, property_name, None) is not None:
             return getattr(self, property_name, None)
 
@@ -95,8 +91,8 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
         return getattr(self, property_name, None)
 
     def get_neighbor(
-        self, default: "Type[Q]", f_edge: str, r_edge: str, filters, cached=True
-    ) -> Optional["OneOrMany[V]"]:
+        self, default: type[Q], f_edge: str, r_edge: str, filters, cached=True
+    ) -> OneOrMany[V] | None:
         if cached and getattr(self, f_edge, None):
             return getattr(self, f_edge, None)
 
@@ -115,13 +111,13 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
         return getattr(self, f_edge, None)
 
     @classmethod
-    def associated_queryable(cls) -> Type[Q]:
+    def associated_queryable(cls) -> type[Q]:
         assert cls.queryable, f"{cls.__name__} cls.queryable"
         return cls.queryable
 
     @classmethod
     @abc.abstractmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         raise NotImplementedError
         return cast("Schema", None)
 
@@ -129,7 +125,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
         return self.node_schema().self_type()
 
     @classmethod
-    def from_dict(cls: Type[V], d: Dict[str, Any], graph_client: Any) -> V:
+    def from_dict(cls: type[V], d: dict[str, Any], graph_client: Any) -> V:
         from grapl_analyzerlib.nodes.base import BaseView
 
         self_schema = cls.node_schema()
@@ -173,21 +169,21 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
         return self_node
 
 
-def deserialize_prop(value, ty: "PropType"):
+def deserialize_prop(value, ty: PropType):
     if ty.primitive is PropPrimitive.Bool:
         if ty.is_set:
-            return set([bool(v) for v in value])
+            return {bool(v) for v in value}
         else:
             return bool(value)
 
     if ty.primitive is PropPrimitive.Int:
         if ty.is_set:
-            return set([int(v) for v in value])
+            return {int(v) for v in value}
         else:
             return int(value)
     if ty.primitive is PropPrimitive.Str:
         if ty.is_set:
-            return set([str(v) for v in value])
+            return {str(v) for v in value}
         else:
             return str(value)
 
@@ -198,8 +194,8 @@ EdgeV = TypeVar("EdgeV", bound="Viewable")
 
 
 def deserialize_edge(
-    edge_viewable: Type[EdgeV], edge_ty: "EdgeT", value, graph_client
-) -> Union[EdgeV, List[EdgeV]]:
+    edge_viewable: type[EdgeV], edge_ty: EdgeT, value, graph_client
+) -> EdgeV | list[EdgeV]:
     if isinstance(value, List):
         edges = []
         # assert edge_ty.is_to_many()
@@ -216,8 +212,8 @@ def deserialize_edge(
 
 
 def traverse_view_iter(
-    root_v: "Viewable", visited: Optional[Set["Viewable"]] = None
-) -> Iterator["Viewable"]:
+    root_v: Viewable, visited: set[Viewable] | None = None
+) -> Iterator[Viewable]:
     if visited is None:
         visited = set()
 
@@ -236,8 +232,7 @@ def traverse_view_iter(
         predicate = make_iter(predicate)
 
         for pred in predicate:
-            for i_in in traverse_view_iter(pred, visited):
-                yield i_in
+            yield from traverse_view_iter(pred, visited)
 
 
 def is_edge(v):
@@ -251,7 +246,7 @@ def is_edge(v):
 T = TypeVar("T")
 
 
-def make_iter(nl: Union[None, T, Iterator[T]]) -> Iterator[T]:
+def make_iter(nl: None | T | Iterator[T]) -> Iterator[T]:
     if not nl:
         return iter(())
     if isinstance(nl, list):

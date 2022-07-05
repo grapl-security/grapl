@@ -2,11 +2,6 @@ from __future__ import annotations
 from typing import (
     Any,
     TypeVar,
-    List,
-    Set,
-    Dict,
-    Tuple,
-    Optional,
     TYPE_CHECKING,
 )
 
@@ -29,7 +24,7 @@ IPQ = TypeVar("IPQ", bound="IpAddressQuery")
 IPV = TypeVar("IPV", bound="IpAddressView")
 
 
-def default_ip_address_properties() -> Dict[str, "PropType"]:
+def default_ip_address_properties() -> dict[str, PropType]:
     return {
         "first_seen_timestamp": PropType(PropPrimitive.Int, False),
         "last_seen_timestamp": PropType(PropPrimitive.Int, False),
@@ -37,7 +32,7 @@ def default_ip_address_properties() -> Dict[str, "PropType"]:
     }
 
 
-def default_ip_address_edges() -> Dict[str, Tuple[EdgeT, str]]:
+def default_ip_address_edges() -> dict[str, tuple[EdgeT, str]]:
     from grapl_analyzerlib.nodes.ip_connection import IpConnectionSchema
 
     return {
@@ -50,7 +45,7 @@ def default_ip_address_edges() -> Dict[str, Tuple[EdgeT, str]]:
 
 class IpAddressSchema(EntitySchema):
     def __init__(self):
-        super(IpAddressSchema, self).__init__(
+        super().__init__(
             default_ip_address_properties(),
             default_ip_address_edges(),
             lambda: IpAddressView,
@@ -66,11 +61,11 @@ class IpAddressQuery(EntityQuery[IPV, IPQ]):
     def with_first_seen_timestamp(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -78,11 +73,11 @@ class IpAddressQuery(EntityQuery[IPV, IPQ]):
     def with_last_seen_timestamp(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -90,12 +85,12 @@ class IpAddressQuery(EntityQuery[IPV, IPQ]):
     def with_ip_address(
         self,
         *,
-        eq: Optional[StrOrNot] = None,
-        contains: Optional[OneOrMany[StrOrNot]] = None,
-        starts_with: Optional[StrOrNot] = None,
-        ends_with: Optional[StrOrNot] = None,
-        regexp: Optional[OneOrMany[StrOrNot]] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ) -> ProcessQuery:
         pass
 
@@ -105,7 +100,7 @@ class IpAddressQuery(EntityQuery[IPV, IPQ]):
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return IpAddressSchema()
 
 
@@ -141,11 +136,11 @@ class IpAddressView(EntityView[IPV, IPQ]):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        first_seen_timestamp: Optional[int] = None,
-        last_seen_timestamp: Optional[int] = None,
-        ip_address: Optional[str] = None,
-        ip_connections: Optional[int] = None,
+        node_types: set[str],
+        first_seen_timestamp: int | None = None,
+        last_seen_timestamp: int | None = None,
+        ip_address: str | None = None,
+        ip_connections: int | None = None,
         **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
@@ -171,7 +166,7 @@ class IpAddressView(EntityView[IPV, IPQ]):
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return IpAddressSchema()
 
 
@@ -196,8 +191,8 @@ class IpAddressExtendsIpConnectionView(IpConnectionView):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        connecting_ips: Optional[List[IpAddressView]] = None,
+        node_types: set[str],
+        connecting_ips: list[IpAddressView] | None = None,
         **kwargs,
     ):
         super().__init__(

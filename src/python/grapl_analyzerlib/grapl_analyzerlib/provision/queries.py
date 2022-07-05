@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 
-from typing import Mapping, Any, List
+from typing import Mapping, Any
 
 from grapl_analyzerlib.grapl_client import GraphClient
 
@@ -10,7 +10,7 @@ QueryPredicateResult = Mapping[str, Any]
 
 def query_dgraph_type(
     client: GraphClient, type_name: str
-) -> List[QueryPredicateResult]:
+) -> list[QueryPredicateResult]:
     query = f"""
         schema(type: {type_name}) {{ type }}
     """

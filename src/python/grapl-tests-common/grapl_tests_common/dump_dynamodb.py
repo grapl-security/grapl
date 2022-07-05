@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from pprint import pformat as pretty_format
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import boto3
 from grapl_common.env_helpers import DynamoDBResourceFactory
@@ -31,7 +31,7 @@ def dump_dynamodb() -> None:
             f.write(table_dump)
 
 
-def _dump_dynamodb_table(table: Table) -> Optional[str]:
+def _dump_dynamodb_table(table: Table) -> str | None:
     """
     Outputs a nicely-formatted Python list of all the items in the table.
     (you may need a `from decimal import Decimal` to interact with it, though.)

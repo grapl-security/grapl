@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, TypeVar
 
 from botocore.client import Config
 from typing_extensions import Protocol
@@ -23,7 +23,7 @@ T = TypeVar("T", covariant=True)
 
 
 class FromEnv(Protocol[T]):
-    def from_env(self, config: Optional[Config] = None) -> T:
+    def from_env(self, config: Config | None = None) -> T:
         pass
 
 
@@ -31,16 +31,14 @@ class FromEnvException(Exception):
     pass
 
 
-ClientGetParams = NamedTuple(
-    "ClientGetParams",
-    (("boto3_client_name", str),),  # e.g. "s3" or "sqs"
-)
+class ClientGetParams(NamedTuple):
+    boto3_client_name: str
 
 
 def _client_get(
     client_create_fn: Callable[..., Any],
     params: ClientGetParams,
-    config: Optional[Config] = None,
+    config: Config | None = None,
 ) -> Any:
     """
     :param client_create_fn: the `boto3.client` or `boto3.resource` function
@@ -106,7 +104,7 @@ class SQSClientFactory(FromEnv["SQSClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, config: Optional[Config] = None) -> SQSClient:
+    def from_env(self, config: Config | None = None) -> SQSClient:
         client: SQSClient = _client_get(
             self.client_create_fn, _SQSParams, config=config
         )
@@ -122,7 +120,7 @@ class SNSClientFactory(FromEnv["SNSClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, config: Optional[Config] = None) -> SNSClient:
+    def from_env(self, config: Config | None = None) -> SNSClient:
         client: SNSClient = _client_get(
             self.client_create_fn, _SNSParams, config=config
         )
@@ -138,7 +136,7 @@ class EC2ResourceFactory(FromEnv["EC2ServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(self, config: Optional[Config] = None) -> EC2ServiceResource:
+    def from_env(self, config: Config | None = None) -> EC2ServiceResource:
         client: EC2ServiceResource = _client_get(
             self.client_create_fn, _EC2Params, config=config
         )
@@ -154,7 +152,7 @@ class SSMClientFactory(FromEnv["SSMClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, config: Optional[Config] = None) -> SSMClient:
+    def from_env(self, config: Config | None = None) -> SSMClient:
         client: SSMClient = _client_get(
             self.client_create_fn, _SSMParams, config=config
         )
@@ -170,7 +168,7 @@ class CloudWatchClientFactory(FromEnv["CloudWatchClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, config: Optional[Config] = None) -> CloudWatchClient:
+    def from_env(self, config: Config | None = None) -> CloudWatchClient:
         client: CloudWatchClient = _client_get(
             self.client_create_fn, _CloudWatchParams, config=config
         )
@@ -186,7 +184,7 @@ class Route53ClientFactory(FromEnv["Route53Client"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, config: Optional[Config] = None) -> Route53Client:
+    def from_env(self, config: Config | None = None) -> Route53Client:
         client: Route53Client = _client_get(
             self.client_create_fn, _Route53Params, config=config
         )
@@ -202,7 +200,7 @@ class S3ClientFactory(FromEnv["S3Client"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, config: Optional[Config] = None) -> S3Client:
+    def from_env(self, config: Config | None = None) -> S3Client:
         client: S3Client = _client_get(self.client_create_fn, _S3Params, config=config)
         return client
 
@@ -211,7 +209,7 @@ class S3ResourceFactory(FromEnv["S3ServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(self, config: Optional[Config] = None) -> S3ServiceResource:
+    def from_env(self, config: Config | None = None) -> S3ServiceResource:
         client: S3ServiceResource = _client_get(
             self.client_create_fn, _S3Params, config=config
         )
@@ -227,7 +225,7 @@ class DynamoDBResourceFactory(FromEnv["DynamoDBServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(self, config: Optional[Config] = None) -> DynamoDBServiceResource:
+    def from_env(self, config: Config | None = None) -> DynamoDBServiceResource:
         client: DynamoDBServiceResource = _client_get(
             self.client_create_fn, _DynamoDBParams, config=config
         )
@@ -238,7 +236,7 @@ class DynamoDBClientFactory(FromEnv["DynamoDBClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, config: Optional[Config] = None) -> DynamoDBClient:
+    def from_env(self, config: Config | None = None) -> DynamoDBClient:
         client: DynamoDBClient = _client_get(
             self.client_create_fn, _DynamoDBParams, config=config
         )
@@ -254,7 +252,7 @@ class SecretsManagerClientFactory(FromEnv["SecretsManagerClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, config: Optional[Config] = None) -> SecretsManagerClient:
+    def from_env(self, config: Config | None = None) -> SecretsManagerClient:
         client: SecretsManagerClient = _client_get(
             self.client_create_fn, _SecretsManagerParams, config=config
         )

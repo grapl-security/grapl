@@ -28,7 +28,7 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
 
 class GraphClient(DgraphClient):
     def __init__(self) -> None:
-        super(GraphClient, self).__init__(
+        super().__init__(
             *(DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
         )
 
@@ -63,7 +63,7 @@ class GraphClient(DgraphClient):
         metadata: Optional[DgraphMetadata] = None,
         credentials: Optional[CallCredentials] = None,
     ) -> None:
-        super(GraphClient, self).alter(
+        super().alter(
             operation=operation,
             timeout=timeout,
             metadata=metadata,

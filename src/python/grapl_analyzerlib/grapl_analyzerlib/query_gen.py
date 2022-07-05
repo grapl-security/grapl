@@ -20,7 +20,7 @@ def _placeholder_generator(prefix: str) -> Iterator[VarPlaceholder]:
             curr = VarPlaceholder(curr[:-1] + chr(ord(last_char) + 1))
 
 
-class VarAllocator(object):
+class VarAllocator:
     def __init__(self, prefix: Optional[str] = None):
         self.prefix = prefix
         self.placeholder_generator: Iterator[VarPlaceholder] = _placeholder_generator(
@@ -508,11 +508,9 @@ def traverse_query_iter(
         for neighbor_filter in neighbor_filters:
             if isinstance(neighbor_filter, tuple) or isinstance(neighbor_filter, list):
                 for n_filter in neighbor_filter:
-                    for nested in traverse_query_iter(n_filter, visited):
-                        yield nested
+                    yield from traverse_query_iter(n_filter, visited)
             else:
-                for nested in traverse_query_iter(neighbor_filter, visited):
-                    yield nested
+                yield from traverse_query_iter(neighbor_filter, visited)
 
 
 def traverse_query_neighbors_iter(
@@ -535,11 +533,9 @@ def traverse_query_neighbors_iter(
         for neighbor_filter in neighbor_filters:
             if isinstance(neighbor_filter, tuple) or isinstance(neighbor_filter, list):
                 for n_filter in neighbor_filter:
-                    for nested in traverse_query_neighbors_iter(n_filter, visited):
-                        yield nested
+                    yield from traverse_query_neighbors_iter(n_filter, visited)
             else:
-                for nested in traverse_query_neighbors_iter(neighbor_filter, visited):
-                    yield nested
+                yield from traverse_query_neighbors_iter(neighbor_filter, visited)
 
 
 from grapl_analyzerlib.queryable import Queryable, EdgeFilter
