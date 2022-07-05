@@ -8,8 +8,7 @@ botocore
 click
 confluent-kafka
 cookiecutter==1.7.3
-grpcio
-grpc-stubs
+grpcio==1.46.2
 hypothesis
 opentelemetry-api
 opentelemetry-exporter-zipkin-json

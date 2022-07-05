@@ -24,11 +24,20 @@ message Int64PropertyUpdate {
     graplinc.grapl.common.v1beta1.PropertyName property_name = 2;
 }
 
+message EdgeUpdate {
+    graplinc.grapl.common.v1beta1.Uid src_uid = 1;
+    graplinc.grapl.common.v1beta1.Uid dst_uid = 2;
+    graplinc.grapl.common.v1beta1.EdgeName src_edge_name = 3;
+    graplinc.grapl.common.v1beta1.EdgeName dst_edge_name = 4;
+
+}
+
 message Update {
     oneof inner {
         StringPropertyUpdate string_property_update = 1;
         UInt64PropertyUpdate uint64_property_update = 2;
         Int64PropertyUpdate int64_property_update = 3;
+        EdgeUpdate edge_update = 4;
     }
 }
 
@@ -38,6 +47,8 @@ message LensRef {
 }
 
 message AnalyzerName {
+    // Not empty, < 48 characters
+    // Ascii only, [a-zA-Z ]+
     string value = 1;
 }
 

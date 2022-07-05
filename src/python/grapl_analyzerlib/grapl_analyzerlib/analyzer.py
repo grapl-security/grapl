@@ -1,104 +1,112 @@
-# from __future__ import annotations
-#
-# import grpc
-# import abc
-# import datetime
-# import uuid
-# from dataclasses import dataclass
-# from typing import Sequence, Optional, Type, cast, Any, Union
-#
-# from python_proto.graplinc.grapl.api.graph_query.v1beta1.graph_query import GraphView, GraphQueryClient, NodeQuery, NodeView, Uid, \
-#     NodeType, PropertyName, EdgeName
-# from proto.graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2_grpc import AnalyzerServiceServicer
-#
-# from proto.graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2 import RunAnalyzerRequest, RunAnalyzerResponse
-#
-#
-# class AnalyzerContext(object):
-#     def get_graph_client(self) -> GraphQueryClient:
-#         raise NotImplementedError
-#
-#     def get_remaining_time(self) -> datetime.timedelta:
-#         raise NotImplementedError
-#
-#
-# class AnalyzerHit(object):
-#     def __init__(self, graph: GraphView, score: int, lenses: Sequence[LensRef, ...]) -> None:
-#         """
-#         `graph` - A graph that has been definitively marked as being suspicious
-#         `score` - Non-Zero positive integer representing how suspicious the graph is
-#         `lenses` - A Non-Empty Sequence of Lenses to attach these nodes to
-#         """
-#         ...
-#
-#
-# class LensRef(object):
-#     def __init__(self, lens_type: str, lens_name: str) -> None:
-#         """
-#         A reference to a lens that may or may not exist.
-#         """
-#         ...
-#
-#
-# class Analyzer(object):
-#     _analyzer_context: AnalyzerContext
-#
-#     def _set_analyzer_context(self, ctx: AnalyzerContext) -> None:
-#         self._analyzer_context = ctx
-#
-#     def get_analyzer_context(self) -> AnalyzerContext:
-#         return self._analyzer_context
-#
-#     @staticmethod
-#     @abc.abstractmethod
-#     def query() -> NodeQuery:
-#         """
-#         * Queries returned by this function will only be executed when one of the properties or edges it references is updated in the graph
-#         * Must be 'pure' - Grapl may only execute this once per Analyzer deployment
-#         * The Query must represent a single, connected graph
-#         """
-#         ...
-#
-#     def analyze(self, matched: NodeView) -> Optional[AnalyzerHit]:
-#         """
-#         Called every time the Queryable matched by `query_graph` matches
-#         Used for any subsequent analysis
-#         ```python3
-#         children = matched.get_children(ProcessQuery().with_process_name(eq="cmd.exe"))
-#         if children:
-#             return ExecutionHit(matched)
-#         ```
-#         """
-#         ...
-#
-#     def context(self, matched: NodeView) -> None:
-#         """
-#         Called when `analyze` returns an `AnalyzerHit`.
-#         `matched` is the graph stored in the AnalyzerHit
-#         ```python3
-#         matched.get_children()
-#         ```
-#         """
-#         ...
-#
-#     def mark_allowed(self, view: NodeView, allowed_for: Optional[datetime.timedelta]=None) -> None:
-#         """
-#         Given a node, marks that node such that it will never trigger this Analyzer again. Optionally accepts a duration for which to allow for.
-#         ex: A VirusTotal Analyzer may want to avoid scanning a node more than 1x a day
-#         """
-#         ...
-#
-#
-# class AnalyzerServiceImpl(AnalyzerServiceServicer):
-#     def __init__(self, analyzer: Analyzer) -> None:
-#         self.analyzer = analyzer
-#
-#     def RunAnalyzer(self,
-#                     request: RunAnalyzerRequest,
-#                     context: grpc.ServicerContext,
-#                     ) -> RunAnalyzerResponse:
-#         ...
-#
-# # def serve_analyzer(analyzer: Analyzer):
-# #     "Runs the gRPC machinery to orchestrate the Analyzer"
-# #     next_context: AnalyzerContext = cast(AnalyzerContext, ())
+from __future__ import annotations
+
+import atexit
+import os
+from functools import cache
+
+import abc
+from datetime import datetime, timedelta
+from dataclasses import dataclass, field, InitVar
+from typing import (
+    Sequence,
+    Optional,
+    Type,
+    cast,
+    Any,
+    Union,
+    List,
+    Literal,
+    Final,
+    Dict,
+    final,
+    Protocol,
+    ContextManager,
+)
+
+from python_proto.graplinc.grapl.api.graph_query.v1beta1.messages import (
+    GraphQueryClient,
+    NodeQuery,
+    NodeView,
+    GraphView,
+    Uid,
+)
+from python_proto.graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.messages import (
+    LensRef,
+    ExecutionHit,
+    AnalyzerName,
+)
+from python_proto.graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.server import AnalyzerService, AnalyzerServiceWrapper
+
+
+@final
+@dataclass(slots=True)
+class AnalyzerContext:
+    _analyzer_name: AnalyzerName
+    _graph_client: GraphQueryClient
+    _start_time: datetime
+    _allowed: Dict[Uid, Optional[timedelta]]
+
+    def get_graph_client(self) -> GraphQueryClient:
+        return self._graph_client
+
+    def get_remaining_time(self) -> timedelta:
+        now = datetime.now()
+        if self._start_time + timedelta(seconds=30) > now:
+            return timedelta()
+        return datetime.now() - self._start_time
+
+    def _reset_start_time(self) -> None:
+        self._start_time = datetime.now()
+
+
+class Analyzer(Protocol):
+    @staticmethod
+    def query() -> NodeQuery:
+        """
+        * Queries returned by this function will only be executed when one of the properties or edges it references is
+            updated in the graph
+        * Must be 'pure' - Grapl may only execute this once per Analyzer deployment
+        * The Query must represent a single, connected graph
+        """
+        ...
+
+    async def analyze(
+        self, matched: NodeView, ctx: AnalyzerContext
+    ) -> ExecutionHit | None:
+        """
+        Called every time the Queryable matched by `query_graph` matches
+        Used for any subsequent analysis
+        ```python3
+        children = matched.get_children(ProcessQuery().with_process_name(eq="cmd.exe"))
+        if children:
+            return ExecutionHit(matched)
+        ```
+        """
+        ...
+
+    async def add_context(self, matched: NodeView, ctx: AnalyzerContext) -> None:
+        """
+        Called when `analyze` returns an `AnalyzerHit`.
+        `matched` is the graph stored in the AnalyzerHit
+        ```python3
+        matched.get_children()
+        ```
+        """
+        ...
+
+
+def serve_analyzer(
+    analyzer_name: AnalyzerName,
+    analyzer: Analyzer,
+) -> None:
+    "Runs the gRPC machinery to orchestrate the Analyzer"
+
+    graph_query_client = cast(GraphQueryClient, None)
+
+    await AnalyzerService(
+        _analyzer_name=analyzer_name,
+        _analyzer=analyzer,
+        _graph_query_client=graph_query_client,
+    ).serve()
+
+    return None

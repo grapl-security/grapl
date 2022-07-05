@@ -2,7 +2,7 @@
 
 # grapl-python-base
 ################################################################################
-FROM python:3.8-slim-bullseye AS grapl-python-base
+FROM python:3.10-slim-bullseye AS grapl-python-base
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod, abstractstaticmethod
+from abc import ABCMeta, abstractmethod
 from typing import Generic, Type, TypeVar
 
 from google.protobuf.message import Message as _Message
@@ -10,6 +10,7 @@ P = TypeVar("P", bound=_Message)
 
 class SerDe(Generic[P], metaclass=ABCMeta):
     proto_cls: Type[P]
+    __slots__ = ("proto_cls",)
 
     @classmethod
     def __subclasshook__(cls, subclass: SerDe[P]) -> bool:
@@ -26,7 +27,7 @@ class SerDe(Generic[P], metaclass=ABCMeta):
         )
 
     @staticmethod
-    @abstractstaticmethod
+    @abstractmethod
     def deserialize(bytes_: bytes) -> SerDe[P]:
         raise NotImplementedError
 
@@ -34,7 +35,7 @@ class SerDe(Generic[P], metaclass=ABCMeta):
         return self.into_proto().SerializeToString()
 
     @staticmethod
-    @abstractstaticmethod
+    @abstractmethod
     def from_proto(proto: P) -> SerDe[P]:
         raise NotImplementedError
 
@@ -49,6 +50,8 @@ I = TypeVar("I", bound=SerDe)
 class SerDeWithInner(Generic[P, I]):
     proto_cls: Type[P]
     inner_message: I
+
+    __slots__ = ("proto_cls", "inner_message")
 
     @classmethod
     def __subclasshook__(cls, subclass: SerDeWithInner[P, I]) -> bool:
@@ -66,7 +69,7 @@ class SerDeWithInner(Generic[P, I]):
         )
 
     @staticmethod
-    @abstractstaticmethod
+    @abstractmethod
     def deserialize(bytes_: bytes, inner_cls: Type[I]) -> SerDeWithInner[P, I]:
         raise NotImplementedError
 
@@ -74,7 +77,7 @@ class SerDeWithInner(Generic[P, I]):
         return self.into_proto().SerializeToString()
 
     @staticmethod
-    @abstractstaticmethod
+    @abstractmethod
     def from_proto(proto: P, inner_cls: Type[I]) -> SerDeWithInner[P, I]:
         raise NotImplementedError
 

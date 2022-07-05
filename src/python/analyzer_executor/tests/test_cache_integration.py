@@ -1,3 +1,4 @@
+# type: ignore
 import os
 from copy import deepcopy
 from typing import Mapping, Optional

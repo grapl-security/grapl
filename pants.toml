@@ -89,7 +89,7 @@ lockfile_generator = "pex"
 requirement_constraints = "3rdparty/python/constraints.txt"
 # If you update these constraints, also update the ones in the
 # `[black]` section below; see there for further background.
-interpreter_constraints = ["==3.8.*"]
+interpreter_constraints = ["==3.10.*"]
 
 [python-bootstrap]
 search_path = ["<PYENV_LOCAL>", "<PYENV>", "<PATH>"]
@@ -112,7 +112,7 @@ version = "black>=22.3.0"
 config = "pyproject.toml"
 # This should mirror the same global constraints above. This is a
 # work-around for https://github.com/pantsbuild/pants/issues/14912.
-interpreter_constraints = ["==3.8.*"]
+interpreter_constraints = ["==3.10.*"]
 
 [isort]
 lockfile = "3rdparty/python/isort.lockfile"
@@ -143,6 +143,9 @@ args = [ "--suppress-no-test-exit-code" ]
 
 [mypy]
 config = "src/python/mypy.ini"
+version = "mypy==0.960"
+lockfile = "3rdparty/python/mypy.lockfile"
+
 # read this section of the mypy docs:
 #
 # https://mypy.readthedocs.io/en/stable/command_line.html#cmdoption-mypy-namespace-packages
@@ -152,6 +155,7 @@ config = "src/python/mypy.ini"
 args = [ "--show-error-codes", "--namespace-packages" ] #, "--verbose" ]
 
 extra_type_stubs = [
+  "grpc-stubs",
   "mypy_boto3_cloudwatch==1.20.35.post1",
   "mypy_boto3_dynamodb==1.20.35.post1",
   "mypy_boto3_ec2==1.20.35.post1",
