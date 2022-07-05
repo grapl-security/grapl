@@ -1,8 +1,10 @@
 # syntax=docker/dockerfile:1.4
 
+ARG PYTHON_VERSION
+
 # grapl-python-base
 ################################################################################
-FROM python:3.8-slim-bullseye AS grapl-python-base
+FROM python:${PYTHON_VERSION}-slim-bullseye AS grapl-python-base
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \

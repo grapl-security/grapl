@@ -75,6 +75,14 @@ variable "RUST_BUILD" {
 variable "RUST_VERSION" {
 }
 
+# This will be incorporated into the base image identifier for our
+# Python images. In general, it should correspond to the version in
+# `.python-version`, which we'll extract in our Makefile
+# and pass in here. If something weird happens in the future where we
+# need to override that for some reason, we can.
+variable "PYTHON_VERSION" {
+}
+
 # This is the directory that certain artifacts will be deposited into
 variable "DIST_DIR" {
 }
