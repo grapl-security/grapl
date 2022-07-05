@@ -72,7 +72,6 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
-        "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "organization-management": builder.build_with_tag("organization-management"),
         "pipeline-ingress": builder.build_with_tag("pipeline-ingress"),
@@ -153,11 +152,9 @@ def main() -> None:
         confluent_environment_name=pulumi_config.require("confluent-environment-name"),
     )
 
-    model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     plugin_registry_bucket = Bucket("plugin-registry-bucket", sse=True)
 
     all_plugin_buckets = [
-        model_plugins_bucket,
         plugin_registry_bucket,
     ]
 
@@ -213,7 +210,6 @@ def main() -> None:
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
         kafka_credentials=kafka_service_credentials,
         kafka_consumer_groups=kafka_consumer_groups,
-        model_plugins_bucket=model_plugins_bucket.bucket,
         organization_management_healthcheck_polling_interval_ms=organization_management_healthcheck_polling_interval_ms,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
         plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
@@ -452,6 +448,10 @@ def main() -> None:
             redis_endpoint=cache.endpoint,
             **nomad_inputs,
         )
+
+        # make it easy to debug nomad var unset issues
+        if pulumi.runtime.is_dry_run():
+            pulumi.export("prod-grapl-core-vars", prod_grapl_core_vars)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",

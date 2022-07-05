@@ -21,12 +21,11 @@ clap = { version = "3.0", default_features = false, features = [
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
-thiserror = "1.0.30"
+thiserror = "1.0"
 tokio = { version = "1.17", features = ["full"] }
-tonic-health = "0.5.0"
-tracing = "0.1.29"
-uuid = { version = "0.8", features = ["v4"] }
-sqlx = { version = "0.5", features = [
+tracing = "0.1"
+uuid = { version = "1.0", features = ["v4"] }
+sqlx = { version = "0.6", features = [
   "chrono",
   "migrate",
   "postgres",
@@ -34,7 +33,7 @@ sqlx = { version = "0.5", features = [
   "uuid",
   "offline",
 ] }
-chrono = "0.4.19"
+chrono = "0.4"
 futures = "0.3"
 
 [dev-dependencies]

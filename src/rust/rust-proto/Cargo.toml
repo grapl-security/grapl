@@ -14,11 +14,11 @@ prost = "0.10"
 prost-types = "0.10"
 thiserror = "1.0"
 tokio = { version = "1.17", features = ["rt", "time"] }
-tokio-stream = { version = "0.1.8", features = ["net"] }
+tokio-stream = { version = "0.1", features = ["net"] }
 tonic = { version = "0.7", features = ["default", "compression", "tls"] }
 tonic-health = "0.6"
 tracing = "0.1"
-uuid = { version = "0.8.2", features = ["v4"] }
+uuid = { version = "1.0", features = ["v4"] }
 
 [build-dependencies]
 tonic-build = { version = "0.7", features = ["default", "compression"] }
