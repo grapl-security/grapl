@@ -93,7 +93,7 @@ lockfile_generator = "pex"
 requirement_constraints = "3rdparty/python/constraints.txt"
 # If you update these constraints, also update the ones in the
 # `[black]` section below; see there for further background.
-interpreter_constraints = ["==3.8.*"]
+interpreter_constraints = ["==3.10.*"]
 
 [python-bootstrap]
 search_path = ["<PYENV_LOCAL>", "<PYENV>", "<PATH>"]
@@ -115,7 +115,7 @@ version = "black>=22.3.0"
 config = "pyproject.toml"
 # This should mirror the same global constraints above. This is a
 # work-around for https://github.com/pantsbuild/pants/issues/14912.
-interpreter_constraints = ["==3.8.*"]
+interpreter_constraints = ["==3.10.*"]
 
 [isort]
 lockfile = "3rdparty/python/isort.lockfile"
