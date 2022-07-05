@@ -3,7 +3,6 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import uuid
-from typing import Type
 
 from graplinc.common.v1beta1.types_pb2 import Duration as _Duration
 from graplinc.common.v1beta1.types_pb2 import Timestamp as _Timestamp
@@ -18,7 +17,7 @@ EPOCH = datetime.datetime.fromisoformat("1970-01-01T00:00:00.000")
 class Uuid(SerDe[_Uuid]):
     lsb: int
     msb: int
-    proto_cls: Type[_Uuid] = _Uuid
+    proto_cls: type[_Uuid] = _Uuid
 
     @staticmethod
     def deserialize(bytes_: bytes) -> Uuid:
@@ -54,7 +53,7 @@ class Uuid(SerDe[_Uuid]):
 class Duration(SerDe[_Duration]):
     seconds: int
     nanos: int
-    proto_cls: Type[_Duration] = _Duration
+    proto_cls: type[_Duration] = _Duration
 
     def __post_init__(self) -> None:
         if self.seconds < 0 or self.nanos < 0:
@@ -101,7 +100,7 @@ class Duration(SerDe[_Duration]):
 class Timestamp(SerDe[_Timestamp]):
     duration: Duration
     before_epoch: bool
-    proto_cls: Type[_Timestamp] = _Timestamp
+    proto_cls: type[_Timestamp] = _Timestamp
 
     @staticmethod
     def deserialize(bytes_: bytes) -> SerDe[_Timestamp]:

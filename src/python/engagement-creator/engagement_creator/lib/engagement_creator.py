@@ -10,10 +10,8 @@ from typing import (
     Any,
     ContextManager,
     Dict,
-    Optional,
     Sequence,
     Tuple,
-    Type,
     TypeVar,
     cast,
 )
@@ -107,7 +105,7 @@ def create_edge(
     txn = client.txn(read_only=False)
     try:
         res = txn.mutate(set_obj=mut, commit_now=True)
-        LOGGER.debug("edge mutation result is: {}".format(res))
+        LOGGER.debug(f"edge mutation result is: {res}")
     finally:
         txn.discard()
 
@@ -126,7 +124,7 @@ def recalculate_score(lens: LensView) -> int:
             risks_by_analyzer[analyzer_name] = risk_score
             key_to_analyzers[node.node_key].add(analyzer_name)
 
-        analyzer_risk_sum = sum([a for a in risks_by_analyzer.values() if a])
+        analyzer_risk_sum = sum(a for a in risks_by_analyzer.values() if a)
         node_risk_scores[node.node_key] = analyzer_risk_sum
         total_risk_score += analyzer_risk_sum
 
@@ -140,7 +138,7 @@ def recalculate_score(lens: LensView) -> int:
     return total_risk_score
 
 
-def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
+def _upsert(client: GraphClient, node_dict: dict[str, Any]) -> str:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]
     query = f"""
@@ -173,9 +171,9 @@ def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
 def upsert(
     client: GraphClient,
     type_name: str,
-    view_type: Type[Viewable[V, Q]],
+    view_type: type[Viewable[V, Q]],
     node_key: str,
-    node_props: Dict[str, Any],
+    node_props: dict[str, Any],
 ) -> Viewable[V, Q]:
     node_props["node_key"] = node_key
     node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
@@ -186,7 +184,7 @@ def upsert(
 
 def nodes_to_attach_risk_to(
     nodes: Sequence[BaseView],
-    risky_node_keys: Optional[Sequence[str]],
+    risky_node_keys: Sequence[str] | None,
 ) -> Sequence[BaseView]:
     """
     a None risky_node_keys means 'mark all as risky'
@@ -231,12 +229,12 @@ def _process_one_event(
     The `incident_graph` dict was emitted from analyzer-executor.py#emit_event
     """
     analyzer_name = incident_graph["analyzer_name"]
-    nodes_raw: Dict[str, Any] = incident_graph[
+    nodes_raw: dict[str, Any] = incident_graph[
         "nodes"
     ]  # same type as `.to_adjacency_list()["nodes"]`
     edges = incident_graph["edges"]
     risk_score = incident_graph["risk_score"]
-    lens_dict: Sequence[Tuple[str, str]] = incident_graph["lenses"]
+    lens_dict: Sequence[tuple[str, str]] = incident_graph["lenses"]
     risky_node_keys = incident_graph["risky_node_keys"]
 
     LOGGER.debug(

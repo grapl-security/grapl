@@ -10,7 +10,7 @@ class PropPrimitive(Enum):
     Bool = 3
 
 
-class PropType(object):
+class PropType:
     def __init__(
         self,
         primitive: PropPrimitive,
@@ -100,7 +100,7 @@ class EdgeRelationship(IntEnum):
         return False
 
 
-class EdgeT(object):
+class EdgeT:
     def __init__(
         self, source: Type["Schema"], dest: Type["Schema"], rel: EdgeRelationship
     ):

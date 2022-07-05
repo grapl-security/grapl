@@ -7,12 +7,9 @@ from typing import (
     Any,
     Callable,
     cast,
-    Dict,
     TypeVar,
     Generic,
-    Type,
     Tuple,
-    Optional,
     List,
     Union,
     TYPE_CHECKING,
@@ -82,16 +79,16 @@ def with_to_neighbor(*args):
 
 
 class QueryFailedException(Exception):
-    def __init__(self, query: Queryable, variables: Dict[VarPlaceholder, str]) -> None:
-        super(QueryFailedException, self).__init__(
+    def __init__(self, query: Queryable, variables: dict[VarPlaceholder, str]) -> None:
+        super().__init__(
             "Failed query input\n" f"  Query: {query}\n" f"  Variables: {variables}\n"
         )
 
 
 class Queryable(Generic[V, Q], Extendable, abc.ABC):
     def __init__(self) -> None:
-        self._property_filters: Dict[str, List[List[Cmp]]] = defaultdict(list)
-        self._edge_filters: Dict[str, EdgeFilter[Q]] = defaultdict(list)
+        self._property_filters: dict[str, list[list[Cmp]]] = defaultdict(list)
+        self._edge_filters: dict[str, EdgeFilter[Q]] = defaultdict(list)
         self._id = str(uuid4())
 
         for prop in type(self).node_schema().get_properties().keys():
@@ -105,7 +102,7 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         self._property_filters["node_key"] = [[Eq("node_key", eq)]]
         return self
 
-    def with_to_neighbor(self, default, f, r, edges) -> "Q":
+    def with_to_neighbor(self, default, f, r, edges) -> Q:
         if edges and not isinstance(edges, tuple):
             edges = (edges,)
         edges = edges or [default()]
@@ -118,12 +115,12 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         self,
         property_name: str,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ):
         self._property_filters[property_name].extend(
             _str_cmps(
@@ -142,11 +139,11 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         self,
         property_name: str,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         self._property_filters[property_name].extend(
             _int_cmps(
@@ -162,20 +159,20 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return cast("Schema", None)
 
     @classmethod
-    def associated_viewable(cls) -> Type[V]:
+    def associated_viewable(cls) -> type[V]:
         return cast("Type[V]", cls.node_schema().associated_viewable())
 
-    def neighbor_filters(self) -> List[Tuple[str, EdgeFilter[Q]]]:
+    def neighbor_filters(self) -> list[tuple[str, EdgeFilter[Q]]]:
         return [
             (edge_name, edge_filter)
             for edge_name, edge_filter in self._edge_filters.items()
         ]
 
-    def property_filters(self) -> List[Tuple[str, List[List["Cmp"]]]]:
+    def property_filters(self) -> list[tuple[str, list[list[Cmp]]]]:
         return [
             (property_name, property_filter)
             for property_name, property_filter in self._property_filters.items()
@@ -187,13 +184,13 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
     def clear_neighbor_filters(self):
         self._edge_filters = defaultdict(list)
 
-    def set_property_filters(self, property_name: str, filters: List[List["Cmp"]]):
+    def set_property_filters(self, property_name: str, filters: list[list[Cmp]]):
         self._property_filters[property_name].extend(filters)
 
     def set_neighbor_filters(self, edge_name: str, filters: EdgeFilter[Q]):
         self._edge_filters[edge_name].extend(filters)
 
-    def query(self, graph_client: GraphClient, first: int) -> List[V]:
+    def query(self, graph_client: GraphClient, first: int) -> list[V]:
         var_alloc, query = gen_query(self, "q0", first=first)
 
         variables = {v: k for k, v in var_alloc.allocated.items()}
@@ -215,9 +212,9 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
     def query_first(
         self,
         graph_client: GraphClient,
-        contains_node_key: Optional[str] = None,
+        contains_node_key: str | None = None,
         best_effort=False,
-    ) -> Optional[V]:
+    ) -> V | None:
         if contains_node_key:
             var_alloc, query = gen_query_parameterized(self, "q0", contains_node_key, 0)
         else:
@@ -253,7 +250,7 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
 
         return int(qres.get("query", {}).get("c", 0))
 
-    def debug_query(self) -> Dict[str, Any]:
+    def debug_query(self) -> dict[str, Any]:
         var_alloc, query = gen_query(self, "q0", first=1)
         variables = {v: k for k, v in var_alloc.allocated.items()}
         return {"query": query, "variables": variables}

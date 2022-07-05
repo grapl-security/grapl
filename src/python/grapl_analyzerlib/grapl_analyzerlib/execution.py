@@ -2,7 +2,7 @@ import json
 from typing import List, Tuple, Optional, Sequence
 
 
-class ExecutionHit(object):
+class ExecutionHit:
     def __init__(
         self,
         analyzer_name: str,
@@ -40,11 +40,11 @@ class ExecutionHit(object):
                 raise TypeError(f"Found an unexpected None k/v in lenses: {lenses}")
 
 
-class ExecutionComplete(object):
+class ExecutionComplete:
     pass
 
 
-class ExecutionFailed(object):
+class ExecutionFailed:
     pass
 
 

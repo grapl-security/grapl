@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, TypeVar, List, Dict, Set, Tuple, Optional
+from typing import Any, TypeVar
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -16,14 +16,14 @@ LQ = TypeVar("LQ", bound="RiskQuery")
 LV = TypeVar("LV", bound="RiskView")
 
 
-def default_risk_properties() -> Dict[str, PropType]:
+def default_risk_properties() -> dict[str, PropType]:
     return {
         "analyzer_name": PropType(PropPrimitive.Str, False),
         "risk_score": PropType(PropPrimitive.Int, False),
     }
 
 
-def default_risk_edges() -> Dict[str, Tuple[EdgeT, str]]:
+def default_risk_edges() -> dict[str, tuple[EdgeT, str]]:
     from grapl_analyzerlib.nodes.entity import EntitySchema
 
     return {
@@ -36,7 +36,7 @@ def default_risk_edges() -> Dict[str, Tuple[EdgeT, str]]:
 
 class RiskSchema(BaseSchema):
     def __init__(self):
-        super(RiskSchema, self).__init__(
+        super().__init__(
             default_risk_properties(), default_risk_edges(), lambda: RiskView
         )
 
@@ -50,12 +50,12 @@ class RiskQuery(BaseQuery[LV, LQ]):
     def with_analyzer_name(
         self,
         *,
-        eq: Optional[StrOrNot] = None,
-        contains: Optional[OneOrMany[StrOrNot]] = None,
-        starts_with: Optional[StrOrNot] = None,
-        ends_with: Optional[StrOrNot] = None,
-        regexp: Optional[OneOrMany[StrOrNot]] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ):
         pass
 
@@ -63,19 +63,19 @@ class RiskQuery(BaseQuery[LV, LQ]):
     def with_risk_score(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
-    def with_scope(self, *scope) -> "RiskQuery":
+    def with_scope(self, *scope) -> RiskQuery:
         return self.with_to_neighbor(EntityQuery, "scope", "in_scope", scope)
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return RiskSchema()
 
 
@@ -108,8 +108,8 @@ class RiskView(BaseView[LV, LQ]):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        risky_nodes: "Optional[List[EntityView]]" = None,
+        node_types: set[str],
+        risky_nodes: list[EntityView] | None = None,
         **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
@@ -123,13 +123,13 @@ class RiskView(BaseView[LV, LQ]):
     def get_risk_score(self, cached=True):
         return self.get_int("risk_score", cached=cached)
 
-    def get_risky_nodes(self, *risks, cached=False) -> "RiskQuery":
+    def get_risky_nodes(self, *risks, cached=False) -> RiskQuery:
         return self.get_neighbor(
             RiskQuery, "risky_nodes", "risks", risks, cached=cached
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return RiskSchema()
 
 

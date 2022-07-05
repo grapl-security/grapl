@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 
-from typing import Any, Dict, List, Tuple, Union, Optional, cast, TypeVar
+from typing import Any, Dict, cast, TypeVar
 
 from grapl_analyzerlib.viewable import traverse_view_iter
 
@@ -29,7 +29,7 @@ def delete_edge(txn: Txn, from_uid: int, edge_name: str, to_uid: int) -> None:
 
     try:
         res = txn.mutate(del_obj=mut, commit_now=True)
-        LOGGER.debug("edge mutation result is: {}".format(res))
+        LOGGER.debug(f"edge mutation result is: {res}")
     finally:
         txn.discard()
 
@@ -43,12 +43,12 @@ def create_edge(txn: Txn, from_uid: int, edge_name: str, to_uid: int) -> None:
 
     try:
         res = txn.mutate(set_obj=mut, commit_now=True)
-        LOGGER.debug("edge mutation result is: {}".format(res))
+        LOGGER.debug(f"edge mutation result is: {res}")
     finally:
         txn.discard()
 
 
-def stripped_node_to_query(node: Dict[str, Union[str, int]]) -> str:
+def stripped_node_to_query(node: dict[str, str | int]) -> str:
     func_filter = f'eq(node_key, "{node["node_key"]}")'
     return f"""
         {{
@@ -62,7 +62,7 @@ def stripped_node_to_query(node: Dict[str, Union[str, int]]) -> str:
     """
 
 
-def get_edges(node: Dict[str, Any]) -> List[Tuple[str, str, str]]:
+def get_edges(node: dict[str, Any]) -> list[tuple[str, str, str]]:
     edges = []
 
     for key, value in node.items():
@@ -76,7 +76,7 @@ def get_edges(node: Dict[str, Any]) -> List[Tuple[str, str, str]]:
     return edges
 
 
-def strip_node(node) -> Dict[str, Any]:
+def strip_node(node) -> dict[str, Any]:
     output = {}
     for key, value in node.items():
         if key == "node_type" or key == "dgraph.type":
@@ -135,7 +135,7 @@ class EngagementTransaction(Txn):
         return res
 
 
-class EngagementClient(object):
+class EngagementClient:
     def __init__(self, eg_uid: int, gclient: GraphClient):
         self.gclient = gclient
         self.eg_uid = eg_uid
@@ -163,7 +163,7 @@ EV = TypeVar("EV", bound="EngagementView")
 
 
 class EngagementQuery(BaseQuery[EV, EQ]):
-    def with_scope(self, *scope) -> "EngagementQuery":
+    def with_scope(self, *scope) -> EngagementQuery:
         return self.with_str_property("lens_type", eq="engagement").with_to_neighbor(
             EntityQuery, "scope", "in_scope", scope
         )
@@ -178,7 +178,7 @@ class EngagementView(LensView[EV, EQ]):
     @staticmethod
     def get_or_create(
         eg_client: GraphClient, lens_name: str, lens_type: str = "engagement"
-    ) -> "EngagementView":
+    ) -> EngagementView:
         lens = LensView.get_or_create(eg_client, lens_name, "engagement")
         engagement_client = EngagementClient(
             lens.uid,
@@ -187,10 +187,10 @@ class EngagementView(LensView[EV, EQ]):
         lens.graph_client = engagement_client
         return cast("EngagementView", lens.into_view(EngagementView))
 
-    def get_node_by_key(self, node_key: str) -> Optional["EntityView"]:
+    def get_node_by_key(self, node_key: str) -> EntityView | None:
         return EntityQuery().with_node_key(eq=node_key).query_first(self.graph_client)
 
-    def get_nodes(self, query: EntityQuery, first: int = 100) -> List["EntityView"]:
+    def get_nodes(self, query: EntityQuery, first: int = 100) -> list[EntityView]:
         return query.query(self.graph_client, first=first)
 
     def detach(self, *nodes: EntityView, recursive=False):
@@ -202,7 +202,7 @@ class EngagementView(LensView[EV, EQ]):
                 remove_from_scope(self, subgraph)
 
 
-def remove_from_scope(engagement: EngagementView, node: "Viewable"):
+def remove_from_scope(engagement: EngagementView, node: Viewable):
     if engagement.node_key == node.node_key:
         return
 

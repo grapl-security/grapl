@@ -14,9 +14,6 @@ if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import Table
 
 
-from typing import Union
-
-
 def meta_into_edge(schema_table: Table, schema: Schema, f_edge) -> EdgeT:
     edge_res = schema_table.get_item(Key={"f_edge": f_edge})["Item"]
     edge_t = schema.edges[f_edge][0]  # type: EdgeT
@@ -41,7 +38,7 @@ def meta_into_property(predicate_meta) -> PropType:
 
 def meta_into_predicate(
     schema_table: Table, schema, predicate_meta
-) -> Union[EdgeT, PropType]:
+) -> EdgeT | PropType:
     try:
         if predicate_meta["type"] == "uid":
             return meta_into_edge(schema_table, schema, predicate_meta["predicate"])

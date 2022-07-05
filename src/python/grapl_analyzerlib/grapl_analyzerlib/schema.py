@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 import types
-from typing import cast, Callable, Type, TypeVar, Any, Dict, Tuple, Union
+from typing import cast, Callable, Type, TypeVar, Any
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
@@ -15,7 +15,7 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 V = TypeVar("V", bound="Viewable")
 
 
-def default_properties() -> Dict[str, PropType]:
+def default_properties() -> dict[str, PropType]:
     return {
         "uid": PropType(PropPrimitive.Str, False),
         "dgraph.type": PropType(PropPrimitive.Str, True),
@@ -31,7 +31,7 @@ class SingletonMeta(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(SingletonMeta, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
 
 
@@ -50,19 +50,19 @@ class Schema(metaclass=SingletonMeta):
 
     def __init__(
         self,
-        properties: Dict[str, PropType],
-        edges: Dict[str, Tuple[EdgeT, str]],
-        viewable: Union[ViewableType, ReturnsViewableType],
+        properties: dict[str, PropType],
+        edges: dict[str, tuple[EdgeT, str]],
+        viewable: ViewableType | ReturnsViewableType,
     ) -> None:
         self.node_types = {"BaseNode", self.self_type()}
-        self.properties: Dict[str, "PropType"] = {**default_properties(), **properties}
-        self.edges: Dict[str, Tuple["EdgeT", str]] = {}
+        self.properties: dict[str, PropType] = {**default_properties(), **properties}
+        self.edges: dict[str, tuple[EdgeT, str]] = {}
 
         for edge_name, (edge, r_edge_name) in edges.items():
             self.add_edge(edge_name, edge, r_edge_name)
 
         # only for exporting to graphql
-        self.forward_edges: Dict[str, Tuple[EdgeT, str]] = {
+        self.forward_edges: dict[str, tuple[EdgeT, str]] = {
             name: edge_tuple
             for (name, edge_tuple) in self.edges.items()
             if isinstance(
@@ -90,13 +90,13 @@ class Schema(metaclass=SingletonMeta):
             # The edge dest Viewable should already be constructed at this point
             edge.dest().edges[reverse_name] = (r_edge, edge_name)
 
-    def prop_type(self, prop_name: str) -> Union[Tuple[EdgeT, str], PropType, None]:
+    def prop_type(self, prop_name: str) -> tuple[EdgeT, str] | PropType | None:
         return self.get_properties().get(prop_name) or self.get_edges().get(prop_name)
 
-    def get_edges(self) -> Dict[str, Tuple[EdgeT, str]]:
+    def get_edges(self) -> dict[str, tuple[EdgeT, str]]:
         return self.edges
 
-    def get_properties(self) -> Dict[str, PropType]:
+    def get_properties(self) -> dict[str, PropType]:
         return self.properties
 
     def associated_viewable(self) -> ViewableType:
