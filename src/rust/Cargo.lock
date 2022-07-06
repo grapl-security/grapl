@@ -2470,8 +2470,18 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 name = "lens-manager"
 version = "0.1.0"
 dependencies = [
+ "grapl-config",
+ "grapl-utils",
+ "prost 0.9.0",
  "rust-proto-new",
  "thiserror",
+ "tokio",
+ "tonic 0.6.2",
+ "tonic-build 0.6.2",
+ "tracing",
+ "tracing-futures",
+ "tracing-subscriber",
+ "uuid 0.8.2",
 ]
 
 [[package]]
