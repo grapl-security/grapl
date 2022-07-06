@@ -4,7 +4,27 @@ version = "0.1.0"
 authors = ["Grapl, Inc. <contact@graplsecurity.com>"]
 edition = "2021"
 
+[[bin]] # Bin to run org management gRPC server
+name = "lens-manager"
+path = "src/main.rs"
+
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-rust-proto = { path = "../rust-proto" }
+grapl-config = { path = "../grapl-config" }
+grapl-utils = { path = "../grapl-utils" }
+tonic = "0.6"
+prost = "0.9.0"
+rust-proto-new = { path = "../rust-proto-new", version = "*" }
 thiserror = "1.0.26"
+tokio = { version = "1.17", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1.29"
+tracing-futures = "0.2.5"
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+    "env-filter",
+    "fmt"
+] }
+uuid = { version = "0.8", features = ["serde", "v4"] }
+
+[build-dependencies]
+tonic-build = { version = "0.6.0", features = ["prost"] }
