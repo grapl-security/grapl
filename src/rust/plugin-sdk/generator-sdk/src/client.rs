@@ -1,5 +1,9 @@
 use std::time::Duration;
 
+use bytes::{
+    Buf,
+    Bytes,
+};
 use consul_connect::resolver::{
     ConsulConnectResolveError,
     ConsulConnectResolver,
@@ -66,7 +70,7 @@ impl From<ClientConfig> for GeneratorClient {
         let certificate = config
             .client_cert_config
             .public_certificate_pem
-            .map(|cert| Certificate::from_pem(&cert.as_bytes().to_vec()));
+            .map(|cert| Certificate::from_pem(cert.as_bytes().copy_to_bytes(cert.len())));
         let clients = ClientCacheBuilder::from(config.client_cache_config).build();
         Self::new(clients, certificate, resolver)
     }
@@ -96,7 +100,7 @@ impl GeneratorClient {
     )]
     pub async fn run_generator(
         &mut self,
-        data: Vec<u8>,
+        data: Bytes,
         plugin_id: String,
     ) -> Result<RunGeneratorResponse, GeneratorClientError> {
         let mut client = self.get_client(plugin_id.clone()).await?;

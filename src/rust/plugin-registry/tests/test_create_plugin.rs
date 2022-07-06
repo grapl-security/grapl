@@ -1,5 +1,6 @@
 #![cfg(feature = "integration_tests")]
 
+use bytes::Bytes;
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::FromEnv;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
@@ -32,10 +33,13 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
         event_source_id: Some(event_source_id),
     };
 
-    let single_chunk = b"dummy vec for now".to_vec();
+    let single_chunk = Bytes::from("dummy vec for now");
 
     let response = client
-        .create_plugin(meta, single_chunk.into_iter())
+        .create_plugin(
+            meta,
+            futures::stream::once(async move { single_chunk.clone() }),
+        )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 

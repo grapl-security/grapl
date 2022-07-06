@@ -138,7 +138,7 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let execution_job = v1beta1::ExecutionJob {
             tenant_id: message.request.tenant_id,
             plugin_id: message.request.plugin_id,
-            data: message.request.pipeline_message,
+            data: message.request.pipeline_message.into(),
         };
         Ok(v1beta1::GetExecuteGeneratorResponse {
             execution_job: Some(execution_job),
@@ -164,7 +164,7 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let execution_job = v1beta1::ExecutionJob {
             tenant_id: message.request.tenant_id,
             plugin_id: message.request.plugin_id,
-            data: message.request.pipeline_message,
+            data: message.request.pipeline_message.into(),
         };
         Ok(v1beta1::GetExecuteAnalyzerResponse {
             execution_job: Some(execution_job),

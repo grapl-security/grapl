@@ -1,3 +1,4 @@
+use bytes::Bytes;
 use grapl_utils::future_ext::GraplFutureExt;
 use sqlx::{
     Pool,
@@ -35,7 +36,7 @@ impl From<ExecutionId> for i64 {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, sqlx::Type)]
 pub struct NextExecutionRequest {
     pub execution_key: ExecutionId,
     pub plugin_id: uuid::Uuid,
@@ -86,7 +87,7 @@ impl PsqlQueue {
     pub async fn put_generator_message(
         &self,
         plugin_id: Uuid,
-        pipeline_message: Vec<u8>,
+        pipeline_message: Bytes,
         tenant_id: Uuid,
     ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
@@ -101,7 +102,7 @@ impl PsqlQueue {
             VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )
         ",
             plugin_id,
-            pipeline_message,
+            pipeline_message.as_ref(),
             &tenant_id,
         )
         .execute(&self.pool)
@@ -113,7 +114,7 @@ impl PsqlQueue {
     pub async fn put_analyzer_message(
         &self,
         plugin_id: Uuid,
-        pipeline_message: Vec<u8>,
+        pipeline_message: Bytes,
         tenant_id: Uuid,
     ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
@@ -128,7 +129,7 @@ impl PsqlQueue {
             VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )
         ",
             plugin_id,
-            pipeline_message,
+            pipeline_message.as_ref(),
             &tenant_id,
         )
         .execute(&self.pool)

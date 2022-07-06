@@ -55,7 +55,7 @@ impl GeneratorDispatcher {
             // HAX TODO we need event source management
             let hax_temp_plugin_id = uuid::Uuid::new_v4();
             let execution_job = ExecutionJob {
-                data: inner_message.log_event.to_vec(),
+                data: inner_message.log_event,
                 plugin_id: hax_temp_plugin_id,
                 tenant_id: metadata.tenant_id,
             };
