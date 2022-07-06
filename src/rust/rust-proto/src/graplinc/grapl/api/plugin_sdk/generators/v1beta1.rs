@@ -1,6 +1,8 @@
 pub mod client;
 pub mod server;
 
+use bytes::Bytes;
+
 use crate::{
     graplinc::grapl::api::graph::v1beta1::GraphDescription,
     protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as proto,
@@ -48,7 +50,7 @@ impl serde_impl::ProtobufSerializable for GeneratedGraph {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RunGeneratorRequest {
-    pub data: Vec<u8>,
+    pub data: Bytes,
 }
 
 impl TryFrom<proto::RunGeneratorRequest> for RunGeneratorRequest {

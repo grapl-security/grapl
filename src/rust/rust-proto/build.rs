@@ -3,8 +3,10 @@ use std::{
     path::Path,
 };
 
+use prost_build::Config;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config = tonic_build::configure();
+    let tonic_build_config = tonic_build::configure();
     println!("cargo:rerun-if-changed=Cargo.toml");
     println!("cargo:rerun-if-changed=../Cargo.lock");
     println!("cargo:rerun-if-changed=build.rs");
@@ -12,12 +14,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     change_on_dir(Path::new("../../proto/"))?;
 
     let mut paths = Vec::new();
-    get_proto_files("../../proto/graplinc", &mut paths)?;
+    get_proto_files("../../proto", &mut paths)?;
 
-    config
+    let mut prost_build_config = Config::new();
+    // deserialize bytes fields into bytes::Bytes
+    prost_build_config.bytes(&["."]);
+    // compile our own vendored well-known types protobufs (to enable
+    // deserialization of bytes to bytes::Bytes as configured above)
+    prost_build_config.compile_well_known_types();
+
+    tonic_build_config
         .build_client(true)
         .build_server(true)
-        .compile(&paths[..], &["../../proto/".to_string()])
+        .compile_with_config(
+            prost_build_config,
+            &paths[..],
+            &["../../proto/".to_string()],
+        )
         .unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
     Ok(())
 }

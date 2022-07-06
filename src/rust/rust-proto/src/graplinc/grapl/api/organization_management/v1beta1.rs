@@ -44,7 +44,7 @@ impl From<CreateOrganizationRequest> for CreateOrganizationRequestProto {
             organization_display_name: create_organization_request.organization_display_name,
             admin_username: create_organization_request.admin_username,
             admin_email: create_organization_request.admin_email,
-            admin_password: create_organization_request.admin_password.to_vec(),
+            admin_password: create_organization_request.admin_password,
             should_reset_password: create_organization_request.should_reset_password,
         }
     }
@@ -121,7 +121,7 @@ impl TryFrom<CreateUserRequestProto> for CreateUserRequest {
                 organization_id: organization_id.into(),
                 name: create_user_request_proto.name,
                 email: create_user_request_proto.email,
-                password: create_user_request_proto.password.into(),
+                password: create_user_request_proto.password,
             }),
             None => Err(SerDeError::MissingField("organization_id")),
         }
@@ -134,7 +134,7 @@ impl From<CreateUserRequest> for CreateUserRequestProto {
             organization_id: Some(create_user_request.organization_id.into()),
             name: create_user_request.name,
             email: create_user_request.email,
-            password: create_user_request.password.to_vec(),
+            password: create_user_request.password,
         }
     }
 }

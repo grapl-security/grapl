@@ -1139,21 +1139,6 @@ impl IdentifiedNode {
         }
     }
 
-    pub fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
-        let mut predicate_cache_identities = Vec::with_capacity(self.properties.len());
-
-        for (key, prop) in &self.properties {
-            let prop_value = prop.property.to_string();
-
-            predicate_cache_identities.push(format!("{}:{}:{}", &self.node_key, key, prop_value));
-        }
-
-        predicate_cache_identities
-            .into_iter()
-            .map(|item| item.into_bytes())
-            .collect()
-    }
-
     pub fn into(self, uid: u64) -> MergedNode {
         MergedNode {
             uid,
