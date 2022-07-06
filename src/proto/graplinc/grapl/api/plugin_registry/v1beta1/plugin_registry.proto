@@ -15,31 +15,8 @@ enum PluginType {
 }
 
 // A basic representation of a plugin
-message Plugin {
-  // unique identifier for this plugin
-  graplinc.common.v1beta1.Uuid plugin_id = 1;
-
-  // The string value to display to a user, non-empty
-  string display_name = 2;
-
-  // The type of the plugin
-  PluginType plugin_type = 3;
-
-  // The executable binary for this plugin
-  bytes plugin_binary = 4;
-}
-
-message CreatePluginRequest {
-  oneof inner {
-    CreatePluginRequestMetadata metadata = 1;
-    // Chunks of the plugin binary
-    bytes chunk = 2;
-  }
-}
-
-// A request to create a plugin entry
-message CreatePluginRequestMetadata {
-  // Tenant that is deploying this plugin
+message PluginMetadata {
+  // The platform tenant this plugin belongs to
   graplinc.common.v1beta1.Uuid tenant_id = 1;
 
   // The string value to display to a user, non-empty
@@ -47,6 +24,26 @@ message CreatePluginRequestMetadata {
 
   // The type of the plugin
   PluginType plugin_type = 3;
+
+  // Optional event source id to associate with this plugin. The semantics of
+  // this field are that it is:
+  //
+  // - present for a plugin of type PLUGIN_TYPE_GENERATOR
+  // - absent otherwise
+  //
+  // Attempting to create a plugin of type PLUGIN_TYPE_GENERATOR without
+  // specifying an event_source_id will result in an error.
+  graplinc.common.v1beta1.Uuid event_source_id = 4;
+}
+
+message CreatePluginRequest {
+  oneof inner {
+    // Preamble containing important information about the plugin.
+    PluginMetadata metadata = 1;
+    // Chunks of the plugin binary--these are streamed in-order after the
+    // PluginMetadata preamble.
+    bytes chunk = 2;
+  }
 }
 
 // A Response to a plugin entry being created
@@ -59,14 +56,17 @@ message CreatePluginResponse {
 message GetPluginRequest {
   // The identity of the plugin
   graplinc.common.v1beta1.Uuid plugin_id = 1;
-  // The tenant for which the plugin belongs to
+  // The platform tenant this plugin belongs to
   graplinc.common.v1beta1.Uuid tenant_id = 2;
 }
 
 // A response containing the request plugin
 message GetPluginResponse {
-  // The requested plugin
-  Plugin plugin = 1;
+  // unique identifier for this plugin
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+
+  // The requested plugin's metadata
+  PluginMetadata plugin_metadata = 2;
 }
 
 // A request to deploy an existing plugin

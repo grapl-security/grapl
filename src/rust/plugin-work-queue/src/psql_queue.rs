@@ -1,9 +1,15 @@
+use grapl_utils::future_ext::GraplFutureExt;
 use sqlx::{
     Pool,
     Postgres,
 };
 use tracing::instrument;
 use uuid::Uuid;
+
+use crate::{
+    server::PluginWorkQueueInitError,
+    PluginWorkQueueDbConfig,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq, sqlx::Type)]
 #[sqlx(type_name = "status", rename_all = "lowercase")]
@@ -56,6 +62,24 @@ pub struct PsqlQueue {
 impl PsqlQueue {
     pub fn new(pool: Pool<Postgres>) -> Self {
         Self { pool }
+    }
+
+    pub async fn try_from(
+        service_config: PluginWorkQueueDbConfig,
+    ) -> Result<Self, PluginWorkQueueInitError> {
+        let postgres_address = format!(
+            "postgresql://{}:{}@{}:{}",
+            service_config.plugin_work_queue_db_username,
+            service_config.plugin_work_queue_db_password,
+            service_config.plugin_work_queue_db_hostname,
+            service_config.plugin_work_queue_db_port,
+        );
+
+        let pool = sqlx::PgPool::connect(&postgres_address)
+            .timeout(std::time::Duration::from_secs(5))
+            .await??;
+
+        Ok(Self::new(pool))
     }
 
     #[instrument(skip(pipeline_message), err)]
@@ -261,39 +285,4 @@ impl PsqlQueue {
         .await?;
         Ok(())
     }
-}
-
-// Pub for testing - otherwise sqlx can't see the query
-pub async fn get_generator_status(
-    pool: &sqlx::Pool<Postgres>,
-    execution_key: &ExecutionId,
-) -> Result<Status, sqlx::Error> {
-    // The request should be marked as failed
-    let row = sqlx::query!(
-        r#"SELECT current_status AS "current_status: Status"
-            FROM plugin_work_queue.generator_plugin_executions
-            WHERE execution_key = $1"#,
-        execution_key.0
-    )
-    .fetch_one(pool)
-    .await?;
-    Ok(row.current_status)
-}
-
-// Pub for testing - otherwise sqlx can't see the query
-pub async fn get_generator_status_by_plugin_id(
-    pool: &sqlx::Pool<Postgres>,
-    plugin_id: &uuid::Uuid,
-) -> Result<Status, sqlx::Error> {
-    // The request should be marked as failed
-    let row = sqlx::query!(
-        r#"SELECT current_status AS "current_status: Status"
-            FROM plugin_work_queue.generator_plugin_executions
-            WHERE plugin_id = $1
-            LIMIT 1;"#,
-        plugin_id as _
-    )
-    .fetch_one(pool)
-    .await?;
-    Ok(row.current_status)
 }

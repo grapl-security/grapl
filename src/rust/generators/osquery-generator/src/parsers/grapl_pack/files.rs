@@ -4,16 +4,13 @@ use endpoint_plugin::{
     IAssetNode,
     IFileNode,
 };
-use rust_proto::graph_descriptions::*;
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use rust_proto::graplinc::grapl::api::graph::v1beta1::GraphDescription;
+use serde::Deserialize;
 
 use super::from_str;
 use crate::parsers::OSQueryAction;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Deserialize, Debug, Clone, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct FileEvent {
     host_identifier: String,
@@ -24,7 +21,7 @@ pub struct FileEvent {
 }
 
 /// See https://osquery.io/schema/4.5.0/#processes
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Deserialize, Debug, Clone, Hash)]
 pub struct FileEventColumns {
     target_path: String,
     action: OSQueryFileAction,
@@ -37,7 +34,7 @@ pub struct FileEventColumns {
     time: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Deserialize, Debug, Clone, Hash)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub(crate) enum OSQueryFileAction {
     Accessed,

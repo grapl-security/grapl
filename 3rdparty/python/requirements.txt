@@ -15,7 +15,7 @@ opentelemetry-exporter-zipkin-json
 opentelemetry-instrumentation
 opentelemetry-instrumentation-botocore
 opentelemetry-sdk
-protobuf>=3.12.1
+protobuf>=3.15.8,<3.16.0
 pulumi>=3.0.0,<4.0.0
 pulumi-aws>=5.0.0,<6.0.0
 pulumi_consul

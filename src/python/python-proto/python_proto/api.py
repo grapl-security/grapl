@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Mapping, Sequence, Type, Union, cast
+from typing import Mapping, Optional, Sequence, Type, Union, cast
 
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
     DecrementOnlyIntProp as _DecrementOnlyIntProp,
@@ -11,6 +11,7 @@ from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
 )
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import Edge as _Edge
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import EdgeList as _EdgeList
+from graplinc.grapl.api.graph.v1beta1.types_pb2 import ExecutionHit as _ExecutionHit
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
     GraphDescription as _GraphDescription,
 )
@@ -34,6 +35,7 @@ from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
     IncrementOnlyUintProp as _IncrementOnlyUintProp,
 )
+from graplinc.grapl.api.graph.v1beta1.types_pb2 import Lens as _Lens
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedEdge as _MergedEdge
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedEdgeList as _MergedEdgeList
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedGraph as _MergedGraph
@@ -732,3 +734,85 @@ class MergedGraph(SerDe[_MergedGraph]):
         for k2, v2 in self.edges.items():
             proto_merged_graph.edges[k2].CopyFrom(v2.into_proto())
         return proto_merged_graph
+
+
+@dataclasses.dataclass(frozen=True)
+class Lens(SerDe[_Lens]):
+    lens_type: str
+    lens_name: str
+    uid: Optional[int] = None
+    score: Optional[int] = None
+    proto_cls: Type[_Lens] = _Lens
+
+    @staticmethod
+    def deserialize(bytes_: bytes) -> Lens:
+        proto_lens = _Lens()
+        proto_lens.ParseFromString(bytes_)
+        return Lens.from_proto(proto_lens=proto_lens)
+
+    @staticmethod
+    def from_proto(proto_lens: _Lens) -> Lens:
+        return Lens(
+            lens_type=proto_lens.lens_type,
+            lens_name=proto_lens.lens_name,
+            uid=proto_lens.uid,
+            score=proto_lens.score,
+        )
+
+    def into_proto(self) -> _Lens:
+        proto_lens = _Lens()
+        proto_lens.lens_type = self.lens_type
+        proto_lens.lens_name = self.lens_name
+        if self.uid is not None:
+            proto_lens.uid = self.uid
+        if self.score is not None:
+            proto_lens.score = self.score
+        return proto_lens
+
+
+@dataclasses.dataclass(frozen=True)
+class ExecutionHit(SerDe[_ExecutionHit]):
+    nodes: Mapping[str, MergedNode]
+    edges: Mapping[str, MergedEdgeList]
+    analyzer_name: str
+    risk_score: int
+    lenses: Sequence[Lens]
+    risky_node_keys: Sequence[str]
+    proto_cls: Type[_ExecutionHit] = _ExecutionHit
+
+    @staticmethod
+    def deserialize(bytes_: bytes) -> ExecutionHit:
+        proto_execution_hit = _ExecutionHit()
+        proto_execution_hit.ParseFromString(bytes_)
+        return ExecutionHit.from_proto(proto_execution_hit=proto_execution_hit)
+
+    @staticmethod
+    def from_proto(proto_execution_hit: _ExecutionHit) -> ExecutionHit:
+        return ExecutionHit(
+            nodes={
+                k: MergedNode.from_proto(v)
+                for k, v in proto_execution_hit.nodes.items()
+            },
+            edges={
+                k: MergedEdgeList.from_proto(v)
+                for k, v in proto_execution_hit.edges.items()
+            },
+            analyzer_name=proto_execution_hit.analyzer_name,
+            risk_score=proto_execution_hit.risk_score,
+            lenses=[Lens.from_proto(l) for l in proto_execution_hit.lenses],
+            risky_node_keys=proto_execution_hit.risky_node_keys,
+        )
+
+    def into_proto(self) -> _ExecutionHit:
+        proto_execution_hit = _ExecutionHit()
+        for k1, v1 in self.nodes.items():
+            proto_execution_hit.nodes[k1].CopyFrom(v1.into_proto())
+        for k2, v2 in self.edges.items():
+            proto_execution_hit.edges[k2].CopyFrom(v2.into_proto())
+        proto_execution_hit.analyzer_name = self.analyzer_name
+        proto_execution_hit.risk_score = self.risk_score
+        for lens in self.lenses:
+            proto_execution_hit.lenses.append(lens.into_proto())
+        for risky_node_key in self.risky_node_keys:
+            proto_execution_hit.risky_node_keys.append(risky_node_key)
+        return proto_execution_hit

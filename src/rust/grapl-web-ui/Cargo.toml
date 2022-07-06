@@ -16,7 +16,7 @@ actix-session = "0.5"
 actix-web-opentelemetry = { version = "0.12", features = ["awc"] }
 argon2 = { version = "0.4", features = ["std"] }
 chrono = { version = "0.4" }
-hmap = "0.1.0"
+hmap = "0.1"
 futures-util = "0.3"
 opentelemetry = { version = "0.17", features = ["rt-tokio"] }
 rand = "0.8"
@@ -28,9 +28,9 @@ tracing-opentelemetry = "0.17"
 tracing-subscriber = "0.3"
 url = "2.2"
 grapl-config = { path = "../grapl-config" }
-rusoto_core = { version = "0.47.0", default_features = false, features = [
+rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-rusoto_dynamodb = { version = "0.47.0", default_features = false, features = [
+rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }

@@ -8,10 +8,12 @@ use failure::{
     Error,
 };
 use rusoto_dynamodb::DynamoDb;
-use rust_proto::graph_descriptions::{
-    id_strategy,
-    Session as SessionStrategy,
-    *,
+use rust_proto::graplinc::grapl::api::graph::v1beta1::{
+    GraphDescription,
+    NodeDescription,
+    Session,
+    Static,
+    Strategy,
 };
 use serde::{
     Deserialize,
@@ -21,11 +23,6 @@ use sha2::{
     Digest,
     Sha256,
 };
-use tracing::{
-    info,
-    trace_span,
-    warn,
-};
 
 use crate::{
     sessiondb::SessionDb,
@@ -33,18 +30,18 @@ use crate::{
 };
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ResolvedMapping {
+pub(crate) struct ResolvedMapping {
     pub mapping: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DirectMapping {
+pub(crate) struct DirectMapping {
     pub pseudo_key: String,
     pub mapping: String,
 }
 
 #[derive(Debug, Clone)]
-pub struct NodeDescriptionIdentifier<D>
+pub(crate) struct NodeDescriptionIdentifier<D>
 where
     D: DynamoDb,
 {
@@ -67,7 +64,7 @@ where
     async fn primary_session_key(
         &self,
         node: &mut NodeDescription,
-        strategy: &SessionStrategy,
+        strategy: &Session,
     ) -> Result<String, Error> {
         let mut primary_key = String::with_capacity(32);
 
@@ -123,10 +120,10 @@ where
     }
 
     #[tracing::instrument(skip(self, strategy), err)]
-    pub async fn attribute_dynamic_session(
+    pub(crate) async fn attribute_dynamic_session(
         &self,
         node: NodeDescription,
-        strategy: &SessionStrategy,
+        strategy: &Session,
     ) -> Result<NodeDescription, Error> {
         let mut attributed_node = node.clone();
 
@@ -166,7 +163,7 @@ where
     }
 
     #[tracing::instrument(skip(self, node, strategy), err)]
-    pub async fn attribute_static_mapping(
+    pub(crate) async fn attribute_static_mapping(
         &self,
         mut node: NodeDescription,
         strategy: &Static,
@@ -178,22 +175,22 @@ where
     }
 
     #[tracing::instrument(skip(self, node), err)]
-    pub async fn attribute_dynamic_node(
+    pub(crate) async fn attribute_dynamic_node(
         &self,
         node: &NodeDescription,
     ) -> Result<NodeDescription, Error> {
         let mut attributed_node = node.clone();
         let strategy = &node.id_strategy[0];
 
-        match strategy.strategy.as_ref().unwrap() {
-            id_strategy::Strategy::Session(ref strategy) => {
-                info!("Attributing dynamic node via session");
+        match strategy.strategy {
+            Strategy::Session(ref strategy) => {
+                tracing::info!("Attributing dynamic node via session");
                 attributed_node = self
                     .attribute_dynamic_session(attributed_node, strategy)
                     .await?;
             }
-            id_strategy::Strategy::Static(ref strategy) => {
-                info!("Attributing dynamic node via static mapping");
+            Strategy::Static(ref strategy) => {
+                tracing::info!("Attributing dynamic node via static mapping");
                 attributed_node = self
                     .attribute_static_mapping(attributed_node, strategy)
                     .await?;
@@ -204,7 +201,7 @@ where
     }
 
     #[tracing::instrument(skip(self, unid_graph, _unid_id_map))]
-    pub async fn attribute_dynamic_nodes(
+    pub(crate) async fn attribute_dynamic_nodes(
         &self,
         unid_graph: GraphDescription,
         _unid_id_map: &mut HashMap<String, String>,
@@ -215,28 +212,28 @@ where
         output_graph.edges = unid_graph.edges;
 
         for node in unid_graph.nodes.values() {
-            let span = trace_span!("dynamic attribution loop", node_key=?node.node_key);
+            let span = tracing::trace_span!("dynamic attribution loop", node_key=?node.node_key);
             let _enter = span.enter();
             let new_node = match self.attribute_dynamic_node(node).await {
                 Ok(node) => node,
                 Err(e) => {
-                    warn!(message="Failed to attribute dynamic node", error=?e);
+                    tracing::warn!(message="Failed to attribute dynamic node", error=?e);
                     dead_nodes.insert(node.node_key.as_ref());
                     continue;
                 }
             };
 
-            info!(message="Attributed NodeDescription", old_key=?node.node_key, new_key=?new_node.node_key);
+            tracing::info!(message="Attributed NodeDescription", old_key=?node.node_key, new_key=?new_node.node_key);
 
             unid_id_map.insert(node.clone_node_key(), new_node.clone_node_key());
             output_graph.add_node(new_node);
         }
 
         if dead_nodes.is_empty() {
-            info!("Attributed all dynamic nodes");
+            tracing::info!("Attributed all dynamic nodes");
             Ok(output_graph)
         } else {
-            warn!(message="Failed to attribute dynamic nodes", dead_nodes=?dead_nodes.len());
+            tracing::warn!(message="Failed to attribute dynamic nodes", dead_nodes=?dead_nodes.len());
             Err(output_graph)
         }
     }

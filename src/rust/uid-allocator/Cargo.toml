@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rust-proto-new = { path = "../rust-proto-new", default-features = false, features = [
+rust-proto = { path = "../rust-proto", default-features = false, features = [
   "uid-allocator-full"
 ] }
 chrono = "0.4.19"
@@ -15,7 +15,7 @@ clap = { version = "3.0", default_features = false, features = [
 ] }
 serde = { version = "1.0.136", features = ["derive"] }
 tokio = { version = "1.17.0", features = ["full"] }
-uuid = { version = "0.8.2", features = ["v4"] }
+uuid = { version = "1.0.0", features = ["v4"] }
 maplit = "1.0.2"
 tracing-appender = "0.2"
 tracing-opentelemetry = "0.16"

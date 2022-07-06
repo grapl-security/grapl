@@ -12,6 +12,12 @@
 
 set -eou pipefail
 
+# Source any custom bootstrap settings for Pants from PANTS_BOOTSTRAP if it exists.
+: ${PANTS_BOOTSTRAP:=".pants.bootstrap"}
+if [[ -f "${PANTS_BOOTSTRAP}" ]]; then
+  source "${PANTS_BOOTSTRAP}"
+fi
+
 # NOTE: To use an unreleased version of Pants from the pantsbuild/pants main branch,
 #  locate the main branch SHA, set PANTS_SHA=<SHA> in the environment, and run this script as usual.
 #

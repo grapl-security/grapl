@@ -5,7 +5,15 @@ use derive_dynamic_node::{
     NodeDescription,
 };
 use log::info;
-use rust_proto::graph_descriptions::*;
+use rust_proto::graplinc::grapl::api::graph::v1beta1::{
+    GraphDescription,
+    IdStrategy,
+    ImmutableStrProp,
+    NodeDescription,
+    NodeProperty,
+    Session,
+    Static,
+};
 use serde_derive::Deserialize;
 
 fn read_log() -> &'static [u8] {

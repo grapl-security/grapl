@@ -12,10 +12,6 @@ use rusoto_core::{
 use rusoto_dynamodb::DynamoDbClient;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use sqs_executor::{
-    make_ten,
-    s3_event_emitter::S3EventEmitter,
-};
 
 use crate::ServiceEnv;
 
@@ -238,26 +234,4 @@ impl From<&ServiceEnv> for MetricReporter<Stdout> {
     fn from(env: &ServiceEnv) -> Self {
         MetricReporter::new(&env.service_name)
     }
-}
-
-pub fn s3_event_emitter_from_env<F>(env: &ServiceEnv, key_fn: F) -> S3EventEmitter<S3Client, F>
-where
-    F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
-{
-    S3EventEmitter::new(
-        S3Client::from_env(),
-        crate::dest_bucket(),
-        key_fn,
-        MetricReporter::new(&env.service_name),
-    )
-}
-
-pub async fn s3_event_emitters_from_env<F>(
-    env: &ServiceEnv,
-    key_fn: F,
-) -> [S3EventEmitter<S3Client, F>; 10]
-where
-    F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
-{
-    make_ten(async { s3_event_emitter_from_env(env, key_fn) }).await
 }

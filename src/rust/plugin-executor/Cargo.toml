@@ -16,7 +16,7 @@ name = "plugin_executor"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-async-trait = "0.1.51"
+async-trait = "0.1"
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",
@@ -25,9 +25,9 @@ clap = { version = "3.0", default_features = false, features = [
 generator-sdk = { path = "../plugin-sdk/generator-sdk", features = ["client"] }
 grapl-config = { path = "../grapl-config" }
 plugin-work-queue = { path = "../plugin-work-queue" }
-rust-proto-new = { path = "../rust-proto-new" }
+rust-proto = { path = "../rust-proto" }
 tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
-tracing = "0.1.29"
+tracing = "0.1"
 
 [features]
-new_integration_tests = []
+integration_tests = []

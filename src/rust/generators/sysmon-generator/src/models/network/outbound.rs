@@ -14,7 +14,7 @@ use endpoint_plugin::{
     ProcessNode,
     ProcessOutboundConnectionNode,
 };
-use rust_proto::graph_descriptions::*;
+use rust_proto::graplinc::grapl::api::graph::v1beta1::GraphDescription;
 use sysmon_parser::{
     event_data::NetworkConnectionEventData,
     System,
@@ -34,7 +34,7 @@ use crate::{
 /// * Source and Destination IP Address and Port nodes
 /// * IP connection and Network connection nodes
 #[tracing::instrument]
-pub fn generate_outbound_connection_subgraph(
+pub(crate) fn generate_outbound_connection_subgraph(
     system: &System,
     event_data: &NetworkConnectionEventData<'_>,
 ) -> Result<GraphDescription, SysmonGeneratorError> {

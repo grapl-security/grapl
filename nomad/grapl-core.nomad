@@ -33,36 +33,6 @@ variable "aws_region" {
   type = string
 }
 
-variable "analyzer_bucket" {
-  type        = string
-  description = "The s3 bucket which the analyzer stores items to analyze"
-}
-
-variable "analyzer_dispatched_bucket" {
-  type        = string
-  description = "The s3 bucket which the analyzer stores items that have been processed"
-}
-
-variable "analyzer_dispatcher_queue" {
-  type        = string
-  description = "Main queue for the dispatcher"
-}
-
-variable "analyzer_dispatcher_dead_letter_queue" {
-  type        = string
-  description = "Dead letter queue for the analyzer services"
-}
-
-variable "analyzer_matched_subgraphs_bucket" {
-  type        = string
-  description = "The s3 bucket used for storing matches"
-}
-
-variable "analyzer_executor_queue" {
-  type        = string
-  description = "Main queue for the executor"
-}
-
 variable "dgraph_replicas" {
   type    = number
   default = 1
@@ -75,10 +45,6 @@ variable "dgraph_replicas" {
 variable "dgraph_shards" {
   type    = number
   default = 1
-}
-
-variable "engagement_creator_queue" {
-  type = string
 }
 
 variable "kafka_bootstrap_servers" {
@@ -137,19 +103,29 @@ variable "organization_management_db" {
   description = "Vars for organization-management database"
 }
 
+variable "organization_management_healthcheck_polling_interval_ms" {
+  type        = string
+  description = "The amount of time to wait between each healthcheck execution."
+}
+
 variable "pipeline_ingress_healthcheck_polling_interval_ms" {
   type        = string
   description = "The amount of time to wait between each healthcheck execution."
 }
 
-variable "pipeline_ingress_kafka_sasl_username" {
-  type        = string
-  description = "The username to authenticate with Confluent Cloud cluster."
+variable "kafka_credentials" {
+  description = "Map from service-name to kafka credentials for that service"
+  type = map(object({
+    # The username to authenticate with Confluent Cloud cluster.
+    sasl_username = string
+    # The password to authenticate with Confluent Cloud cluster.
+    sasl_password = string
+  }))
 }
 
-variable "pipeline_ingress_kafka_sasl_password" {
-  type        = string
-  description = "The password to authenticate with Confluent Cloud cluster."
+variable "kafka_consumer_groups" {
+  description = "Map from service-name to the consumer group for that service to join"
+  type        = map(string)
 }
 
 variable "plugin_work_queue_db" {
@@ -200,6 +176,16 @@ variable "uid_allocator_service_config" {
   description = "Vars for the uid allocator service"
 }
 
+variable "event_source_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for event-source database"
+}
+
 variable "plugin_registry_bucket_aws_account_id" {
   type        = string
   description = "The account id that owns the bucket where plugins are stored"
@@ -216,61 +202,15 @@ variable "num_graph_mergers" {
   description = "The number of graph merger instances to run."
 }
 
-variable "graph_merger_queue" {
-  type = string
-}
-
-variable "graph_merger_dead_letter_queue" {
-  type = string
-}
-
 variable "test_user_name" {
   type        = string
   description = "The name of the test user"
-}
-
-variable "model_plugins_bucket" {
-  type        = string
-  description = "The s3 bucket used for storing plugins"
 }
 
 variable "num_node_identifiers" {
   type        = number
   default     = 1
   description = "The number of node identifiers to run."
-}
-
-variable "num_node_identifier_retries" {
-  type        = number
-  default     = 1
-  description = "The number of node identifier retries to run."
-}
-
-variable "node_identifier_queue" {
-  type = string
-}
-
-variable "node_identifier_dead_letter_queue" {
-  type = string
-}
-
-variable "node_identifier_retry_queue" {
-  type = string
-}
-
-variable "unid_subgraphs_generated_bucket" {
-  type        = string
-  description = "The destination bucket for unidentified subgraphs. Used by generators."
-}
-
-variable "subgraphs_merged_bucket" {
-  type        = string
-  description = "The destination bucket for merged subgraphs. Used by Graph Merger."
-}
-
-variable "subgraphs_generated_bucket" {
-  type        = string
-  description = "The destination bucket for generated subgraphs. Used by Node identifier."
 }
 
 variable "user_auth_table" {
@@ -281,22 +221,6 @@ variable "user_auth_table" {
 variable "user_session_table" {
   type        = string
   description = "What is the name of the DynamoDB user session table?"
-}
-
-variable "sysmon_generator_queue" {
-  type = string
-}
-
-variable "sysmon_generator_dead_letter_queue" {
-  type = string
-}
-
-variable "osquery_generator_queue" {
-  type = string
-}
-
-variable "osquery_generator_dead_letter_queue" {
-  type = string
 }
 
 variable "tracing_endpoint" {
@@ -707,6 +631,55 @@ job "grapl-core" {
   ## Begin actual Grapl core services ##
   #######################################
 
+  group "generator-dispatcher" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+    }
+
+    task "generator-dispatcher" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["generator-dispatcher"]
+      }
+
+      env {
+        # Upstreams
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+
+        # Kafka
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["generator-dispatcher"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["generator-dispatcher"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher"]
+        KAFKA_CONSUMER_TOPIC      = "raw-logs"
+        KAFKA_PRODUCER_TOPIC      = "generated-graphs"
+
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "generator-dispatcher"
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "plugin-work-queue"
+              local_bind_port  = 1000
+            }
+          }
+        }
+      }
+    }
+  }
+
   group "generator-executor" {
     network {
       mode = "bridge"
@@ -784,10 +757,14 @@ job "grapl-core" {
         REDIS_ENDPOINT     = var.redis_endpoint
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
-        # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
-        DEST_BUCKET_NAME                = var.subgraphs_merged_bucket
-        SOURCE_QUEUE_URL                = var.graph_merger_queue
-        DEAD_LETTER_QUEUE_URL           = var.graph_merger_dead_letter_queue
+
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["graph-merger"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["graph-merger"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["graph-merger"]
+        KAFKA_CONSUMER_TOPIC      = "identified-graphs"
+        KAFKA_PRODUCER_TOPIC      = "merged-graphs"
+
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
@@ -838,170 +815,27 @@ job "grapl-core" {
       }
 
       env {
-        AWS_REGION                  = var.aws_region
-        RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = local.rust_backtrace
-        REDIS_ENDPOINT              = var.redis_endpoint
-        MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
-        GRAPL_SCHEMA_TABLE          = var.schema_table_name
-        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
-        # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
-        DEST_BUCKET_NAME                = var.subgraphs_generated_bucket
-        SOURCE_QUEUE_URL                = var.node_identifier_queue
-        DEAD_LETTER_QUEUE_URL           = var.node_identifier_retry_queue
+        AWS_REGION = var.aws_region
+
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["node-identifier"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["node-identifier"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["node-identifier"]
+        KAFKA_CONSUMER_TOPIC      = "generated-graphs"
+        KAFKA_PRODUCER_TOPIC      = "identified-graphs"
+
+        GRAPL_SCHEMA_TABLE          = var.schema_table_name
+        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
       }
 
       service {
         name = "node-identifier"
-      }
-    }
-  }
-
-  group "node-identifier-retry" {
-    count = var.num_node_identifier_retries
-
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-    }
-
-    task "node-identifier-retry" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["node-identifier-retry"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        AWS_REGION                      = var.aws_region
-        RUST_LOG                        = var.rust_log
-        RUST_BACKTRACE                  = local.rust_backtrace
-        REDIS_ENDPOINT                  = var.redis_endpoint
-        MG_ALPHAS                       = local.alpha_grpc_connect_str
-        GRAPL_SCHEMA_TABLE              = var.schema_table_name
-        GRAPL_DYNAMIC_SESSION_TABLE     = var.session_table_name
-        DEST_BUCKET_NAME                = var.subgraphs_generated_bucket
-        SOURCE_QUEUE_URL                = var.node_identifier_retry_queue
-        DEAD_LETTER_QUEUE_URL           = var.node_identifier_dead_letter_queue
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
-      }
-
-      service {
-        name = "node-identifier-retry"
-      }
-
-    }
-  }
-
-  group "analyzer-dispatcher" {
-
-    task "analyzer-dispatcher" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["analyzer-dispatcher"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        # AWS vars
-        AWS_REGION = var.aws_region
-        # rust vars
-        RUST_LOG       = var.rust_log
-        RUST_BACKTRACE = local.rust_backtrace
-        # service vars
-        GRAPL_ANALYZERS_BUCKET = var.analyzer_bucket
-        DEST_BUCKET_NAME       = var.analyzer_dispatched_bucket
-        SOURCE_QUEUE_URL       = var.analyzer_dispatcher_queue
-        DEAD_LETTER_QUEUE_URL  = var.analyzer_dispatcher_dead_letter_queue
-        # tracing vars
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
-      }
-
-      service {
-        name = "analyzer-dispatcher"
-      }
-
-    }
-
-  }
-
-  group "analyzer-executor" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-    }
-
-    task "analyzer-executor" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["analyzer-executor"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        # AWS vars
-        AWS_DEFAULT_REGION = var.aws_region
-        # python vars
-        GRAPL_LOG_LEVEL = var.py_log_level
-        # dgraph vars
-        MG_ALPHAS = local.alpha_grpc_connect_str
-        # service vars
-        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = var.analyzer_matched_subgraphs_bucket
-        GRAPL_ANALYZERS_BUCKET                  = var.analyzer_bucket
-        GRAPL_MODEL_PLUGINS_BUCKET              = var.model_plugins_bucket
-        SOURCE_QUEUE_URL                        = var.analyzer_executor_queue
-        GRPC_ENABLE_FORK_SUPPORT                = 1
-        HITCACHE_ADDR                           = local.redis_host
-        HITCACHE_PORT                           = local.redis_port
-        IS_RETRY                                = "False"
-        MESSAGECACHE_ADDR                       = local.redis_host
-        MESSAGECACHE_PORT                       = local.redis_port
-        OTEL_EXPORTER_ZIPKIN_ENDPOINT           = local.tracing_zipkin_endpoint
-      }
-    }
-
-    service {
-      name = "analyzer-executor"
-      connect {
-        sidecar_service {
-          proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
-            }
-          }
-        }
       }
     }
   }
@@ -1028,16 +862,14 @@ job "grapl-core" {
       }
 
       env {
-        # AWS vars
         AWS_DEFAULT_REGION = var.aws_region
-        # python vars
+
         GRAPL_LOG_LEVEL = var.py_log_level
-        # dgraph vars
+
         MG_ALPHAS = local.alpha_grpc_connect_str
 
-        # service vars
-        SOURCE_QUEUE_URL = var.engagement_creator_queue
-        # Tracing endpoint
+        SOURCE_QUEUE_URL = "fake"
+
         OTEL_EXPORTER_ZIPKIN_ENDPOINT = local.tracing_zipkin_endpoint
       }
     }
@@ -1120,41 +952,6 @@ job "grapl-core" {
       }
     }
   }
-
-  group "model-plugin-deployer" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-      port "model-plugin-deployer" {
-      }
-    }
-
-    task "model-plugin-deployer" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["model-plugin-deployer"]
-        ports = ["model-plugin-deployer"]
-      }
-
-      env {
-        RUST_LOG                         = var.rust_log
-        RUST_BACKTRACE                   = local.rust_backtrace
-        GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_PORT_model-plugin-deployer}"
-      }
-    }
-
-    service {
-      name = "model-plugin-deployer"
-      port = "model-plugin-deployer"
-      connect {
-        sidecar_service {}
-      }
-    }
-  }
-
 
   group "web-ui" {
     network {
@@ -1239,50 +1036,22 @@ job "grapl-core" {
       }
 
       env {
-        DEST_BUCKET_NAME                = var.unid_subgraphs_generated_bucket
-        DEAD_LETTER_QUEUE_URL           = var.sysmon_generator_dead_letter_queue
-        SOURCE_QUEUE_URL                = var.sysmon_generator_queue
-        AWS_REGION                      = var.aws_region
-        REDIS_ENDPOINT                  = var.redis_endpoint
-        RUST_LOG                        = var.rust_log
-        RUST_BACKTRACE                  = local.rust_backtrace
+        AWS_REGION = var.aws_region
+
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
-      }
-    }
-  }
 
-  group "osquery-generator" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-    }
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["graph-generator"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["graph-generator"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["graph-generator"]
 
-    task "osquery-generator" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["osquery-generator"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        DEST_BUCKET_NAME                = var.unid_subgraphs_generated_bucket
-        DEAD_LETTER_QUEUE_URL           = var.osquery_generator_dead_letter_queue
-        SOURCE_QUEUE_URL                = var.osquery_generator_queue
-        AWS_REGION                      = var.aws_region
-        REDIS_ENDPOINT                  = var.redis_endpoint
-        RUST_LOG                        = var.rust_log
-        RUST_BACKTRACE                  = local.rust_backtrace
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+        # Temp, until we change sysmon-generator to use the real Plugin SDK
+        KAFKA_CONSUMER_TOPIC = "raw-logs"
+        KAFKA_PRODUCER_TOPIC = "generated-graphs"
       }
     }
   }
@@ -1323,6 +1092,8 @@ job "grapl-core" {
         ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db.username
         OTEL_EXPORTER_JAEGER_AGENT_HOST      = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT      = local.tracing_jaeger_endpoint_port
+
+        ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = var.organization_management_healthcheck_polling_interval_ms
       }
     }
 
@@ -1368,8 +1139,9 @@ job "grapl-core" {
         RUST_LOG                                         = var.rust_log
         PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS = var.pipeline_ingress_healthcheck_polling_interval_ms
         KAFKA_BOOTSTRAP_SERVERS                          = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME                              = var.pipeline_ingress_kafka_sasl_username
-        KAFKA_SASL_PASSWORD                              = var.pipeline_ingress_kafka_sasl_password
+        KAFKA_SASL_USERNAME                              = var.kafka_credentials["pipeline-ingress"].sasl_username
+        KAFKA_SASL_PASSWORD                              = var.kafka_credentials["pipeline-ingress"].sasl_password
+        KAFKA_PRODUCER_TOPIC                             = "raw-logs"
 
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
@@ -1569,14 +1341,12 @@ job "grapl-core" {
     }
   }
 
-
   group "graph-mutation-service" {
     network {
       mode = "bridge"
       dns {
         servers = local.dns_servers
       }
-
       port "graph-mutation-service-port" {
       }
     }
@@ -1655,7 +1425,6 @@ job "grapl-core" {
       }
 
       env {
-        AWS_REGION                      = var.aws_region
         NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
         SCHEMA_SERVICE_BIND_ADDRESS     = "0.0.0.0:${NOMAD_PORT_schema-manager-port}"
         RUST_BACKTRACE                  = local.rust_backtrace
@@ -1675,6 +1444,66 @@ job "grapl-core" {
       connect {
         sidecar_service {
         }
+      }
+    }
+  }
+
+
+  group "event-source" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+
+      port "event-source-port" {
+      }
+    }
+
+    task "event-source" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["event-source"]
+        ports = ["event-source-port"]
+      }
+
+      template {
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
+        env         = true
+      }
+
+      env {
+        EVENT_SOURCE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_event-source-port}"
+        EVENT_SOURCE_DB_HOSTNAME  = var.event_source_db.hostname
+        EVENT_SOURCE_DB_PASSWORD  = var.event_source_db.password
+        EVENT_SOURCE_DB_PORT      = var.event_source_db.port
+        EVENT_SOURCE_DB_USERNAME  = var.event_source_db.username
+        # Hardcoded, but makes little sense to pipe up through Pulumi
+        EVENT_SOURCE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
+
+        # common Rust env vars
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "event-source"
+      port = "event-source-port"
+      connect {
+        sidecar_service {
+        }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "event-source-port"
+        interval = "10s"
+        timeout  = "3s"
       }
     }
   }

@@ -1,11 +1,9 @@
 use std::{
-    io::Stdout,
     str::FromStr,
     time::Duration,
 };
 
 use color_eyre::Help;
-use grapl_observe::metric_reporter::MetricReporter;
 use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
@@ -17,10 +15,6 @@ use rusoto_core::{
 use rusoto_sqs::{
     ListQueuesRequest,
     Sqs,
-};
-use sqs_executor::{
-    make_ten,
-    redis_cache::RedisCache,
 };
 use tracing::debug;
 use tracing_subscriber::{
@@ -54,31 +48,6 @@ pub fn _init_grapl_env(
     let tracing_guard = _init_grapl_log(&env.service_name);
     tracing::info!(env=?env, "initializing environment");
     (env, tracing_guard)
-}
-
-pub async fn event_cache(env: &ServiceEnv) -> RedisCache {
-    let cache_address = std::env::var("REDIS_ENDPOINT").expect("REDIS_ENDPOINT");
-    if !cache_address.starts_with("redis://") {
-        panic!(
-            "Expected redis client with redis://, but got {}",
-            cache_address
-        );
-    }
-    let lru_cache_size = std::env::var("LRU_CACHE_SIZE")
-        .unwrap_or(String::from("1000000"))
-        .parse::<usize>()
-        .unwrap_or(1_000_000);
-    RedisCache::with_lru_capacity(
-        lru_cache_size,
-        cache_address.to_owned(),
-        MetricReporter::<Stdout>::new(&env.service_name),
-    )
-    .await
-    .expect("Could not create redis client")
-}
-
-pub async fn event_caches(env: &ServiceEnv) -> [RedisCache; 10] {
-    make_ten(event_cache(env)).await
 }
 
 pub fn dest_bucket() -> String {
