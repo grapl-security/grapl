@@ -22,6 +22,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // compile our own vendored well-known types protobufs (to enable
     // deserialization of bytes to bytes::Bytes as configured above)
     prost_build_config.compile_well_known_types();
+    // disable copying comments from the vendored protobufs to the generated
+    // rust code because doctest tries to execute the example C++ code
+    prost_build_config.disable_comments(&[".google.protobuf"]);
 
     tonic_build_config
         .build_client(true)

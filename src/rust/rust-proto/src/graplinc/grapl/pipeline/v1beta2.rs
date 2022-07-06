@@ -1,7 +1,7 @@
 use crate::{
     graplinc::grapl::pipeline::v1beta1::Metadata,
     protobufs::{
-        google::protobuf::Any as AnyProto,
+        google::protobuf::v1::Any as AnyProto,
         graplinc::grapl::pipeline::v1beta2::NewEnvelope as NewEnvelopeProto,
     },
     serde_impl,

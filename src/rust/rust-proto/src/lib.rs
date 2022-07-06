@@ -137,7 +137,9 @@ pub(crate) mod protobufs {
 
     pub(crate) mod google {
         pub(crate) mod protobuf {
-            include!(concat!(env!("OUT_DIR"), "/google.protobuf.rs"));
+            pub(crate) mod v1 {
+                include!(concat!(env!("OUT_DIR"), "/google.protobuf.v1.rs"));
+            }
         }
     }
 }

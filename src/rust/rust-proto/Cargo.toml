@@ -6,9 +6,6 @@ edition = "2021"
 description = "Wrapper library for Grapl's protocol buffers"
 license = "MIT"
 
-[lib]
-doctest = false
-
 [dependencies]
 bytes = "1.1"
 futures = "0.3"
