@@ -92,6 +92,7 @@ impl type_url::TypeUrl for ExecutionJob {
 pub struct AcknowledgeGeneratorRequest {
     pub request_id: i64,
     pub success: bool,
+    pub plugin_id: uuid::Uuid,
 }
 
 impl TryFrom<proto::AcknowledgeGeneratorRequest> for AcknowledgeGeneratorRequest {
@@ -100,9 +101,14 @@ impl TryFrom<proto::AcknowledgeGeneratorRequest> for AcknowledgeGeneratorRequest
     fn try_from(value: proto::AcknowledgeGeneratorRequest) -> Result<Self, Self::Error> {
         let request_id = value.request_id;
         let success = value.success;
+        let plugin_id = value
+            .plugin_id
+            .ok_or(Self::Error::MissingField("plugin_id"))?
+            .into();
         Ok(Self {
             request_id,
             success,
+            plugin_id,
         })
     }
 }
@@ -112,6 +118,7 @@ impl From<AcknowledgeGeneratorRequest> for proto::AcknowledgeGeneratorRequest {
         Self {
             request_id: value.request_id,
             success: value.success,
+            plugin_id: Some(value.plugin_id.into()),
         }
     }
 }
@@ -155,6 +162,7 @@ impl type_url::TypeUrl for AcknowledgeGeneratorResponse {
 pub struct AcknowledgeAnalyzerRequest {
     pub request_id: i64,
     pub success: bool,
+    pub plugin_id: uuid::Uuid,
 }
 
 impl TryFrom<proto::AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequest {
@@ -162,11 +170,15 @@ impl TryFrom<proto::AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequest {
 
     fn try_from(value: proto::AcknowledgeAnalyzerRequest) -> Result<Self, Self::Error> {
         let request_id = value.request_id;
-
         let success = value.success;
+        let plugin_id = value
+            .plugin_id
+            .ok_or(Self::Error::MissingField("plugin_id"))?
+            .into();
         Ok(Self {
             request_id,
             success,
+            plugin_id,
         })
     }
 }
@@ -176,6 +188,7 @@ impl From<AcknowledgeAnalyzerRequest> for proto::AcknowledgeAnalyzerRequest {
         Self {
             request_id: value.request_id,
             success: value.success,
+            plugin_id: Some(value.plugin_id.into()),
         }
     }
 }
@@ -216,19 +229,36 @@ impl type_url::TypeUrl for AcknowledgeAnalyzerResponse {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct GetExecuteAnalyzerRequest {}
+pub struct GetExecuteAnalyzerRequest {
+    pub tenant_id: uuid::Uuid,
+    pub plugin_id: uuid::Uuid,
+}
 
 impl TryFrom<proto::GetExecuteAnalyzerRequest> for GetExecuteAnalyzerRequest {
     type Error = SerDeError;
 
-    fn try_from(_value: proto::GetExecuteAnalyzerRequest) -> Result<Self, Self::Error> {
-        Ok(Self {})
+    fn try_from(value: proto::GetExecuteAnalyzerRequest) -> Result<Self, Self::Error> {
+        let tenant_id = value
+            .tenant_id
+            .ok_or(Self::Error::MissingField("tenant_id"))?
+            .into();
+        let plugin_id = value
+            .plugin_id
+            .ok_or(Self::Error::MissingField("plugin_id"))?
+            .into();
+        Ok(Self {
+            tenant_id,
+            plugin_id,
+        })
     }
 }
 
 impl From<GetExecuteAnalyzerRequest> for proto::GetExecuteAnalyzerRequest {
-    fn from(_value: GetExecuteAnalyzerRequest) -> Self {
-        Self {}
+    fn from(value: GetExecuteAnalyzerRequest) -> Self {
+        Self {
+            tenant_id: Some(value.tenant_id.into()),
+            plugin_id: Some(value.plugin_id.into()),
+        }
     }
 }
 
@@ -285,19 +315,36 @@ impl type_url::TypeUrl for GetExecuteAnalyzerResponse {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct GetExecuteGeneratorRequest {}
+pub struct GetExecuteGeneratorRequest {
+    pub tenant_id: uuid::Uuid,
+    pub plugin_id: uuid::Uuid,
+}
 
 impl TryFrom<proto::GetExecuteGeneratorRequest> for GetExecuteGeneratorRequest {
     type Error = SerDeError;
 
-    fn try_from(_value: proto::GetExecuteGeneratorRequest) -> Result<Self, Self::Error> {
-        Ok(Self {})
+    fn try_from(value: proto::GetExecuteGeneratorRequest) -> Result<Self, Self::Error> {
+        let tenant_id = value
+            .tenant_id
+            .ok_or(Self::Error::MissingField("tenant_id"))?
+            .into();
+        let plugin_id = value
+            .plugin_id
+            .ok_or(Self::Error::MissingField("plugin_id"))?
+            .into();
+        Ok(Self {
+            tenant_id,
+            plugin_id,
+        })
     }
 }
 
 impl From<GetExecuteGeneratorRequest> for proto::GetExecuteGeneratorRequest {
-    fn from(_value: GetExecuteGeneratorRequest) -> Self {
-        Self {}
+    fn from(value: GetExecuteGeneratorRequest) -> Self {
+        Self {
+            tenant_id: Some(value.tenant_id.into()),
+            plugin_id: Some(value.plugin_id.into()),
+        }
     }
 }
 
@@ -354,129 +401,144 @@ impl type_url::TypeUrl for GetExecuteGeneratorResponse {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PutExecuteAnalyzerRequest {
+pub struct PushExecuteAnalyzerRequest {
     pub execution_job: ExecutionJob,
+    pub plugin_id: uuid::Uuid,
 }
 
-impl TryFrom<proto::PutExecuteAnalyzerRequest> for PutExecuteAnalyzerRequest {
+impl TryFrom<proto::PushExecuteAnalyzerRequest> for PushExecuteAnalyzerRequest {
     type Error = SerDeError;
 
-    fn try_from(value: proto::PutExecuteAnalyzerRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::PushExecuteAnalyzerRequest) -> Result<Self, Self::Error> {
         let execution_job = value
             .execution_job
-            .ok_or(Self::Error::MissingField(
-                "PutExecuteAnalyzerRequest.execution_job",
-            ))?
+            .ok_or(Self::Error::MissingField("execution_job"))?
             .try_into()?;
+        let plugin_id = value
+            .plugin_id
+            .ok_or(Self::Error::MissingField("plugin_id"))?
+            .into();
 
-        Ok(Self { execution_job })
+        Ok(Self {
+            execution_job,
+            plugin_id,
+        })
     }
 }
 
-impl From<PutExecuteAnalyzerRequest> for proto::PutExecuteAnalyzerRequest {
-    fn from(value: PutExecuteAnalyzerRequest) -> Self {
+impl From<PushExecuteAnalyzerRequest> for proto::PushExecuteAnalyzerRequest {
+    fn from(value: PushExecuteAnalyzerRequest) -> Self {
         Self {
             execution_job: Some(value.execution_job.into()),
+            plugin_id: Some(value.plugin_id.into()),
         }
     }
 }
 
-impl ProtobufSerializable for PutExecuteAnalyzerRequest {
-    type ProtobufMessage = proto::PutExecuteAnalyzerRequest;
+impl ProtobufSerializable for PushExecuteAnalyzerRequest {
+    type ProtobufMessage = proto::PushExecuteAnalyzerRequest;
 }
 
-impl type_url::TypeUrl for PutExecuteAnalyzerRequest {
+impl type_url::TypeUrl for PushExecuteAnalyzerRequest {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteAnalyzerRequest";
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PushExecuteAnalyzerRequest";
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PutExecuteAnalyzerResponse {}
+pub struct PushExecuteAnalyzerResponse {}
 
-impl TryFrom<proto::PutExecuteAnalyzerResponse> for PutExecuteAnalyzerResponse {
+impl TryFrom<proto::PushExecuteAnalyzerResponse> for PushExecuteAnalyzerResponse {
     type Error = SerDeError;
 
-    fn try_from(_value: proto::PutExecuteAnalyzerResponse) -> Result<Self, Self::Error> {
+    fn try_from(_value: proto::PushExecuteAnalyzerResponse) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
-impl From<PutExecuteAnalyzerResponse> for proto::PutExecuteAnalyzerResponse {
-    fn from(_value: PutExecuteAnalyzerResponse) -> Self {
+impl From<PushExecuteAnalyzerResponse> for proto::PushExecuteAnalyzerResponse {
+    fn from(_value: PushExecuteAnalyzerResponse) -> Self {
         Self {}
     }
 }
 
-impl ProtobufSerializable for PutExecuteAnalyzerResponse {
-    type ProtobufMessage = proto::PutExecuteAnalyzerResponse;
+impl ProtobufSerializable for PushExecuteAnalyzerResponse {
+    type ProtobufMessage = proto::PushExecuteAnalyzerResponse;
 }
 
-impl type_url::TypeUrl for PutExecuteAnalyzerResponse {
+impl type_url::TypeUrl for PushExecuteAnalyzerResponse {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteAnalyzerResponse";
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PushExecuteAnalyzerResponse";
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PutExecuteGeneratorRequest {
+pub struct PushExecuteGeneratorRequest {
     pub execution_job: ExecutionJob,
+    pub plugin_id: uuid::Uuid,
 }
 
-impl TryFrom<proto::PutExecuteGeneratorRequest> for PutExecuteGeneratorRequest {
+impl TryFrom<proto::PushExecuteGeneratorRequest> for PushExecuteGeneratorRequest {
     type Error = SerDeError;
 
-    fn try_from(value: proto::PutExecuteGeneratorRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::PushExecuteGeneratorRequest) -> Result<Self, Self::Error> {
         let execution_job = value
             .execution_job
-            .ok_or(Self::Error::MissingField(
-                "PutExecuteGeneratorRequest.execution_job",
-            ))?
+            .ok_or(Self::Error::MissingField("execution_job"))?
             .try_into()?;
 
-        Ok(Self { execution_job })
+        let plugin_id = value
+            .plugin_id
+            .ok_or(Self::Error::MissingField("plugin_id"))?
+            .into();
+
+        Ok(Self {
+            execution_job,
+            plugin_id,
+        })
     }
 }
 
-impl From<PutExecuteGeneratorRequest> for proto::PutExecuteGeneratorRequest {
-    fn from(value: PutExecuteGeneratorRequest) -> Self {
+impl From<PushExecuteGeneratorRequest> for proto::PushExecuteGeneratorRequest {
+    fn from(value: PushExecuteGeneratorRequest) -> Self {
         Self {
             execution_job: Some(value.execution_job.into()),
+            plugin_id: Some(value.plugin_id.into()),
         }
     }
 }
 
-impl ProtobufSerializable for PutExecuteGeneratorRequest {
-    type ProtobufMessage = proto::PutExecuteGeneratorRequest;
+impl ProtobufSerializable for PushExecuteGeneratorRequest {
+    type ProtobufMessage = proto::PushExecuteGeneratorRequest;
 }
 
-impl type_url::TypeUrl for PutExecuteGeneratorRequest {
+impl type_url::TypeUrl for PushExecuteGeneratorRequest {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteGeneratorRequest";
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PushExecuteGeneratorRequest";
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PutExecuteGeneratorResponse {}
+pub struct PushExecuteGeneratorResponse {}
 
-impl TryFrom<proto::PutExecuteGeneratorResponse> for PutExecuteGeneratorResponse {
+impl TryFrom<proto::PushExecuteGeneratorResponse> for PushExecuteGeneratorResponse {
     type Error = SerDeError;
 
-    fn try_from(_value: proto::PutExecuteGeneratorResponse) -> Result<Self, Self::Error> {
+    fn try_from(_value: proto::PushExecuteGeneratorResponse) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
-impl From<PutExecuteGeneratorResponse> for proto::PutExecuteGeneratorResponse {
-    fn from(_value: PutExecuteGeneratorResponse) -> Self {
+impl From<PushExecuteGeneratorResponse> for proto::PushExecuteGeneratorResponse {
+    fn from(_value: PushExecuteGeneratorResponse) -> Self {
         Self {}
     }
 }
 
-impl ProtobufSerializable for PutExecuteGeneratorResponse {
-    type ProtobufMessage = proto::PutExecuteGeneratorResponse;
+impl ProtobufSerializable for PushExecuteGeneratorResponse {
+    type ProtobufMessage = proto::PushExecuteGeneratorResponse;
 }
 
-impl type_url::TypeUrl for PutExecuteGeneratorResponse {
+impl type_url::TypeUrl for PushExecuteGeneratorResponse {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteGeneratorResponse";
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PushExecuteGeneratorResponse";
 }
 
 impl From<Option<ExecutionJob>> for get_execute_generator_response::MaybeJob {

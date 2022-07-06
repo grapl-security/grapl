@@ -89,10 +89,10 @@ impl PluginWorkQueueApi for PluginWorkQueue {
     type Error = PluginWorkQueueError;
 
     #[tracing::instrument(skip(self, request), err)]
-    async fn put_execute_generator(
+    async fn push_execute_generator(
         &self,
-        request: v1beta1::PutExecuteGeneratorRequest,
-    ) -> Result<v1beta1::PutExecuteGeneratorResponse, PluginWorkQueueError> {
+        request: v1beta1::PushExecuteGeneratorRequest,
+    ) -> Result<v1beta1::PushExecuteGeneratorResponse, PluginWorkQueueError> {
         let tenant_id = request.execution_job.tenant_id;
         let plugin_id = request.execution_job.plugin_id;
         let data = request.execution_job.data;
@@ -101,14 +101,14 @@ impl PluginWorkQueueApi for PluginWorkQueue {
             .put_generator_message(plugin_id, data, tenant_id)
             .await?;
 
-        Ok(v1beta1::PutExecuteGeneratorResponse {})
+        Ok(v1beta1::PushExecuteGeneratorResponse {})
     }
 
     #[tracing::instrument(skip(self, request), err)]
-    async fn put_execute_analyzer(
+    async fn push_execute_analyzer(
         &self,
-        request: v1beta1::PutExecuteAnalyzerRequest,
-    ) -> Result<v1beta1::PutExecuteAnalyzerResponse, PluginWorkQueueError> {
+        request: v1beta1::PushExecuteAnalyzerRequest,
+    ) -> Result<v1beta1::PushExecuteAnalyzerResponse, PluginWorkQueueError> {
         let tenant_id = request.execution_job.tenant_id;
         let plugin_id = request.execution_job.plugin_id;
         let data = request.execution_job.data;
@@ -117,7 +117,7 @@ impl PluginWorkQueueApi for PluginWorkQueue {
             .put_analyzer_message(plugin_id, data, tenant_id)
             .await?;
 
-        Ok(v1beta1::PutExecuteAnalyzerResponse {})
+        Ok(v1beta1::PushExecuteAnalyzerResponse {})
     }
 
     #[tracing::instrument(skip(self, _request), err)]

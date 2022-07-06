@@ -9,7 +9,7 @@ use plugin_work_queue::client::{
 use rust_proto::graplinc::grapl::{
     api::plugin_work_queue::v1beta1::{
         ExecutionJob,
-        PutExecuteGeneratorRequest,
+        PushExecuteGeneratorRequest,
     },
     pipeline::{
         v1beta1::RawLog,
@@ -60,7 +60,7 @@ impl GeneratorDispatcher {
                 tenant_id: metadata.tenant_id,
             };
             self.plugin_work_queue_client
-                .put_execute_generator(PutExecuteGeneratorRequest { execution_job })
+                .push_execute_generator(PushExecuteGeneratorRequest { execution_job })
                 .await?;
         }
         // Should we let the process exit if that while-let fails?
