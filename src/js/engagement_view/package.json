@@ -40,6 +40,7 @@
     "react-async-hook": "^4.0.0",
     "react-dom": "^17.0.2",
     "react-force-graph-2d": "^1.23.10",
+    "react-google-login": "^5.2.2",
     "react-router-dom": "^6.2.2",
     "react-scripts": "^5.0.0",
     "react-test-render": "^1.1.2",
@@ -73,7 +74,7 @@
   },
   "devDependencies": {
     "@babel/preset-typescript": "^7.12.7",
-    "@types/react": "^17.0.40"
+    "@types/react": "^18.0.15"
   },
   "packageManager": "yarn@3.1.1"
 }
