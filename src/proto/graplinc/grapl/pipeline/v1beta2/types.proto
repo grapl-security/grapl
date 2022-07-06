@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package graplinc.grapl.pipeline.v1beta2;
 
-import "google/protobuf/v1/any.proto";
+import "google/protobuf/any.proto";
 import "graplinc/grapl/pipeline/v1beta1/types.proto";
 
 // A wrapper message for pipeline data. Includes useful metadata to help
@@ -12,5 +12,5 @@ message NewEnvelope {
   graplinc.grapl.pipeline.v1beta1.Metadata metadata = 1;
 
   // The serialized bytes of the inner message, along with its type
-  google.protobuf.v1.Any inner_message = 2;
+  google.protobuf.Any inner_message = 2;
 }
