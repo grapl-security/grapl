@@ -24,7 +24,7 @@ pub struct ClientCertificate {
 impl From<ClientCertificateProto> for ClientCertificate {
     fn from(client_certificate_proto: ClientCertificateProto) -> Self {
         ClientCertificate {
-            client_certificate: client_certificate_proto.client_certificate.into(),
+            client_certificate: client_certificate_proto.client_certificate,
         }
     }
 }
@@ -32,7 +32,7 @@ impl From<ClientCertificateProto> for ClientCertificate {
 impl From<ClientCertificate> for ClientCertificateProto {
     fn from(client_certificate: ClientCertificate) -> Self {
         ClientCertificateProto {
-            client_certificate: client_certificate.client_certificate.to_vec(),
+            client_certificate: client_certificate.client_certificate,
         }
     }
 }
@@ -134,7 +134,7 @@ pub struct PluginPayload {
 impl From<PluginPayloadProto> for PluginPayload {
     fn from(plugin_payload_proto: PluginPayloadProto) -> Self {
         PluginPayload {
-            plugin_binary: plugin_payload_proto.plugin_binary.into(),
+            plugin_binary: plugin_payload_proto.plugin_binary,
         }
     }
 }
@@ -142,7 +142,7 @@ impl From<PluginPayloadProto> for PluginPayload {
 impl From<PluginPayload> for PluginPayloadProto {
     fn from(plugin_payload: PluginPayload) -> Self {
         PluginPayloadProto {
-            plugin_binary: plugin_payload.plugin_binary.to_vec(),
+            plugin_binary: plugin_payload.plugin_binary,
         }
     }
 }

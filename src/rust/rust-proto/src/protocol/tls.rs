@@ -1,3 +1,5 @@
+use bytes::Bytes;
+
 /// Wrapper around Tonic's Identity so we can avoid clients having to depend
 /// on Tonic directly.
 pub struct Identity {
@@ -5,7 +7,7 @@ pub struct Identity {
 }
 
 impl Identity {
-    pub fn from_pem(cert: Vec<u8>, key: Vec<u8>) -> Self {
+    pub fn from_pem(cert: Bytes, key: Bytes) -> Self {
         Self {
             inner: tonic::transport::Identity::from_pem(cert, key),
         }
@@ -23,7 +25,7 @@ pub struct Certificate {
     inner: tonic::transport::Certificate,
 }
 impl Certificate {
-    pub fn from_pem(pem: &Vec<u8>) -> Self {
+    pub fn from_pem(pem: Bytes) -> Self {
         Self {
             inner: tonic::transport::Certificate::from_pem(pem),
         }

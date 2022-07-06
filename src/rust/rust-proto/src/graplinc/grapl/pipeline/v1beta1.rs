@@ -149,7 +149,7 @@ impl RawLog {
 impl From<RawLogProto> for RawLog {
     fn from(raw_log_proto: RawLogProto) -> Self {
         RawLog {
-            log_event: Bytes::from(raw_log_proto.log_event),
+            log_event: raw_log_proto.log_event,
         }
     }
 }
@@ -157,7 +157,7 @@ impl From<RawLogProto> for RawLog {
 impl From<RawLog> for RawLogProto {
     fn from(raw_log: RawLog) -> Self {
         RawLogProto {
-            log_event: raw_log.log_event.to_vec(),
+            log_event: raw_log.log_event,
         }
     }
 }

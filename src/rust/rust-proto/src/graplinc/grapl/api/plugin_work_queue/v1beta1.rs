@@ -2,6 +2,7 @@
 
 use std::fmt::Formatter;
 
+use bytes::Bytes;
 use proto::{
     get_execute_analyzer_response,
     get_execute_generator_response,
@@ -28,7 +29,7 @@ use crate::{
 pub struct ExecutionJob {
     pub tenant_id: uuid::Uuid,
     pub plugin_id: uuid::Uuid,
-    pub data: Vec<u8>,
+    pub data: Bytes,
 }
 
 impl std::fmt::Debug for ExecutionJob {
