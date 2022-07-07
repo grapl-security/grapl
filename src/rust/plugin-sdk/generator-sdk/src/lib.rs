@@ -1,8 +1,3 @@
+// wimax july 2022: ??? that seems wrong?
 #[cfg(feature = "client")]
 pub mod server;
-
-#[cfg(feature = "client")]
-pub mod client;
-
-#[cfg(feature = "client")]
-pub mod client_config;

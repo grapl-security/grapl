@@ -29,6 +29,11 @@ variable "plugin_runtime_image" {
   description = "The container that will load and run the plugin"
 }
 
+variable "plugin_execution_image" {
+  type        = string
+  description = "The container that will load and run the Generator Executor or Analyzer Executor"
+}
+
 job "grapl-plugin" {
   datacenters = ["dc1"]
   namespace   = "plugin-${var.plugin_id}"
@@ -40,6 +45,58 @@ job "grapl-plugin" {
   constraint {
     attribute = "${meta.is_grapl_plugin_host}"
     value     = true
+  }
+
+  group "plugin-sidecars" {
+    count = var.plugin_count
+
+    service {
+      name = "plugin-execution-sidecar-${var.plugin_id}"
+      tags = [
+        "serve_type:plugin-execution-sidecar",
+        "tenant_id:${var.tenant_id}",
+        "plugin_id:${var.plugin_id}"
+      ]
+
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "plugin-work-queue"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1000
+            }
+
+            upstreams {
+              destination_name = "plugin-${var.plugin_id}"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1001
+            }
+
+            // TODO: upstream for graph-query-service
+          }
+        }
+      }
+    }
+
+    # The execution task pulls messages from the plugin-work-queue and
+    # sends them to the plugin
+    task "tenant-plugin-execution-sidecar" {
+      driver = "docker"
+
+      config {
+        image = var.plugin_execution_image
+      }
+
+      env {
+        PLUGIN_ID = "${var.plugin_id}"
+
+        PLUGIN_URL                       = "http://${NOMAD_UPSTREAM_ADDR_plugin-grpc-receiver}"
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+      }
+    }
+
+    // TODO: task "tenant-plugin-graph-query-sidecar"
   }
 
   group "plugin" {

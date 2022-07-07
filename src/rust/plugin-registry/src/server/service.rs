@@ -82,7 +82,7 @@ pub struct PluginRegistryServiceConfig {
     #[clap(long, env)]
     pub plugin_bootstrap_container_image: String,
     #[clap(long, env)]
-    pub plugin_execution_container_image: String,
+    pub plugin_execution_image: String,
     #[clap(long, env = "PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL")]
     pub kernel_artifact_url: String,
     #[clap(long, env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]

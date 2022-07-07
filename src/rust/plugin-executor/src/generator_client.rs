@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use async_trait;
 use rust_proto::{
-    graplinc::grapl::api::plugin_registry::v1beta1::{
-        PluginRegistryServiceClient,
-        PluginRegistryServiceClientError,
+    graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::{
+        GeneratorServiceClient,
+        GeneratorServiceClientError,
     },
     protocol::{
         healthcheck::client::HealthcheckClient,
@@ -13,7 +13,7 @@ use rust_proto::{
 };
 use tonic::transport::Endpoint;
 
-const ADDRESS_ENV_VAR: &'static str = "PLUGIN_REGISTRY_CLIENT_ADDRESS";
+const ADDRESS_ENV_VAR: &'static str = "PLUGIN_CLIENT_ADDRESS";
 
 #[async_trait::async_trait]
 pub trait FromEnv<T, E> {
@@ -21,11 +21,9 @@ pub trait FromEnv<T, E> {
 }
 
 #[async_trait::async_trait]
-impl FromEnv<PluginRegistryServiceClient, PluginRegistryServiceClientError>
-    for PluginRegistryServiceClient
-{
+impl FromEnv<GeneratorServiceClient, GeneratorServiceClientError> for GeneratorServiceClient {
     /// Create a client from environment
-    async fn from_env() -> Result<PluginRegistryServiceClient, PluginRegistryServiceClientError> {
+    async fn from_env() -> Result<GeneratorServiceClient, GeneratorServiceClientError> {
         let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
 
         // TODO: Add a `rust-proto` wrapper around tonic Endpoint
@@ -40,7 +38,7 @@ impl FromEnv<PluginRegistryServiceClient, PluginRegistryServiceClientError>
             Duration::from_millis(500),
         )
         .await
-        .expect("plugin-registry never reported healthy");
+        .expect("Generator plugin never reported healthy");
 
         Self::connect(endpoint).await
     }

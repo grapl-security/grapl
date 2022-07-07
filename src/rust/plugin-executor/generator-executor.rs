@@ -1,12 +1,21 @@
 use std::time::Duration;
 
-use clap::Parser;
-use generator_sdk::client::GeneratorClient;
+use plugin_executor::generator_client::FromEnv as generator_from_env;
 use plugin_work_queue::client::{
-    FromEnv,
+    FromEnv as pwq_from_env,
     PluginWorkQueueServiceClient,
 };
-use rust_proto::graplinc::grapl::api::plugin_work_queue::v1beta1;
+use rust_proto::graplinc::grapl::api::{
+    plugin_sdk::generators::v1beta1::{
+        client::GeneratorServiceClient,
+        RunGeneratorRequest,
+    },
+    plugin_work_queue::v1beta1::{
+        AcknowledgeGeneratorRequest,
+        ExecutionJob,
+        GetExecuteGeneratorRequest,
+    },
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 struct GeneratorExecutor {
-    generator_client: GeneratorClient,
+    generator_service_client: GeneratorServiceClient,
     plugin_work_queue_client: PluginWorkQueueServiceClient,
     plugin_id: uuid::Uuid,
 }
@@ -24,11 +33,7 @@ struct GeneratorExecutor {
 impl GeneratorExecutor {
     #[tracing::instrument(err)]
     async fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let generator_client = {
-            let generator_client_config = generator_sdk::client_config::ClientConfig::parse();
-            GeneratorClient::from(generator_client_config)
-        };
-
+        let generator_service_client = GeneratorServiceClient::from_env().await?;
         let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
 
         // TODO: perhaps change to Clap
@@ -36,7 +41,7 @@ impl GeneratorExecutor {
         let plugin_id = uuid::Uuid::parse_str(&plugin_id)?;
 
         Ok(Self {
-            generator_client,
+            generator_service_client,
             plugin_work_queue_client,
             plugin_id,
         })
@@ -45,7 +50,7 @@ impl GeneratorExecutor {
     #[tracing::instrument(skip(self), err)]
     async fn main_loop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         // Continually scan for new work for this Plugin.
-        let get_request = v1beta1::GetExecuteGeneratorRequest {
+        let get_request = GetExecuteGeneratorRequest {
             plugin_id: self.plugin_id,
         };
         while let Ok(get_execute_response) = self
@@ -56,12 +61,12 @@ impl GeneratorExecutor {
             let request_id = get_execute_response.request_id;
             if let Some(job) = get_execute_response.execution_job {
                 // Process the job
-                let process_result = self.process_job(job, request_id).await;
+                let process_result = self.process_job(job).await;
 
                 // Inform plugin-work-queue whether it worked or if we need
                 // to retry
                 self.plugin_work_queue_client
-                    .acknowledge_generator(v1beta1::AcknowledgeGeneratorRequest {
+                    .acknowledge_generator(AcknowledgeGeneratorRequest {
                         request_id,
                         plugin_id: self.plugin_id,
                         success: process_result.is_ok(),
@@ -77,14 +82,10 @@ impl GeneratorExecutor {
     }
 
     #[tracing::instrument(skip(self, job), err)]
-    async fn process_job(
-        &mut self,
-        job: v1beta1::ExecutionJob,
-        request_id: i64,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    async fn process_job(&mut self, job: ExecutionJob) -> Result<(), Box<dyn std::error::Error>> {
         let _run_generator_response = self
-            .generator_client
-            .run_generator(job.data, self.plugin_id.to_string())
+            .generator_service_client
+            .run_generator(RunGeneratorRequest { data: job.data })
             .await?;
 
         //kafka_stream.put(generated_graphs).await.unwrap();

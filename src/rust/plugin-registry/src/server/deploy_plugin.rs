@@ -67,6 +67,10 @@ pub fn get_job(
                     "plugin_runtime_image",
                     service_config.hax_docker_plugin_runtime_image.to_owned(),
                 ),
+                (
+                    "plugin_execution_image",
+                    service_config.plugin_execution_image.to_owned(),
+                ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("tenant_id", plugin.tenant_id.to_string()),
             ]);
@@ -91,8 +95,8 @@ pub fn get_job(
                     service_config.plugin_bootstrap_container_image.to_owned(),
                 ),
                 (
-                    "plugin_execution_container_image",
-                    service_config.plugin_execution_container_image.to_owned(),
+                    "plugin_execution_image",
+                    service_config.plugin_execution_image.to_owned(),
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 (
@@ -168,7 +172,7 @@ mod tests {
             hax_docker_plugin_runtime_image: Default::default(),
             kernel_artifact_url: Default::default(),
             plugin_bootstrap_container_image: Default::default(),
-            plugin_execution_container_image: Default::default(),
+            plugin_execution_image: Default::default(),
             bucket_aws_account_id: Default::default(),
             bucket_name: Default::default(),
             rootfs_artifact_url: Default::default(),

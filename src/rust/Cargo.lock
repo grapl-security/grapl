@@ -3014,11 +3014,11 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "clap 3.1.18",
- "generator-sdk",
  "grapl-config",
  "plugin-work-queue",
  "rust-proto",
  "tokio",
+ "tonic 0.7.2",
  "tracing",
  "uuid",
 ]
