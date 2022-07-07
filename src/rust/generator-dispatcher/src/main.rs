@@ -49,18 +49,19 @@ impl GeneratorDispatcher {
         while let Some(raw_log_result) = stream.next().await {
             let Envelope {
                 inner_message,
-                metadata,
+                metadata: _,
             } = raw_log_result?;
 
             // HAX TODO we need event source management
             let hax_temp_plugin_id = uuid::Uuid::new_v4();
             let execution_job = ExecutionJob {
                 data: inner_message.log_event,
-                plugin_id: hax_temp_plugin_id,
-                tenant_id: metadata.tenant_id,
             };
             self.plugin_work_queue_client
-                .push_execute_generator(PushExecuteGeneratorRequest { execution_job })
+                .push_execute_generator(PushExecuteGeneratorRequest {
+                    execution_job,
+                    plugin_id: hax_temp_plugin_id,
+                })
                 .await?;
         }
         // Should we let the process exit if that while-let fails?

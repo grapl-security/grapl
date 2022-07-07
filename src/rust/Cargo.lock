@@ -3020,6 +3020,7 @@ dependencies = [
  "rust-proto",
  "tokio",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

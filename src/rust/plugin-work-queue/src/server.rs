@@ -93,13 +93,10 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         &self,
         request: v1beta1::PushExecuteGeneratorRequest,
     ) -> Result<v1beta1::PushExecuteGeneratorResponse, PluginWorkQueueError> {
-        let tenant_id = request.execution_job.tenant_id;
-        let plugin_id = request.execution_job.plugin_id;
+        let plugin_id = request.plugin_id;
         let data = request.execution_job.data;
 
-        self.queue
-            .put_generator_message(plugin_id, data, tenant_id)
-            .await?;
+        self.queue.put_generator_message(plugin_id, data).await?;
 
         Ok(v1beta1::PushExecuteGeneratorResponse {})
     }
@@ -109,13 +106,10 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         &self,
         request: v1beta1::PushExecuteAnalyzerRequest,
     ) -> Result<v1beta1::PushExecuteAnalyzerResponse, PluginWorkQueueError> {
-        let tenant_id = request.execution_job.tenant_id;
-        let plugin_id = request.execution_job.plugin_id;
+        let plugin_id = request.plugin_id;
         let data = request.execution_job.data;
 
-        self.queue
-            .put_analyzer_message(plugin_id, data, tenant_id)
-            .await?;
+        self.queue.put_analyzer_message(plugin_id, data).await?;
 
         Ok(v1beta1::PushExecuteAnalyzerResponse {})
     }
@@ -136,8 +130,6 @@ impl PluginWorkQueueApi for PluginWorkQueue {
             }
         };
         let execution_job = v1beta1::ExecutionJob {
-            tenant_id: message.request.tenant_id,
-            plugin_id: message.request.plugin_id,
             data: message.request.pipeline_message.into(),
         };
         Ok(v1beta1::GetExecuteGeneratorResponse {
@@ -162,8 +154,6 @@ impl PluginWorkQueueApi for PluginWorkQueue {
             }
         };
         let execution_job = v1beta1::ExecutionJob {
-            tenant_id: message.request.tenant_id,
-            plugin_id: message.request.plugin_id,
             data: message.request.pipeline_message.into(),
         };
         Ok(v1beta1::GetExecuteAnalyzerResponse {

@@ -27,16 +27,12 @@ use crate::{
 
 #[derive(Clone, PartialEq)]
 pub struct ExecutionJob {
-    pub tenant_id: uuid::Uuid,
-    pub plugin_id: uuid::Uuid,
     pub data: Bytes,
 }
 
 impl std::fmt::Debug for ExecutionJob {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ExecutionJob")
-            .field("tenant_id", &self.tenant_id)
-            .field("plugin_id", &self.plugin_id)
             .field("data.len", &self.data.len())
             .finish()
     }
@@ -46,24 +42,11 @@ impl TryFrom<proto::ExecutionJob> for ExecutionJob {
     type Error = SerDeError;
 
     fn try_from(value: proto::ExecutionJob) -> Result<Self, Self::Error> {
-        let tenant_id = value
-            .tenant_id
-            .ok_or(Self::Error::MissingField("ExecutionJob.tenant_id"))?
-            .into();
-        let plugin_id = value
-            .plugin_id
-            .ok_or(Self::Error::MissingField("ExecutionJob.plugin_id"))?
-            .into();
-
         let data = value.data;
         if data.is_empty() {
             return Err(Self::Error::MissingField("ExecutionJob.data"));
         }
-        Ok(Self {
-            tenant_id,
-            plugin_id,
-            data,
-        })
+        Ok(Self { data })
     }
 }
 
@@ -71,11 +54,7 @@ impl From<ExecutionJob> for proto::ExecutionJob {
     fn from(value: ExecutionJob) -> Self {
         assert!(!value.data.is_empty());
 
-        Self {
-            tenant_id: Some(value.tenant_id.into()),
-            plugin_id: Some(value.plugin_id.into()),
-            data: value.data,
-        }
+        Self { data: value.data }
     }
 }
 
@@ -230,7 +209,6 @@ impl type_url::TypeUrl for AcknowledgeAnalyzerResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetExecuteAnalyzerRequest {
-    pub tenant_id: uuid::Uuid,
     pub plugin_id: uuid::Uuid,
 }
 
@@ -238,25 +216,17 @@ impl TryFrom<proto::GetExecuteAnalyzerRequest> for GetExecuteAnalyzerRequest {
     type Error = SerDeError;
 
     fn try_from(value: proto::GetExecuteAnalyzerRequest) -> Result<Self, Self::Error> {
-        let tenant_id = value
-            .tenant_id
-            .ok_or(Self::Error::MissingField("tenant_id"))?
-            .into();
         let plugin_id = value
             .plugin_id
             .ok_or(Self::Error::MissingField("plugin_id"))?
             .into();
-        Ok(Self {
-            tenant_id,
-            plugin_id,
-        })
+        Ok(Self { plugin_id })
     }
 }
 
 impl From<GetExecuteAnalyzerRequest> for proto::GetExecuteAnalyzerRequest {
     fn from(value: GetExecuteAnalyzerRequest) -> Self {
         Self {
-            tenant_id: Some(value.tenant_id.into()),
             plugin_id: Some(value.plugin_id.into()),
         }
     }
@@ -316,7 +286,6 @@ impl type_url::TypeUrl for GetExecuteAnalyzerResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetExecuteGeneratorRequest {
-    pub tenant_id: uuid::Uuid,
     pub plugin_id: uuid::Uuid,
 }
 
@@ -324,25 +293,17 @@ impl TryFrom<proto::GetExecuteGeneratorRequest> for GetExecuteGeneratorRequest {
     type Error = SerDeError;
 
     fn try_from(value: proto::GetExecuteGeneratorRequest) -> Result<Self, Self::Error> {
-        let tenant_id = value
-            .tenant_id
-            .ok_or(Self::Error::MissingField("tenant_id"))?
-            .into();
         let plugin_id = value
             .plugin_id
             .ok_or(Self::Error::MissingField("plugin_id"))?
             .into();
-        Ok(Self {
-            tenant_id,
-            plugin_id,
-        })
+        Ok(Self { plugin_id })
     }
 }
 
 impl From<GetExecuteGeneratorRequest> for proto::GetExecuteGeneratorRequest {
     fn from(value: GetExecuteGeneratorRequest) -> Self {
         Self {
-            tenant_id: Some(value.tenant_id.into()),
             plugin_id: Some(value.plugin_id.into()),
         }
     }

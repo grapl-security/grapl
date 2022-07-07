@@ -889,13 +889,9 @@ pub mod plugin_work_queue {
 
     prop_compose! {
         pub fn execution_jobs()(
-            tenant_id in uuids(),
-            plugin_id in uuids(),
             data in bytes(1024),
         ) -> native::ExecutionJob {
             native::ExecutionJob {
-                tenant_id,
-                plugin_id,
                 data,
             }
         }
@@ -946,11 +942,9 @@ pub mod plugin_work_queue {
     prop_compose! {
         pub fn get_execute_analyzer_requests()(
             plugin_id in uuids(),
-            tenant_id in uuids(),
         ) -> native::GetExecuteAnalyzerRequest {
             native::GetExecuteAnalyzerRequest {
                 plugin_id,
-                tenant_id,
             }
         }
     }
@@ -970,11 +964,9 @@ pub mod plugin_work_queue {
     prop_compose! {
         pub fn get_execute_generator_requests()(
             plugin_id in uuids(),
-            tenant_id in uuids(),
         ) -> native::GetExecuteGeneratorRequest {
             native::GetExecuteGeneratorRequest {
                 plugin_id,
-                tenant_id,
             }
         }
     }

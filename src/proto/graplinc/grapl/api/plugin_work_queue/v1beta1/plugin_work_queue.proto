@@ -34,18 +34,14 @@ message PushExecuteAnalyzerResponse {}
 
 // A request to retrieve a new ExecutionJob for a Generator
 message GetExecuteGeneratorRequest {
-  // The tenant id of the plugin making this request
-  graplinc.common.v1beta1.Uuid tenant_id = 1;
   // The plugin id of the plugin making this request
-  graplinc.common.v1beta1.Uuid plugin_id = 2;
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
 }
 
 // A request to retrieve a new ExecutionJob for an Analyzer
 message GetExecuteAnalyzerRequest {
-  // The tenant id of the plugin making this request
-  graplinc.common.v1beta1.Uuid tenant_id = 1;
   // The plugin id of the plugin making this request
-  graplinc.common.v1beta1.Uuid plugin_id = 2;
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
 }
 
 // When there are no jobs left in the queue. Primarily for transport as we
