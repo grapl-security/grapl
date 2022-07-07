@@ -47,8 +47,17 @@ job "grapl-plugin" {
     value     = true
   }
 
-  group "plugin-sidecars" {
+  group "plugin-sidecar" {
     count = var.plugin_count
+
+    network {
+      mode = "bridge"
+      // TODO i think? possibly cargo culted?
+      // dns {
+      //   servers = local.dns_servers
+      // }
+      port "plugin-sidecar" {}
+    }
 
     service {
       name = "plugin-execution-sidecar-${var.plugin_id}"
@@ -91,7 +100,7 @@ job "grapl-plugin" {
       env {
         PLUGIN_ID = "${var.plugin_id}"
 
-        PLUGIN_URL                       = "http://${NOMAD_UPSTREAM_ADDR_plugin-grpc-receiver}"
+        //PLUGIN_CLIENT_ADDRESS            = "http://${NOMAD_UPSTREAM_ADDR_plugin-${!PLUGIN_ID}}"
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
       }
     }

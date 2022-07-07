@@ -13,7 +13,7 @@ use rust_proto::{
 };
 use tonic::transport::Endpoint;
 
-const ADDRESS_ENV_VAR: &'static str = "PLUGIN_CLIENT_ADDRESS";
+//const ADDRESS_ENV_VAR: &'static str = "PLUGIN_CLIENT_ADDRESS";
 
 #[async_trait::async_trait]
 pub trait FromEnv<T, E> {
@@ -24,7 +24,9 @@ pub trait FromEnv<T, E> {
 impl FromEnv<GeneratorServiceClient, GeneratorServiceClientError> for GeneratorServiceClient {
     /// Create a client from environment
     async fn from_env() -> Result<GeneratorServiceClient, GeneratorServiceClientError> {
-        let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
+        let plugin_id = std::env::var("PLUGIN_ID").expect("PLUGIN_ID");
+        let upstream_addr_env_var = format!("NOMAD_UPSTREAM_ADDR_plugin-{plugin_id}");
+        let address = format!("http://{upstream_addr_env_var}");
 
         // TODO: Add a `rust-proto` wrapper around tonic Endpoint
         let endpoint = Endpoint::from_shared(address.to_string())?
