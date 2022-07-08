@@ -39,12 +39,16 @@ CMD [":"]
 # integration-tests
 ################################################################################
 FROM grapl-python-base AS integration-tests
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
+ARG PANTS_PYTHON_VERSION="3.8.13"
+# We install python3-dev so that we have a python version supported by pants (No 3.10 support yet)
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         build-essential=12.9 \
         curl=7.74.0-1.3+deb11u1 \
         unzip=6.0-26 \
+        python3-dev=3.9.2-3 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \
         --disabled-password \
@@ -53,6 +57,8 @@ RUN apt-get update \
         --shell /bin/bash \
         --uid 2000 \
         pants_ci
+# Uncomment to get the versions for pins
+#RUN dpkg-query -l && exit 5
 
 # /mnt/pants-cache is mounted by `integration-tests.nomad` at runtime.
 # It will copy the existing directory structure in.
