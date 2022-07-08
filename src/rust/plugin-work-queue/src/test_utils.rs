@@ -32,7 +32,7 @@ pub trait PsqlQueueTestExtensions {
     /// Get all generator messages regardless of state
     async fn get_all_generator_messages(
         &self,
-        tenant_id: Uuid,
+        plugin_id: Uuid,
     ) -> Result<Vec<NextExecutionRequest>, PsqlQueueError>;
 }
 
@@ -40,7 +40,7 @@ pub trait PsqlQueueTestExtensions {
 impl PsqlQueueTestExtensions for PsqlQueue {
     async fn get_all_generator_messages(
         &self,
-        tenant_id: Uuid,
+        plugin_id: Uuid,
     ) -> Result<Vec<NextExecutionRequest>, PsqlQueueError> {
         let generator_messages = sqlx::query_as!(
             NextExecutionRequest,
@@ -48,12 +48,11 @@ impl PsqlQueueTestExtensions for PsqlQueue {
             SELECT
                  execution_key AS "execution_key!: ExecutionId",
                  plugin_id,
-                 pipeline_message,
-                 tenant_id
+                 pipeline_message
             FROM plugin_work_queue.generator_plugin_executions
-            WHERE tenant_id = $1
+            WHERE plugin_id = $1
             "#,
-            tenant_id
+            plugin_id
         )
         .fetch_all(&self.pool)
         .await?;
