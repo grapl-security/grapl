@@ -1,7 +1,6 @@
 [GLOBAL]
 pants_version = "2.12.0"
 backend_packages = [
-  "grapl_setup_py",
   "pants.backend.codegen.protobuf.lint.buf",
   "pants.backend.codegen.protobuf.python",
   "pants.backend.docker",
@@ -16,14 +15,6 @@ backend_packages = [
   "pants.backend.shell",
   "pants.backend.shell.lint.shellcheck",
   "pants.backend.shell.lint.shfmt"
-]
-
-pythonpath = [
-  "%(buildroot)s/pants-plugins"
-]
-
-build_file_prelude_globs = [
-  "pants-plugins/macros.py",
 ]
 
 pants_ignore=[
@@ -72,7 +63,6 @@ root_patterns = [
   "/build-support",
   "/devbox",
   "/etc",  # Some of our tests use sample data from here
-  "/pants-plugins",
   "/pulumi",
   "/src/proto",
   "/src/python/engagement-creator",
