@@ -115,7 +115,9 @@ job "grapl-plugin" {
       env {
         PLUGIN_ID = "${var.plugin_id}"
 
-        //PLUGIN_CLIENT_ADDRESS            = "http://${NOMAD_UPSTREAM_ADDR_plugin-${!PLUGIN_ID}}"
+        // FYI: the upstream plugin's address is discovered at runtime, not
+        // env{}, because the upstream's name is based on ${PLUGIN_ID}.
+
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
 
         RUST_LOG       = var.rust_log
