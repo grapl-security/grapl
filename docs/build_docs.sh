@@ -11,7 +11,7 @@ source "dist/export/python/virtualenvs/grapl/$(cat .python-version)/bin/activate
 
 cd "${THIS_DIR}"
 pip install wheel
-pip install -r requirements.txt
+pip install -r constraints.txt
 
 export TARGET_DIR="/tmp/grapl_docs"
 rm -rf $TARGET_DIR || true
