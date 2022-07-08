@@ -70,6 +70,7 @@ pub struct OrganizationManagement {
     pool: Pool<Postgres>,
 }
 
+
 impl OrganizationManagement {
     async fn try_from(
         service_config: &OrganizationManagementServiceConfig,
