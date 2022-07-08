@@ -6,10 +6,7 @@ use rust_proto::{
         GeneratorApi,
         GeneratorServer,
     },
-    protocol::{
-        healthcheck::HealthcheckStatus,
-        tls::Identity,
-    },
+    protocol::healthcheck::HealthcheckStatus,
 };
 use tokio::net::TcpListener;
 
@@ -30,20 +27,12 @@ pub async fn exec_service(
     graph_generator: impl GeneratorApi + Send + Sync + 'static,
     config: GeneratorServiceConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // todo: When bootstrapping and this service are more mature we should determine
-    //       the right way to get these configuration values passed around
-    let cert = tokio::fs::read("/etc/ssl/private/plugin-client-cert.pem").await?;
-    let key = tokio::fs::read("/etc/ssl/private/plugin-client-cert.key").await?;
-
-    let identity = Identity::from_pem(cert, key);
-
     let healthcheck_polling_interval_ms = 5000; // TODO: un-hardcode
     let (server, _shutdown_tx) = GeneratorServer::new(
         graph_generator,
         TcpListener::bind(config.bind_address.clone()).await?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
         Duration::from_millis(healthcheck_polling_interval_ms),
-        identity,
     );
     tracing::info!(
         message = "starting gRPC server",

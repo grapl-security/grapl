@@ -10,7 +10,9 @@ path = "src/examples/example_generator.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-trait = "0.1"
+bytes = "1.1"
 consul-connect = { path = "../../consul-connect" }
+grapl-config = { path = "../../grapl-config" }
 moka = { version = "0.8", features = ["future"] }
 rust-proto = { path = "../../rust-proto" }
 serde = { version = "1.0", features = ["derive"] }
@@ -25,5 +27,3 @@ tracing = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
 
 [features]
-internal = ["client"]
-client = []

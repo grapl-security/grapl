@@ -1,5 +1,6 @@
 #![cfg(feature = "integration_tests")]
 
+use bytes::Bytes;
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::FromEnv;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
@@ -43,22 +44,34 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
         event_source_id: None,
     };
 
-    let chunk = b"chonk".to_vec();
+    let chunk = Bytes::from("chonk");
 
+    let create_generator1_chunk = chunk.clone();
     let create_generator1_response = client
-        .create_plugin(generator1_metadata, chunk.clone().into_iter())
+        .create_plugin(
+            generator1_metadata,
+            futures::stream::once(async move { create_generator1_chunk }),
+        )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
     let generator1_plugin_id = create_generator1_response.plugin_id;
 
+    let create_generator2_chunk = chunk.clone();
     let create_generator2_response = client
-        .create_plugin(generator2_metadata, chunk.clone().into_iter())
+        .create_plugin(
+            generator2_metadata,
+            futures::stream::once(async move { create_generator2_chunk }),
+        )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
     let generator2_plugin_id = create_generator2_response.plugin_id;
 
+    let create_analyzer_chunk = chunk.clone();
     let create_analyzer_response = client
-        .create_plugin(analyzer_metadata, chunk.clone().into_iter())
+        .create_plugin(
+            analyzer_metadata,
+            futures::stream::once(async move { create_analyzer_chunk }),
+        )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
     let analyzer_plugin_id = create_analyzer_response.plugin_id;

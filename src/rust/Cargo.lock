@@ -1673,8 +1673,10 @@ name = "generator-sdk"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "bytes",
  "clap 3.1.18",
  "consul-connect",
+ "grapl-config",
  "moka",
  "rust-proto",
  "serde",
@@ -1789,7 +1791,6 @@ dependencies = [
  "async-trait",
  "color-eyre",
  "eyre",
- "grapl-observe",
  "log",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
@@ -1817,19 +1818,6 @@ dependencies = [
  "thiserror",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "grapl-observe"
-version = "0.0.1"
-dependencies = [
- "chrono",
- "dgraph-tonic",
- "lazy_static",
- "log",
- "pin-project",
- "regex",
- "thiserror",
 ]
 
 [[package]]
@@ -3027,12 +3015,13 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "clap 3.1.18",
- "generator-sdk",
  "grapl-config",
  "plugin-work-queue",
  "rust-proto",
  "tokio",
+ "tonic 0.7.2",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -3067,6 +3056,7 @@ name = "plugin-work-queue"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "bytes",
  "chrono",
  "clap 3.1.18",
  "futures",
@@ -3761,7 +3751,7 @@ dependencies = [
  "grapl-utils",
  "proptest",
  "prost 0.10.4",
- "prost-types 0.10.1",
+ "prost-build 0.10.4",
  "quickcheck",
  "quickcheck_macros",
  "test-context",

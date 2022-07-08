@@ -33,7 +33,6 @@ BUILD @christophermaier
 /nomad @twunderlich-grapl
 /pants @christophermaier
 /pants.ci.toml @christophermaier
-/pants-plugins/ @christophermaier
 /pants.toml @christophermaier
 /pulumi/ @christophermaier
 /pyproject.toml @christophermaier
@@ -67,7 +66,6 @@ BUILD @christophermaier
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
-/src/rust/grapl-observe/ @wimax-grapl
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/grapl-web-ui/ @inickles-grapl
 /src/rust/kafka/ @grapl-security/wg-data-infra

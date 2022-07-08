@@ -10,8 +10,8 @@ lint:
     - OTHER
   ignore:
     # We have vendored some of the Google protobuf definitions; we
-    # don't need to lint them, and will be able to remove them soon.
-    - google
+    # don't need to lint them.
+    - google/
 breaking:
   # https://docs.buf.build/breaking-configuration
   use:
@@ -25,4 +25,4 @@ breaking:
     - graplinc/grapl/api/plugin_registry/v1beta1
     - graplinc/common/v1beta1
     # Again, we don't care about vendored definitions
-    - google
+    - google/

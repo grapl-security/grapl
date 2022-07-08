@@ -38,7 +38,7 @@ uuid = { version = "1.0", features = ["v4"] }
 
 [dev-dependencies]
 async-trait = "0.1"
-bytes = "1.0"
+bytes = "1.1"
 test-context = "0.1"
 
 [features]

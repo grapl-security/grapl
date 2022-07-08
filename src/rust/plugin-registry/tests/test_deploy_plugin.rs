@@ -1,5 +1,6 @@
 #![cfg(feature = "integration_tests")]
 
+use bytes::Bytes;
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::FromEnv;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
@@ -12,8 +13,8 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");
 
-fn get_example_generator() -> Result<Vec<u8>, std::io::Error> {
-    std::fs::read("/test-fixtures/example-generator")
+fn get_example_generator() -> Result<Bytes, std::io::Error> {
+    std::fs::read("/test-fixtures/example-generator").map(Bytes::from)
 }
 
 #[test_log::test(tokio::test)]
@@ -34,7 +35,10 @@ async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         client
-            .create_plugin(metadata, artifact.into_iter())
+            .create_plugin(
+                metadata,
+                futures::stream::once(async move { artifact.clone() }),
+            )
             .timeout(std::time::Duration::from_secs(5))
             .await??
     };

@@ -67,8 +67,21 @@ pub fn get_job(
                     "plugin_runtime_image",
                     service_config.hax_docker_plugin_runtime_image.to_owned(),
                 ),
+                (
+                    "plugin_execution_image",
+                    service_config.plugin_execution_image.to_owned(),
+                ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("tenant_id", plugin.tenant_id.to_string()),
+                ("rust_log", service_config.rust_log.to_owned()),
+                (
+                    "otel_exporter_jaeger_agent_host",
+                    service_config.otel_exporter_jaeger_agent_host.to_owned(),
+                ),
+                (
+                    "otel_exporter_jaeger_agent_port",
+                    service_config.otel_exporter_jaeger_agent_port.to_owned(),
+                ),
             ]);
             cli.parse_hcl2(job_file_hcl, job_file_vars)
         }
@@ -91,8 +104,8 @@ pub fn get_job(
                     service_config.plugin_bootstrap_container_image.to_owned(),
                 ),
                 (
-                    "plugin_execution_container_image",
-                    service_config.plugin_execution_container_image.to_owned(),
+                    "plugin_execution_image",
+                    service_config.plugin_execution_image.to_owned(),
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 (
@@ -168,11 +181,14 @@ mod tests {
             hax_docker_plugin_runtime_image: Default::default(),
             kernel_artifact_url: Default::default(),
             plugin_bootstrap_container_image: Default::default(),
-            plugin_execution_container_image: Default::default(),
+            plugin_execution_image: Default::default(),
             bucket_aws_account_id: Default::default(),
             bucket_name: Default::default(),
             rootfs_artifact_url: Default::default(),
             artifact_size_limit_mb: Default::default(),
+            otel_exporter_jaeger_agent_host: Default::default(),
+            otel_exporter_jaeger_agent_port: Default::default(),
+            rust_log: Default::default(),
         }
     }
     /// This is used to keep test coverage on the eventually-desirable-but-
