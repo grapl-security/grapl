@@ -1676,6 +1676,7 @@ dependencies = [
  "bytes",
  "clap 3.1.18",
  "consul-connect",
+ "grapl-config",
  "moka",
  "rust-proto",
  "serde",
