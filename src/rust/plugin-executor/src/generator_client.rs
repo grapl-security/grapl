@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use async_trait;
 use rust_proto::{
-    graplinc::grapl::api::plugin_registry::v1beta1::{
-        PluginRegistryServiceClient,
-        PluginRegistryServiceClientError,
+    graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::{
+        GeneratorServiceClient,
+        GeneratorServiceClientError,
     },
     protocol::{
         healthcheck::client::HealthcheckClient,
@@ -13,20 +13,24 @@ use rust_proto::{
 };
 use tonic::transport::Endpoint;
 
-const ADDRESS_ENV_VAR: &'static str = "PLUGIN_REGISTRY_CLIENT_ADDRESS";
-
 #[async_trait::async_trait]
 pub trait FromEnv<T, E> {
     async fn from_env() -> Result<T, E>;
 }
 
+fn get_plugin_upstream_address_from_env() -> String {
+    let plugin_id = std::env::var("PLUGIN_ID").expect("PLUGIN_ID");
+    let upstream_addr_env_var = format!("NOMAD_UPSTREAM_ADDR_plugin-{plugin_id}");
+    let upstream_addr = std::env::var(&upstream_addr_env_var).expect(&upstream_addr_env_var);
+    let address = format!("http://{upstream_addr}");
+    address
+}
+
 #[async_trait::async_trait]
-impl FromEnv<PluginRegistryServiceClient, PluginRegistryServiceClientError>
-    for PluginRegistryServiceClient
-{
+impl FromEnv<GeneratorServiceClient, GeneratorServiceClientError> for GeneratorServiceClient {
     /// Create a client from environment
-    async fn from_env() -> Result<PluginRegistryServiceClient, PluginRegistryServiceClientError> {
-        let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
+    async fn from_env() -> Result<GeneratorServiceClient, GeneratorServiceClientError> {
+        let address = get_plugin_upstream_address_from_env();
 
         // TODO: Add a `rust-proto` wrapper around tonic Endpoint
         let endpoint = Endpoint::from_shared(address.to_string())?
@@ -40,7 +44,7 @@ impl FromEnv<PluginRegistryServiceClient, PluginRegistryServiceClientError>
             Duration::from_millis(500),
         )
         .await
-        .expect("plugin-registry never reported healthy");
+        .expect("Generator plugin never reported healthy");
 
         Self::connect(endpoint).await
     }

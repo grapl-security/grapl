@@ -42,26 +42,26 @@ impl PluginWorkQueueServiceClient {
 
     /// Adds a new execution job for a generator
     #[tracing::instrument(skip(self, request), err)]
-    pub async fn put_execute_generator(
+    pub async fn push_execute_generator(
         &mut self,
-        request: native::PutExecuteGeneratorRequest,
-    ) -> Result<native::PutExecuteGeneratorResponse, PluginWorkQueueServiceClientError> {
+        request: native::PushExecuteGeneratorRequest,
+    ) -> Result<native::PushExecuteGeneratorResponse, PluginWorkQueueServiceClientError> {
         let response = self
             .proto_client
-            .put_execute_generator(proto::PutExecuteGeneratorRequest::from(request))
+            .push_execute_generator(proto::PushExecuteGeneratorRequest::from(request))
             .await?;
         Ok(response.into_inner().try_into()?)
     }
 
     /// Adds a new execution job for an analyzer
     #[tracing::instrument(skip(self, request), err)]
-    pub async fn put_execute_analyzer(
+    pub async fn push_execute_analyzer(
         &mut self,
-        request: native::PutExecuteAnalyzerRequest,
-    ) -> Result<native::PutExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
+        request: native::PushExecuteAnalyzerRequest,
+    ) -> Result<native::PushExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
         let response = self
             .proto_client
-            .put_execute_analyzer(proto::PutExecuteAnalyzerRequest::from(request))
+            .push_execute_analyzer(proto::PushExecuteAnalyzerRequest::from(request))
             .await?;
         Ok(response.into_inner().try_into()?)
     }

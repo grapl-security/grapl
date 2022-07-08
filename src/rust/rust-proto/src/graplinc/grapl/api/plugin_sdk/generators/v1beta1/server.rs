@@ -18,7 +18,6 @@ use tonic::{
     transport::{
         NamedService,
         Server,
-        ServerTlsConfig,
     },
     Request,
     Response,
@@ -41,7 +40,6 @@ use crate::{
             HealthcheckStatus,
         },
         status::Status,
-        tls::Identity,
     },
     server_internals::GrpcApi,
     SerDeError,
@@ -88,7 +86,6 @@ where
     tcp_listener: TcpListener,
     shutdown_rx: Receiver<()>,
     service_name: &'static str,
-    identity: Identity,
     f_: PhantomData<F>,
 }
 
@@ -108,7 +105,6 @@ where
         tcp_listener: TcpListener,
         healthcheck: H,
         healthcheck_polling_interval: Duration,
-        identity: Identity,
     ) -> (Self, Sender<()>) {
         let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
         (
@@ -119,7 +115,6 @@ where
                 tcp_listener,
                 shutdown_rx,
                 service_name: GeneratorServiceProto::<GrpcApi<T>>::NAME,
-                identity,
                 f_: PhantomData,
             },
             shutdown_tx,
@@ -144,17 +139,15 @@ where
             .await;
 
         // TODO: add tower tracing, concurrency limits
-        let mut server_builder = Server::builder()
-            .tls_config(ServerTlsConfig::new().identity(self.identity.into()))?
-            .trace_fn(|request| {
-                tracing::info_span!(
-                    "exec_service",
-                    headers = ?request.headers(),
-                    method = ?request.method(),
-                    uri = %request.uri(),
-                    extensions = ?request.extensions(),
-                )
-            });
+        let mut server_builder = Server::builder().trace_fn(|request| {
+            tracing::info_span!(
+                "exec_service",
+                headers = ?request.headers(),
+                method = ?request.method(),
+                uri = %request.uri(),
+                extensions = ?request.extensions(),
+            )
+        });
 
         Ok(server_builder
             .add_service(health_service)
