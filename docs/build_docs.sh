@@ -7,7 +7,7 @@ cd "${THIS_DIR}/.."
 # Create a virtualenv from Pants
 ./pants export ::
 # shellcheck disable=SC1090
-source "dist/export/python/virtualenv/$(cat .python-version)/bin/activate"
+source "dist/export/python/virtualenvs/grapl/$(cat .python-version)/bin/activate"
 
 cd "${THIS_DIR}"
 pip install wheel
