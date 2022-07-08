@@ -62,7 +62,7 @@ job "grapl-plugin" {
     value     = true
   }
 
-  group "plugin-sidecar" {
+  group "plugin-execution-sidecar" {
     count = var.plugin_count
 
     network {
@@ -71,7 +71,7 @@ job "grapl-plugin" {
       // dns {
       //   servers = local.dns_servers
       // }
-      port "plugin-sidecar" {}
+      port "plugin-execution-sidecar" {}
     }
 
     service {
@@ -105,7 +105,7 @@ job "grapl-plugin" {
 
     # The execution task pulls messages from the plugin-work-queue and
     # sends them to the plugin
-    task "tenant-plugin-execution-sidecar" {
+    task "plugin-execution-sidecar" {
       driver = "docker"
 
       config {
@@ -136,7 +136,7 @@ job "grapl-plugin" {
       // dns {
       //   servers = local.dns_servers
       // }
-      port "plugin-grpc-receiver" {}
+      port "plugin" {}
     }
 
     restart {
@@ -147,7 +147,7 @@ job "grapl-plugin" {
 
     service {
       name = "plugin-${var.plugin_id}"
-      port = "plugin-grpc-receiver"
+      port = "plugin"
       tags = [
         "plugin",
         "tenant-${var.tenant_id}",
@@ -156,17 +156,12 @@ job "grapl-plugin" {
 
       connect {
         sidecar_service {
-          proxy {
-            config {
-              protocol = "http"
-            }
-          }
         }
       }
 
       check {
         type     = "grpc"
-        port     = "plugin-grpc-receiver"
+        port     = "plugin"
         interval = "10s"
         timeout  = "3s"
       }
@@ -174,11 +169,11 @@ job "grapl-plugin" {
 
     # a Docker task holding:
     # - the plugin binary itself (mounted)
-    task "run-plugin" {
+    task "plugin" {
       driver = "docker"
 
       config {
-        ports = ["plugin-grpc-receiver"]
+        ports = ["plugin"]
 
         image      = var.plugin_runtime_image
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
@@ -212,7 +207,7 @@ EOF
         PLUGIN_ID  = "${var.plugin_id}"
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
         # Consumed by GeneratorServiceConfig
-        PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-grpc-receiver}"
+        PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
 
         OTEL_EXPORTER_JAEGER_AGENT_HOST = var.otel_exporter_jaeger_agent_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = var.otel_exporter_jaeger_agent_port

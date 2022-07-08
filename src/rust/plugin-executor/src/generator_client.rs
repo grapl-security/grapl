@@ -26,7 +26,8 @@ impl FromEnv<GeneratorServiceClient, GeneratorServiceClientError> for GeneratorS
     async fn from_env() -> Result<GeneratorServiceClient, GeneratorServiceClientError> {
         let plugin_id = std::env::var("PLUGIN_ID").expect("PLUGIN_ID");
         let upstream_addr_env_var = format!("NOMAD_UPSTREAM_ADDR_plugin-{plugin_id}");
-        let address = format!("http://{upstream_addr_env_var}");
+        let upstream_addr = std::env::var(&upstream_addr_env_var).expect(&upstream_addr_env_var);
+        let address = format!("http://{upstream_addr}");
 
         // TODO: Add a `rust-proto` wrapper around tonic Endpoint
         let endpoint = Endpoint::from_shared(address.to_string())?
