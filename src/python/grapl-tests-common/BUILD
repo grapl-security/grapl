@@ -1,4 +1,4 @@
-grapl_python_distribution(
+python_distribution(
     dependencies=[
         "./grapl_tests_common",
         "./grapl_tests_common:py_typed",
