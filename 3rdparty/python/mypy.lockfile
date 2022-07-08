@@ -6,7 +6,7 @@
 // {
 //   "version": 2,
 //   "valid_for_interpreter_constraints": [
-//     "CPython==3.8.*"
+//     "CPython==3.10.*"
 //   ],
 //   "generated_with_requirements": [
 //     "mypy==0.910"
@@ -32,28 +32,8 @@
             },
             {
               "algorithm": "sha256",
-              "hash": "866c41f28cee548475f146aa4d39a51cf3b6a84246969f3759cb3e9c742fc072",
-              "url": "https://files.pythonhosted.org/packages/11/02/5e68a38bdcda80f0707828b54ee1db06ebb27ed2d8e1055790a1e51c3373/mypy-0.910-cp38-cp38-manylinux2010_x86_64.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "ec4e0cd079db280b6bdabdc807047ff3e199f334050db5cbb91ba3e959a67504",
-              "url": "https://files.pythonhosted.org/packages/2d/4c/08a918dbaf355d9e0c5b7a90736508bd9fa60a5e0416cdabaea1a15d6773/mypy-0.910-cp38-cp38-macosx_10_9_x86_64.whl"
-            },
-            {
-              "algorithm": "sha256",
               "hash": "704098302473cb31a218f1775a873b376b30b4c18229421e9e9dc8916fd16150",
               "url": "https://files.pythonhosted.org/packages/33/46/b5d01f8844c84772e950bfc6adcaaa94cd22fedeb7c01776fd6effb3c2f6/mypy-0.910.tar.gz"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "ceb6e0a6e27fb364fb3853389607cf7eb3a126ad335790fa1e14ed02fba50811",
-              "url": "https://files.pythonhosted.org/packages/c6/12/c08e950032d1a3afd8e29ee114032419988afaed82749f4c009e8b3b038c/mypy-0.910-cp38-cp38-win_amd64.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "119bed3832d961f3a880787bf621634ba042cb8dc850a7429f643508eeac97b9",
-              "url": "https://files.pythonhosted.org/packages/d9/7d/eb935e77ec2c50c5504f3c92d27e27776dba21ba6079211015dc5dd4c97e/mypy-0.910-cp38-cp38-manylinux1_x86_64.whl"
             }
           ],
           "project_name": "mypy",
@@ -126,8 +106,8 @@
         }
       ],
       "platform_tag": [
-        "cp38",
-        "cp38",
+        "cp310",
+        "cp310",
         "manylinux_2_31_x86_64"
       ]
     }
@@ -139,7 +119,7 @@
     "mypy==0.910"
   ],
   "requires_python": [
-    "==3.8.*"
+    "==3.10.*"
   ],
   "resolver_version": "pip-2020-resolver",
   "style": "universal",
