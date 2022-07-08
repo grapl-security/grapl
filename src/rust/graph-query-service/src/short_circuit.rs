@@ -4,7 +4,6 @@ use std::sync::{
         Ordering,
     },
     Arc,
-    Mutex,
 };
 
 #[derive(Clone)]

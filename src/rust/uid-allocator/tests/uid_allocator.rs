@@ -1,7 +1,7 @@
 #![cfg(all(test, feature = "integration"))]
 
 use clap::Parser;
-use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorClient;
+use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorClient;
 use sqlx::PgPool;
 use uid_allocator::client::CachingUidAllocatorClient;
 

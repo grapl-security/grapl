@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
+use rust_proto::graplinc::grapl::common::v1beta1::types::{
     EdgeName,
     NodeType,
     PropertyName,
@@ -60,7 +60,7 @@ impl PropertyQueryExecutor {
         node_type: &NodeType,
         property_name: &PropertyName,
     ) -> Result<Option<StringField>, PropertyQueryError> {
-        let tenant_urn = tenant_id.to_simple();
+        let tenant_urn = tenant_id.simple();
 
         let mut query = scylla::query::Query::from(format!(
             r"
@@ -103,7 +103,7 @@ impl PropertyQueryExecutor {
         uid: Uid,
         edge_name: &EdgeName,
     ) -> Result<Option<Vec<EdgeRow>>, PropertyQueryError> {
-        let tenant_urn = tenant_id.to_simple();
+        let tenant_urn = tenant_id.simple();
 
         let mut query = scylla::query::Query::from(format!(
             r"

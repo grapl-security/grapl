@@ -9,11 +9,9 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
-rust-proto = { path = "../rust-proto", default-features = false, features = [
-  "schema-manager-server"
-] }
+rust-proto = { path = "../rust-proto" }
 grapl-graphql-codegen = { path = "../grapl-graphql-codegen" }
-sqlx = { version = "0.5", features = [
+sqlx = { version = "0.6", features = [
   "runtime-tokio-rustls",
   "postgres",
   "time",

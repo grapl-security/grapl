@@ -9,13 +9,13 @@ use tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::Server;
 
 use crate::{
-    graplinc::grapl::api::graph_query::v1beta1::messages::{
+    graplinc::grapl::api::graph_query_service::v1beta1::messages::{
         QueryGraphFromNodeRequest,
         QueryGraphFromNodeResponse,
         QueryGraphWithNodeRequest,
         QueryGraphWithNodeResponse,
     },
-    protobufs::graplinc::grapl::api::graph_query::v1beta1::{
+    protobufs::graplinc::grapl::api::graph_query_service::v1beta1::{
         graph_query_service_server::{
             GraphQueryService as GraphQueryServiceProto,
             GraphQueryServiceServer as GraphQueryServiceServerProto,

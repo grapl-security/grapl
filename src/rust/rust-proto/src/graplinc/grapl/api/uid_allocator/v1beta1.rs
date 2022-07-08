@@ -1,4 +1,3 @@
-#[cfg(feature = "uid-allocator-server")]
 pub mod server {
     use std::net::SocketAddr;
 
@@ -178,7 +177,6 @@ pub mod server {
     }
 }
 
-#[cfg(feature = "uid-allocator-client")]
 pub mod client {
     use crate::{
         graplinc::grapl::api::uid_allocator::v1beta1::messages::{
@@ -240,7 +238,6 @@ pub mod client {
     }
 }
 
-#[cfg(feature = "uid-allocator-messages")]
 pub mod messages {
     use crate::{
         protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{

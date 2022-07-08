@@ -4,7 +4,6 @@ package graplinc.grapl.api.plugin_sdk.analyzers.v1beta1;
 
 
 import "graplinc/common/v1beta1/types.proto";
-import "graplinc/grapl/api/graph/v1beta1/types.proto";
 import "graplinc/grapl/api/graph_query_service/v1beta1/graph_query_service.proto";
 import "graplinc/grapl/common/v1beta1/types.proto";
 
@@ -53,7 +52,7 @@ message AnalyzerName {
 }
 
 message ExecutionHit {
-    graph_query.v1beta1.GraphView graph_view = 1;
+    graplinc.grapl.api.graph_query_service.v1beta1.GraphView graph_view = 1;
     graplinc.grapl.common.v1beta1.Uid root_uid = 2;
     repeated LensRef lens_refs = 3;
     AnalyzerName analyzer_name = 4;

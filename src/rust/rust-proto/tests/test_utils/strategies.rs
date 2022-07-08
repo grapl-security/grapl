@@ -1013,7 +1013,7 @@ pub mod plugin_work_queue {
 
 pub mod uid_allocator {
 
-    use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::messages as native;
+    use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::messages as native;
 
     use super::*;
 

@@ -12,7 +12,7 @@ use std::{
     marker::PhantomData,
 };
 
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
+use rust_proto::graplinc::grapl::common::v1beta1::types::{
     NodeType,
     PropertyName,
     Uid,

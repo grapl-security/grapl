@@ -1,57 +1,80 @@
-use std::{
-    cell::RefCell,
-    collections::{
-        HashMap,
-        HashSet,
-        VecDeque,
-    },
-    rc::Rc,
-    sync::{
-        atomic::{
-            AtomicBool,
-            Ordering,
-        },
-        Arc,
-        Mutex,
-    },
-};
-
-use async_recursion::async_recursion;
-use futures::{
-    future::{
-        self,
-        join_all,
-        try_join_all,
-    },
-    TryFutureExt,
-};
-use itertools::Itertools;
-// We should not return a Node but instead a Graph
-// And we'll then mark which node in the graph corresponds with the root
-pub use rust_proto_new::graplinc::grapl::api::graph_query::v1beta1::messages::StringCmp;
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
-    EdgeName,
-    NodeType,
-    PropertyName,
+use futures::future::join_all;
+pub use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::messages::StringCmp;
+use rust_proto::graplinc::grapl::common::v1beta1::types::{
     Uid,
 };
-use scylla::{
-    cql_to_rust::FromCqlVal,
-    CachingSession,
-    FromUserType,
-    IntoTypedRows,
-    IntoUserType,
-    Session,
+use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::messages::{
+    GraphQuery,
+    GraphView,
 };
 
 use crate::{
-    graph_view::Graph,
-    node_query::NodePropertiesQuery,
-    node_view::Node,
     property_query::PropertyQueryExecutor,
     short_circuit::ShortCircuit,
     visited::Visited,
 };
+use crate::node_query::fetch_node_with_edges;
+
+
+#[tracing::instrument(skip(graph_query, property_query_executor))]
+pub async fn query_graph(
+    graph_query: &GraphQuery,
+    uid: Uid,
+    tenant_id: uuid::Uuid,
+    property_query_executor: PropertyQueryExecutor,
+) -> Result<Option<(GraphView, Uid)>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+    let mut query_handles = Vec::with_capacity(graph_query.node_property_queries.len());
+    let x_query_short_circuiter = ShortCircuit::new();
+    // We should add a way for different queries to short circuit each other
+    for node_query in graph_query.node_property_queries.values() {
+        let property_query_executor = property_query_executor.clone();
+        let node_query = node_query.clone();
+        let x_query_short_circuiter = x_query_short_circuiter.clone();
+        query_handles.push(async move {
+            let visited = Visited::new();
+            let mut root_query_uid = None;
+            match fetch_node_with_edges(
+                    &node_query,
+                    &graph_query,
+                    uid,
+                    tenant_id,
+                    property_query_executor,
+                    visited,
+                    x_query_short_circuiter.clone(),
+                    &mut root_query_uid,
+                )
+                .await
+            {
+                Ok(Some(g)) => {
+                    x_query_short_circuiter.set_short_circuit();
+                    Ok(Some((g, root_query_uid)))
+                }
+                Ok(None) => Ok(None),
+                Err(e) => Err(e),
+            }
+        });
+    }
+    // todo: We don't need to join_all, we can stop polling the other futures
+    //       once one of them matches
+    for graph in join_all(query_handles).await {
+        match graph {
+            Ok(Some((graph, Some(root_uid)))) => return Ok(Some((graph, root_uid))),
+            Ok(Some((_, None))) => {
+                tracing::error!(
+                    message="Graph query matched without finding root_uid. This is a bug.",
+                )
+            },
+            Ok(None) => continue,
+            Err(e) => {
+                tracing::error!(
+                    message="Graph query failed",
+                    error=?e,
+                )
+            },
+        }
+    }
+    Ok(None)
+}
 
 #[cfg(test)]
 mod tests {
@@ -63,6 +86,7 @@ mod tests {
         },
         path::Path,
     };
+    use std::sync::Arc;
 
     use maplit::hashmap;
     use scylla::{
@@ -377,75 +401,5 @@ mod tests {
     {
         let file = File::open(filename)?;
         Ok(io::BufReader::new(file).lines())
-    }
-}
-
-#[derive(Clone)]
-pub struct GraphQuery {
-    pub root_query_id: u64,
-    pub nodes: HashMap<u64, NodePropertiesQuery>,
-    pub edges: HashMap<(u64, EdgeName), HashSet<u64>>,
-    pub edge_map: HashMap<EdgeName, EdgeName>,
-}
-
-impl GraphQuery {
-    pub fn add_node(&mut self, query_id: u64, node_type: NodeType) {
-        self.nodes.insert(
-            query_id,
-            NodePropertiesQuery {
-                query_id,
-                node_type,
-                string_filters: HashMap::new(),
-            },
-        );
-    }
-
-    pub fn merge_node(&mut self, inner_node: NodePropertiesQuery) {
-        self.nodes.insert(inner_node.query_id, inner_node);
-    }
-
-    #[tracing::instrument(skip(self, property_query_executor))]
-    pub async fn query_graph(
-        &self,
-        uid: Uid,
-        tenant_id: uuid::Uuid,
-        property_query_executor: PropertyQueryExecutor,
-    ) -> Result<Option<Graph>, Box<dyn std::error::Error + Send + Sync + 'static>> {
-        let mut query_handles = Vec::with_capacity(self.nodes.len());
-        let x_query_short_circuiter = ShortCircuit::new();
-        // We should add a way for different queries to short circuit each other
-        for node_query in self.nodes.values() {
-            let property_query_executor = property_query_executor.clone();
-            let node_query = node_query.clone();
-            let x_query_short_circuiter = x_query_short_circuiter.clone();
-            query_handles.push(async move {
-                let visited = Visited::new();
-                match node_query
-                    .fetch_node_with_edges(
-                        &self,
-                        uid,
-                        tenant_id,
-                        property_query_executor,
-                        visited,
-                        x_query_short_circuiter.clone(),
-                    )
-                    .await
-                {
-                    g @ Ok(Some(_)) => {
-                        x_query_short_circuiter.set_short_circuit();
-                        g
-                    }
-                    e => e,
-                }
-            });
-        }
-        // todo: We don't need to join_all, we can stop polling the other futures
-        //       once one of them short circuits
-        for graph in try_join_all(query_handles).await? {
-            if let Some(graph) = graph {
-                return Ok(Some(graph));
-            }
-        }
-        Ok(None)
     }
 }

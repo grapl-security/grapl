@@ -4,7 +4,7 @@ use dashmap::{
     mapref::entry::Entry,
     DashMap,
 };
-use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::{
+use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::{
     messages::{
         AllocateIdsRequest,
         AllocateIdsResponse,

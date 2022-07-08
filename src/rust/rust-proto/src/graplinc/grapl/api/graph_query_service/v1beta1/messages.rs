@@ -2,6 +2,7 @@ use std::collections::{
     HashMap,
     HashSet,
 };
+use std::collections::hash_map::Entry;
 
 use crate::{
     graplinc::grapl::{
@@ -17,7 +18,7 @@ use crate::{
             Uid,
         },
     },
-    protobufs::graplinc::grapl::api::graph_query::v1beta1::{
+    protobufs::graplinc::grapl::api::graph_query_service::v1beta1::{
         AndIntFilters as AndIntFiltersProto,
         AndStringFilters as AndStringFiltersProto,
         EdgeEntry as EdgeEntryProto,
@@ -57,8 +58,9 @@ use crate::{
     },
     SerDeError,
 };
+use crate::protobufs::graplinc::grapl::api::graph_query_service::v1beta1::{EdgeQueryEntry, EdgeQueryMap, NodePropertyQueryEntry};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct QueryId {
     pub value: u64,
 }
@@ -178,7 +180,7 @@ impl TryFrom<IntFilterProto> for IntFilter {
 
     fn try_from(value_proto: IntFilterProto) -> Result<Self, Self::Error> {
         let operation = value_proto.operation().try_into()?;
-        let value = value_proto.value; // todo: use Uid
+        let value = value_proto.value;
         let negated = value_proto.negated;
         Ok(Self {
             operation,
@@ -255,6 +257,38 @@ impl From<OrIntFilters> for OrIntFiltersProto {
     }
 }
 
+
+
+// Higher level helper
+#[derive(Clone, Debug)]
+pub enum StrCmp<'a> {
+    Eq(&'a str, bool),
+    Contains(&'a str, bool),
+    Has,
+}
+
+impl<'a> StrCmp<'a> {
+    pub fn eq(value: &'a str, negated: bool) -> Self {
+        StrCmp::Eq(value, negated)
+    }
+}
+
+impl<'a> From<&'a StringFilter> for StrCmp<'a> {
+    fn from(string_filter: &'a StringFilter) -> StrCmp<'a> {
+        match string_filter.operation {
+            StringOperation::Has => StrCmp::Has,
+            StringOperation::Equal => StrCmp::Eq(string_filter.value.as_str(), string_filter.negated),
+            StringOperation::Contains => {
+                StrCmp::Contains(string_filter.value.as_str(), string_filter.negated)
+            }
+            StringOperation::Regex => {
+                // todo: We don't currently support Regex, but we should
+                unimplemented!()
+            }
+        }
+    }
+}
+
 // Higher level helper
 #[derive(Clone, Debug)]
 pub enum StringCmp {
@@ -278,6 +312,7 @@ impl From<StringFilter> for StringCmp {
                 StringCmp::Contains(string_filter.value, string_filter.negated)
             }
             StringOperation::Regex => {
+                // todo: We don't currently support Regex, but we should
                 unimplemented!()
             }
         }
@@ -352,7 +387,7 @@ impl TryFrom<StringFilterProto> for StringFilter {
 
     fn try_from(value_proto: StringFilterProto) -> Result<Self, Self::Error> {
         let operation = value_proto.operation().try_into()?;
-        let value = value_proto.value; // todo: use Uid
+        let value = value_proto.value;
         let negated = value_proto.negated;
         Ok(Self {
             operation,
@@ -563,6 +598,12 @@ impl NodePropertyQuery {
         }
     }
 
+    pub fn merge(&mut self, other: Self) {
+        debug_assert_eq!(self.query_id, other.query_id);
+        debug_assert_eq!(self.node_type, other.node_type);
+        // self.string_filters.extend(other.string_filters);
+    }
+
     pub fn with_string_filters(
         &mut self,
         property_name: PropertyName,
@@ -584,19 +625,6 @@ impl TryFrom<NodePropertyQueryProto> for NodePropertyQuery {
             .node_type
             .ok_or(SerDeError::MissingField("node_type"))?
             .try_into()?;
-        // let int_filters = value
-        //     .int_filters
-        //     .into_iter()
-        //     .map(|(k, v)| {
-        //         Ok((
-        //             PropertyName::try_from(k).map_err(|e| SerDeError::InvalidField {
-        //                 field_name: "int_filters",
-        //                 assertion: e.to_owned(),
-        //             })?,
-        //             v.try_into()?,
-        //         ))
-        //     })
-        //     .collect::<Result<_, SerDeError>>()?;
 
         let string_filters = value
             .string_filters
@@ -623,7 +651,6 @@ impl TryFrom<NodePropertyQueryProto> for NodePropertyQuery {
         Ok(Self {
             query_id,
             node_type,
-            // int_filters,
             string_filters,
             uid_filters,
         })
@@ -655,20 +682,172 @@ impl From<NodePropertyQuery> for NodePropertyQueryProto {
 
 #[derive(Debug, Clone)]
 pub struct GraphQuery {
-    root_query_id: QueryId,
-    node_property_queries: HashMap<QueryId, NodePropertyQuery>,
-    edge_filters: HashMap<(QueryId, EdgeName), QueryId>,
-    edge_map: HashMap<EdgeName, EdgeName>,
+    pub root_query_id: QueryId,
+    pub node_property_queries: HashMap<QueryId, NodePropertyQuery>,
+    pub edge_filters: HashMap<(QueryId, EdgeName), HashSet<QueryId>>,
+    pub edge_map: HashMap<EdgeName, EdgeName>,
 }
 
-// impl TryFrom<GraphQuery>
+impl GraphQuery {
+
+    pub fn add_node(&mut self, query_id: QueryId, node_type: NodeType) {
+        self.node_property_queries.insert(
+            query_id,
+            NodePropertyQuery {
+                query_id,
+                node_type,
+                string_filters: HashMap::new(),
+                uid_filters: Default::default()
+            },
+        );
+    }
+
+
+    pub fn merge_node(&mut self, node: NodePropertyQuery) {
+        match self.node_property_queries.entry(node.query_id) {
+            Entry::Occupied(n) => {
+                n.into_mut().merge(node);
+            }
+            Entry::Vacant(n) => {
+                n.insert(node);
+            }
+        }
+    }
+}
+
+impl TryFrom<GraphQueryProto> for GraphQuery {
+    type Error = SerDeError;
+    fn try_from(value: GraphQueryProto) -> Result<Self, Self::Error> {
+        let root_query_id: QueryId = value.root_query_id
+            .ok_or_else(|| SerDeError::MissingField("root_query_id"))?
+            .try_into()?;
+
+        let node_property_queries_proto = value.node_property_queries
+            .ok_or_else(|| SerDeError::MissingField("node_property_queries"))?;
+
+        let mut node_property_queries: HashMap<QueryId, NodePropertyQuery> = HashMap::with_capacity(node_property_queries_proto.entries.len());
+        for node_property_query in node_property_queries_proto.entries {
+            let query_id = node_property_query.query_id
+                .ok_or_else(|| SerDeError::MissingField("query_id"))?
+                .try_into()?;
+            let node_property_query = node_property_query.node_property_query
+                .ok_or_else(|| SerDeError::MissingField("node_property_query"))?
+                .try_into()?;
+            node_property_queries.insert(query_id, node_property_query);
+        }
+
+        let edge_filters_proto = value.edge_filters
+            .ok_or_else(|| SerDeError::MissingField("edge_filters"))?;
+
+        let mut edge_filters: HashMap<(QueryId, EdgeName), HashSet<QueryId>> = HashMap::with_capacity(edge_filters_proto.entries.len());
+        for edge_filter in edge_filters_proto.entries {
+            let query_id = edge_filter.query_id
+                .ok_or_else(|| SerDeError::MissingField("query_id"))?
+                .try_into()?;
+            let edge_name = edge_filter.edge_name
+                .ok_or_else(|| SerDeError::MissingField("edge_name"))?
+                .try_into()?;
+            let neighbor_query_ids = edge_filter.neighbor_query_ids.into_iter()
+                .map(|query_id| query_id.try_into())
+                .collect::<Result<HashSet<_>, _>>()?;
+            edge_filters.insert((query_id, edge_name), neighbor_query_ids);
+        }
+
+        let edge_map_proto = value.edge_map
+            .ok_or_else(|| SerDeError::MissingField("edge_map"))?;
+        let mut edge_map: HashMap<EdgeName, EdgeName> = HashMap::with_capacity(edge_map_proto.entries.len());
+
+        for edge_entry in edge_map_proto.entries {
+            let forward_edge_name = edge_entry.forward_edge_name
+                .ok_or_else(|| SerDeError::MissingField("forward_edge_name"))?
+                .try_into()?;
+            let reverse_edge_name = edge_entry.reverse_edge_name
+                .ok_or_else(|| SerDeError::MissingField("reverse_edge_name"))?
+                .try_into()?;
+            edge_map.insert(forward_edge_name, reverse_edge_name);
+        }
+
+        Ok(Self {
+            root_query_id,
+            node_property_queries,
+            edge_filters,
+            edge_map,
+        })
+    }
+}
+
+impl From<GraphQuery> for GraphQueryProto {
+    fn from(value: GraphQuery) -> Self {
+        let root_query_id = Some(value.root_query_id.into());
+        let node_property_queries = Some(
+            NodePropertyQueryMapProto {
+                entries: value.node_property_queries
+                    .into_iter()
+                    .map(|(k, v)| NodePropertyQueryEntryProto {
+                        query_id: Some(k.into()),
+                        node_property_query: Some(v.into()),
+                    })
+                    .collect(),
+            }
+        );
+        let edge_filters = Some(
+            EdgeQueryMap {
+                entries: value.edge_filters
+                    .into_iter()
+                    .map(|((k0,k1), v)| EdgeQueryEntry {
+                        query_id: Some(k0.into()),
+                        edge_name: Some(k1.into()),
+                        neighbor_query_ids: v.into_iter().map(QueryIdProto::from).collect(),
+                    })
+                    .collect(),
+            }
+        );
+
+        let edge_map = Some(
+            EdgeMapProto {
+                entries: value.edge_map
+                    .into_iter()
+                    .map(|(k, v)| EdgeEntryProto {
+                        forward_edge_name: Some(k.into()),
+                        reverse_edge_name: Some(v.into()),
+                    })
+                    .collect(),
+            }
+        );
+        Self {
+            root_query_id,
+            node_property_queries,
+            edge_filters,
+            edge_map,
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct NodePropertiesView {
     pub uid: Uid,
     pub node_type: NodeType,
     pub string_properties: HashMap<PropertyName, String>,
-    pub int_properties: HashMap<PropertyName, i64>,
+}
+
+impl NodePropertiesView {
+    pub fn new(uid: Uid, node_type: NodeType, string_properties: HashMap<PropertyName, String>) -> Self {
+        Self {
+            uid,
+            node_type,
+            string_properties,
+        }
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        debug_assert_eq!(self.uid, other.uid);
+        debug_assert_eq!(self.node_type, other.node_type);
+        self.string_properties.extend(other.string_properties);
+    }
+
+    pub fn add_string_property(&mut self, property_name: PropertyName, value: String) {
+        self.string_properties.insert(property_name, value);
+    }
 }
 
 impl TryFrom<NodePropertiesViewProto> for NodePropertiesView {
@@ -684,17 +863,6 @@ impl TryFrom<NodePropertiesViewProto> for NodePropertiesView {
             string_properties.insert(property_name.try_into()?, string_property.property_value);
         }
 
-
-        let proto_int_properties = value.int_properties
-            .ok_or_else(||SerDeError::MissingField("int_properties"))?;
-
-        let mut int_properties = HashMap::with_capacity(proto_int_properties.properties.len());
-
-        for int_property in proto_int_properties.properties {
-            let property_name = int_property.property_name.ok_or_else(|| SerDeError::MissingField("property_name"))?;
-            int_properties.insert(property_name.try_into()?, int_property.property_value);
-        }
-
         Ok(Self {
             uid: value
                 .uid
@@ -705,7 +873,6 @@ impl TryFrom<NodePropertiesViewProto> for NodePropertiesView {
                 .ok_or(SerDeError::MissingField("node_type"))?
                 .try_into()?,
             string_properties,
-            int_properties,
         })
     }
 }
@@ -724,23 +891,10 @@ impl From<NodePropertiesView> for NodePropertiesViewProto {
             properties: string_properties,
         });
 
-        let int_properties: Vec<IntPropertyProto> = value
-            .int_properties
-            .into_iter()
-            .map(|(k, v)| IntPropertyProto {
-                property_name: Some(k.into()),
-                property_value: v,
-            })
-            .collect();
-        let int_properties = Some(IntPropertiesProto {
-            properties: int_properties,
-        });
-
         Self {
             uid: Some(value.uid.into()),
             node_type: Some(value.node_type.into()),
             string_properties,
-            int_properties,
         }
     }
 }
@@ -905,8 +1059,67 @@ pub struct GraphView {
 }
 
 impl GraphView {
+    pub fn new() -> Self {
+        Self {
+            nodes: HashMap::new(),
+            edges: HashMap::new(),
+        }
+    }
+
+    pub fn new_node(&mut self, uid: Uid, node_type: NodeType) -> &mut NodePropertiesView {
+        self.nodes
+            .entry(uid)
+            .or_insert_with(|| NodePropertiesView::new(uid, node_type, Default::default()))
+    }
+
     pub fn add_node(&mut self, node: NodePropertiesView) {
-        self.nodes.insert(node.uid, node);
+        match self.nodes.entry(node.uid) {
+            Entry::Occupied(n) => {
+                n.into_mut().merge(node);
+            }
+            Entry::Vacant(n) => {
+                n.insert(node);
+            }
+        }
+    }
+
+    pub fn add_edge(&mut self, from: Uid, edge_name: EdgeName, to: Uid) {
+        self.edges
+            .entry((from, edge_name))
+            .or_insert_with(|| HashSet::new())
+            .insert(to);
+    }
+
+    pub fn add_edges(&mut self, src_uid: Uid, edge_name: EdgeName, dst_uids: HashSet<Uid>) {
+        self.edges
+            .entry((src_uid, edge_name))
+            .or_insert_with(|| HashSet::new())
+            .extend(dst_uids);
+    }
+
+    pub fn get_node(&self, uid: Uid) -> Option<&NodePropertiesView> {
+        self.nodes.get(&uid)
+    }
+
+    pub fn get_edges(&self, from: Uid) -> impl Iterator<Item = (&EdgeName, &HashSet<Uid>)> {
+        self.edges
+            .iter()
+            .filter(move |(key, _)| key.0 == from)
+            .map(|(key, value)| (&key.1, value))
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        for (_, node) in other.nodes.into_iter() {
+            self.add_node(node);
+        }
+
+        for ((src_uid, edge_name), dst_uids) in other.edges.into_iter() {
+            self.add_edges(src_uid.clone(), edge_name.clone(), dst_uids.clone());
+        }
+    }
+
+    pub fn get_nodes(&self) -> &HashMap<Uid, NodePropertiesView> {
+        &self.nodes
     }
 }
 

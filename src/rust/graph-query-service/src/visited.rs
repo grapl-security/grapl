@@ -9,10 +9,10 @@ use std::{
         Mutex,
     },
 };
+use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::messages::QueryId;
 
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
+use rust_proto::graplinc::grapl::common::v1beta1::types::{
     EdgeName,
-    Uid,
 };
 
 // We should have the short circuit logic get shared between tasks
@@ -21,7 +21,7 @@ use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
 #[derive(Clone)]
 pub struct Visited {
     short_circuit: Arc<AtomicBool>,
-    already_visited: Arc<Mutex<HashSet<(u64, EdgeName, u64)>>>,
+    already_visited: Arc<Mutex<HashSet<(QueryId, EdgeName, QueryId)>>>,
 }
 
 impl Visited {
@@ -40,18 +40,18 @@ impl Visited {
         self.short_circuit.as_ref().store(true, Ordering::Release)
     }
 
-    pub fn check_and_add(&self, src: u64, edge_name: EdgeName, dst: u64) -> bool {
+    pub fn check_and_add(&self, src: QueryId, edge_name: EdgeName, dst: QueryId) -> bool {
         let already_visited =
             (*self.already_visited.lock().unwrap()).contains(&(src, edge_name.clone(), dst));
         self.add(src, edge_name, dst);
         already_visited
     }
 
-    pub fn check(&self, src: u64, edge_name: EdgeName, dst: u64) -> bool {
+    pub fn check(&self, src: QueryId, edge_name: EdgeName, dst: QueryId) -> bool {
         (*self.already_visited.lock().unwrap()).contains(&(src, edge_name.into(), dst))
     }
 
-    pub fn add(&self, src: u64, edge_name: EdgeName, dst: u64) {
+    pub fn add(&self, src: QueryId, edge_name: EdgeName, dst: QueryId) {
         (*self.already_visited.lock().unwrap()).insert((src, edge_name.into(), dst));
     }
 }

@@ -57,7 +57,6 @@ pub(crate) mod protobufs {
                     }
                 }
 
-                #[cfg(feature = "graph-mutation")]
                 pub(crate) mod graph_mutation {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -67,12 +66,11 @@ pub(crate) mod protobufs {
                     }
                 }
 
-                #[cfg(feature = "graph-query")]
-                pub(crate) mod graph_query {
+                pub(crate) mod graph_query_service {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
                             env!("OUT_DIR"),
-                            "/graplinc.grapl.api.graph_query.v1beta1.rs"
+                            "/graplinc.grapl.api.graph_query_service.v1beta1.rs"
                         ));
                     }
                 }
@@ -142,7 +140,6 @@ pub(crate) mod protobufs {
                     }
                 }
 
-                #[cfg(feature = "schema-manager")]
                 pub(crate) mod schema_manager {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -152,7 +149,6 @@ pub(crate) mod protobufs {
                     }
                 }
 
-                #[cfg(feature = "uid-allocator")]
                 pub(crate) mod uid_allocator {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -207,13 +203,11 @@ pub mod graplinc {
                 pub mod v1beta1;
             }
 
-            #[cfg(feature = "graph-mutation")]
             pub mod graph_mutation {
                 pub mod v1beta1;
             }
 
-            #[cfg(feature = "graph-query")]
-            pub mod graph_query {
+            pub mod graph_query_service {
                 pub mod v1beta1;
             }
 
@@ -251,7 +245,10 @@ pub mod graplinc {
                 mod v1beta1_server;
             }
 
-            #[cfg(feature = "uid-allocator")]
+            pub mod schema_manager {
+                pub mod v1beta1;
+            }
+
             pub mod uid_allocator {
                 pub mod v1beta1;
             }

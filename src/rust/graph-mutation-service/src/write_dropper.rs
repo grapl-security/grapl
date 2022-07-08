@@ -1,7 +1,7 @@
 use std::future::Future;
 
 use dashmap::mapref::entry::Entry;
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::{
+use rust_proto::graplinc::grapl::common::v1beta1::types::{
     EdgeName,
     NodeType,
     PropertyName,

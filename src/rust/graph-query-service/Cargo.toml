@@ -5,9 +5,7 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-rust-proto = { path = "../rust-proto", default-features = false, features = [
-  "graph-query"
-] }
+rust-proto = { path = "../rust-proto" }
 chrono = "0.4.19"
 serde = { version = "1.0.136", features = ["derive"] }
 tokio = { version = "1.17.0", features = ["full"] }

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package graplinc.grapl.api.graph_query.v1beta1;
+package graplinc.grapl.api.graph_query_service.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/api/graph/v1beta1/types.proto";
@@ -79,8 +79,8 @@ message NodePropertyQuery {
   graplinc.grapl.common.v1beta1.NodeType node_type = 1;
   QueryId query_id = 2;
   map<string, OrStringFilters> string_filters = 3;
-  UidFilters uid_filters = 4;
   // todo: Add other property types
+  UidFilters uid_filters = 4;
 }
 
 // Maps to `Dict[Tuple[QueryId, EdgeName], Set[QueryId]]`
@@ -154,8 +154,7 @@ message NodePropertiesView {
   graplinc.grapl.common.v1beta1.NodeType node_type = 2;
   // The string properties of the node
   StringProperties string_properties = 3;
-  // The int properties of the node
-  IntProperties int_properties = 4;
+  // Todo: add other property types - int
 }
 
 message NodePropertiesViewEntry {

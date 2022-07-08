@@ -7,7 +7,7 @@ use moka::future::{
     Cache,
     CacheBuilder,
 };
-use rust_proto_new::graplinc::grapl::common::v1beta1::types::Uid;
+use rust_proto::graplinc::grapl::common::v1beta1::types::Uid;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum CacheMatch {
     Matched,

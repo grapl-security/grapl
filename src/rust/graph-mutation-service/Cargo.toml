@@ -12,10 +12,7 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 dashmap = "5.2.0"
-rust-proto = { path = "../rust-proto", default-features = false, features = [
-  "graph-mutation-server",
-  "schema-manager-server"
-] }
+rust-proto = { path = "../rust-proto" }
 scylla = "0.4.4"
 thiserror = "1.0.30"
 tokio = { version = "1.17.0", features = ["full"] }

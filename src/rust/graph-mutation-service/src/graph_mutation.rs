@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rust_proto_new::{
+use rust_proto::{
     graplinc::grapl::{
         api::{
             graph::v1beta1::Property,
@@ -27,8 +27,19 @@ use rust_proto_new::{
     },
     protocol::status::Status,
 };
-use scylla::Session;
+use scylla::CachingSession;
+use scylla::query::Query;
 use uid_allocator::client::CachingUidAllocatorServiceClient as UidAllocatorClient;
+
+use crate::table_names::{
+    IMM_I_64_TABLE_NAME,
+    IMM_STRING_TABLE_NAME,
+    IMM_U_64_TABLE_NAME,
+    MAX_I_64_TABLE_NAME,
+    MAX_U_64_TABLE_NAME,
+    MIN_I_64_TABLE_NAME,
+    MIN_U_64_TABLE_NAME,
+};
 
 use crate::{
     prepared_statements::{
@@ -78,7 +89,7 @@ impl From<GraphMutationManagerError> for Status {
 }
 
 pub struct GraphMutationManager {
-    scylla_client: Arc<Session>,
+    scylla_client: Arc<CachingSession>,
     prepared_statements: PreparedStatements,
     uid_allocator_client: UidAllocatorClient,
     reverse_edge_resolver: ReverseEdgeResolver,
@@ -87,7 +98,7 @@ pub struct GraphMutationManager {
 
 impl GraphMutationManager {
     pub fn new(
-        scylla_client: Arc<Session>,
+        scylla_client: Arc<CachingSession>,
         uid_allocator_client: UidAllocatorClient,
         reverse_edge_resolver: ReverseEdgeResolver,
     ) -> Self {
@@ -118,17 +129,17 @@ impl GraphMutationManager {
                 || async move {
                     let property_value = property_value as i64;
                     // Create a prepared statement, and then execute it
-                    let mut statement = self
-                        .prepared_statements
-                        .prepare_max_u64(&self.scylla_client, tenant_keyspace)
-                        .await?;
-
-                    statement.set_timestamp(Some(property_value));
+                    let tenant_urn = tenant_keyspace.urn();
+                    let mut query = Query::new(format!(r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{MAX_U_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                        VALUES (?, ?, ?, ?)
+                    "));
+                    query.set_timestamp(Some(property_value));
 
                     self.scylla_client
                         .execute(
-                            &statement,
-                            (
+                            query,
+                            &(
                                 uid.as_i64(),
                                 node_type.value,
                                 property_name.value,
@@ -159,17 +170,19 @@ impl GraphMutationManager {
                 || async move {
                     let property_value = property_value as i64;
                     // Create a prepared statement, and then execute it
-                    let mut statement = self
-                        .prepared_statements
-                        .prepare_min_u64(&self.scylla_client, tenant_keyspace)
-                        .await?;
 
-                    statement.set_timestamp(Some(-property_value));
+                    let tenant_urn = tenant_keyspace.urn();
+                    let mut query = Query::new(format!(r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{MIN_U_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                        VALUES (?, ?, ?, ?)
+                    "));
+
+                    query.set_timestamp(Some(-property_value));
 
                     self.scylla_client
                         .execute(
-                            &statement,
-                            (
+                            query,
+                            &(
                                 uid.as_i64(),
                                 node_type.value,
                                 property_name.value,
@@ -199,18 +212,17 @@ impl GraphMutationManager {
                 || async move {
                     let property_value = property_value as i64;
                     // todo: We should only prepare statements once
-                    let mut statement = self
-                        .prepared_statements
-                        .prepare_imm_u64(&self.scylla_client, tenant_keyspace)
-                        .await?;
 
-                    // Immutable values can never be overwritten
-                    statement.set_timestamp(Some(1i64));
+                    let tenant_urn = tenant_keyspace.urn();
+                    let query = Query::new(format!(r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_U_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                        VALUES (?, ?, ?, ?)
+                    "));
 
                     self.scylla_client
                         .execute(
-                            &statement,
-                            (
+                            query,
+                            &(
                                 uid.as_i64(),
                                 node_type.value,
                                 property_name.value,
@@ -241,17 +253,18 @@ impl GraphMutationManager {
                 property_value,
                 || async move {
                     // Create a prepared statement, and then execute it
-                    let mut statement = self
-                        .prepared_statements
-                        .prepare_max_i64(&self.scylla_client, tenant_keyspace)
-                        .await?;
 
-                    statement.set_timestamp(Some(property_value));
+                    let tenant_urn = tenant_keyspace.urn();
+                    let mut query = Query::new(format!(r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{MAX_I_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                        VALUES (?, ?, ?, ?)
+                    "));
+                    query.set_timestamp(Some(property_value));
 
                     self.scylla_client
                         .execute(
-                            &statement,
-                            (
+                            query,
+                            &(
                                 uid.as_i64(),
                                 node_type.value,
                                 property_name.value,
@@ -281,17 +294,19 @@ impl GraphMutationManager {
                 property_value,
                 || async move {
                     // Create a prepared statement, and then execute it
-                    let mut statement = self
-                        .prepared_statements
-                        .prepare_min_i64(&self.scylla_client, tenant_keyspace)
-                        .await?;
 
-                    statement.set_timestamp(Some(-property_value));
+                    let tenant_urn = tenant_keyspace.urn();
+                    let mut query = Query::new(format!(r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{MIN_I_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                        VALUES (?, ?, ?, ?)
+                    "));
+
+                    query.set_timestamp(Some(-property_value));
 
                     self.scylla_client
                         .execute(
-                            &statement,
-                            (
+                            query,
+                            &(
                                 uid.as_i64(),
                                 node_type.value,
                                 property_name.value,
@@ -319,16 +334,16 @@ impl GraphMutationManager {
                 node_type.clone(),
                 property_name.clone(),
                 || async move {
-                    // todo: We should only prepare statements once
-                    let statement = self
-                        .prepared_statements
-                        .prepare_imm_i64(&self.scylla_client, tenant_keyspace)
-                        .await?;
+                    let tenant_urn = tenant_keyspace.urn();
+                    let query = Query::new(format!(r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_I_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                        VALUES (?, ?, ?, ?)
+                    "));
 
                     self.scylla_client
                         .execute(
-                            &statement,
-                            (
+                            query,
+                            &(
                                 uid.as_i64(),
                                 node_type.value,
                                 property_name.value,
@@ -350,14 +365,15 @@ impl GraphMutationManager {
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_node_type(tenant_keyspace, uid, || async move {
-                // todo: Should we only prepare statements once?
-                let statement = self
-                    .prepared_statements
-                    .prepare_node_type(&self.scylla_client, tenant_keyspace)
-                    .await?;
+
+                let tenant_urn = tenant_keyspace.urn();
+                let query = Query::new(format!(r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.node_type (uid, node_type)
+                        VALUES (?, ?)
+                    "));
 
                 self.scylla_client
-                    .execute(&statement, (uid.as_i64(), node_type.value))
+                    .execute(query, &(uid.as_i64(), node_type.value))
                     .await?;
                 Ok(())
             })
@@ -378,16 +394,17 @@ impl GraphMutationManager {
                 node_type.clone(),
                 property_name.clone(),
                 || async move {
-                    // todo: Should we only prepare statements once?
-                    let statement = self
-                        .prepared_statements
-                        .prepare_imm_string(&self.scylla_client, tenant_keyspace)
-                        .await?;
+
+                    let tenant_urn = tenant_keyspace.urn();
+                    let query = Query::new(format!(r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_STRING_TABLE_NAME} (uid, node_type, property_name, property_value)
+                        VALUES (?, ?, ?, ?)
+                    "));
 
                     self.scylla_client
                         .execute(
-                            &statement,
-                            (
+                            query,
+                            &(
                                 uid.as_i64(),
                                 node_type.value,
                                 property_name.value,
@@ -421,7 +438,7 @@ impl GraphMutationManager {
                 || async move {
                     let f_statement = self
                         .prepared_statements
-                        .prepare_edge(&self.scylla_client, tenant_keyspace)
+                        .prepare_edge(&self.scylla_client.session, tenant_keyspace)
                         .await?;
                     let r_statement = f_statement.clone();
 
@@ -430,7 +447,7 @@ impl GraphMutationManager {
                     batch.append_statement(r_statement);
                     batch.set_is_idempotent(true);
 
-                    self.scylla_client
+                    self.scylla_client.session
                         .batch(
                             &batch,
                             (
@@ -571,7 +588,7 @@ impl GraphMutationApi for GraphMutationManager {
         .await?;
 
         Ok(CreateEdgeResponse {
-            // todo: At this point we can't tell if the update was redundant
+            // todo: At this point we don't track if the update was redundant
             //       but it is always safe (albeit suboptimal) to assume that
             //       it was not.
             mutation_redundancy: MutationRedundancy::Maybe,

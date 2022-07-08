@@ -1,4 +1,4 @@
-use rust_proto_new::graplinc::grapl::{
+use rust_proto::graplinc::grapl::{
     api::schema_manager::v1beta1::{
         client::{
             SchemaManagerClient,
