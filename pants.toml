@@ -18,14 +18,6 @@ backend_packages = [
   "pants.backend.shell.lint.shfmt"
 ]
 
-pythonpath = [
-  "%(buildroot)s/pants-plugins"
-]
-
-build_file_prelude_globs = [
-  "pants-plugins/macros.py",
-]
-
 pants_ignore=[
     "!.buildkite",
     "/src/proto/google"
@@ -72,7 +64,6 @@ root_patterns = [
   "/build-support",
   "/devbox",
   "/etc",  # Some of our tests use sample data from here
-  "/pants-plugins",
   "/pulumi",
   "/src/proto",
   "/src/python/engagement-creator",

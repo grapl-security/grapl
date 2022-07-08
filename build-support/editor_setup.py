@@ -45,7 +45,6 @@ BASE_PYRIGHTCONFIG: PyrightConfig = {
     ],
     "executionEnvironments": [
         {"root": "pulumi"},
-        {"root": "pants-plugins"},
         # NOTE: We will augment this with the src/python root in the
         # code below
     ],
@@ -90,7 +89,6 @@ def src_python_execution_environment() -> Dict[str, Union[str, List[str]]]:
         not in (
             "/3rdparty",
             "/build-support",
-            "/pants-plugins",
             "/pulumi",
             "/src/proto",
         )
