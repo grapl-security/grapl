@@ -73,6 +73,9 @@ pub fn get_job(
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("tenant_id", plugin.tenant_id.to_string()),
+                ("rust_log", service_config.rust_log.to_owned()),
+                ("otel_exporter_jaeger_agent_host", service_config.otel_exporter_jaeger_agent_host.to_owned()),
+                ("otel_exporter_jaeger_agent_port", service_config.otel_exporter_jaeger_agent_port.to_owned()),
             ]);
             cli.parse_hcl2(job_file_hcl, job_file_vars)
         }

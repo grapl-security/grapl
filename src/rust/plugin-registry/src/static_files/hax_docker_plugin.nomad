@@ -34,6 +34,21 @@ variable "plugin_execution_image" {
   description = "The container that will load and run the Generator Executor or Analyzer Executor"
 }
 
+variable "rust_log" {
+  type        = string
+  description = "Controls the logging behavior of Rust-based services."
+}
+
+variable "otel_exporter_jaeger_agent_host" {
+  type = string
+  description = "Jaeger configuration"
+}
+
+variable "otel_exporter_jaeger_agent_port" {
+  type = number
+  description = "Jaeger configuration"
+}
+
 job "grapl-plugin" {
   datacenters = ["dc1"]
   namespace   = "plugin-${var.plugin_id}"
@@ -102,6 +117,12 @@ job "grapl-plugin" {
 
         //PLUGIN_CLIENT_ADDRESS            = "http://${NOMAD_UPSTREAM_ADDR_plugin-${!PLUGIN_ID}}"
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = 1
+
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = var.otel_exporter_jaeger_agent_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = var.otel_exporter_jaeger_agent_port
       }
     }
 
@@ -193,8 +214,11 @@ EOF
         # Consumed by GeneratorServiceConfig
         PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-grpc-receiver}"
 
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = var.otel_exporter_jaeger_agent_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = var.otel_exporter_jaeger_agent_port
+
         # Should we make these eventually customizable?
-        RUST_LOG       = "DEBUG"
+        RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
       }
     }

@@ -56,5 +56,5 @@ impl GeneratorServiceClient {
 
 impl NamedService for GeneratorServiceClient {
     const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorServiceClient";
+        "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorService";
 }
