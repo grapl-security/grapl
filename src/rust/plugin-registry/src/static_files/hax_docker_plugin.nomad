@@ -29,6 +29,26 @@ variable "plugin_runtime_image" {
   description = "The container that will load and run the plugin"
 }
 
+variable "plugin_execution_image" {
+  type        = string
+  description = "The container that will load and run the Generator Executor or Analyzer Executor"
+}
+
+variable "rust_log" {
+  type        = string
+  description = "Controls the logging behavior of Rust-based services."
+}
+
+variable "otel_exporter_jaeger_agent_host" {
+  type        = string
+  description = "Jaeger configuration"
+}
+
+variable "otel_exporter_jaeger_agent_port" {
+  type        = number
+  description = "Jaeger configuration"
+}
+
 job "grapl-plugin" {
   datacenters = ["dc1"]
   namespace   = "plugin-${var.plugin_id}"
@@ -42,6 +62,75 @@ job "grapl-plugin" {
     value     = true
   }
 
+  group "plugin-execution-sidecar" {
+    count = var.plugin_count
+
+    network {
+      mode = "bridge"
+      // TODO i think? possibly cargo culted?
+      // dns {
+      //   servers = local.dns_servers
+      // }
+      port "plugin-execution-sidecar" {}
+    }
+
+    service {
+      name = "plugin-execution-sidecar-${var.plugin_id}"
+      tags = [
+        "serve_type:plugin-execution-sidecar",
+        "tenant_id:${var.tenant_id}",
+        "plugin_id:${var.plugin_id}"
+      ]
+
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "plugin-work-queue"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1000
+            }
+
+            upstreams {
+              destination_name = "plugin-${var.plugin_id}"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1001
+            }
+
+            // TODO: upstream for graph-query-service
+          }
+        }
+      }
+    }
+
+    # The execution task pulls messages from the plugin-work-queue and
+    # sends them to the plugin
+    task "plugin-execution-sidecar" {
+      driver = "docker"
+
+      config {
+        image = var.plugin_execution_image
+      }
+
+      env {
+        PLUGIN_ID = "${var.plugin_id}"
+
+        // FYI: the upstream plugin's address is discovered at runtime, not
+        // env{}, because the upstream's name is based on ${PLUGIN_ID}.
+
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = 1
+
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = var.otel_exporter_jaeger_agent_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = var.otel_exporter_jaeger_agent_port
+      }
+    }
+
+    // TODO: task "tenant-plugin-graph-query-sidecar"
+  }
+
   group "plugin" {
     network {
       mode = "bridge"
@@ -49,7 +138,7 @@ job "grapl-plugin" {
       // dns {
       //   servers = local.dns_servers
       // }
-      port "plugin-grpc-receiver" {}
+      port "plugin" {}
     }
 
     restart {
@@ -60,7 +149,7 @@ job "grapl-plugin" {
 
     service {
       name = "plugin-${var.plugin_id}"
-      port = "plugin-grpc-receiver"
+      port = "plugin"
       tags = [
         "plugin",
         "tenant-${var.tenant_id}",
@@ -69,17 +158,12 @@ job "grapl-plugin" {
 
       connect {
         sidecar_service {
-          proxy {
-            config {
-              protocol = "http"
-            }
-          }
         }
       }
 
       check {
         type     = "grpc"
-        port     = "plugin-grpc-receiver"
+        port     = "plugin"
         interval = "10s"
         timeout  = "3s"
       }
@@ -87,11 +171,11 @@ job "grapl-plugin" {
 
     # a Docker task holding:
     # - the plugin binary itself (mounted)
-    task "run-plugin" {
+    task "plugin" {
       driver = "docker"
 
       config {
-        ports = ["plugin-grpc-receiver"]
+        ports = ["plugin"]
 
         image      = var.plugin_runtime_image
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
@@ -125,10 +209,13 @@ EOF
         PLUGIN_ID  = "${var.plugin_id}"
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
         # Consumed by GeneratorServiceConfig
-        PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-grpc-receiver}"
+        PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
+
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = var.otel_exporter_jaeger_agent_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = var.otel_exporter_jaeger_agent_port
 
         # Should we make these eventually customizable?
-        RUST_LOG       = "DEBUG"
+        RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
       }
     }
