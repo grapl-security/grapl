@@ -415,6 +415,9 @@ target "_python-base" {
     etc-ctx  = "etc"
   }
   dockerfile = "src/python/Dockerfile"
+  args = {
+    PYTHON_VERSION = "${PYTHON_VERSION}"
+  }
 }
 
 target "engagement-creator" {
