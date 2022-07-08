@@ -33,7 +33,6 @@ BUILD @christophermaier
 /nomad @twunderlich-grapl
 /pants @christophermaier
 /pants.ci.toml @christophermaier
-/pants-plugins/ @christophermaier
 /pants.toml @christophermaier
 /pulumi/ @christophermaier
 /pyproject.toml @christophermaier
