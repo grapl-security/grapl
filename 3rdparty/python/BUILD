@@ -11,4 +11,5 @@ python_requirements(
         "opentelemetry-sdk": ["opentelemetry.sdk"],
     },
     resolve="grapl",
+    source="constraints.txt",
 )
