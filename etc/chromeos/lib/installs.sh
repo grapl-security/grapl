@@ -151,9 +151,17 @@ install_pyenv() {
 
     # shellcheck disable=SC1091
     home_pyenv_dir="$HOME/.pyenv"
-    if [ -d "${home_pyenv_dir}" ] && should_force_reinstall; then
-        echo ".pyenv already exists. Nuking it so that the pyenv is properly installed and configured"
-        rm -rf "${home_pyenv_dir}"
+    if [ -d "${home_pyenv_dir}" ]; then # && should_force_reinstall; then
+        if [ should_force_reinstall ]; then
+          echo ".pyenv already exists. Nuking it so that the pyenv is properly installed and configured"
+          rm -rf "${home_pyenv_dir}"
+        else
+          echo "pyenv already exists. Upgrading pyenv to the lastest version"
+          (
+            cd $(pyenv root)
+            git pull
+          )
+        fi
     fi
 
     # This function is stolen from the
