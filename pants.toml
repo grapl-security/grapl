@@ -99,6 +99,7 @@ default_resolve = "grapl"
 interpreter_constraints = ["==3.8.*"]
 
 [python.resolves]
+builddocs = "3rdparty/python/builddocs.lockfile"
 grapl = "3rdparty/python/grapl.lockfile"
 pantsplugin = "3rdparty/python/pantsplugin.lockfile"
 
