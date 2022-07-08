@@ -27,7 +27,8 @@ build_file_prelude_globs = [
 ]
 
 pants_ignore=[
-    "!.buildkite"
+    "!.buildkite",
+    "/src/proto/google"
 ]
 
 plugins = [

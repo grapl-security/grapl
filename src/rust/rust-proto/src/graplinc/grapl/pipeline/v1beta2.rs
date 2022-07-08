@@ -1,9 +1,9 @@
-use bytes::Bytes;
-use prost_types::Any as AnyProto;
-
 use crate::{
     graplinc::grapl::pipeline::v1beta1::Metadata,
-    protobufs::graplinc::grapl::pipeline::v1beta2::NewEnvelope as NewEnvelopeProto,
+    protobufs::{
+        google::protobuf::Any as AnyProto,
+        graplinc::grapl::pipeline::v1beta2::NewEnvelope as NewEnvelopeProto,
+    },
     serde_impl,
     type_url,
     SerDe,
@@ -45,7 +45,7 @@ where
         if let Some(any_proto) = envelope_proto.inner_message {
             Ok(Envelope {
                 metadata: metadata.try_into()?,
-                inner_message: SerDe::deserialize(Bytes::from(any_proto.value))?,
+                inner_message: SerDe::deserialize(any_proto.value)?,
             })
         } else {
             Err(SerDeError::MissingField("inner_message"))
@@ -64,7 +64,7 @@ where
             metadata: Some(envelope.metadata.try_into()?),
             inner_message: Some(AnyProto {
                 type_url: T::TYPE_URL.to_string(),
-                value: envelope.inner_message.serialize()?.to_vec(),
+                value: envelope.inner_message.serialize()?,
             }),
         })
     }

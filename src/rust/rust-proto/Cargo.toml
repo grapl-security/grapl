@@ -11,7 +11,6 @@ bytes = "1.1"
 futures = "0.3"
 grapl-utils = { path = "../grapl-utils" }
 prost = "0.10"
-prost-types = "0.10"
 thiserror = "1.0"
 tokio = { version = "1.17", features = ["rt", "time"] }
 tokio-stream = { version = "0.1", features = ["net"] }
@@ -22,6 +21,7 @@ uuid = { version = "1.0", features = ["v4"] }
 
 [build-dependencies]
 tonic-build = { version = "0.7", features = ["default", "compression"] }
+prost-build = "0.10"
 
 [dev-dependencies]
 proptest = "1.0"

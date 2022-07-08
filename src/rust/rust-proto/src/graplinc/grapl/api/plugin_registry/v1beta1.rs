@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use bytes::Bytes;
 use proto::create_plugin_request;
 
 pub use crate::graplinc::grapl::api::plugin_registry::{
@@ -151,7 +152,7 @@ impl ProtobufSerializable for PluginMetadata {
 #[derive(Debug, Clone, PartialEq)]
 pub enum CreatePluginRequest {
     Metadata(PluginMetadata),
-    Chunk(Vec<u8>),
+    Chunk(Bytes),
 }
 
 impl type_url::TypeUrl for CreatePluginRequest {
@@ -167,9 +168,7 @@ impl TryFrom<proto::CreatePluginRequest> for CreatePluginRequest {
             Some(create_plugin_request::Inner::Metadata(m)) => {
                 Ok(CreatePluginRequest::Metadata(m.try_into()?))
             }
-            Some(create_plugin_request::Inner::Chunk(c)) => {
-                Ok(CreatePluginRequest::Chunk(c.try_into()?))
-            }
+            Some(create_plugin_request::Inner::Chunk(c)) => Ok(CreatePluginRequest::Chunk(c)),
             _ => Err(SerDeError::UnknownVariant("CreatePluginRequest.inner")),
         }
     }
@@ -182,7 +181,7 @@ impl From<CreatePluginRequest> for proto::CreatePluginRequest {
                 CreatePluginRequest::Metadata(m) => {
                     create_plugin_request::Inner::Metadata(m.into())
                 }
-                CreatePluginRequest::Chunk(c) => create_plugin_request::Inner::Chunk(c.into()),
+                CreatePluginRequest::Chunk(c) => create_plugin_request::Inner::Chunk(c),
             }),
         }
     }

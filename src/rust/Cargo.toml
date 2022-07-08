@@ -10,7 +10,6 @@ members = [
   "./graph-merger",
   "./grapl-config",
   "./grapl-graphql-codegen",
-  "./grapl-observe",
   "./grapl-web-ui",
   "./grapl-utils",
   "./kafka",

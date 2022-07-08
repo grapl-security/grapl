@@ -13,6 +13,7 @@ name = "plugin_work_queue"
 
 [dependencies]
 async-trait = "0.1"
+bytes = "1.1"
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",

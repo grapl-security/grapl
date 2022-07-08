@@ -35,7 +35,7 @@ pub async fn exec_service(
     let cert = tokio::fs::read("/etc/ssl/private/plugin-client-cert.pem").await?;
     let key = tokio::fs::read("/etc/ssl/private/plugin-client-cert.key").await?;
 
-    let identity = Identity::from_pem(cert, key);
+    let identity = Identity::from_pem(cert.into(), key.into());
 
     let healthcheck_polling_interval_ms = 5000; // TODO: un-hardcode
     let (server, _shutdown_tx) = GeneratorServer::new(
