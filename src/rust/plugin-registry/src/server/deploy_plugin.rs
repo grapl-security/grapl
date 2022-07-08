@@ -186,6 +186,9 @@ mod tests {
             bucket_name: Default::default(),
             rootfs_artifact_url: Default::default(),
             artifact_size_limit_mb: Default::default(),
+            otel_exporter_jaeger_agent_host: Default::default(),
+            otel_exporter_jaeger_agent_port: Default::default(),
+            rust_log: Default::default(),
         }
     }
     /// This is used to keep test coverage on the eventually-desirable-but-
