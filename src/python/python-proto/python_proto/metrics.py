@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import enum
-from typing import Sequence, Type, Union, cast
+from typing import Sequence, Union, cast
 
 from graplinc.grapl.metrics.v1.metric_types_pb2 import Counter as _Counter
 from graplinc.grapl.metrics.v1.metric_types_pb2 import Gauge as _Gauge
@@ -16,7 +16,7 @@ from python_proto import SerDe
 class Label(SerDe[_Label]):
     key: str
     value: str
-    proto_cls: Type[_Label] = _Label
+    proto_cls: type[_Label] = _Label
 
     @staticmethod
     def deserialize(bytes_: bytes) -> Label:
@@ -40,7 +40,7 @@ class Counter(SerDe[_Counter]):
     name: str
     increment: int
     labels: Sequence[Label]
-    proto_cls: Type[_Counter] = _Counter
+    proto_cls: type[_Counter] = _Counter
 
     @staticmethod
     def deserialize(bytes_: bytes) -> Counter:
@@ -78,7 +78,7 @@ class Gauge(SerDe[_Gauge]):
     name: str
     value: float
     labels: Sequence[Label]
-    proto_cls: Type[_Gauge] = _Gauge
+    proto_cls: type[_Gauge] = _Gauge
 
     @staticmethod
     def deserialize(bytes_: bytes) -> Gauge:
@@ -110,7 +110,7 @@ class Histogram(SerDe):
     name: str
     value: float
     labels: Sequence[Label]
-    proto_cls: Type[_Histogram] = _Histogram
+    proto_cls: type[_Histogram] = _Histogram
 
     @staticmethod
     def deserialize(bytes_: bytes) -> Histogram:
@@ -137,8 +137,8 @@ class Histogram(SerDe):
 
 @dataclasses.dataclass(frozen=True)
 class MetricWrapper(SerDe):
-    metric: Union[Counter, Gauge, Histogram]
-    proto_cls: Type[_MetricWrapper] = _MetricWrapper
+    metric: Counter | Gauge | Histogram
+    proto_cls: type[_MetricWrapper] = _MetricWrapper
 
     @staticmethod
     def deserialize(bytes_: bytes) -> MetricWrapper:

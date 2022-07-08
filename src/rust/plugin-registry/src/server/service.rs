@@ -82,7 +82,7 @@ pub struct PluginRegistryServiceConfig {
     #[clap(long, env)]
     pub plugin_bootstrap_container_image: String,
     #[clap(long, env)]
-    pub plugin_execution_container_image: String,
+    pub plugin_execution_image: String,
     #[clap(long, env = "PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL")]
     pub kernel_artifact_url: String,
     #[clap(long, env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]
@@ -95,6 +95,13 @@ pub struct PluginRegistryServiceConfig {
         default_value = "250"
     )]
     pub artifact_size_limit_mb: usize,
+    // --- Pass through a couple env vars also used for this binary
+    #[clap(long, env)]
+    pub rust_log: String,
+    #[clap(long, env)]
+    pub otel_exporter_jaeger_agent_host: String,
+    #[clap(long, env)]
+    pub otel_exporter_jaeger_agent_port: String,
 }
 
 pub struct PluginRegistry {

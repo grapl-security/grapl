@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from os import environ
-from typing import List
 
 import pytest
 import requests
@@ -36,7 +35,7 @@ def _after_tests() -> None:
 
 
 def exec_pytest() -> int:
-    pytest_args: List[str] = []
+    pytest_args: list[str] = []
     if environ.get("PYTEST_EXPRESSION"):
         pytest_args.extend(("-k", environ["PYTEST_EXPRESSION"]))
 

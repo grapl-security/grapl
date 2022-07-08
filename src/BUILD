@@ -2,7 +2,7 @@
 # which code belongs to which python_distributions in order to sort
 # out dependencies properly. Since this depends on both Python code
 # and protobuf code, it has to be "higher" than both of them.
-grapl_python_distribution(
+python_distribution(
     name="graplinc_grapl_api",
     dependencies=[
         "src/proto:graplinc",

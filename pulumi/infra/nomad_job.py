@@ -55,7 +55,7 @@ class NomadJob(pulumi.ComponentResource):
         self.register_outputs({})
 
     def _file_contents(self, nomad_file: str) -> str:
-        with open(nomad_file, "r") as f:
+        with open(nomad_file) as f:
             jobspec = f.read()
             f.close()
             return jobspec

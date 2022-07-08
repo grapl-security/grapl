@@ -1,9 +1,5 @@
-use std::{
-    io::Stdout,
-    str::FromStr,
-};
+use std::str::FromStr;
 
-use grapl_observe::metric_reporter::MetricReporter;
 use rusoto_cloudwatch::CloudWatchClient;
 use rusoto_core::{
     HttpClient,
@@ -12,8 +8,6 @@ use rusoto_core::{
 use rusoto_dynamodb::DynamoDbClient;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-
-use crate::ServiceEnv;
 
 pub const ENV_ENDPOINT: &'static str = "GRAPL_AWS_ENDPOINT";
 const ENV_ACCESS_KEY_ID: &'static str = "GRAPL_AWS_ACCESS_KEY_ID";
@@ -227,11 +221,5 @@ impl FromEnv<S3Client> for S3Client {
                 panic!("Must specify no overrides, or s3_endpoint and/or both of s3_access_key_id, s3_access_key_secret")
             }
         }
-    }
-}
-
-impl From<&ServiceEnv> for MetricReporter<Stdout> {
-    fn from(env: &ServiceEnv) -> Self {
-        MetricReporter::new(&env.service_name)
     }
 }

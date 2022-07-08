@@ -680,52 +680,6 @@ job "grapl-core" {
     }
   }
 
-  group "generator-executor" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-      port "generator-executor-port" {}
-    }
-
-    task "generator-executor" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["generator-executor"]
-      }
-
-      env {
-        DNS_RESOLVER_IPS  = var.dns_server
-        DNS_RESOLVER_PORT = "${NOMAD_PORT_generator-executor-port}"
-        # Upstreams
-        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
-
-        RUST_LOG                        = var.rust_log
-        RUST_BACKTRACE                  = local.rust_backtrace
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
-      }
-    }
-
-    service {
-      name = "generator-executor"
-      connect {
-        sidecar_service {
-          proxy {
-            upstreams {
-              destination_name = "plugin-work-queue"
-              local_bind_port  = 1000
-            }
-            # NOTE: Generator Executor also connects to arbitrary upstreams at
-            # runtime via native Consul Connect in GeneratorClient
-          }
-        }
-      }
-    }
-  }
-
   group "graph-merger" {
     count = var.num_graph_mergers
 
@@ -1202,10 +1156,9 @@ job "grapl-core" {
         PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL             = var.plugin_registry_kernel_artifact_url
         PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL             = var.plugin_registry_rootfs_artifact_url
         PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE = var.container_images["hax-docker-plugin-runtime"]
-        # Plugin Execution code/image doesn't exist yet; change this once it does!
-        PLUGIN_EXECUTION_CONTAINER_IMAGE      = "grapl/plugin-execution-sidecar-TODO"
-        PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID = var.plugin_registry_bucket_aws_account_id
-        PLUGIN_REGISTRY_BUCKET_NAME           = var.plugin_registry_bucket_name
+        PLUGIN_EXECUTION_IMAGE                          = var.container_images["generator-executor"] # TODO: add support for analyzer too
+        PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID           = var.plugin_registry_bucket_aws_account_id
+        PLUGIN_REGISTRY_BUCKET_NAME                     = var.plugin_registry_bucket_name
 
         # common Rust env vars
         RUST_BACKTRACE                  = local.rust_backtrace

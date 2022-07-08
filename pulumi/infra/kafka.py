@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Mapping, Optional, Sequence, TypeVar, cast
+from typing import Any, Mapping, Sequence, TypeVar, cast
 
 from infra import config
 from pulumi.stack_reference import StackReference
@@ -56,7 +56,7 @@ class Service:
     ingress_topics: Sequence[str]
     egress_topics: Sequence[str]
     service_account: Credential
-    consumer_group_name: Optional[str] = None
+    consumer_group_name: str | None = None
 
     @staticmethod
     def from_json(data: Mapping[str, Any]) -> Service:
@@ -121,13 +121,13 @@ class Confluent:
 
 
 class Kafka(pulumi.ComponentResource):
-    confluent_environment: Optional[pulumi.Output[Environment]]
+    confluent_environment: pulumi.Output[Environment] | None
 
     def __init__(
         self,
         name: str,
         confluent_environment_name: str,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
         create_local_topics: bool = True,
     ):
         super().__init__("grapl:Kafka", name=name, props=None, opts=opts)
@@ -211,7 +211,7 @@ class Kafka(pulumi.ComponentResource):
 T = TypeVar("T")
 
 
-def _expect(val: Optional[T]) -> T:
+def _expect(val: T | None) -> T:
     if val is None:
         raise Exception("expected value to be present")
     else:

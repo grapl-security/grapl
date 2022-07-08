@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional, cast
+from typing import cast
 
 import pulumi_aws as aws
 import pulumi_random as random
@@ -40,10 +40,10 @@ class Postgres(pulumi.ComponentResource):
         self,
         name: str,
         vpc_id: pulumi.Input[str],
-        subnet_ids: pulumi.Input[List[str]],
+        subnet_ids: pulumi.Input[list[str]],
         nomad_agent_security_group_id: pulumi.Input[str],
         availability_zone: pulumi.Input[str],
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:Postgres", name, None, opts)
 

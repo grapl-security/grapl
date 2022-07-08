@@ -176,6 +176,12 @@ pub(crate) mod protobufs {
             }
         }
     }
+
+    pub(crate) mod google {
+        pub(crate) mod protobuf {
+            include!(concat!(env!("OUT_DIR"), "/google.protobuf.rs"));
+        }
+    }
 }
 
 // This module hierarchy closely emulates the one above, but contains our rust

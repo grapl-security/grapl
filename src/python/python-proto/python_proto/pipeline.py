@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import uuid
-from typing import Generic, Type, cast
+from typing import Generic, cast
 
 from google.protobuf.any_pb2 import Any as _Any
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Metadata as _Metadata
@@ -20,7 +20,7 @@ class Metadata(SerDe[_Metadata]):
     event_source_id: uuid.UUID
     created_time: datetime.datetime
     last_updated_time: datetime.datetime
-    proto_cls: Type[_Metadata] = _Metadata
+    proto_cls: type[_Metadata] = _Metadata
 
     @staticmethod
     def deserialize(bytes_: bytes) -> Metadata:
@@ -62,16 +62,16 @@ class Metadata(SerDe[_Metadata]):
 class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
     metadata: Metadata
     inner_message: I
-    proto_cls: Type[_Envelope] = _Envelope
+    proto_cls: type[_Envelope] = _Envelope
 
     @staticmethod
-    def deserialize(bytes_: bytes, inner_cls: Type[I]) -> Envelope[I]:
+    def deserialize(bytes_: bytes, inner_cls: type[I]) -> Envelope[I]:
         proto_envelope = _Envelope()
         proto_envelope.ParseFromString(bytes_)
         return Envelope.from_proto(proto_envelope=proto_envelope, inner_cls=inner_cls)
 
     @staticmethod
-    def from_proto(proto_envelope: _Envelope, inner_cls: Type[I]) -> Envelope[I]:
+    def from_proto(proto_envelope: _Envelope, inner_cls: type[I]) -> Envelope[I]:
         inner_message_proto = inner_cls.proto_cls()
         proto_envelope.inner_message.Unpack(inner_message_proto)
         inner_message = cast(I, inner_cls.from_proto(inner_message_proto))  # fuck it
@@ -95,7 +95,7 @@ class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
 @dataclasses.dataclass(frozen=True)
 class RawLog(SerDe[_RawLog]):
     log_event: bytes
-    proto_cls: Type[_RawLog] = _RawLog
+    proto_cls: type[_RawLog] = _RawLog
 
     @staticmethod
     def deserialize(bytes_: bytes) -> RawLog:

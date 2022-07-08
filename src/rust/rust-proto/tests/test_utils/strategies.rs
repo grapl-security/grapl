@@ -32,13 +32,6 @@ pub fn string_not_empty() -> proptest::string::RegexGeneratorStrategy<String> {
     proptest::string::string_regex(".+").expect("Invalid regex")
 }
 
-pub fn vec_not_empty<T>() -> impl Strategy<Value = Vec<T>>
-where
-    T: Arbitrary,
-{
-    any::<Vec<T>>().prop_filter("Only accept non-empty vecs", |v| !v.is_empty())
-}
-
 pub mod pipeline {
     use std::fmt::Debug;
 
@@ -746,7 +739,7 @@ pub mod plugin_registry {
 
     pub fn create_plugin_requests() -> impl Strategy<Value = CreatePluginRequest> {
         prop_oneof![
-            any::<Vec<u8>>().prop_map(CreatePluginRequest::Chunk),
+            bytes(1024).prop_map(CreatePluginRequest::Chunk),
             plugin_metadatas().prop_map(CreatePluginRequest::Metadata)
         ]
     }
@@ -870,7 +863,7 @@ pub mod plugin_sdk_generators {
 
     prop_compose! {
         pub fn run_generator_requests()(
-            data in any::<Vec<u8>>()
+            data in bytes(1024)
         ) -> native::RunGeneratorRequest {
             native::RunGeneratorRequest {
                 data
@@ -896,13 +889,9 @@ pub mod plugin_work_queue {
 
     prop_compose! {
         pub fn execution_jobs()(
-            tenant_id in uuids(),
-            plugin_id in uuids(),
-            data in vec_not_empty::<u8>(),
+            data in bytes(1024),
         ) -> native::ExecutionJob {
             native::ExecutionJob {
-                tenant_id,
-                plugin_id,
                 data,
             }
         }
@@ -912,10 +901,12 @@ pub mod plugin_work_queue {
         pub fn acknowledge_generator_requests()(
             request_id in any::<i64>(),
             success in any::<bool>(),
+            plugin_id in uuids(),
         ) -> native::AcknowledgeGeneratorRequest {
             native::AcknowledgeGeneratorRequest {
                 request_id,
                 success,
+                plugin_id,
             }
         }
     }
@@ -929,10 +920,12 @@ pub mod plugin_work_queue {
         pub fn acknowledge_analyzer_requests()(
             request_id in any::<i64>(),
             success in any::<bool>(),
+            plugin_id in uuids(),
         ) -> native::AcknowledgeAnalyzerRequest {
             native::AcknowledgeAnalyzerRequest {
                 request_id,
                 success,
+                plugin_id,
             }
         }
     }
@@ -946,9 +939,14 @@ pub mod plugin_work_queue {
         proptest::option::of(execution_jobs())
     }
 
-    pub fn get_execute_analyzer_requests(
-    ) -> impl Strategy<Value = native::GetExecuteAnalyzerRequest> {
-        Just(native::GetExecuteAnalyzerRequest {})
+    prop_compose! {
+        pub fn get_execute_analyzer_requests()(
+            plugin_id in uuids(),
+        ) -> native::GetExecuteAnalyzerRequest {
+            native::GetExecuteAnalyzerRequest {
+                plugin_id,
+            }
+        }
     }
 
     prop_compose! {
@@ -963,9 +961,14 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn get_execute_generator_requests(
-    ) -> impl Strategy<Value = native::GetExecuteGeneratorRequest> {
-        Just(native::GetExecuteGeneratorRequest {})
+    prop_compose! {
+        pub fn get_execute_generator_requests()(
+            plugin_id in uuids(),
+        ) -> native::GetExecuteGeneratorRequest {
+            native::GetExecuteGeneratorRequest {
+                plugin_id,
+            }
+        }
     }
 
     prop_compose! {
@@ -981,33 +984,37 @@ pub mod plugin_work_queue {
     }
 
     prop_compose! {
-        pub fn put_execute_analyzer_requests()(
+        pub fn push_execute_analyzer_requests()(
             execution_job in execution_jobs(),
-        ) -> native::PutExecuteAnalyzerRequest {
-            native::PutExecuteAnalyzerRequest {
+            plugin_id in uuids(),
+        ) -> native::PushExecuteAnalyzerRequest {
+            native::PushExecuteAnalyzerRequest {
                 execution_job,
+                plugin_id,
             }
         }
     }
 
-    pub fn put_execute_analyzer_responses(
-    ) -> impl Strategy<Value = native::PutExecuteAnalyzerResponse> {
-        Just(native::PutExecuteAnalyzerResponse {})
+    pub fn push_execute_analyzer_responses(
+    ) -> impl Strategy<Value = native::PushExecuteAnalyzerResponse> {
+        Just(native::PushExecuteAnalyzerResponse {})
     }
 
     prop_compose! {
-        pub fn put_execute_generator_requests()(
+        pub fn push_execute_generator_requests()(
             execution_job in execution_jobs(),
-        ) -> native::PutExecuteGeneratorRequest {
-            native::PutExecuteGeneratorRequest {
+            plugin_id in uuids(),
+        ) -> native::PushExecuteGeneratorRequest {
+            native::PushExecuteGeneratorRequest {
                 execution_job,
+                plugin_id,
             }
         }
     }
 
-    pub fn put_execute_generator_responses(
-    ) -> impl Strategy<Value = native::PutExecuteGeneratorResponse> {
-        Just(native::PutExecuteGeneratorResponse {})
+    pub fn push_execute_generator_responses(
+    ) -> impl Strategy<Value = native::PushExecuteGeneratorResponse> {
+        Just(native::PushExecuteGeneratorResponse {})
     }
 }
 

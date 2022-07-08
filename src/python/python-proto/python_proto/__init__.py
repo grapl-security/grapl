@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import Generic, Type, TypeVar
+from typing import Generic, TypeVar
 
 from google.protobuf.message import Message as _Message
 
@@ -9,7 +9,7 @@ P = TypeVar("P", bound=_Message)
 
 
 class SerDe(Generic[P], metaclass=ABCMeta):
-    proto_cls: Type[P]
+    proto_cls: type[P]
     __slots__ = ("proto_cls",)
 
     @classmethod
@@ -48,7 +48,7 @@ I = TypeVar("I", bound=SerDe)
 
 
 class SerDeWithInner(Generic[P, I]):
-    proto_cls: Type[P]
+    proto_cls: type[P]
     inner_message: I
 
     __slots__ = ("proto_cls", "inner_message")
@@ -70,7 +70,7 @@ class SerDeWithInner(Generic[P, I]):
 
     @staticmethod
     @abstractmethod
-    def deserialize(bytes_: bytes, inner_cls: Type[I]) -> SerDeWithInner[P, I]:
+    def deserialize(bytes_: bytes, inner_cls: type[I]) -> SerDeWithInner[P, I]:
         raise NotImplementedError
 
     def serialize(self) -> bytes:
@@ -78,7 +78,7 @@ class SerDeWithInner(Generic[P, I]):
 
     @staticmethod
     @abstractmethod
-    def from_proto(proto: P, inner_cls: Type[I]) -> SerDeWithInner[P, I]:
+    def from_proto(proto: P, inner_cls: type[I]) -> SerDeWithInner[P, I]:
         raise NotImplementedError
 
     @abstractmethod

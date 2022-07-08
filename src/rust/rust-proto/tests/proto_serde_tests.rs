@@ -456,22 +456,22 @@ mod plugin_work_queue {
         }
 
         #[test]
-        fn test_put_execute_analyzer_requests(value in pwq_strats::put_execute_analyzer_requests()) {
+        fn test_push_execute_analyzer_requests(value in pwq_strats::push_execute_analyzer_requests()) {
             check_encode_decode_invariant(value)
         }
 
         #[test]
-        fn test_put_execute_analyzer_responses(value in pwq_strats::put_execute_analyzer_responses()) {
+        fn test_push_execute_analyzer_responses(value in pwq_strats::push_execute_analyzer_responses()) {
             check_encode_decode_invariant(value)
         }
 
         #[test]
-        fn test_put_execute_generator_requests(value in pwq_strats::put_execute_generator_requests()) {
+        fn test_push_execute_generator_requests(value in pwq_strats::push_execute_generator_requests()) {
             check_encode_decode_invariant(value)
         }
 
         #[test]
-        fn test_put_execute_generator_responses(value in pwq_strats::put_execute_generator_responses()) {
+        fn test_push_execute_generator_responses(value in pwq_strats::push_execute_generator_responses()) {
             check_encode_decode_invariant(value)
         }
     }
