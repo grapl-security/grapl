@@ -139,16 +139,15 @@ where
             .await;
 
         // TODO: add tower tracing, concurrency limits
-        let mut server_builder = Server::builder()
-            .trace_fn(|request| {
-                tracing::info_span!(
-                    "exec_service",
-                    headers = ?request.headers(),
-                    method = ?request.method(),
-                    uri = %request.uri(),
-                    extensions = ?request.extensions(),
-                )
-            });
+        let mut server_builder = Server::builder().trace_fn(|request| {
+            tracing::info_span!(
+                "exec_service",
+                headers = ?request.headers(),
+                method = ?request.method(),
+                uri = %request.uri(),
+                extensions = ?request.extensions(),
+            )
+        });
 
         Ok(server_builder
             .add_service(health_service)

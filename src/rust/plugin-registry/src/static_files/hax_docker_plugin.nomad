@@ -40,12 +40,12 @@ variable "rust_log" {
 }
 
 variable "otel_exporter_jaeger_agent_host" {
-  type = string
+  type        = string
   description = "Jaeger configuration"
 }
 
 variable "otel_exporter_jaeger_agent_port" {
-  type = number
+  type        = number
   description = "Jaeger configuration"
 }
 

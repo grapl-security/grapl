@@ -6,9 +6,7 @@ use rust_proto::{
         GeneratorApi,
         GeneratorServer,
     },
-    protocol::{
-        healthcheck::HealthcheckStatus,
-    },
+    protocol::healthcheck::HealthcheckStatus,
 };
 use tokio::net::TcpListener;
 
