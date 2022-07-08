@@ -15,7 +15,6 @@ pub mod server {
     };
 
     use crate::{
-        execute_rpc,
         graplinc::grapl::api::lens_manager::v1beta1::messages::{
             AddNodeToScopeRequest,
             AddNodeToScopeResponse,
@@ -55,9 +54,8 @@ pub mod server {
             },
             status::Status,
         },
-        SerDeError,
     };
-    use crate::server_internals::GrpcApi;
+
     
 
     #[tonic::async_trait]
