@@ -63,8 +63,8 @@
         }
       ],
       "platform_tag": [
-        "cp38",
-        "cp38",
+        "cp310",
+        "cp310",
         "manylinux_2_31_x86_64"
       ]
     }

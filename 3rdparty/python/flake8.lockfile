@@ -6,7 +6,7 @@
 // {
 //   "version": 2,
 //   "valid_for_interpreter_constraints": [
-//     "CPython==3.8.*"
+//     "CPython==3.10.*"
 //   ],
 //   "generated_with_requirements": [
 //     "flake8<4.0,>=3.9.2"
@@ -106,8 +106,8 @@
         }
       ],
       "platform_tag": [
-        "cp38",
-        "cp38",
+        "cp310",
+        "cp310",
         "manylinux_2_31_x86_64"
       ]
     }
@@ -119,7 +119,7 @@
     "flake8<4.0,>=3.9.2"
   ],
   "requires_python": [
-    "==3.8.*"
+    "==3.10.*"
   ],
   "resolver_version": "pip-2020-resolver",
   "style": "universal",
