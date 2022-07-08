@@ -33,7 +33,7 @@ class PyrightConfig(TypedDict):
 
 
 BASE_PYRIGHTCONFIG: PyrightConfig = {
-    "pythonVersion": "3.8",
+    "pythonVersion": "3.10",
     "pythonPlatform": "Linux",
     "venvPath": "build-support",
     "venv": "venv",

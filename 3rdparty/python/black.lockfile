@@ -6,7 +6,7 @@
 // {
 //   "version": 2,
 //   "valid_for_interpreter_constraints": [
-//     "CPython==3.8.*"
+//     "CPython==3.10.*"
 //   ],
 //   "generated_with_requirements": [
 //     "black>=22.3.0",
@@ -33,13 +33,8 @@
             },
             {
               "algorithm": "sha256",
-              "hash": "a218d7e5856f91d20f04e931b6f16d15356db1c846ee55f01bac297a705ca24f",
-              "url": "https://files.pythonhosted.org/packages/07/eb/a757135497a3be31ab8c00ef239070c7277ad11b618104950a756bcab3c1/black-22.6.0-cp38-cp38-macosx_10_9_universal2.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "568ac3c465b1c8b34b61cd7a4e349e93f91abf0f9371eda1cf87194663ab684e",
-              "url": "https://files.pythonhosted.org/packages/3e/fd/5e47b4d77549909e484de906a69fccc3fcfb782131d8b449073ad8b3ed3e/black-22.6.0-cp38-cp38-macosx_10_9_x86_64.whl"
+              "hash": "6797f58943fceb1c461fb572edbe828d811e719c24e03375fd25170ada53825e",
+              "url": "https://files.pythonhosted.org/packages/1a/84/203163902ee26bcf1beaef582ee0c8df3f325da3e961b68d2ece959e19d3/black-22.6.0-cp310-cp310-macosx_11_0_arm64.whl"
             },
             {
               "algorithm": "sha256",
@@ -48,18 +43,23 @@
             },
             {
               "algorithm": "sha256",
-              "hash": "b9fd45787ba8aa3f5e0a0a98920c1012c884622c6c920dbe98dbd05bc7c70fbf",
-              "url": "https://files.pythonhosted.org/packages/c4/67/a4e9125bf1a4eb5a2624b3b979af2dc6ee8d3c4ee0b3d2867173db4916fa/black-22.6.0-cp38-cp38-win_amd64.whl"
+              "hash": "b270a168d69edb8b7ed32c193ef10fd27844e5c60852039599f9184460ce0807",
+              "url": "https://files.pythonhosted.org/packages/63/96/814e02033701f51701444d5505b5e2594453b1f7e913764a097b1f701633/black-22.6.0-cp310-cp310-macosx_10_9_x86_64.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "6c1734ab264b8f7929cef8ae5f900b85d579e6cbfde09d7387da8f04771b51c6",
-              "url": "https://files.pythonhosted.org/packages/e7/fe/4533d110ddced851a359cbbb162685814719690ee01939a34be023410854/black-22.6.0-cp38-cp38-macosx_11_0_arm64.whl"
+              "hash": "f586c26118bc6e714ec58c09df0157fe2d9ee195c764f630eb0d8e7ccce72e69",
+              "url": "https://files.pythonhosted.org/packages/80/ff/cfcfa4cdb42d8fff75b6b4dc355a1186a95de4714df8cc2a60f69f7b17f8/black-22.6.0-cp310-cp310-macosx_10_9_universal2.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "c9a3ac16efe9ec7d7381ddebcc022119794872abce99475345c5a61aa18c45ad",
-              "url": "https://files.pythonhosted.org/packages/fc/37/032c45b55f901ee3fe780fbc17fe2dc262c809d94de1288201350d8d680b/black-22.6.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+              "hash": "f6fe02afde060bbeef044af7996f335fbe90b039ccf3f5eb8f16df8b20f77666",
+              "url": "https://files.pythonhosted.org/packages/86/9c/2a8a13993bc63a50bda7436ecba902231fd9a88dd1cd233e6e3f534e071c/black-22.6.0-cp310-cp310-win_amd64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "c85928b9d5f83b23cee7d0efcb310172412fbf7cb9d9ce963bd67fd141781def",
+              "url": "https://files.pythonhosted.org/packages/a7/51/d0acd9f74a946a825a148dcc392433c2332ae405967d76292b9e64712dc8/black-22.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
             }
           ],
           "project_name": "black",
@@ -202,29 +202,11 @@
           "requires_dists": [],
           "requires_python": ">=3.7",
           "version": "2.0.1"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
-              "hash": "25642c956049920a5aa49edcdd6ab1e06d7e5d467fc00e0506c44ac86fbfca02",
-              "url": "https://files.pythonhosted.org/packages/ed/d6/2afc375a8d55b8be879d6b4986d4f69f01115e795e36827fd3a40166028b/typing_extensions-4.3.0-py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "e6d2677a32f47fc7eb2795db1dd15c1f34eff616bcaf2cfb5e997f854fa1c4a6",
-              "url": "https://files.pythonhosted.org/packages/9e/1d/d128169ff58c501059330f1ad96ed62b79114a2eb30b8238af63a2e27f70/typing_extensions-4.3.0.tar.gz"
-            }
-          ],
-          "project_name": "typing-extensions",
-          "requires_dists": [],
-          "requires_python": ">=3.7",
-          "version": "4.3"
         }
       ],
       "platform_tag": [
-        "cp38",
-        "cp38",
+        "cp310",
+        "cp310",
         "manylinux_2_31_x86_64"
       ]
     }
@@ -237,7 +219,7 @@
     "typing-extensions>=3.10.0.0; python_version < \"3.10\""
   ],
   "requires_python": [
-    "==3.8.*"
+    "==3.10.*"
   ],
   "resolver_version": "pip-2020-resolver",
   "style": "universal",
