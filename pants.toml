@@ -89,12 +89,18 @@ root_patterns = [
 
 [python]
 lockfile_generator = "pex"
-# Use this as a lockfile; speeds up installation of dependencies
-# To update it, see build-support/manage_virtualenv.sh
-requirement_constraints = "3rdparty/python/constraints.txt"
+# We've migrated to multiple lockfiles from a single constraints file.
+# This enables us to support python 3.10 for our main codebase and support 3.7-3.9 for the pants plugin.
+# To install/update lockfiles run `./pants generate-lockfiles`
+enable_resolves = true
+default_resolve = "grapl"
 # If you update these constraints, also update the ones in the
 # `[black]` section below; see there for further background.
 interpreter_constraints = ["==3.8.*"]
+
+[python.resolves]
+grapl = "3rdparty/python/grapl.lockfile"
+pantsplugin = "3rdparty/python/pantsplugin.lockfile"
 
 [python-bootstrap]
 search_path = ["<PYENV_LOCAL>", "<PYENV>", "<PATH>"]

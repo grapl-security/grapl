@@ -9,5 +9,6 @@ python_requirements(
         ],
         "opentelemetry-exporter-zipkin-json": ["opentelemetry.exporter.zipkin.json"],
         "opentelemetry-sdk": ["opentelemetry.sdk"],
-    }
+    },
+    resolve="grapl",
 )
