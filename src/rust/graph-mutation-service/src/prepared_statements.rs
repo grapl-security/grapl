@@ -7,7 +7,6 @@ use scylla::{
     Session,
 };
 
-
 #[derive(thiserror::Error, Debug)]
 pub enum PreparedStatementsError {
     #[error("QueryError: {0}")]
@@ -18,7 +17,6 @@ pub enum PreparedStatementsError {
 pub(crate) struct PreparedInsert {
     pub edges: PreparedStatement,
 }
-
 
 fn raw_edge_prepare_statement(tenant_id: uuid::Uuid) -> String {
     let tenant_urn = tenant_id.urn();
@@ -45,9 +43,7 @@ impl PreparedInsert {
     ) -> Result<Self, PreparedStatementsError> {
         let edges = prepare_upsert(scylla_client, raw_edge_prepare_statement(tenant_id)).await?;
 
-        Ok(Self {
-            edges,
-        })
+        Ok(Self { edges })
     }
 }
 
@@ -81,9 +77,7 @@ impl PreparedStatements {
         tenant_id: uuid::Uuid,
     ) -> Result<PreparedStatement, PreparedStatementsError> {
         match self.tenant_statements.entry(tenant_id) {
-            dashmap::mapref::entry::Entry::Occupied(entry) => {
-                Ok(entry.get().edges.clone())
-            }
+            dashmap::mapref::entry::Entry::Occupied(entry) => Ok(entry.get().edges.clone()),
             dashmap::mapref::entry::Entry::Vacant(entry) => {
                 crate::prepared_statements::PreparedInsert::prepare(scylla_client, tenant_id)
                     .await

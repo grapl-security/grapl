@@ -2,22 +2,31 @@ import asyncio
 import logging
 from concurrent import futures
 from dataclasses import dataclass, field
-from typing import NoReturn, List, Any, Awaitable
-
-from grapl_analyzerlib.analyzer import Analyzer, AnalyzerContext
-from graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2_grpc import add_AnalyzerServiceServicer_to_server, \
-    AnalyzerServiceServicer
-from python_proto.graplinc.grapl.api.graph_query.v1beta1.messages import GraphQuery, NodeQuery, GraphQueryClient, \
-    PropertyName, GraphView, NodeView
 from datetime import datetime, timedelta
+from typing import Any, Awaitable, List, NoReturn
+
 import graplinc
 import grpc
-
-from python_proto.graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.messages import (
-    RunAnalyzerRequest,
-    RunAnalyzerResponse, ExecutionResult, AnalyzerName, ExecutionHit,
+from grapl_analyzerlib.analyzer import Analyzer, AnalyzerContext
+from graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2_grpc import (
+    AnalyzerServiceServicer,
+    add_AnalyzerServiceServicer_to_server,
 )
-
+from python_proto.graplinc.grapl.api.graph_query.v1beta1.messages import (
+    GraphQuery,
+    GraphQueryClient,
+    GraphView,
+    NodeQuery,
+    NodeView,
+    PropertyName,
+)
+from python_proto.graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.messages import (
+    AnalyzerName,
+    ExecutionHit,
+    ExecutionResult,
+    RunAnalyzerRequest,
+    RunAnalyzerResponse,
+)
 
 _cleanup_coroutines: List[Awaitable[Any]] = []
 
@@ -30,9 +39,7 @@ class AnalyzerService:
     _graph_query_client: GraphQueryClient
 
     def __post_init__(self) -> None:
-        self._graph_query = GraphQuery.from_node_query(
-            self._analyzer.query()
-        )
+        self._graph_query = GraphQuery.from_node_query(self._analyzer.query())
 
     async def run_analyzer(self, request: RunAnalyzerRequest) -> RunAnalyzerResponse:
         _tenant_id = request.tenant_id
@@ -85,7 +92,7 @@ class AnalyzerService:
             ),
             server,
         )
-        listen_addr = '[::]:50051'
+        listen_addr = "[::]:50051"
         server.add_insecure_port(listen_addr)
         await server.start()
 
@@ -112,9 +119,9 @@ class AnalyzerServiceWrapper(AnalyzerServiceServicer):
     analyzer_service_impl: AnalyzerService
 
     async def RunAnalyzer(
-            self,
-            request: graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2.RunAnalyzerRequest,
-            context: grpc.aio.ServicerContext, # type: ignore
+        self,
+        request: graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2.RunAnalyzerRequest,
+        context: grpc.aio.ServicerContext,  # type: ignore
     ) -> graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2.RunAnalyzerResponse:
         response = await self.analyzer_service_impl.run_analyzer(
             RunAnalyzerRequest.from_proto(request)
@@ -130,8 +137,8 @@ def check_ctx_timeout(ctx: AnalyzerContext) -> RunAnalyzerResponse | None:
 
 
 def check_for_string_property(
-        graph_query: GraphQuery,
-        property_name: PropertyName,
+    graph_query: GraphQuery,
+    property_name: PropertyName,
 ) -> bool:
     for node in graph_query.node_property_queries.entries.values():
         for query_property_name in node.string_filters.keys():

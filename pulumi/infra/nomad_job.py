@@ -4,8 +4,8 @@ from typing import Any, Mapping, Optional, Union, cast, get_args
 
 import pulumi_nomad as nomad
 from infra.config import STACK_NAME
-from infra.local.scylla import NomadServiceScyllaDbArgs
 from infra.kafka import NomadServiceKafkaCredentials
+from infra.local.scylla import NomadServiceScyllaDbArgs
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
 
 import pulumi

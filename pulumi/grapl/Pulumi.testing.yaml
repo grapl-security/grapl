@@ -22,9 +22,6 @@ config:
     schema-manager:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
-    node-identifier:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
     sysmon-generator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG

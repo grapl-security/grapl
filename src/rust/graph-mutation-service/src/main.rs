@@ -1,7 +1,6 @@
 use std::sync::Arc;
-use clap::Parser;
-use scylla::CachingSession;
 
+use clap::Parser;
 use graph_mutation_service::{
     config::GraphMutationServiceConfig,
     graph_mutation::GraphMutationManager,
@@ -11,6 +10,7 @@ use rust_proto::graplinc::grapl::api::{
     graph_mutation::v1beta1::server::GraphMutationServiceServer,
     schema_manager::v1beta1::client::SchemaManagerClient,
 };
+use scylla::CachingSession;
 use uid_allocator::client::{
     CachingUidAllocatorServiceClient as CachingUidAllocatorClient,
     UidAllocatorServiceClient as UidAllocatorClient,
@@ -24,7 +24,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     scylla_config.auth_username = Some(config.graph_db_config.graph_db_auth_username.to_owned());
     scylla_config.auth_password = Some(config.graph_db_config.graph_db_auth_password.to_owned());
 
-    let scylla_client = Arc::new(CachingSession::from(scylla::Session::connect(scylla_config).await?, 100_000));
+    let scylla_client = Arc::new(CachingSession::from(
+        scylla::Session::connect(scylla_config).await?,
+        100_000,
+    ));
     let graph_mutation_service = GraphMutationManager::new(
         scylla_client,
         CachingUidAllocatorClient::new(

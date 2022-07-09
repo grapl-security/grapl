@@ -1,25 +1,31 @@
 use std::{
-    cell::{
-        RefCell,
-    },
+    cell::RefCell,
     collections::{
         HashMap,
         HashSet,
     },
-    rc::{
-        Rc,
-    },
+    rc::Rc,
 };
 
 use async_recursion::async_recursion;
-use rust_proto::graplinc::grapl::common::v1beta1::types::{
-    EdgeName,
-    NodeType,
-    PropertyName,
-    Uid,
+use rust_proto::graplinc::grapl::{
+    api::graph_query_service::v1beta1::messages::{
+        AndStringFilters,
+        GraphQuery,
+        GraphView,
+        NodePropertiesView,
+        NodePropertyQuery,
+        OrStringFilters,
+        QueryId,
+        StrCmp,
+    },
+    common::v1beta1::types::{
+        EdgeName,
+        NodeType,
+        PropertyName,
+        Uid,
+    },
 };
-
-use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::messages::{AndStringFilters, GraphQuery, GraphView, NodePropertiesView, NodePropertyQuery, OrStringFilters, QueryId, StrCmp};
 
 use crate::{
     property_query::{
@@ -31,13 +37,14 @@ use crate::{
     visited::Visited,
 };
 
-
 pub(crate) fn match_property(
     node_properties_query: &NodePropertyQuery,
     property_name: &PropertyName,
     property_value: &str,
 ) -> bool {
-    'outer: for or_filters in &node_properties_query.string_filters[property_name].and_string_filters {
+    'outer: for or_filters in
+        &node_properties_query.string_filters[property_name].and_string_filters
+    {
         for and_filter in &or_filters.string_filters {
             match StrCmp::from(and_filter) {
                 StrCmp::Eq(to, negated) => match (negated, property_value == to) {
@@ -45,13 +52,11 @@ pub(crate) fn match_property(
                     (true, true) => continue 'outer,
                     (_, _) => (),
                 },
-                StrCmp::Contains(to, negated) => {
-                    match (negated, property_value.contains(&to)) {
-                        (false, false) => continue 'outer,
-                        (true, true) => continue 'outer,
-                        (_, _) => (),
-                    }
-                }
+                StrCmp::Contains(to, negated) => match (negated, property_value.contains(&to)) {
+                    (false, false) => continue 'outer,
+                    (true, true) => continue 'outer,
+                    (_, _) => (),
+                },
                 StrCmp::Has => (),
             };
         }
@@ -141,11 +146,16 @@ pub async fn fetch_node_with_edges(
         return Ok(None);
     }
 
-    let mut node = NodePropertiesView::new(uid, node_properties_query.node_type.clone(), HashMap::new());
+    let mut node =
+        NodePropertiesView::new(uid, node_properties_query.node_type.clone(), HashMap::new());
 
-    let node_properties =
-        fetch_node_properties(node_properties_query, uid, tenant_id, property_query_executor.clone())
-        .await?;
+    let node_properties = fetch_node_properties(
+        node_properties_query,
+        uid,
+        tenant_id,
+        property_query_executor.clone(),
+    )
+    .await?;
 
     let node_properties = match node_properties {
         None => {
@@ -156,7 +166,11 @@ pub async fn fetch_node_with_edges(
     };
 
     for node_property in node_properties.iter() {
-        if match_property(node_properties_query, &node_property.populated_field, &node_property.value) {
+        if match_property(
+            node_properties_query,
+            &node_property.populated_field,
+            &node_property.value,
+        ) {
             node.add_string_property(
                 node_property.populated_field.clone(),
                 node_property.value.clone(),
@@ -175,17 +189,23 @@ pub async fn fetch_node_with_edges(
     graph.add_node(node);
 
     tracing::debug!(
-            message = "Retrieved node indices",
-            count = node_properties.len(),
-        );
+        message = "Retrieved node indices",
+        count = node_properties.len(),
+    );
 
     if x_short_circuit.get_short_circuit() {
         return Ok(None);
     }
 
     // fetch the edges for the uid
-    let edges = match fetch_edges(node_properties_query, uid, graph_query, tenant_id, property_query_executor.clone())
-        .await?
+    let edges = match fetch_edges(
+        node_properties_query,
+        uid,
+        graph_query,
+        tenant_id,
+        property_query_executor.clone(),
+    )
+    .await?
     {
         Some(edges) => edges,
         None => {
@@ -203,7 +223,11 @@ pub async fn fetch_node_with_edges(
         for edge_query_id in edge_queries {
             let edge_query = &graph_query.node_property_queries[&edge_query_id];
             // we have to check the reverse edge as well
-            if visited.check_and_add(node_properties_query.query_id, edge_name.clone(), edge_query.query_id) {
+            if visited.check_and_add(
+                node_properties_query.query_id,
+                edge_name.clone(),
+                edge_query.query_id,
+            ) {
                 continue;
             }
 
@@ -223,18 +247,17 @@ pub async fn fetch_node_with_edges(
                 if x_short_circuit.get_short_circuit() {
                     return Ok(None);
                 }
-                let neighbors = match
-                    fetch_node_with_edges(
-                        edge_query,
-                        graph_query,
-                        edge_row.destination_uid,
-                        tenant_id,
-                        property_query_executor.clone(),
-                        visited.clone(),
-                        x_short_circuit.clone(),
-                        root_node_uid,
-                    )
-                    .await?
+                let neighbors = match fetch_node_with_edges(
+                    edge_query,
+                    graph_query,
+                    edge_row.destination_uid,
+                    tenant_id,
+                    property_query_executor.clone(),
+                    visited.clone(),
+                    x_short_circuit.clone(),
+                    root_node_uid,
+                )
+                .await?
                 {
                     Some(neighbors) => neighbors,
                     None => continue,
@@ -420,6 +443,7 @@ impl NodeQuery {
 #[cfg(test)]
 mod tests {
     use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::messages::StringCmp;
+
     use super::*;
 
     #[tokio::test]

@@ -35,7 +35,10 @@ from python_proto.graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.messages impor
     ExecutionHit,
     AnalyzerName,
 )
-from python_proto.graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.server import AnalyzerService, AnalyzerServiceWrapper
+from python_proto.graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.server import (
+    AnalyzerService,
+    AnalyzerServiceWrapper,
+)
 
 
 @final
@@ -44,7 +47,7 @@ class AnalyzerContext:
     _analyzer_name: AnalyzerName
     _graph_client: GraphQueryClient
     _start_time: datetime
-    _allowed: Dict[Uid, Optional[timedelta]]
+    _allowed: dict[Uid, timedelta | None]
 
     def get_graph_client(self) -> GraphQueryClient:
         return self._graph_client

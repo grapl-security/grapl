@@ -47,9 +47,9 @@ from graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2 import (
 from python_proto import SerDe
 from python_proto.common import Timestamp, Uuid
 from python_proto.graplinc.grapl.api.graph_query.v1beta1.messages import (
+    GraphView,
     PropertyName,
     Uid,
-    GraphView,
 )
 from typing_extensions import Never, assert_never
 

@@ -137,7 +137,6 @@ extra_requirements = [
 args = [ "--suppress-no-test-exit-code" ]
 
 [mypy]
-lockfile = "3rdparty/python/mypy.lockfile"
 config = "src/python/mypy.ini"
 version = "mypy==0.960"
 lockfile = "3rdparty/python/mypy.lockfile"

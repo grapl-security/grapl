@@ -120,7 +120,6 @@ message NodePropertyQueryMap {
   repeated NodePropertyQueryEntry entries = 1;
 }
 
-
 message GraphQuery {
   QueryId root_query_id = 1;
   NodePropertyQueryMap node_property_queries = 2;
@@ -136,7 +135,6 @@ message StringProperty {
 message StringProperties {
   repeated StringProperty properties = 1;
 }
-
 
 message IntProperty {
   graplinc.grapl.common.v1beta1.PropertyName property_name = 1;

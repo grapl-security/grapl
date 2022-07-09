@@ -319,7 +319,7 @@ class StringFilter(SerDe[StringFilterProto]):
 
 @dataclass(frozen=True, slots=True)
 class AndStringFilters(SerDe[AndStringFiltersProto]):
-    string_filters: List[StringFilter] = field(default_factory=list)
+    string_filters: list[StringFilter] = field(default_factory=list)
 
     @staticmethod
     def deserialize(bytes_: bytes) -> AndStringFilters:
@@ -334,7 +334,7 @@ class AndStringFilters(SerDe[AndStringFiltersProto]):
 
     def into_proto(self) -> AndStringFiltersProto:
         msg = AndStringFiltersProto()
-        msg.string_filters.extend((p.into_proto() for p in self.string_filters))
+        msg.string_filters.extend(p.into_proto() for p in self.string_filters)
         return msg
 
     def __len__(self) -> int:
@@ -346,7 +346,7 @@ class AndStringFilters(SerDe[AndStringFiltersProto]):
 
 @dataclass(frozen=True, slots=True)
 class OrStringFilters(SerDe[OrStringFiltersProto]):
-    and_string_filters: List[AndStringFilters] = field(default_factory=list)
+    and_string_filters: list[AndStringFilters] = field(default_factory=list)
 
     @staticmethod
     def deserialize(bytes_: bytes) -> OrStringFilters:
@@ -363,7 +363,7 @@ class OrStringFilters(SerDe[OrStringFiltersProto]):
 
     def into_proto(self) -> OrStringFiltersProto:
         msg = OrStringFiltersProto()
-        msg.and_string_filters.extend((p.into_proto() for p in self.and_string_filters))
+        msg.and_string_filters.extend(p.into_proto() for p in self.and_string_filters)
         return msg
 
     def append(self, and_string_filters: AndStringFilters) -> None:
@@ -380,7 +380,7 @@ class OrStringFilters(SerDe[OrStringFiltersProto]):
 class EdgeQueryEntry(SerDe[EdgeQueryEntryProto]):
     query_id: QueryId
     edge_name: EdgeName
-    neighbor_query_ids: Set[QueryId]
+    neighbor_query_ids: set[QueryId]
 
     @staticmethod
     def deserialize(bytes_: bytes) -> EdgeQueryEntry:
@@ -392,16 +392,16 @@ class EdgeQueryEntry(SerDe[EdgeQueryEntryProto]):
         return EdgeQueryEntry(
             query_id=QueryId.from_proto(proto.query_id),
             edge_name=EdgeName.from_proto(proto.edge_name),
-            neighbor_query_ids=set(
-                (QueryId.from_proto(p) for p in proto.neighbor_query_ids)
-            ),
+            neighbor_query_ids={
+                QueryId.from_proto(p) for p in proto.neighbor_query_ids
+            },
         )
 
     def into_proto(self) -> EdgeQueryEntryProto:
         msg = EdgeQueryEntryProto()
         msg.query_id.CopyFrom(self.query_id.into_proto())
         msg.edge_name.CopyFrom(self.edge_name.into_proto())
-        msg.neighbor_query_ids.extend((p.into_proto() for p in self.neighbor_query_ids))
+        msg.neighbor_query_ids.extend(p.into_proto() for p in self.neighbor_query_ids)
         return msg
 
 
@@ -436,7 +436,7 @@ class UidFilter(SerDe[UidFilterProto]):
 
 @dataclass(frozen=True, slots=True)
 class EdgeQueryMap(SerDe[EdgeQueryMapProto]):
-    entries: Dict[Tuple[QueryId, EdgeName], Set[QueryId]] = field(default_factory=dict)
+    entries: dict[tuple[QueryId, EdgeName], set[QueryId]] = field(default_factory=dict)
 
     @staticmethod
     def deserialize(bytes_: bytes) -> EdgeQueryMap:
@@ -450,7 +450,7 @@ class EdgeQueryMap(SerDe[EdgeQueryMapProto]):
                 (
                     QueryId.from_proto(entry.query_id),
                     EdgeName.from_proto(entry.edge_name),
-                ): set((QueryId.from_proto(n) for n in entry.neighbor_query_ids))
+                ): {QueryId.from_proto(n) for n in entry.neighbor_query_ids}
                 for entry in proto.entries
             }
         )
@@ -466,10 +466,10 @@ class EdgeQueryMap(SerDe[EdgeQueryMapProto]):
         msg.entries.extend(entries)
         return msg
 
-    def __getitem__(self, key: Tuple[QueryId, EdgeName]) -> Set[QueryId]:
+    def __getitem__(self, key: tuple[QueryId, EdgeName]) -> set[QueryId]:
         return self.entries[key]
 
-    def __setitem__(self, key: Tuple[QueryId, EdgeName], value: Set[QueryId]) -> None:
+    def __setitem__(self, key: tuple[QueryId, EdgeName], value: set[QueryId]) -> None:
         self.entries[key] = value
 
 
@@ -480,7 +480,7 @@ class NodePropertyQuery(SerDe[NodePropertyQueryProto]):
     string_filters: DefaultDict[PropertyName, OrStringFilters] = field(
         default_factory=lambda: defaultdict(OrStringFilters)
     )
-    uid_filters: List[Tuple[UidFilter, ...]] = field(default_factory=list)
+    uid_filters: list[tuple[UidFilter, ...]] = field(default_factory=list)
 
     @staticmethod
     def deserialize(bytes_: bytes) -> NodePropertyQuery:
@@ -531,7 +531,7 @@ class NodePropertyQuery(SerDe[NodePropertyQueryProto]):
 
 @dataclass(frozen=True, slots=True)
 class EdgeMap(SerDe[EdgeMapProto]):
-    entries: Dict[EdgeName, EdgeName] = field(default_factory=dict)
+    entries: dict[EdgeName, EdgeName] = field(default_factory=dict)
 
     @staticmethod
     def deserialize(bytes_: bytes) -> EdgeMap:
@@ -582,7 +582,7 @@ class EdgeMap(SerDe[EdgeMapProto]):
 
 @dataclass(frozen=True, slots=True)
 class NodePropertyQueryMap(SerDe[NodePropertyQueryMapProto]):
-    entries: Dict[QueryId, NodePropertyQuery] = field(default_factory=dict)
+    entries: dict[QueryId, NodePropertyQuery] = field(default_factory=dict)
 
     @staticmethod
     def deserialize(bytes_: bytes) -> NodePropertyQueryMap:
@@ -684,7 +684,7 @@ class GraphQuery(SerDe[GraphQueryProto]):
         self,
         uid: Uid,
         client: GraphQueryClient,
-    ) -> Optional[NodeView]:
+    ) -> NodeView | None:
         response = client.query_with_uid(
             node_uid=uid,
             graph_query=self,
@@ -705,7 +705,7 @@ class GraphQuery(SerDe[GraphQueryProto]):
 
 @dataclass(frozen=True, slots=True)
 class StringProperties(SerDe[StringPropertiesProto]):
-    properties: Dict[PropertyName, str] = field(default_factory=dict)
+    properties: dict[PropertyName, str] = field(default_factory=dict)
 
     @staticmethod
     def deserialize(bytes_: bytes) -> StringProperties:
@@ -779,7 +779,7 @@ class NodePropertiesView(SerDe[NodePropertiesViewProto]):
 
 @dataclass(frozen=True, slots=True)
 class NodePropertiesViewMap(SerDe[NodePropertiesViewMapProto]):
-    entries: Dict[Uid, NodePropertiesView] = field(default_factory=dict)
+    entries: dict[Uid, NodePropertiesView] = field(default_factory=dict)
 
     def property_views(self) -> Iterator[NodePropertiesView]:
         return iter(self.entries.values())
@@ -815,7 +815,7 @@ class NodePropertiesViewMap(SerDe[NodePropertiesViewMapProto]):
     def __getitem__(self, key: Uid) -> NodePropertiesView:
         return self.entries[key]
 
-    def get(self, key: Uid) -> Optional[NodePropertiesView]:
+    def get(self, key: Uid) -> NodePropertiesView | None:
         return self.entries.get(key)
 
     def update(self, other: NodePropertiesViewMap) -> None:
@@ -828,7 +828,7 @@ class NodePropertiesViewMap(SerDe[NodePropertiesViewMapProto]):
 
 @dataclass(frozen=True, slots=True)
 class EdgeViewMap(SerDe[EdgeViewMapProto]):
-    entries: Dict[Tuple[Uid, EdgeName], Set[Uid]] = field(default_factory=dict)
+    entries: dict[tuple[Uid, EdgeName], set[Uid]] = field(default_factory=dict)
 
     @staticmethod
     def deserialize(bytes_: bytes) -> EdgeViewMap:
@@ -839,9 +839,9 @@ class EdgeViewMap(SerDe[EdgeViewMapProto]):
     def from_proto(proto: EdgeViewMapProto) -> EdgeViewMap:
         return EdgeViewMap(
             entries={
-                (Uid.from_proto(entry.uid), EdgeName.from_proto(entry.edge_name)): set(
-                    (Uid.from_proto(n) for n in entry.neighbors)
-                )
+                (Uid.from_proto(entry.uid), EdgeName.from_proto(entry.edge_name)): {
+                    Uid.from_proto(n) for n in entry.neighbors
+                }
                 for entry in proto.entries
             }
         )
@@ -850,22 +850,20 @@ class EdgeViewMap(SerDe[EdgeViewMapProto]):
         msg = EdgeViewMapProto()
 
         msg.entries.extend(
-            (
-                EdgeViewEntryProto(
-                    uid=uid.into_proto(),
-                    edge_name=edge_name.into_proto(),
-                    neighbors=(n.into_proto() for n in neighbors),
-                )
-                for ((uid, edge_name), neighbors) in self.entries.items()
+            EdgeViewEntryProto(
+                uid=uid.into_proto(),
+                edge_name=edge_name.into_proto(),
+                neighbors=(n.into_proto() for n in neighbors),
             )
+            for ((uid, edge_name), neighbors) in self.entries.items()
         )
 
         return msg
 
-    def __getitem__(self, key: Tuple[Uid, EdgeName]) -> Set[Uid]:
+    def __getitem__(self, key: tuple[Uid, EdgeName]) -> set[Uid]:
         return self.entries[key]
 
-    def get(self, key: Tuple[Uid, EdgeName]) -> Optional[Set[Uid]]:
+    def get(self, key: tuple[Uid, EdgeName]) -> set[Uid] | None:
         return self.entries.get(key)
 
 
@@ -1020,7 +1018,7 @@ class GraphQueryClient:
         self,
         node_uid: Uid,
         graph_query: GraphQuery,
-    ) -> Optional[GraphView]:
+    ) -> GraphView | None:
         request = QueryGraphWithNodeRequest(
             tenant_id=self.tenant_id,
             node_uid=node_uid,
@@ -1039,7 +1037,7 @@ class GraphQueryClient:
         self,
         node_uid: Uid,
         graph_query: GraphQuery,
-    ) -> Optional[GraphView]:
+    ) -> GraphView | None:
         request = QueryGraphFromNodeRequest(
             tenant_id=self.tenant_id,
             node_uid=node_uid,
@@ -1067,7 +1065,7 @@ BELOW IS NOT RELATED TO PROTOBUF, THESE ARE HELPERS
 
 @dataclass(frozen=True, slots=True)
 class EdgeFilters:
-    node_queries: List[NodeQuery] = field(default_factory=list)
+    node_queries: list[NodeQuery] = field(default_factory=list)
 
     def append(self, node_query: NodeQuery) -> None:
         self.node_queries.append(node_query)
@@ -1088,7 +1086,7 @@ class NodeQuery:
     edge_filters: DefaultDict[EdgeName, EdgeFilters] = field(
         default_factory=lambda: defaultdict(EdgeFilters)
     )
-    edge_map: Dict[EdgeName, EdgeName] = field(default_factory=dict)
+    edge_map: dict[EdgeName, EdgeName] = field(default_factory=dict)
 
     def get_query_id(self) -> QueryId:
         return self.node_property_query.query_id
@@ -1131,11 +1129,11 @@ class NodeQuery:
 @dataclass(frozen=False)
 class NodeQueryIterator:
     parent: NodeQuery
-    query_ids: Dict[NodeQuery, QueryId] = field(default_factory=dict)
-    visited: Set[Tuple[QueryId, EdgeName, QueryId]] = field(default_factory=set)
+    query_ids: dict[NodeQuery, QueryId] = field(default_factory=dict)
+    visited: set[tuple[QueryId, EdgeName, QueryId]] = field(default_factory=set)
     neighbors: Deque[NodeQuery] = field(default_factory=deque)
 
-    def __iter__(self) -> Iterator[Tuple[NodeQuery, EdgeName, NodeQuery]]:
+    def __iter__(self) -> Iterator[tuple[NodeQuery, EdgeName, NodeQuery]]:
         while True:
             for edge_name, neighbors in self.parent.edge_filters.items():
                 for neighbor in neighbors:
@@ -1188,7 +1186,7 @@ class NodeView(NodePropertiesView):
             graph_query_client=graph_query_client,
         )
 
-    def get_node(self, node_uid: Uid) -> Optional[NodeView]:
+    def get_node(self, node_uid: Uid) -> NodeView | None:
         if n := self.graph.nodes.get(node_uid):
             return NodeView.from_parts(n, self.graph, self.graph_query_client)
         return None
@@ -1227,8 +1225,6 @@ class NodeView(NodePropertiesView):
             self.graph.merge(response)
 
 
-
-
 class StringConflictResolution(enum.IntEnum):
     Immutable = 0
 
@@ -1258,8 +1254,10 @@ class EdgeSchema:
 @dataclass(frozen=True, slots=True)
 class NodeSchema:
     node_type: NodeType
-    string_property_schemas: Dict[PropertyName, StringPropertySchema] = field(default_factory=dict)
-    edge_schemas: Dict[EdgeName, EdgeSchema] = field(default_factory=dict)
+    string_property_schemas: dict[PropertyName, StringPropertySchema] = field(
+        default_factory=dict
+    )
+    edge_schemas: dict[EdgeName, EdgeSchema] = field(default_factory=dict)
 
 
 def main() -> None:

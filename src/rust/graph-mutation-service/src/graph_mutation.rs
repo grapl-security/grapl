@@ -27,19 +27,11 @@ use rust_proto::{
     },
     protocol::status::Status,
 };
-use scylla::CachingSession;
-use scylla::query::Query;
-use uid_allocator::client::CachingUidAllocatorServiceClient as UidAllocatorClient;
-
-use crate::table_names::{
-    IMM_I_64_TABLE_NAME,
-    IMM_STRING_TABLE_NAME,
-    IMM_U_64_TABLE_NAME,
-    MAX_I_64_TABLE_NAME,
-    MAX_U_64_TABLE_NAME,
-    MIN_I_64_TABLE_NAME,
-    MIN_U_64_TABLE_NAME,
+use scylla::{
+    query::Query,
+    CachingSession,
 };
+use uid_allocator::client::CachingUidAllocatorServiceClient as UidAllocatorClient;
 
 use crate::{
     prepared_statements::{
@@ -49,6 +41,15 @@ use crate::{
     reverse_edge_resolver::{
         ReverseEdgeResolver,
         ReverseEdgeResolverError,
+    },
+    table_names::{
+        IMM_I_64_TABLE_NAME,
+        IMM_STRING_TABLE_NAME,
+        IMM_U_64_TABLE_NAME,
+        MAX_I_64_TABLE_NAME,
+        MAX_U_64_TABLE_NAME,
+        MIN_I_64_TABLE_NAME,
+        MIN_U_64_TABLE_NAME,
     },
     write_dropper::WriteDropper,
 };
@@ -365,12 +366,13 @@ impl GraphMutationManager {
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_node_type(tenant_keyspace, uid, || async move {
-
                 let tenant_urn = tenant_keyspace.urn();
-                let query = Query::new(format!(r"
+                let query = Query::new(format!(
+                    r"
                         INSERT INTO tenant_keyspace_{tenant_urn}.node_type (uid, node_type)
                         VALUES (?, ?)
-                    "));
+                    "
+                ));
 
                 self.scylla_client
                     .execute(query, &(uid.as_i64(), node_type.value))
@@ -447,7 +449,8 @@ impl GraphMutationManager {
                     batch.append_statement(r_statement);
                     batch.set_is_idempotent(true);
 
-                    self.scylla_client.session
+                    self.scylla_client
+                        .session
                         .batch(
                             &batch,
                             (

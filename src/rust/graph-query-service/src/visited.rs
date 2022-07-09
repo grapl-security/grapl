@@ -9,10 +9,10 @@ use std::{
         Mutex,
     },
 };
-use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::messages::QueryId;
 
-use rust_proto::graplinc::grapl::common::v1beta1::types::{
-    EdgeName,
+use rust_proto::graplinc::grapl::{
+    api::graph_query_service::v1beta1::messages::QueryId,
+    common::v1beta1::types::EdgeName,
 };
 
 // We should have the short circuit logic get shared between tasks
