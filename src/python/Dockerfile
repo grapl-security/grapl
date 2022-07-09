@@ -43,7 +43,6 @@ CMD [":"]
 FROM grapl-python-base AS integration-tests
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
-ARG PANTS_PYTHON_VERSION="3.8.13"
 # We install python3-dev so that we have a python version supported by pants (No 3.10 support yet)
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
