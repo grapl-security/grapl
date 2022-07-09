@@ -5,6 +5,7 @@ backend_packages = [
   "pants.backend.codegen.protobuf.python",
   "pants.backend.docker",
   "pants.backend.docker.lint.hadolint",
+  "pants.backend.experimental.python.lint.autoflake",
   "pants.backend.experimental.python.lint.pyupgrade",
   "pants.backend.plugin_development",
   "pants.backend.python",
@@ -96,6 +97,11 @@ inits = true
 
 [python-protobuf]
 mypy_plugin = true
+
+[autoflake]
+lockfile = "3rdparty/python/autoflake.lockfile"
+# prelude is a file that has only imports. Other code then imports the imports from prelude.
+args = ["--exclude", "prelude.py"]
 
 [black]
 lockfile = "3rdparty/python/black.lockfile"
