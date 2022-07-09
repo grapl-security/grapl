@@ -1,13 +1,11 @@
-#![cfg(feature = "new_integration_tests")]
+#![cfg(feature = "integration_tests")]
 
+use bytes::Bytes;
 use grapl_utils::future_ext::GraplFutureExt;
-use plugin_registry::{
-    client::FromEnv,
-    exp_backoff_retry::simple_exponential_backoff_retry,
-};
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-    CreatePluginRequestMetadata,
+use plugin_registry::client::FromEnv;
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     DeployPluginRequest,
+    PluginMetadata,
     PluginRegistryServiceClient,
     PluginRegistryServiceClientError,
     PluginType,
@@ -15,38 +13,32 @@ use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");
 
-fn get_example_generator() -> Result<Vec<u8>, std::io::Error> {
-    std::fs::read("/test-fixtures/example-generator")
-}
-
-async fn get_client() -> Result<PluginRegistryServiceClient, PluginRegistryServiceClientError> {
-    // For some reason, I'm seeing nondeterministic failures when initializing
-    // a client.
-    // Suspicions:
-    // - it's due to creating two clients at exactly the same time
-    //   (these two async tests are concurrent)
-    // - maybe something about warming up a connection pool?
-    // Anyway, I have no evidence, but this seems to do the trick. Weird.
-    simple_exponential_backoff_retry(PluginRegistryServiceClient::from_env).await
+fn get_example_generator() -> Result<Bytes, std::io::Error> {
+    std::fs::read("/test-fixtures/example-generator").map(Bytes::from)
 }
 
 #[test_log::test(tokio::test)]
 async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = get_client().await?;
+    let mut client = PluginRegistryServiceClient::from_env().await?;
 
     let tenant_id = uuid::Uuid::new_v4();
+    let event_source_id = uuid::Uuid::new_v4();
 
     let create_response = {
         let display_name = uuid::Uuid::new_v4().to_string();
         let artifact = get_example_generator()?;
-        let metadata = CreatePluginRequestMetadata {
+        let metadata = PluginMetadata {
             tenant_id: tenant_id.clone(),
             display_name: display_name.clone(),
             plugin_type: PluginType::Generator,
+            event_source_id: Some(event_source_id.clone()),
         };
 
         client
-            .create_plugin(metadata, artifact.into_iter())
+            .create_plugin(
+                metadata,
+                futures::stream::once(async move { artifact.clone() }),
+            )
             .timeout(std::time::Duration::from_secs(5))
             .await??
     };
@@ -74,7 +66,7 @@ fn assert_contains(input: &str, expected_substr: &str) {
 /// So we *expect* this call to fail since it's an arbitrary PluginID that
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = get_client().await?;
+    let mut client = PluginRegistryServiceClient::from_env().await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 

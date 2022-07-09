@@ -2,6 +2,7 @@ use futures::{
     StreamExt,
     TryFutureExt,
 };
+use rusoto_core::ByteStream;
 use rusoto_s3::{
     AbortMultipartUploadRequest,
     CompleteMultipartUploadRequest,
@@ -9,11 +10,10 @@ use rusoto_s3::{
     CompletedPart,
     CreateMultipartUploadRequest,
     S3Client,
-    StreamingBody,
     UploadPartRequest,
     S3,
 };
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::CreatePluginRequest;
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::CreatePluginRequest;
 
 use super::service::PluginRegistryServiceConfig;
 use crate::{
@@ -82,6 +82,7 @@ pub struct UploadStreamMultipartOutput {
 }
 
 type Error = PluginRegistryServiceError;
+
 pub async fn upload_stream_multipart_to_s3(
     request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
     s3: &S3Client,
@@ -157,9 +158,18 @@ async fn upload_body(
 
         tracing::info!(message = "Uploading part", part_number = part_number,);
 
-        let part_upload = simple_exponential_backoff_retry(|| {
+        let upload_id = upload_id.clone();
+        let s3_multipart_fields = s3_multipart_fields.clone();
+
+        let part_upload = simple_exponential_backoff_retry(move || {
+            let len = bytes.len();
+            let bytes = bytes.clone();
+
             s3.upload_part(UploadPartRequest {
-                body: Some(StreamingBody::from(bytes.clone())),
+                body: Some(ByteStream::new_with_size(
+                    futures::stream::once(async move { Ok(bytes.clone()) }),
+                    len,
+                )),
                 upload_id: upload_id.clone(),
                 part_number,
                 ..s3_multipart_fields.clone().into()

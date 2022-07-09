@@ -13,6 +13,10 @@
 # required for our local usage of Nomad, because Nomad won't resolve a
 # `latest` tag from the host machine.)
 IMAGE_TAG ?= dev
+# This is a build argument for our Rust images, and is thus used in
+# docker-bake.hcl
+RUST_VERSION ?= $(shell build-support/rust_version.sh)
+# Also influences Rust image build via docker-bake.hcl
 RUST_BUILD ?= dev-local-grapl
 UID = $(shell id --user)
 GID = $(shell id --group)
@@ -39,9 +43,8 @@ endif
 # over invoking `docker buildx bake` directly.
 DOCKER_BUILDX_BAKE := docker buildx bake $(buildx_builder_args)
 
-COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
-COMPOSE_PROJECT_INTEGRATION_TESTS_NEW := grapl-integration_tests_new
-COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
+COMPOSE_PROJECT_PYTHON_INTEGRATION_TESTS := python-integration-tests
+COMPOSE_PROJECT_RUST_INTEGRATION_TESTS := rust-integration-tests
 
 # All the services defined in the docker-compose.check.yml file are
 # run with the same general arguments; just supply the service name to
@@ -115,23 +118,20 @@ help: ## Print this help
 	@printf -- '             (≡)      /____/             /_/            \n'
 	@printf -- '\n'
 	@printf -- '${FMT_BOLD}Useful environment variables (with examples):${FMT_END}\n'
-	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-analyzer-executor typecheck-grapl-common" make typecheck\n'
+	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-grapl-common" make typecheck\n'
 	@printf -- '    to only run a subset of test targets.\n'
 	@printf -- '\n'
-	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration\n'
+	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration-rust\n'
 	@printf -- '    to keep the test environment around after a test suite.\n'
 	@printf -- '\n'
-	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
-	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
-	@printf -- '\n'
-	@printf -- '  ${FMT_PURPLE}WITH_PULUMI_TRACING=1${FMT_END} makeup \n'
+	@printf -- '  ${FMT_PURPLE}WITH_PULUMI_TRACING=1${FMT_END} make up\n'
 	@printf -- '    to send pulumi traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}WITH_TRACING=1${FMT_END} make build-local-infrastructure \n'
 	@printf -- '    to send docker build traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_BOLD}FUN FACT${FMT_END}: You can also specify these as postfix, like:\n'
-	@printf -- '    make test-something KEEP_TEST_ENV=1\n'
+	@printf -- '    make test-integration-rust KEEP_TEST_ENV=1\n'
 	@printf '\n'
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make ${FMT_BLUE}<target>${FMT_END}\n"} \
 		 /^[a-zA-Z0-9_-]+:.*?##/ { printf "  ${FMT_BLUE}%-46s${FMT_END} %s\n", $$1, $$2 } \
@@ -161,14 +161,6 @@ build-service-pex-files: ## Build all PEX files needed by Grapl SaaS services
 	@echo "--- Building Grapl service PEX files"
 	./pants --tag="service-pex" package ::
 
-.PHONY: build-e2e-pex-files
-build-e2e-pex-files:
-# Any PEX tagged with `e2e-test-pex` is required for our image. This
-# seems like the most straightforward way of capturing these
-# dependencies at the moment.
-	@echo "--- Building e2e PEX files"
-	./pants --tag="e2e-test-pex" package ::
-
 .PHONY: build-engagement-view
 build-engagement-view: ## Build website assets to include in grapl-web-ui
 	@echo "--- Building the engagement view"
@@ -195,27 +187,22 @@ build-grapl-service-prerequisites: build-engagement-view
 # target!
 .PHONY: build-image-prerequisites
 build-image-prerequisites: ## Build all dependencies that must be copied into our images that we push to our registry
-build-image-prerequisites: build-grapl-service-prerequisites build-e2e-pex-files
+build-image-prerequisites: build-grapl-service-prerequisites
 
 .PHONY: build-local-infrastructure
 build-local-infrastructure: build-grapl-service-prerequisites
 	@echo "--- Building the Grapl SaaS service images and local-only images"
 	$(DOCKER_BUILDX_BAKE) local-infrastructure
 
-.PHONY: build-test-e2e
-build-test-e2e: build-e2e-pex-files
-	@echo "--- Building e2e testing image"
-	$(DOCKER_BUILDX_BAKE) e2e-tests
+.PHONY: build-test-integration-rust
+build-test-integration-rust:
+	@echo "--- Building rust integration test images"
+	$(DOCKER_BUILDX_BAKE) rust-integration-tests
 
-.PHONY: build-test-integration
-build-test-integration:
-	@echo "--- Building integration test images"
-	$(DOCKER_BUILDX_BAKE) integration-tests
-
-.PHONY: build-test-integration-new
-build-test-integration-new:
-	@echo "--- Building \"new\" integration test images"
-	$(DOCKER_BUILDX_BAKE) rust-integration-tests-new
+.PHONY: build-test-integration-python
+build-test-integration-python:
+	@echo "--- Building python integration test images"
+	$(DOCKER_BUILDX_BAKE) python-integration-tests
 
 ########################################################################
 
@@ -306,26 +293,19 @@ test-unit-rust-coverage: ## Run Rust unit tests and gather coverage statistics (
 typecheck: ## Typecheck Python Code
 	./pants check ::
 
-.PHONY: test-integration
-test-integration: build-local-infrastructure
-test-integration: build-test-integration
-test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-test-integration: ## Build and run integration tests
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
+.PHONY: test-integration-python
+test-integration-python: build-local-infrastructure
+test-integration-python: build-test-integration-python
+test-integration-python: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_PYTHON_INTEGRATION_TESTS)
+test-integration-python: ## Build and run python integration tests
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh python-integration-tests 9"
 
-.PHONY: test-integration-new
-test-integration-new: build-local-infrastructure
-test-integration-new: build-test-integration-new
-test-integration-new: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS_NEW)
-test-integration-new: ## Build and run "new" integration tests
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests-new 9"
-
-.PHONY: test-e2e
-test-e2e: build-local-infrastructure
-test-e2e: build-test-e2e
-test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
-test-e2e: ## Build and run e2e tests
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh e2e-tests 6"
+.PHONY: test-integration-rust
+test-integration-rust: build-local-infrastructure
+test-integration-rust: build-test-integration-rust
+test-integration-rust: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_RUST_INTEGRATION_TESTS)
+test-integration-rust: ## Build and run rust integration tests
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh rust-integration-tests 9"
 
 # This target is not intended to be used directly from the command line.
 # Think of it as a Context Manager that:
@@ -485,7 +465,7 @@ _up:
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
-		pulumi
+		pulumi && echo "✅ Pulumi deployed successfully ✅"
 
 .SILENT: down
 .PHONY: down
@@ -496,8 +476,8 @@ down: ## docker compose down - both stops and removes the containers
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
 	docker compose $(EVERY_COMPOSE_FILE) down --timeout=0
-	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
-	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_RUST_INTEGRATION_TESTS) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_PYTHON_INTEGRATION_TESTS) down --timeout=0
 
 .PHONY: stop
 stop: ## docker compose stop - stops (but preserves) the containers

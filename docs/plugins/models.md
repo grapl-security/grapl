@@ -168,7 +168,4 @@ Run the notebook and you should be good to go.
 
 ## Deploying Analyzers With Plugins
 
-The simplest way to using Plugins in your Analyzers is to publish them to the
-PyPI and then add them as requirements to the
-`analyzer_executor/requirements.txt`, rebuild, and redeploy. At that point your
-analyzers can import the plugins and you can build out your graph signatures.
+TBD

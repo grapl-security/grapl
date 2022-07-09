@@ -24,8 +24,7 @@ export empty_target_message
 
 # Pull the version from our rust-toolchain.toml file; automatic
 # synchronization FTW!
-# TODO: Consider pulling this logic into a script for other uses
-rust_version := $(shell grep channel rust-toolchain.toml | sed -E 's/channel = "(.*)"/\1/g')
+rust_version := $(shell ../../build-support/rust_version.sh)
 
 .ONESHELL:
 SHELL := bash

@@ -1,11 +1,11 @@
 [GLOBAL]
-pants_version = "2.11.0"
+pants_version = "2.12.0"
 backend_packages = [
-  "grapl_setup_py",
   "pants.backend.codegen.protobuf.lint.buf",
   "pants.backend.codegen.protobuf.python",
   "pants.backend.docker",
   "pants.backend.docker.lint.hadolint",
+  "pants.backend.experimental.python.lint.pyupgrade",
   "pants.backend.plugin_development",
   "pants.backend.python",
   "pants.backend.python.lint.black",
@@ -17,16 +17,9 @@ backend_packages = [
   "pants.backend.shell.lint.shfmt"
 ]
 
-pythonpath = [
-  "%(buildroot)s/pants-plugins"
-]
-
-build_file_prelude_globs = [
-  "pants-plugins/macros.py",
-]
-
 pants_ignore=[
-    "!.buildkite"
+    "!.buildkite",
+    "/src/proto/google"
 ]
 
 plugins = [
@@ -51,6 +44,12 @@ enabled = true
 # Randomly generated with `uuidgen --random`
 repo_id = "f416be7b-e109-4915-8eba-940bcfa310c1"
 
+[protoc]
+version = "3.15.8"
+known_versions = [
+    "3.15.8|linux_x86_64|b9ff821d2a4f9e9943dc2a13e6a76d99c7472dac46ddd3718a3a4c3b877c044a|1639343"
+]
+
 # Given how our code is currently structured, with package and test
 # code for every project in their own directory, I believe we have to
 # list each of those top-level containing directories here in order
@@ -64,22 +63,18 @@ root_patterns = [
   "/build-support",
   "/devbox",
   "/etc",  # Some of our tests use sample data from here
-  "/pants-plugins",
   "/pulumi",
   "/src/proto",
-  "/src/python/analyzer_executor/src",
-  "/src/python/analyzer_executor/tests",
-  "/src/python/e2e-test-runner",
   "/src/python/engagement-creator",
   "/src/python/graphql_endpoint_tests",
   "/src/python/grapl_analyzerlib",
   "/src/python/grapl-common",
   "/src/python/graplctl",
-  "/src/python/grapl_e2e_tests",
   "/src/python/grapl-tests-common",
   "/src/python/provisioner",
   "/src/python/python-proto",
   "/src/python/repl",
+  "src/python/suspicious_svchost",
 ]
 
 [python]
@@ -89,7 +84,7 @@ lockfile_generator = "pex"
 requirement_constraints = "3rdparty/python/constraints.txt"
 # If you update these constraints, also update the ones in the
 # `[black]` section below; see there for further background.
-interpreter_constraints = ["==3.8.*"]
+interpreter_constraints = ["==3.10.*"]
 
 [python-bootstrap]
 search_path = ["<PYENV_LOCAL>", "<PYENV>", "<PATH>"]
@@ -101,6 +96,7 @@ inits = true
 
 [python-protobuf]
 mypy_plugin = true
+infer_runtime_dependency = false
 
 [black]
 lockfile = "3rdparty/python/black.lockfile"
@@ -111,7 +107,7 @@ version = "black>=22.3.0"
 config = "pyproject.toml"
 # This should mirror the same global constraints above. This is a
 # work-around for https://github.com/pantsbuild/pants/issues/14912.
-interpreter_constraints = ["==3.8.*"]
+interpreter_constraints = ["==3.10.*"]
 
 [isort]
 lockfile = "3rdparty/python/isort.lockfile"
@@ -142,6 +138,9 @@ args = [ "--suppress-no-test-exit-code" ]
 
 [mypy]
 config = "src/python/mypy.ini"
+version = "mypy==0.960"
+lockfile = "3rdparty/python/mypy.lockfile"
+
 # read this section of the mypy docs:
 #
 # https://mypy.readthedocs.io/en/stable/command_line.html#cmdoption-mypy-namespace-packages
@@ -151,6 +150,7 @@ config = "src/python/mypy.ini"
 args = [ "--show-error-codes", "--namespace-packages" ] #, "--verbose" ]
 
 extra_type_stubs = [
+  "grpc-stubs",
   "mypy_boto3_cloudwatch==1.20.35.post1",
   "mypy_boto3_dynamodb==1.20.35.post1",
   "mypy_boto3_ec2==1.20.35.post1",
@@ -175,6 +175,7 @@ lockfile = "3rdparty/python/ipython.lockfile"
 version = "ipython==7.20.0"
 
 [flake8]
+lockfile = "3rdparty/python/flake8.lockfile"
 config = ".flake8"
 
 [shfmt]
@@ -188,6 +189,7 @@ output = "all"
 use_coverage = "true"
 
 [coverage-py]
+lockfile = "3rdparty/python/coveragepy.lockfile"
 report = ["xml"]
 # coverage.py only reports statistics based on the files it
 # encounters, not on all the files in the repository; this counteracts
@@ -203,6 +205,10 @@ known_versions = [
   # https://github.com/pantsbuild/pants/blob/1d828786c3c0f352e7811e29dd80f7877f5e170c/src/python/pants/core/util_rules/external_tool.py#L131
   "v2.10.0|linux_x86_64|8ee6ff537341681f9e91bae2d5da451b15c575691e33980893732d866d3cefc4|2301804"
 ]
+
+[pyupgrade]
+lockfile = "3rdparty/python/pyupgrade.lockfile"
+args = ["--py38-plus"]
 
 [tailor]
 ignore_paths = [

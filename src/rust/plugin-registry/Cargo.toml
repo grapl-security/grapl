@@ -11,20 +11,20 @@ path = "src/main.rs"
 name = "plugin_registry"
 
 [dependencies]
-async-trait = "0.1.51"
+async-trait = "0.1"
 bytes = "1.1"
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",
   "derive"
 ] }
-futures-retry = "0.6.0"
+futures-retry = "0.6"
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
-rust-proto-new = { path = "../rust-proto-new" }
+rust-proto = { path = "../rust-proto" }
 nomad-client-gen = { path = "../nomad-client-gen" }
-serde_json = "1.0.72"
-sqlx = { version = "0.5", features = [
+serde_json = "1.0"
+sqlx = { version = "0.6", features = [
   "chrono",
   "migrate",
   "offline",
@@ -32,19 +32,19 @@ sqlx = { version = "0.5", features = [
   "runtime-tokio-rustls",
   "uuid",
 ] }
-tempfile = "3.3.0"
-thiserror = "1.0.30"
+tempfile = "3.3"
+thiserror = "1.0"
 tokio = { version = "1.17", features = ["full"] }
 # TODO remove tonic after https://github.com/grapl-security/grapl/pull/1665
 tonic = { version = "0.7", features = ["default", "compression"] }
-tracing = "0.1.29"
-rusoto_core = { version = "0.47.0", default_features = false, features = [
+tracing = "0.1"
+rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-rusoto_s3 = { version = "0.47.0", default_features = false, features = [
+rusoto_s3 = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-uuid = { version = "0.8", features = ["v4"] }
+uuid = { version = "1.0", features = ["v4"] }
 futures = "0.3"
 
 [dev-dependencies]
@@ -55,4 +55,4 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
 ] }
 
 [features]
-new_integration_tests = []
+integration_tests = []

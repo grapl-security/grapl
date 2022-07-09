@@ -1,12 +1,17 @@
-#![cfg(feature = "integration")]
+#![cfg(feature = "integration_tests")]
+
+use std::time::Duration;
 
 use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
-use organization_management::{
-    client::OrganizationManagementServiceClient,
-    OrganizationManagementServiceConfig,
+use organization_management::OrganizationManagementServiceConfig;
+use rust_proto::{
+    graplinc::grapl::api::organization_management::v1beta1::{
+        client::OrganizationManagementClient,
+        CreateOrganizationRequest,
+    },
+    protocol::healthcheck::client::HealthcheckClient,
 };
-use rust_proto::organization_management::CreateOrganizationRequest;
 
 #[test_log::test(tokio::test)]
 async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
@@ -25,10 +30,27 @@ async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let pool = sqlx::PgPool::connect(&postgres_address)
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
 
-    let mut client = OrganizationManagementServiceClient::from_env().await?;
+    let endpoint = std::env::var("ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS")
+        .expect("missing environment variable ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS");
+
+    tracing::info!(
+        message = "waiting 60s for organization-management to report healthy",
+        endpoint = %endpoint,
+    );
+
+    HealthcheckClient::wait_until_healthy(
+        endpoint.clone(),
+        "graplinc.grapl.api.organization_management.v1beta1.OrganizationManagementService",
+        Duration::from_secs(60),
+        Duration::from_millis(500),
+    )
+    .await
+    .expect("organization-management never reported healthy");
+
+    let mut client = OrganizationManagementClient::connect(endpoint.clone()).await?;
 
     let organization_display_name = uuid::Uuid::new_v4().to_string();
     let admin_username = "test user".to_string();
@@ -39,14 +61,11 @@ async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
         organization_display_name: organization_display_name.clone(),
         admin_username,
         admin_email: admin_email.parse().unwrap(),
-        admin_password,
+        admin_password: admin_password.into(),
         should_reset_password: false,
     };
 
-    let response = client
-        .create_organization(request)
-        .timeout(std::time::Duration::from_secs(5))
-        .await??;
+    let response = client.create_organization(request).await?;
 
     let organization_id = response.organization_id;
 

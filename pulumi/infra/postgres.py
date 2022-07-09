@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional, cast
+from typing import cast
 
 import pulumi_aws as aws
 import pulumi_random as random
@@ -40,10 +40,10 @@ class Postgres(pulumi.ComponentResource):
         self,
         name: str,
         vpc_id: pulumi.Input[str],
-        subnet_ids: pulumi.Input[List[str]],
+        subnet_ids: pulumi.Input[list[str]],
         nomad_agent_security_group_id: pulumi.Input[str],
         availability_zone: pulumi.Input[str],
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:Postgres", name, None, opts)
 
@@ -141,7 +141,7 @@ class Postgres(pulumi.ComponentResource):
         self._instance = aws.rds.Instance(
             instance_name,
             identifier=instance_name,
-            name=database_name,  # See above diatribe
+            db_name=database_name,  # See above diatribe
             engine="postgres",
             engine_version=postgres_config.postgres_version,
             instance_class=postgres_config.instance_type,

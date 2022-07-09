@@ -1,4 +1,4 @@
-#![cfg(feature = "integration")]
+#![cfg(feature = "integration_tests")]
 
 use std::time::Duration;
 

@@ -6,20 +6,25 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-trait = "0.1"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 kafka = { path = "../kafka", version = "*" }
 opentelemetry = { version = "0.16", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.15", features = [
   "collector_client",
   "rt-tokio"
 ] }
-rust-proto-new = { path = "../rust-proto-new", version = "*" }
+rust-proto = { path = "../rust-proto", version = "*" }
 tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
 thiserror = "1.0"
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-opentelemetry = "0.16"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-uuid = { version = "0.8", features = ["v4"] }
+uuid = { version = "1.0", features = ["v4"] }
 
 [dev-dependencies]
 bytes = "1.1"
@@ -28,4 +33,4 @@ test-context = "0.1"
 tokio = { version = "1.17", features = ["macros", "rt"] }
 
 [features]
-new_integration_tests = []
+integration_tests = []

@@ -4,12 +4,18 @@ use sqlx::types::chrono::{
 };
 
 #[derive(sqlx::FromRow)]
+pub struct PluginIdRow {
+    pub plugin_id: uuid::Uuid,
+}
+
+#[derive(sqlx::FromRow)]
 pub struct PluginRow {
     pub plugin_id: uuid::Uuid,
     pub tenant_id: uuid::Uuid,
     pub display_name: String,
     pub plugin_type: String,
     pub artifact_s3_key: String,
+    pub event_source_id: Option<uuid::Uuid>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, sqlx::Type)]
@@ -32,7 +38,7 @@ impl<T, E> From<&Result<T, E>> for PluginDeploymentStatus {
 /// consumed anywhere.
 #[derive(sqlx::FromRow)]
 pub struct PluginDeploymentRow {
-    pub id: i32,
+    pub id: i64,
     pub plugin_id: uuid::Uuid,
     pub deploy_time: DateTime<Utc>,
     pub status: PluginDeploymentStatus,

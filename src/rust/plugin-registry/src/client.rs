@@ -1,9 +1,15 @@
 use std::time::Duration;
 
 use async_trait;
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-    PluginRegistryServiceClient,
-    PluginRegistryServiceClientError,
+use rust_proto::{
+    graplinc::grapl::api::plugin_registry::v1beta1::{
+        PluginRegistryServiceClient,
+        PluginRegistryServiceClientError,
+    },
+    protocol::{
+        healthcheck::client::HealthcheckClient,
+        service_client::NamedService,
+    },
 };
 use tonic::transport::Endpoint;
 
@@ -22,9 +28,20 @@ impl FromEnv<PluginRegistryServiceClient, PluginRegistryServiceClientError>
     async fn from_env() -> Result<PluginRegistryServiceClient, PluginRegistryServiceClientError> {
         let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
 
+        // TODO: Add a `rust-proto` wrapper around tonic Endpoint
         let endpoint = Endpoint::from_shared(address.to_string())?
             .timeout(Duration::from_secs(10))
             .concurrency_limit(30);
+
+        HealthcheckClient::wait_until_healthy(
+            endpoint.clone(),
+            Self::SERVICE_NAME,
+            Duration::from_millis(10000),
+            Duration::from_millis(500),
+        )
+        .await
+        .expect("plugin-registry never reported healthy");
+
         Self::connect(endpoint).await
     }
 }

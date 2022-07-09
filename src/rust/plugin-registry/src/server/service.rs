@@ -5,15 +5,10 @@ use std::{
 
 use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
-use rusoto_s3::{
-    GetObjectRequest,
-    S3Client,
-    S3,
-};
-use rust_proto_new::{
+use rusoto_s3::S3Client;
+use rust_proto::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
-        CreatePluginRequestMetadata,
         CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
@@ -23,7 +18,7 @@ use rust_proto_new::{
         GetGeneratorsForEventSourceResponse,
         GetPluginRequest,
         GetPluginResponse,
-        Plugin,
+        PluginMetadata,
         PluginRegistryApi,
         PluginRegistryServer,
         PluginType,
@@ -32,10 +27,7 @@ use rust_proto_new::{
     },
     protocol::healthcheck::HealthcheckStatus,
 };
-use tokio::{
-    io::AsyncReadExt,
-    net::TcpListener,
-};
+use tokio::net::TcpListener;
 use tonic::async_trait;
 
 use super::create_plugin::upload_stream_multipart_to_s3;
@@ -90,7 +82,7 @@ pub struct PluginRegistryServiceConfig {
     #[clap(long, env)]
     pub plugin_bootstrap_container_image: String,
     #[clap(long, env)]
-    pub plugin_execution_container_image: String,
+    pub plugin_execution_image: String,
     #[clap(long, env = "PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL")]
     pub kernel_artifact_url: String,
     #[clap(long, env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]
@@ -103,6 +95,13 @@ pub struct PluginRegistryServiceConfig {
         default_value = "250"
     )]
     pub artifact_size_limit_mb: usize,
+    // --- Pass through a couple env vars also used for this binary
+    #[clap(long, env)]
+    pub rust_log: String,
+    #[clap(long, env)]
+    pub otel_exporter_jaeger_agent_host: String,
+    #[clap(long, env)]
+    pub otel_exporter_jaeger_agent_port: String,
 }
 
 pub struct PluginRegistry {
@@ -127,10 +126,11 @@ impl PluginRegistryApi for PluginRegistry {
 
         let mut request = request;
 
-        let CreatePluginRequestMetadata {
+        let PluginMetadata {
             tenant_id,
             display_name,
             plugin_type,
+            event_source_id,
         } = match request.next().await {
             Some(CreatePluginRequest::Metadata(m)) => m,
             _ => {
@@ -172,6 +172,7 @@ impl PluginRegistryApi for PluginRegistry {
                     tenant_id,
                     display_name,
                     plugin_type,
+                    event_source_id,
                 },
                 &s3_key,
             )
@@ -186,44 +187,23 @@ impl PluginRegistryApi for PluginRegistry {
         request: GetPluginRequest,
     ) -> Result<GetPluginResponse, Self::Error> {
         let PluginRow {
-            artifact_s3_key,
+            artifact_s3_key: _,
             plugin_type,
             plugin_id,
             display_name,
-            tenant_id: _,
+            tenant_id,
+            event_source_id,
         } = self.db_client.get_plugin(&request.plugin_id).await?;
 
-        let s3_key: String = artifact_s3_key;
         let plugin_type: PluginType = try_from(&plugin_type)?;
 
-        let get_object_output = self
-            .s3
-            .get_object(GetObjectRequest {
-                bucket: self.config.bucket_name.clone(),
-                key: s3_key.clone(),
-                expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
-                ..Default::default()
-            })
-            .await?;
-
-        let stream = get_object_output
-            .body
-            .ok_or(PluginRegistryServiceError::EmptyObject)?;
-
-        let mut plugin_binary = Vec::new();
-
-        // read the whole file
-        stream
-            .into_async_read()
-            .read_to_end(&mut plugin_binary)
-            .await?;
-
         let response = GetPluginResponse {
-            plugin: Plugin {
-                plugin_id,
+            plugin_id,
+            plugin_metadata: PluginMetadata {
+                tenant_id,
                 display_name,
                 plugin_type,
-                plugin_binary,
+                event_source_id,
             },
         };
 
@@ -262,12 +242,20 @@ impl PluginRegistryApi for PluginRegistry {
         todo!()
     }
 
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn get_generators_for_event_source(
         &self,
-        _request: GetGeneratorsForEventSourceRequest,
+        request: GetGeneratorsForEventSourceRequest,
     ) -> Result<GetGeneratorsForEventSourceResponse, Self::Error> {
-        todo!()
+        Ok(GetGeneratorsForEventSourceResponse {
+            plugin_ids: self
+                .db_client
+                .get_generators_for_event_source(&request.event_source_id)
+                .await?
+                .iter()
+                .map(|row| row.plugin_id)
+                .collect(),
+        })
     }
 
     #[allow(dead_code)]
@@ -329,9 +317,9 @@ fn generate_artifact_s3_key(
 ) -> String {
     format!(
         "plugins/tenant_id_{}/plugin_type-{}/{}.bin",
-        tenant_id.to_hyphenated(),
+        tenant_id.as_hyphenated(),
         plugin_type.type_name(),
-        plugin_id.to_hyphenated(),
+        plugin_id.as_hyphenated(),
     )
 }
 

@@ -6,7 +6,7 @@ use endpoint_plugin::{
     IProcessNode,
     ProcessNode,
 };
-use rust_proto::graph_descriptions::*;
+use rust_proto::graplinc::grapl::api::graph::v1beta1::GraphDescription;
 use sysmon_parser::{
     event_data::ProcessCreateEventData,
     System,
@@ -29,7 +29,7 @@ use crate::{
 /// * A subject `Process` node - indicating the process created per the `ProcessCreateEvent`
 /// * A process `File` node - indicating the file executed in creating the new process
 #[tracing::instrument]
-pub fn generate_process_create_subgraph(
+pub(crate) fn generate_process_create_subgraph(
     system: &System,
     event_data: &ProcessCreateEventData<'_>,
 ) -> Result<GraphDescription, SysmonGeneratorError> {
@@ -100,9 +100,11 @@ pub fn generate_process_create_subgraph(
 }
 #[cfg(test)]
 mod tests {
-    use rust_proto::graph_descriptions::{
-        node_property::Property,
+    use rust_proto::graplinc::grapl::api::graph::v1beta1::{
+        GraphDescription,
         ImmutableUintProp,
+        NodeDescription,
+        Property,
     };
     use sysmon_parser::EventData;
 
@@ -115,7 +117,7 @@ mod tests {
     ) -> Option<&'a NodeDescription> {
         graph.nodes.values().find(|n| {
             n.properties.iter().any(|(p_name, p_value)| {
-                p_name.as_str() == o_p_name && p_value.property.clone().unwrap() == o_p_value
+                p_name.as_str() == o_p_name && p_value.property.clone() == o_p_value
             })
         })
     }

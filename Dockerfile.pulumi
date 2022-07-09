@@ -1,4 +1,6 @@
-FROM python:3.7-slim-bullseye as grapl-local-pulumi
+FROM python:3.10-slim-bullseye as grapl-local-pulumi
+# This upgrades to 3.10 because per https://bugs.python.org/issue42233, GenricAlias doesn't support Unions until 3.10.
+# We're upgrading to 3.10 imminently so that's the solution
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \

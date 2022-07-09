@@ -119,36 +119,11 @@ and execute the end-to-end tests in AWS.
 
 ### Deploy analyzers
 
-To deploy the test analyzers, run the following `graplctl` commands:
-
-```bash
-./bin/graplctl upload analyzer --analyzer_main_py etc/local_grapl/unique_cmd_parent/main.py
-```
-
-```bash
-./bin/graplctl upload analyzer --analyzer_main_py etc/local_grapl/suspicious_svchost/main.py
-```
-
-Now Grapl is ready to analyze a test dataset.
+TBD
 
 ### Upload test data
 
-To upload the test data, run the following `graplctl` command:
-
-```bash
-./bin/graplctl upload sysmon --logfile etc/sample_data/eventlog.xml
-```
-
-This will send the test dataset to the appropriate location in S3, which will
-kick off the Grapl data pipeline.
-
-### Execute the end-to-end tests
-
-To deploy end-to-end tests to a Nomad cluster running on AWS, see
-[pulumi/integration_tests/README.md].
-
-Then, using the Nomad UI at `localhost:4646` (courtesy of SSM Port Forwarding),
-kick off the `e2e-tests` parameterized batch job.
+TBD
 
 ### Logging in to the Grapl UI with the test user
 

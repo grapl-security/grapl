@@ -1,9 +1,5 @@
-use std::{
-    collections::HashMap,
-    io::Stdout,
-};
+use std::collections::HashMap;
 
-use grapl_observe::metric_reporter::MetricReporter;
 use grapl_utils::{
     future_ext::GraplFutureExt,
     rusoto_ext::dynamodb::GraplDynamoDbClientExt,
@@ -15,11 +11,7 @@ use rusoto_dynamodb::{
     DynamoDbClient,
     KeysAndAttributes,
 };
-use rust_proto::graph_descriptions::Edge;
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use rust_proto::graplinc::grapl::api::graph::v1beta1::Edge;
 
 use crate::service::GraphMergerError;
 
@@ -32,21 +24,15 @@ lazy_static! {
 pub struct ReverseEdgeResolver {
     dynamo: DynamoDbClient,
     r_edge_cache: std::sync::Arc<std::sync::Mutex<lru::LruCache<String, String>>>,
-    metric_reporter: MetricReporter<Stdout>,
 }
 
 impl ReverseEdgeResolver {
-    pub fn new(
-        dynamo: DynamoDbClient,
-        metric_reporter: MetricReporter<Stdout>,
-        cache_size: usize,
-    ) -> Self {
+    pub fn new(dynamo: DynamoDbClient, cache_size: usize) -> Self {
         let r_edge_cache = lru::LruCache::new(cache_size);
         let r_edge_cache = std::sync::Arc::new(std::sync::Mutex::new(r_edge_cache));
         Self {
             dynamo,
             r_edge_cache,
-            metric_reporter,
         }
     }
 
@@ -87,36 +73,20 @@ impl ReverseEdgeResolver {
     ) -> (Vec<Edge>, Vec<Edge>) {
         let mut reversed = vec![];
         let mut remaining = vec![];
-        let mut cache_hit = 0;
-        let mut cache_miss = 0;
         let cache = self.r_edge_cache.clone();
         let mut cache = cache.lock().unwrap();
         for edge in edges.into_iter() {
             match cache.get(&edge.edge_name).map(String::from) {
                 Some(r_edge_name) => {
                     reversed.push(reverse_edge(&edge, r_edge_name));
-                    cache_hit += 1;
                 }
                 None => {
                     remaining.push(edge);
-                    cache_miss += 1;
                 }
             }
         }
         drop(cache);
 
-        let _ = self.metric_reporter.clone().counter(
-            "reverse_resolver.cache.hit.count",
-            cache_hit as f64,
-            0.10,
-            &[],
-        );
-        let _ = self.metric_reporter.clone().counter(
-            "reverse_resolver.cache.miss.count",
-            cache_miss as f64,
-            0.10,
-            &[],
-        );
         (reversed, remaining)
     }
 }
@@ -127,11 +97,6 @@ fn reverse_edge(edge: &Edge, reverse_edge_name: String) -> Edge {
         to_node_key: edge.from_node_key.to_owned(),
         edge_name: reverse_edge_name,
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct EdgeMapping {
-    r_edge: String,
 }
 
 /// Returns a HashMap of f_edge -> Optional r_edge entries from dynamodb

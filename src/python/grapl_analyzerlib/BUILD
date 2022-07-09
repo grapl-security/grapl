@@ -1,8 +1,7 @@
-grapl_python_distribution(
+python_distribution(
     dependencies=[
         "./grapl_analyzerlib",
         "./grapl_analyzerlib:py_typed",
-        "./grapl_analyzerlib/nodes",
     ],
     provides=setup_py(
         name="grapl-analyzerlib",

@@ -1,9 +1,10 @@
 import json
 from pathlib import Path
-from typing import Any, Mapping, Optional, Union, cast
+from typing import Any, Mapping, Optional, Union, cast, get_args
 
 import pulumi_nomad as nomad
 from infra.config import STACK_NAME
+from infra.kafka import NomadServiceKafkaCredentials
 from infra.local.scylla import NomadServiceScyllaDbArgs
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
 
@@ -13,9 +14,13 @@ _ValidNomadVarTypePrimitives = Union[str, bool, int]
 _ValidNomadVarTypes = pulumi.Input[
     Union[
         _ValidNomadVarTypePrimitives,
-        Mapping[str, _ValidNomadVarTypePrimitives],
-        NomadServicePostgresDbArgs,  # Upsettingly, this is a Mapping[str, object]
-        NomadServiceScyllaDbArgs,  # Samesies
+        Mapping[str, pulumi.Input[_ValidNomadVarTypePrimitives]],
+        # Upsettingly, TypedDicts are a Mapping[str, object]
+        NomadServicePostgresDbArgs,
+        Union[
+            pulumi.Input[NomadServiceKafkaCredentials],
+            Mapping[str, pulumi.Input[NomadServiceKafkaCredentials]],
+        ],
     ]
 ]
 NomadVars = Mapping[str, Optional[_ValidNomadVarTypes]]
@@ -37,7 +42,7 @@ class NomadJob(pulumi.ComponentResource):
         self.job = nomad.Job(
             resource_name=f"{STACK_NAME}-{name}-job",
             jobspec=self._file_contents(str(jobspec)),
-            hcl2=nomad.JobHcl2Args(enabled=True, vars=self._fix_pulumi_preview(vars)),
+            hcl2=nomad.JobHcl2Args(enabled=True, vars=vars),
             # Wait for all services to become healthy
             detach=False,
             # Purge job from Nomad servers after a `pulumi destroy`
@@ -50,12 +55,13 @@ class NomadJob(pulumi.ComponentResource):
         self.register_outputs({})
 
     def _file_contents(self, nomad_file: str) -> str:
-        with open(nomad_file, "r") as f:
+        with open(nomad_file) as f:
             jobspec = f.read()
             f.close()
             return jobspec
 
-    def _json_dump_complex_types(self, vars: NomadVars) -> NomadVars:
+    @staticmethod
+    def _json_dump_complex_types(vars: NomadVars) -> NomadVars:
         """
         Nomad accepts input of lists and maps, but the Nomad/Pulumi plugin doesn't
         convert them correctly.
@@ -93,9 +99,14 @@ class NomadJob(pulumi.ComponentResource):
 
             nomad_vars = {}
             for key, value in vars.items():
-                if isinstance(value, pulumi.Output):
-                    # TODO figure out a better way to filter down to output<string> and not just all outputs
 
+                # This checks to see if this is a pulumi.Output[str] using _undocumented python implementation details_
+                # https://twitter.com/chompie1337/status/1435775022694555652?cxt=HHwWiICz0dXx8uwnAAAA
+                # SO thread on the python undocumented implementation details in question:
+                # https://stackoverflow.com/questions/57706180/generict-base-class-how-to-get-type-of-t-from-within-instance/60984681#60984681
+                if isinstance(value, pulumi.Output) and get_args(
+                    value.__orig_class__
+                ) == (str,):
                     value = pulumi_preview_replacement_string
                     if key == "redis_endpoint":
                         value = redis_endpoint

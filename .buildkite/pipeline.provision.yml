@@ -6,11 +6,11 @@ env:
 steps:
   - label: ":pulumi: Preview grapl/testing environment changes in Staging account"
     plugins:
-      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-login#v0.1.3
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - grapl-security/pulumi#v0.1.4:
+      - grapl-security/pulumi#v0.1.5:
           command: preview
           project_dir: pulumi/grapl
           stack: grapl/testing
@@ -21,7 +21,7 @@ steps:
 
   - label: ":pulumi: Destroy stateful resources in Staging account"
     plugins:
-      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-login#v0.1.3
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
@@ -34,14 +34,14 @@ steps:
 
   - label: ":pulumi: Update grapl/testing environment in Staging account"
     plugins:
-      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-login#v0.1.3
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
       - improbable-eng/metahook#v0.4.1:
           post-command: |
             .buildkite/scripts/grapl_testing_stack/dump_artifacts.sh
-      - grapl-security/pulumi#v0.1.4:
+      - grapl-security/pulumi#v0.1.5:
           command: update
           project_dir: pulumi/grapl
           stack: grapl/testing
@@ -52,30 +52,30 @@ steps:
 
   - wait
 
-  - label: ":pulumi: Preview grapl/integration-tests/testing environment changes in Staging account"
+  - label: ":pulumi: Preview grapl/rust-integration-tests/testing environment changes in Staging account"
     plugins:
-      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-login#v0.1.3
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - grapl-security/pulumi#v0.1.4:
+      - grapl-security/pulumi#v0.1.5:
           command: preview
-          project_dir: pulumi/integration_tests
+          project_dir: pulumi/rust_integration_tests
           stack: grapl/testing
     agents:
       queue: "pulumi-staging"
 
   - wait
 
-  - label: ":pulumi: Update grapl/integration-tests/testing environment in Staging account"
+  - label: ":pulumi: Update grapl/rust-integration-tests/testing environment in Staging account"
     plugins:
-      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-login#v0.1.3
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - grapl-security/pulumi#v0.1.4:
+      - grapl-security/pulumi#v0.1.5:
           command: update
-          project_dir: pulumi/integration_tests
+          project_dir: pulumi/rust_integration_tests
           stack: grapl/testing
     agents:
       queue: "pulumi-staging"
@@ -103,7 +103,7 @@ steps:
     command:
       - .buildkite/scripts/extract_artifacts.sh grapl/testing
     plugins:
-      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-login#v0.1.3
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
@@ -119,7 +119,7 @@ steps:
   # remove packages that future runs of this pipeline might need.
   - label: ":cloudsmith: Promote validated packages"
     plugins:
-      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-login#v0.1.3
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - CLOUDSMITH_API_KEY
