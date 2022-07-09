@@ -238,7 +238,7 @@ mod tests {
                        f_edge_name text,
                        r_edge_name text,
                        destination_uid bigint,
-                       PRIMARY KEY((source_uid, f_edge_name), destination_uid)
+                       PRIMARY KEY((source_uid, f_edge_name, r_edge_name), destination_uid)
                 )
                 WITH compression = {{
                     'sstable_compression': 'LZ4Compressor',

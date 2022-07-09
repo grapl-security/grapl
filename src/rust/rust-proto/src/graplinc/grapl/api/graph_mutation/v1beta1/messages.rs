@@ -142,7 +142,6 @@ pub struct CreateEdgeRequest {
     pub from_uid: Uid,
     pub to_uid: Uid,
     pub source_node_type: NodeType,
-    pub dest_node_type: NodeType,
 }
 
 impl TryFrom<CreateEdgeRequestProto> for CreateEdgeRequest {
@@ -170,17 +169,12 @@ impl TryFrom<CreateEdgeRequestProto> for CreateEdgeRequest {
             .ok_or(SerDeError::MissingField("source_node_type"))?
             .try_into()?;
 
-        let dest_node_type = proto
-            .dest_node_type
-            .ok_or(SerDeError::MissingField("dest_node_type"))?
-            .try_into()?;
         Ok(Self {
             edge_name,
             tenant_id,
             from_uid,
             to_uid,
             source_node_type,
-            dest_node_type,
         })
     }
 }
@@ -193,7 +187,6 @@ impl From<CreateEdgeRequest> for CreateEdgeRequestProto {
             from_uid: Some(value.from_uid.into()),
             to_uid: Some(value.to_uid.into()),
             source_node_type: Some(value.source_node_type.into()),
-            dest_node_type: Some(value.dest_node_type.into()),
         }
     }
 }

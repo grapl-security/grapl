@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let scylla_client = Arc::new(CachingSession::from(
         scylla::Session::connect(scylla_config).await?,
-        100_000,
+        10_000,
     ));
     let graph_mutation_service = GraphMutationManager::new(
         scylla_client,
@@ -40,8 +40,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 config.schema_manager_client_config.schema_manager_address,
             )
             .await?,
-            1000,
+            10_000,
         ),
+        1_000_000,
     );
 
     let (_tx, rx) = tokio::sync::oneshot::channel();

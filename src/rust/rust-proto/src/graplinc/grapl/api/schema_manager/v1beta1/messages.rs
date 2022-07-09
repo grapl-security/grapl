@@ -1,3 +1,5 @@
+use bytes::Bytes;
+
 use crate::{
     graplinc::grapl::common::v1beta1::types::{
         EdgeName,
@@ -48,7 +50,7 @@ impl type_url::TypeUrl for SchemaType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DeployModelRequest {
     pub tenant_id: uuid::Uuid,
-    pub schema: Vec<u8>,
+    pub schema: Bytes,
     pub schema_type: SchemaType,
     pub schema_version: u32,
 }
