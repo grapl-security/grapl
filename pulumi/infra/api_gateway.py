@@ -1,5 +1,4 @@
 import json
-from typing import List, Optional
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -56,8 +55,8 @@ class ApiGateway(pulumi.ComponentResource):
         nomad_agents_alb_listener_arn: pulumi.Input[str],
         # This property is exported from networking_stack and defines the
         # subnet the Nomad Agents Cluster runs on
-        nomad_agents_private_subnet_ids: pulumi.Input[List[str]],
-        opts: Optional[pulumi.ResourceOptions] = None,
+        nomad_agents_private_subnet_ids: pulumi.Input[list[str]],
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         """
         Quick diatribe on how this is all hooked up:

@@ -9,8 +9,6 @@ from typing import (
     cast,
     TypeVar,
     Generic,
-    Tuple,
-    List,
     Union,
     TYPE_CHECKING,
 )
@@ -33,8 +31,8 @@ Q = TypeVar("Q", bound="Queryable")
 V = TypeVar("V", bound="Viewable")
 F = TypeVar("F", bound="Queryable")
 
-ToOneFilter = List[F]
-ToManyFilter = List[Tuple[F, ...]]
+ToOneFilter = list[F]
+ToManyFilter = list[tuple[F, ...]]
 EdgeFilter = Union[ToOneFilter[F], ToManyFilter[F]]
 F = TypeVar("F", bound=Callable)
 

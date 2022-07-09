@@ -5,7 +5,7 @@ grapl-common is beneath grapl_analyzerlib in the stack, so that's a bad candidat
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, cast
+from typing import Any, TYPE_CHECKING, cast
 from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.provision.meta_into import meta_into_predicate
 from grapl_analyzerlib.provision.queries import query_dgraph_type
@@ -39,8 +39,8 @@ class SchemaPropertyDict(TypedDict):
 class SchemaDict(TypedDict):
     properties: List[SchemaPropertyDict]
 """
-SchemaPropertyDict = Dict[str, Any]
-SchemaDict = Dict[str, Any]
+SchemaPropertyDict = dict[str, Any]
+SchemaDict = dict[str, Any]
 
 
 def store_schema_properties(table: Table, schema: Schema) -> None:
@@ -72,7 +72,7 @@ def store_schema_properties(table: Table, schema: Schema) -> None:
         Item={
             "node_type": schema.self_type(),
             # Dynamodb doesn't like my fancy typedict
-            "type_definition": cast(Dict[str, Any], type_definition),
+            "type_definition": cast(dict[str, Any], type_definition),
             "display_property": schema.get_display_property(),
         }
     )

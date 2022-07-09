@@ -31,7 +31,7 @@ class NomadJob(pulumi.ComponentResource):
         name: str,
         jobspec: Path,
         vars: NomadVars,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:NomadJob", name, None, opts)
 

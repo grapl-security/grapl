@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import Optional
 
 import pulumi_consul as consul
 
@@ -16,7 +15,7 @@ class ConsulIntentions(pulumi.ComponentResource):
         self,
         name: str,
         intention_directory: Path,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:ConsulIntentions", name, None, opts)
         files = list(Path(intention_directory).glob("*.json"))

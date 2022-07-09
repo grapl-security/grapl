@@ -1,9 +1,9 @@
 import re
-from typing import Any, List, Union, TypeVar, Optional, Tuple
+from typing import Any, List, TypeVar, Union
 
 
 T = TypeVar("T")
-OneOrMany = Union[T, List[T]]
+OneOrMany = Union[T, list[T]]
 
 
 def escape_dgraph_regexp(input: str) -> str:
@@ -21,7 +21,7 @@ def escape_dgraph_regexp(input: str) -> str:
 
 
 class Not:
-    def __init__(self, value: Union[str, int]):
+    def __init__(self, value: str | int):
         self.value = value
 
 
@@ -44,7 +44,7 @@ class Has:
 
 
 class Eq:
-    def __init__(self, predicate: str, value: Union[Not, str, int]):
+    def __init__(self, predicate: str, value: Not | str | int):
         self.predicate = predicate
         self.value = extract_value(value)
         self.negated: bool = isinstance(value, Not)
@@ -232,13 +232,13 @@ def dgraph_prop_type(cmp: Cmp) -> str:
 
 def _str_cmps(
     predicate: str,
-    eq: Optional[StrOrNot] = None,
-    contains: Optional[OneOrMany[StrOrNot]] = None,
-    ends_with: Optional[StrOrNot] = None,
-    starts_with: Optional[StrOrNot] = None,
-    regexp: Optional[OneOrMany[StrOrNot]] = None,
-    distance_lt: Optional[Tuple[StrOrNot, int]] = None,
-) -> List[List[StrCmp]]:
+    eq: StrOrNot | None = None,
+    contains: OneOrMany[StrOrNot] | None = None,
+    ends_with: StrOrNot | None = None,
+    starts_with: StrOrNot | None = None,
+    regexp: OneOrMany[StrOrNot] | None = None,
+    distance_lt: tuple[StrOrNot, int] | None = None,
+) -> list[list[StrCmp]]:
     cmps = []  # type: List[List[Any]]
 
     if isinstance(eq, str) or isinstance(eq, Not):
@@ -276,12 +276,12 @@ def _str_cmps(
 
 def _int_cmps(
     predicate: str,
-    eq: Optional[IntOrNot] = None,
-    gt: Optional[IntOrNot] = None,
-    ge: Optional[IntOrNot] = None,
-    lt: Optional[IntOrNot] = None,
-    le: Optional[IntOrNot] = None,
-) -> List[List[StrCmp]]:
+    eq: IntOrNot | None = None,
+    gt: IntOrNot | None = None,
+    ge: IntOrNot | None = None,
+    lt: IntOrNot | None = None,
+    le: IntOrNot | None = None,
+) -> list[list[StrCmp]]:
     cmps = []  # type: List[List[Any]]
 
     if isinstance(eq, str) or isinstance(eq, Not):
@@ -305,7 +305,7 @@ def _int_cmps(
     return cmps
 
 
-def extract_value(value: Union[Not, int, str]) -> Union[int, str]:
+def extract_value(value: Not | int | str) -> int | str:
     if isinstance(value, Not):
         return value.value
     else:

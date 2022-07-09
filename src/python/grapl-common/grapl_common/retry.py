@@ -1,13 +1,13 @@
 import logging
 import time
 from functools import wraps
-from typing import Any, Callable, Type, TypeVar, cast
+from typing import Any, Callable, TypeVar, cast
 
 F = TypeVar("F", bound=Callable)
 
 
 def retry(
-    exception_cls: Type[Exception],
+    exception_cls: type[Exception],
     logger: logging.Logger,
     on_falsey: bool = False,
     tries: int = 3,
