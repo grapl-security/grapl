@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 
-def endpoint_url(suffix: Optional[str]) -> str:
+def endpoint_url(suffix: str | None) -> str:
     """
     Builds the URL for the Grapl API endpoint corresponding to
     the given suffix. This function expects that GRAPL_API_HOST

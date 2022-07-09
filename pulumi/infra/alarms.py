@@ -17,7 +17,7 @@ class AlarmSink(pulumi.ComponentResource):
         *,
         topic_name_suffix: str,
         email: str,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:AlarmSink", name=name, props=None, opts=opts)
         child_opts = pulumi.ResourceOptions(parent=self)
@@ -48,7 +48,7 @@ class OpsAlarms(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:OpsAlarms", name=name, props=None, opts=opts)
 

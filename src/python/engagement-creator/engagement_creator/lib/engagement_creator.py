@@ -39,7 +39,7 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 """
 https://docs.aws.amazon.com/AmazonS3/latest/dev/notification-content-structure.html
 """
-EventWithReceiptHandle = Tuple[SQSMessageBody, str]
+EventWithReceiptHandle = tuple[SQSMessageBody, str]
 
 V = TypeVar("V", bound=Viewable)
 Q = TypeVar("Q", bound=Queryable)

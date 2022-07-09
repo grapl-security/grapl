@@ -33,7 +33,7 @@ def _reject_invalid_chars(s: str) -> None:
 
 def statsd_format(
     metric_name: str,
-    value: Union[int, float],
+    value: int | float,
     typ: MetricType,
     sample_rate: float = DEFAULT_SAMPLE_RATE,
     tags: Sequence[TagPair] = (),

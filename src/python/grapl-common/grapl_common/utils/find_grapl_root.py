@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import Optional
 
 
-def find_grapl_root() -> Optional[Path]:
+def find_grapl_root() -> Path | None:
     # We could potentially add other heuristics here.
     return _find_grapl_root_based_off_git_in_pwd()
 
 
-def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
+def _find_grapl_root_based_off_git_in_pwd() -> Path | None:
     cmd = "git rev-parse --show-toplevel"
     git_repo_root = _quietly_execute(cmd)
     if git_repo_root is None:
@@ -22,7 +22,7 @@ def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
     return git_repo_root_path
 
 
-def _quietly_execute(cmd: str) -> Optional[str]:
+def _quietly_execute(cmd: str) -> str | None:
     try:
         return (
             subprocess.check_output(

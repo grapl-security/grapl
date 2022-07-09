@@ -7,8 +7,8 @@ from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_tests_common.clients.common import endpoint_url
 
 # Would be nice to improve this as a TypedDict
-GqlLensDict = Dict[str, Any]
-GraphqlType = Dict[str, Any]
+GqlLensDict = dict[str, Any]
+GraphqlType = dict[str, Any]
 
 LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
@@ -23,8 +23,8 @@ class GraphqlEndpointClient:
         self.actix_session = actix_session
 
     def query(
-        self, query: str, variables: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, query: str, variables: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         resp = requests.post(
             f"{self.endpoint}/graphql",
             json={"query": query, "variables": json.dumps(variables or {})},
@@ -36,7 +36,7 @@ class GraphqlEndpointClient:
                 f'Status {resp.status_code} from graphql endpoint for query "{query}" with variables "{variables}"\n'
                 f'Response: "{resp_str or "no response"}"'
             )
-        return cast(Dict[str, Any], resp.json()["data"])
+        return cast(dict[str, Any], resp.json()["data"])
 
     def query_for_scope(self, lens_name: str) -> GqlLensDict:
         query = self.get_scope_query()

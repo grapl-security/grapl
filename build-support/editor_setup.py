@@ -28,8 +28,8 @@ class PyrightConfig(TypedDict):
     venv: str
     verboseOutput: bool
     reportMissingImports: bool
-    exclude: List[str]
-    executionEnvironments: List[Dict[str, Union[str, List[str]]]]
+    exclude: list[str]
+    executionEnvironments: list[dict[str, str | list[str]]]
 
 
 BASE_PYRIGHTCONFIG: PyrightConfig = {
@@ -54,7 +54,7 @@ PANTS_TOML = "pants.toml"
 PYRIGHTCONFIG_JSON = "pyrightconfig.json"
 
 
-def src_python_execution_environment() -> Dict[str, Union[str, List[str]]]:
+def src_python_execution_environment() -> dict[str, str | list[str]]:
     """Generate a pyright "executionEnvironments" entry for code in our
     `src/python` directory.
 

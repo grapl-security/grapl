@@ -14,7 +14,7 @@ class EventEmitter(pulumi.ComponentResource):
     """
 
     def __init__(
-        self, event_name: str, opts: Optional[pulumi.ResourceOptions] = None
+        self, event_name: str, opts: pulumi.ResourceOptions | None = None
     ) -> None:
 
         super().__init__("grapl:EventEmitter", event_name, None, opts)

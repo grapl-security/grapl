@@ -15,7 +15,7 @@ class ConsulConfig(pulumi.ComponentResource):
         self,
         name: str,
         tracing_endpoint: str,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:ConsulConfig", name, None, opts)
 

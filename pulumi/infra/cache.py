@@ -14,11 +14,11 @@ class Cache(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        subnet_ids: pulumi.Input[List[str]],
+        subnet_ids: pulumi.Input[list[str]],
         vpc_id: pulumi.Input[str],
         # We grab this security group from the Nomad Agents stack.
         nomad_agent_security_group_id: pulumi.Input[str],
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:Cache", name, None, opts)
 

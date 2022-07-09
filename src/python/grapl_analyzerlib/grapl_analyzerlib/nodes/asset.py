@@ -15,7 +15,7 @@ AV = TypeVar("AV", bound="AssetView")
 
 T = TypeVar("T")
 
-OneOrMany = Union[List[T], T]
+OneOrMany = Union[list[T], T]
 
 
 def default_asset_properties() -> dict[str, PropType]:

@@ -12,7 +12,7 @@ class Bucket(aws.s3.Bucket):
         self,
         name: str,
         sse: bool = False,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         """Abstracts logic for creating an S3 bucket for our purposes.
 
@@ -161,8 +161,8 @@ class Bucket(aws.s3.Bucket):
     def upload_to_bucket(
         self,
         file_path: Path,
-        root_path: Optional[Path] = None,
-    ) -> List[aws.s3.BucketObject]:
+        root_path: Path | None = None,
+    ) -> list[aws.s3.BucketObject]:
         """
         Compare with CDK's s3deploy.BucketDeployment
         root_path is so that:

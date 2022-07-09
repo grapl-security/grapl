@@ -27,7 +27,7 @@ class FirecrackerAssets(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        repository_name: Optional[str],
+        repository_name: str | None,
         artifacts: ArtifactGetter,
         opts: pulumi.ResourceOptions = None,
     ) -> None:
@@ -123,7 +123,7 @@ def local_or_remote_asset(
     local_path: Path,
     artifacts: ArtifactGetter,
     artifact_key: str,
-    repository_name: Optional[str],
+    repository_name: str | None,
 ) -> pulumi.asset.Asset:
     # Check Pulumi.stackname.yaml for a Cloudsmith-hosted asset
     version = artifacts.get(artifact_key)

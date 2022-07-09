@@ -23,7 +23,7 @@ def register_auto_tags(auto_tags: Mapping[str, str]) -> None:
 
 def auto_tag(
     args: pulumi.ResourceTransformationArgs, auto_tags: Mapping[str, str]
-) -> Optional[pulumi.ResourceTransformationResult]:
+) -> pulumi.ResourceTransformationResult | None:
     """Applies the given tags to the resource properties if applicable."""
     if is_taggable(args.type_):
         # Ignore the typing because this is code we didn't actually

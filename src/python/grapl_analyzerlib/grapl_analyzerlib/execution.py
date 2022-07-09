@@ -8,8 +8,8 @@ class ExecutionHit:
         analyzer_name: str,
         node_view: "EntityView",
         risk_score: int,
-        lenses: List[Tuple[str, str]],
-        risky_node_keys: Optional[Sequence[str]] = None,
+        lenses: list[tuple[str, str]],
+        risky_node_keys: Sequence[str] | None = None,
     ) -> None:
         """
         When an Analyzer finds a risk, its :py:meth:`~grapl_analyzerlib.analyzer.Analyzer.on_response` method will

@@ -66,7 +66,7 @@ class Fixture:
 
 class MockWriteable:
     def __init__(self) -> None:
-        self.writes: List[str] = []
+        self.writes: list[str] = []
 
     def write(self, some_str: str) -> int:
         self.writes.append(some_str)

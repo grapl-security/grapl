@@ -13,7 +13,7 @@ def _dict_subset_equals(larger: Mapping, smaller: Mapping, path: str) -> None:
         _subset_equals(larger=larger[k], smaller=smaller[k], path=new_path)
 
 
-def _list_subset_equals(larger: List, smaller: List, path: str) -> None:
+def _list_subset_equals(larger: list, smaller: list, path: str) -> None:
     """
     Example: [1, 2], [2] => true, the smaller is a subset of the larger.
     We do not care about order.
@@ -68,7 +68,7 @@ def _subset_equals(larger: object, smaller: object, path: str = "") -> None:
     __tracebackhide__ = True  # hide this helper function's traceback from pytest
     if larger is smaller:
         pass  # we good
-    elif isinstance(larger, List) and isinstance(smaller, List):
+    elif isinstance(larger, list) and isinstance(smaller, list):
         _list_subset_equals(larger, smaller, path)
     elif isinstance(larger, Mapping) and isinstance(smaller, Mapping):
         _dict_subset_equals(larger, smaller, path)

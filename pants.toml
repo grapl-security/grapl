@@ -204,7 +204,7 @@ known_versions = [
 
 [pyupgrade]
 lockfile = "3rdparty/python/pyupgrade.lockfile"
-args = ["--py38-plus"]
+args = ["--py310-plus"]
 
 [tailor]
 ignore_paths = [

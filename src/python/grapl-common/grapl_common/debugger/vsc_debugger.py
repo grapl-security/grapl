@@ -46,7 +46,7 @@ def _should_debug_service(service: ServiceIdentifier) -> bool:
     return service in debug_services
 
 
-def _get_debug_port() -> Optional[int]:
+def _get_debug_port() -> int | None:
     port = os.getenv("VSC_DEBUGGER_PORT")
     if not port:
         return None

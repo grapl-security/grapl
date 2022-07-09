@@ -11,7 +11,7 @@ LOGGER.setLevel(logging.INFO)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-def _container_names_by_prefix(prefix: str) -> List[str]:
+def _container_names_by_prefix(prefix: str) -> list[str]:
     """Return a list of all containers (running or not) whose names begin
     with `prefix`.
 
@@ -78,7 +78,7 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
 
 
 def dump_volume(
-    compose_project: Optional[str], volume_name: str, artifacts_dir: Path
+    compose_project: str | None, volume_name: str, artifacts_dir: Path
 ) -> None:
     # Make a temporary container with the volume mounted
     # docker compose prefixes volume names with the compose project name.

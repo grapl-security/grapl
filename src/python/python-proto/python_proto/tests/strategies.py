@@ -193,9 +193,7 @@ def statics(
 
 
 def id_strategies(
-    strategies: st.SearchStrategy[Union[Session, Static]] = st.one_of(
-        sessions(), statics()
-    )
+    strategies: st.SearchStrategy[Session | Static] = st.one_of(sessions(), statics())
 ) -> st.SearchStrategy[IdStrategy]:
     return st.builds(
         IdStrategy,
@@ -259,15 +257,15 @@ def immutable_str_props(
 
 def node_properties(
     properties: st.SearchStrategy[
-        Union[
-            IncrementOnlyUintProp,
-            DecrementOnlyUintProp,
-            ImmutableUintProp,
-            IncrementOnlyIntProp,
-            DecrementOnlyIntProp,
-            ImmutableIntProp,
-            ImmutableStrProp,
-        ]
+        (
+            IncrementOnlyUintProp
+            | DecrementOnlyUintProp
+            | ImmutableUintProp
+            | IncrementOnlyIntProp
+            | DecrementOnlyIntProp
+            | ImmutableIntProp
+            | ImmutableStrProp
+        )
     ] = st.one_of(
         increment_only_uint_props(),
         decrement_only_uint_props(),
@@ -531,7 +529,7 @@ def histograms(
 
 
 def metric_wrappers(
-    metrics: st.SearchStrategy[Union[Counter, Gauge, Histogram]] = st.one_of(
+    metrics: st.SearchStrategy[Counter | Gauge | Histogram] = st.one_of(
         counters(), gauges(), histograms()
     )
 ) -> st.SearchStrategy[MetricWrapper]:

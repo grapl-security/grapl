@@ -56,7 +56,7 @@ class MetricReporter:
     def write_metric(
         self,
         metric_name: str,
-        value: Union[int, float],
+        value: int | float,
         typ: MetricType,
         sample_rate: float = DEFAULT_SAMPLE_RATE,
         tags: Sequence[TagPair] = (),
@@ -75,7 +75,7 @@ class MetricReporter:
     def counter(
         self,
         metric_name: str,
-        value: Union[int, float],
+        value: int | float,
         sample_rate: float = DEFAULT_SAMPLE_RATE,
         tags: Sequence[TagPair] = (),
     ) -> None:
@@ -94,7 +94,7 @@ class MetricReporter:
     def gauge(
         self,
         metric_name: str,
-        value: Union[int, float],
+        value: int | float,
         tags: Sequence[TagPair] = (),
     ) -> None:
         """
@@ -112,7 +112,7 @@ class MetricReporter:
         metric_name: str,
         value: MillisDuration,
         tags: Sequence[TagPair] = (),
-        unit: Optional[HistogramUnit] = None,
+        unit: HistogramUnit | None = None,
     ) -> None:
         """
         A histogram is a measure of the distribution of timer values over time, calculated at the

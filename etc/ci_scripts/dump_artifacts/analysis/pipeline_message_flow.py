@@ -37,7 +37,7 @@ def analyze_grapl_core(artifacts_dir: Path, analysis_dir: Path) -> None:
         f.write(output)
 
 
-def analyze_paths(paths: List[Path]) -> str:
+def analyze_paths(paths: list[Path]) -> str:
     output = []
     for path in paths:
         with open(path) as file:
@@ -52,7 +52,7 @@ def analyze_paths(paths: List[Path]) -> str:
 ########################################
 
 
-def get_num_received_messages(lines: List[str]) -> int:
+def get_num_received_messages(lines: list[str]) -> int:
     """
     Given a split-lines input, count up all receives.
     """
@@ -62,7 +62,7 @@ def get_num_received_messages(lines: List[str]) -> int:
     return total_receives
 
 
-def get_receive_count_for_line(line: str) -> Optional[int]:
+def get_receive_count_for_line(line: str) -> int | None:
     """
     Given a single line, parse for receive-count data.
     """
@@ -73,7 +73,7 @@ def get_receive_count_for_line(line: str) -> Optional[int]:
     return res
 
 
-def get_receive_count_for_rust_sqs_executor_line(line: str) -> Optional[int]:
+def get_receive_count_for_rust_sqs_executor_line(line: str) -> int | None:
     """
     Corresponds to logs output from
     info!(message_batch_len = message_batch_len, "Received messages");
@@ -97,7 +97,7 @@ def get_receive_count_for_rust_sqs_executor_line(line: str) -> Optional[int]:
 PY_SQS_TIMEOUT_MANAGER_PATTERN = re.compile(r"SQS MessageID [0-9a-f\-]+\: Loop 1 .*")
 
 
-def get_receive_count_for_py_sqs_timeout_manager(line: str) -> Optional[int]:
+def get_receive_count_for_py_sqs_timeout_manager(line: str) -> int | None:
     """
     Corresponds to logs output from
     sqs_timeout_manager.py

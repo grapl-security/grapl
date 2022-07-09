@@ -46,7 +46,7 @@ class Args:
         )
         parser.set_defaults(dump_agent_logs=False)
         args = parser.parse_args()
-        self.compose_project: Optional[str] = args.compose_project
+        self.compose_project: str | None = args.compose_project
         self.dump_agent_logs: bool = args.dump_agent_logs
 
 

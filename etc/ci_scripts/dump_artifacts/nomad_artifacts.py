@@ -137,7 +137,7 @@ class NomadTask:
         return ""
 
 
-JobToAllocDict = Dict[str, List[NomadAllocation]]
+JobToAllocDict = dict[str, list[NomadAllocation]]
 
 
 def _get_allocations(nomad_client: Nomad, parent: NomadNamespace) -> JobToAllocDict:

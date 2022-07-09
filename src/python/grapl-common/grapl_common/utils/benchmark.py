@@ -4,7 +4,7 @@ from typing import Iterator, Optional
 
 
 class BenchmarkResult:
-    result: Optional[timedelta]
+    result: timedelta | None
 
     def __init__(self) -> None:
         self.result = None

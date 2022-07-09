@@ -8,7 +8,7 @@ from grapl_analyzerlib.nodes.asset import AssetView
 from grapl_analyzerlib.test_utils.dgraph_utils import random_key_for_test, upsert
 from grapl_analyzerlib.test_utils.strategies.misc import text_dgraph_compat
 
-AssetProps = NewType("AssetProps", Dict[str, Any])
+AssetProps = NewType("AssetProps", dict[str, Any])
 
 
 def asset_props_strategy() -> st.SearchStrategy[AssetProps]:

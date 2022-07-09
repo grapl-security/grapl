@@ -35,7 +35,7 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
-ViewableType = Type["Viewable"]
+ViewableType = type["Viewable"]
 ReturnsViewableType = Callable[[], ViewableType]
 
 

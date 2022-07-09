@@ -32,7 +32,7 @@ HOST_IP_IN_NOMAD: Final[str] = "${attr.unique.network.ip-address}"
 CONSUL_DNS_IP: Final[str] = os.getenv("CONSUL_DNS_IP", "8.8.8.8")
 
 
-def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
+def to_bool(input: str | bool | None) -> bool | None:
     if isinstance(input, bool):
         return input
     elif input is None:
@@ -168,7 +168,7 @@ def configurable_envvars(service_name: str, vars: Sequence[str]) -> Mapping[str,
 
 
 # TODO: The verbiage "version" here is a bit restrictive.
-def configured_version_for(artifact_name: str) -> Optional[str]:
+def configured_version_for(artifact_name: str) -> str | None:
     """Given the name of an artifact, retrieves the version of that
     artifact from the current stack configuration. Returns `None` if
     no version has been specified for that artifact.
@@ -217,7 +217,7 @@ def require_artifact(artifact_name: str) -> Any:
     return artifact
 
 
-def cloudsmith_repository_name() -> Optional[str]:
+def cloudsmith_repository_name() -> str | None:
     """The repository from which to pull container images and Firecracker
     packages from.
 
@@ -230,7 +230,7 @@ def cloudsmith_repository_name() -> Optional[str]:
     return pulumi.Config().get("cloudsmith-repository-name")
 
 
-def container_repository() -> Optional[str]:
+def container_repository() -> str | None:
     """The repository from which to pull container images from.
 
     Not specifying a repository will result in local images being used,

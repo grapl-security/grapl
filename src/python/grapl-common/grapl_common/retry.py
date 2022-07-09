@@ -7,7 +7,7 @@ F = TypeVar("F", bound=Callable)
 
 
 def retry(
-    exception_cls: Type[Exception],
+    exception_cls: type[Exception],
     logger: logging.Logger,
     on_falsey: bool = False,
     tries: int = 3,

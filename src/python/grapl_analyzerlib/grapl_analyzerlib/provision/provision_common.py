@@ -39,8 +39,8 @@ class SchemaPropertyDict(TypedDict):
 class SchemaDict(TypedDict):
     properties: List[SchemaPropertyDict]
 """
-SchemaPropertyDict = Dict[str, Any]
-SchemaDict = Dict[str, Any]
+SchemaPropertyDict = dict[str, Any]
+SchemaDict = dict[str, Any]
 
 
 def store_schema_properties(table: Table, schema: Schema) -> None:
@@ -72,7 +72,7 @@ def store_schema_properties(table: Table, schema: Schema) -> None:
         Item={
             "node_type": schema.self_type(),
             # Dynamodb doesn't like my fancy typedict
-            "type_definition": cast(Dict[str, Any], type_definition),
+            "type_definition": cast(dict[str, Any], type_definition),
             "display_property": schema.get_display_property(),
         }
     )

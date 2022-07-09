@@ -12,7 +12,7 @@ class LocalPostgresInstance(pulumi.ComponentResource):
         self,
         name: str,
         port: int,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:PostgresInstance", name, None, opts)
 
