@@ -5,6 +5,7 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1"
 chrono = { version = "0.4" }
 clap = { version = "3.0", default_features = false, features = [
   "std",
@@ -13,6 +14,7 @@ clap = { version = "3.0", default_features = false, features = [
 ] }
 endpoint-plugin = { path = "../../endpoint-plugin", version = "*" }
 futures = "0.3"
+generator-sdk = { path = "../../plugin-sdk/generator-sdk" }
 kafka = { path = "../../kafka", version = "*" }
 opentelemetry = { version = "0.16", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.15", features = [

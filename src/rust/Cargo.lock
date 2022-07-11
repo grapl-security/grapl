@@ -4309,6 +4309,7 @@ dependencies = [
  "clap 3.1.18",
  "endpoint-plugin",
  "futures",
+ "generator-sdk",
  "kafka",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",

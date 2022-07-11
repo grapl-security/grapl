@@ -1,29 +1,18 @@
-use clap::Parser;
-use futures::StreamExt;
-use kafka::{
-    config::{
-        ConsumerConfig,
-        ProducerConfig,
-    },
-    StreamProcessor,
-    StreamProcessorError,
+use generator_sdk::server::{
+    self,
+    GeneratorServiceConfig,
 };
 use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
 };
-use rust_proto::graplinc::grapl::{
-    api::graph::v1beta1::GraphDescription,
-    pipeline::{
-        v1beta1::{
-            Metadata,
-            RawLog,
-        },
-        v1beta2::Envelope,
-    },
+use rust_proto::graplinc::grapl::api::plugin_sdk::generators::v1beta1::{
+    server::GeneratorApi,
+    GeneratedGraph,
+    RunGeneratorRequest,
+    RunGeneratorResponse,
 };
 use sysmon_parser::SysmonEvent;
-use tracing::instrument::WithSubscriber;
 use tracing_subscriber::{
     prelude::*,
     EnvFilter,
@@ -35,7 +24,7 @@ mod models;
 use crate::error::SysmonGeneratorError;
 
 #[tokio::main]
-async fn main() -> Result<(), SysmonGeneratorError> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
 
     // initialize json logging layer
@@ -59,63 +48,33 @@ async fn main() -> Result<(), SysmonGeneratorError> {
 
     tracing::info!("logger configured successfully");
 
-    handler().await
+    let config = GeneratorServiceConfig::from_env_vars();
+    let generator = SysmonGenerator {};
+    server::exec_service(generator, config).await
 }
 
-#[tracing::instrument]
-async fn handler() -> Result<(), SysmonGeneratorError> {
-    let consumer_config = ConsumerConfig::parse();
-    let producer_config = ProducerConfig::parse();
+pub struct SysmonGenerator {}
 
-    tracing::info!(
-        message = "Configuring Kafka StreamProcessor",
-        consumer_config = ?consumer_config,
-        producer_config = ?producer_config,
-    );
+#[async_trait::async_trait]
+impl GeneratorApi for SysmonGenerator {
+    type Error = SysmonGeneratorError;
 
-    // TODO: also construct a stream processor for retries
+    #[tracing::instrument(skip(self, request), err)]
+    async fn run_generator(
+        &self,
+        request: RunGeneratorRequest,
+    ) -> Result<RunGeneratorResponse, Self::Error> {
+        let sysmon_event = SysmonEvent::from_str(std::str::from_utf8(&request.data)?)?;
 
-    let stream_processor = StreamProcessor::new(consumer_config, producer_config)?;
-
-    tracing::info!(message = "Kafka StreamProcessor configured successfully");
-
-    let stream = stream_processor.stream(event_handler)?;
-
-    stream
-        .for_each_concurrent(
-            10, // TODO: make configurable?
-            |res| async move {
-                if let Err(e) = res {
-                    // TODO: retry the message?
-                    tracing::error!(
-                        message = "Error processing Kafka message",
-                        reason = %e,
-                    );
-                } else {
-                    // TODO: collect some metrics
-                    tracing::debug!(message = "Generated graph from sysmon event");
-                }
-            },
-        )
-        .with_current_subscriber()
-        .await;
-
-    Ok(())
-}
-
-async fn event_handler(
-    event: Result<Envelope<RawLog>, StreamProcessorError>,
-) -> Result<Option<Envelope<GraphDescription>>, SysmonGeneratorError> {
-    let envelope = event?;
-    let sysmon_event = SysmonEvent::from_str(std::str::from_utf8(
-        envelope.inner_message.log_event.as_ref(),
-    )?)?;
-
-    match models::generate_graph_from_event(&sysmon_event)? {
-        Some(graph_description) => Ok(Some(Envelope::new(
-            Metadata::create_from(envelope.metadata),
-            graph_description,
-        ))),
-        None => Ok(None),
+        match models::generate_graph_from_event(&sysmon_event)? {
+            Some(graph_description) => Ok(RunGeneratorResponse {
+                generated_graph: GeneratedGraph { graph_description },
+            }),
+            None => {
+                // We do not expect to handle all Sysmon event types.
+                // So we'd just return an empty Graph Description.
+                Ok(RunGeneratorResponse::default())
+            }
+        }
     }
 }

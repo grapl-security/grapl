@@ -1,9 +1,10 @@
+use rust_proto::protocol::status::Status;
 use thiserror::Error;
 
 /// This represents all possible errors that can occur in this generator.
 #[non_exhaustive]
 #[derive(Debug, Error)]
-pub(crate) enum SysmonGeneratorError {
+pub enum SysmonGeneratorError {
     /// Parsing found time value
     #[error("found negative time value: `{0}`")]
     NegativeEventTime(i64),
@@ -27,8 +28,8 @@ pub(crate) enum SysmonGeneratorError {
     TraceError(#[from] opentelemetry::trace::TraceError),
 }
 
-impl From<SysmonGeneratorError> for kafka::StreamProcessorError {
-    fn from(val: SysmonGeneratorError) -> Self {
-        kafka::StreamProcessorError::EventHandlerError(val.to_string())
+impl From<SysmonGeneratorError> for Status {
+    fn from(e: SysmonGeneratorError) -> Self {
+        Status::internal(e.to_string())
     }
 }
