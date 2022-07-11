@@ -1,10 +1,12 @@
+use std::marker::PhantomData;
+
 use futures::channel::oneshot::Sender;
 use rust_proto::{
     graplinc::{
         common::v1beta1::Duration,
         grapl::api::plugin_sdk::generators::v1beta1::{
             client::GeneratorServiceClient,
-            server::GeneratorServer,
+            server::{GeneratorServer, GeneratorApi},
         },
     },
     protocol::{
@@ -15,21 +17,32 @@ use rust_proto::{
         },
     },
 };
-use sysmon_generator::api::SysmonGenerator;
 use test_context::AsyncTestContext;
 use tokio::{
     net::TcpListener,
     task::JoinHandle,
 };
 
-pub struct GeneratorTestContext {
+pub trait NewGeneratorApi<T> 
+where T: GeneratorApi + Send + Sync + 'static,
+{
+    fn new_generator_api() -> T;
+}
+
+pub struct GeneratorTestContext<T> 
+where T: GeneratorApi
+{
+    _api: PhantomData<T>,
     pub client: GeneratorServiceClient,
     server_handle: JoinHandle<Result<(), ServeError>>,
     shutdown_tx: Sender<()>,
 }
 
 #[async_trait::async_trait]
-impl AsyncTestContext for GeneratorTestContext {
+impl<T> AsyncTestContext for GeneratorTestContext<T>
+where T: GeneratorApi + Send + Sync + 'static,
+Self: NewGeneratorApi<T>
+{
     async fn setup() -> Self {
         // binding the tcp listener on port 0 tells the operating system to
         // reserve an unused, ephemeral port
@@ -47,7 +60,7 @@ impl AsyncTestContext for GeneratorTestContext {
         let endpoint = format!("http://{}:{}", socket_address.ip(), socket_address.port());
 
         // TODO: Figure out a way to make this generic!
-        let api = SysmonGenerator {};
+        let api = Self::new_generator_api();
 
         let (server, shutdown_tx) = GeneratorServer::new(
             api,
@@ -74,6 +87,7 @@ impl AsyncTestContext for GeneratorTestContext {
             .expect("could not configure client");
 
         GeneratorTestContext {
+            _api: PhantomData,
             client,
             server_handle,
             shutdown_tx,

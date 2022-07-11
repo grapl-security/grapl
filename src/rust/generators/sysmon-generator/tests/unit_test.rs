@@ -1,7 +1,5 @@
-mod generator_test_ctx;
-
 use bytes::Bytes;
-use generator_test_ctx::GeneratorTestContext;
+use generator_sdk::test_utils::test_ctx::{GeneratorTestContext, NewGeneratorApi};
 use rust_proto::graplinc::grapl::api::{
     graph::v1beta1::{
         GraphDescription,
@@ -11,6 +9,7 @@ use rust_proto::graplinc::grapl::api::{
     },
     plugin_sdk::generators::v1beta1::RunGeneratorRequest,
 };
+use sysmon_generator::api::SysmonGenerator;
 use test_context::test_context;
 
 fn find_node<'a>(
@@ -73,7 +72,14 @@ fn log_bytes() -> Bytes {
     log_event
 }
 
-#[test_context(GeneratorTestContext)]
+type SysmonGeneratorTestContext = GeneratorTestContext<SysmonGenerator>;
+impl NewGeneratorApi<SysmonGenerator> for SysmonGeneratorTestContext {
+    fn new_generator_api() -> SysmonGenerator {
+        SysmonGenerator {  }
+    }
+}
+
+#[test_context(SysmonGeneratorTestContext)]
 #[tokio::test]
 async fn test_sysmon_event_produces_expected_graph(
     ctx: &mut SysmonGeneratorTestContext,
