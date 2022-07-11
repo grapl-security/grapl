@@ -44,12 +44,13 @@ use crate::{
         plugin_registry_service_server::PluginRegistryServiceServer as PluginRegistryServiceProto,
     },
     protocol::{
+        error::ServeError,
         healthcheck::{
             server::init_health_service,
             HealthcheckError,
             HealthcheckStatus,
         },
-        status::Status, error::ServeError,
+        status::Status,
     },
     server_internals::GrpcApi,
     SerDeError,

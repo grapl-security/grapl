@@ -38,12 +38,13 @@ use crate::{
         PublishRawLogResponse as PublishRawLogResponseProto,
     },
     protocol::{
+        error::ServeError,
         healthcheck::{
             server::init_health_service,
             HealthcheckError,
             HealthcheckStatus,
         },
-        status::Status, error::ServeError,
+        status::Status,
     },
     server_internals::GrpcApi,
     SerDeError,

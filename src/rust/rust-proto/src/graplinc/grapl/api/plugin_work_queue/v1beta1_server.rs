@@ -25,12 +25,13 @@ use crate::{
     graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
     protocol::{
+        error::ServeError,
         healthcheck::{
             server::init_health_service,
             HealthcheckError,
             HealthcheckStatus,
         },
-        status::Status, error::ServeError,
+        status::Status,
     },
     server_internals::GrpcApi,
     SerDeError,
