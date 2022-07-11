@@ -1,6 +1,6 @@
 import os
 
-from typing import Iterator
+from typing import Iterator, Optional
 from grpc import CallCredentials
 
 from pydgraph import DgraphClient, DgraphClientStub, Txn, RetriableError, Operation
@@ -61,7 +61,7 @@ class GraphClient(DgraphClient):
         operation: Operation,
         timeout: SecsDuration | None = None,
         metadata: DgraphMetadata | None = None,
-        credentials: CallCredentials | None = None,
+        credentials: Optional[CallCredentials] = None,
     ) -> None:
         super().alter(
             operation=operation,

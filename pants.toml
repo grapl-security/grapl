@@ -210,7 +210,9 @@ known_versions = [
 
 [pyupgrade]
 lockfile = "3rdparty/python/pyupgrade.lockfile"
-args = ["--py310-plus"]
+# keep-runtime-typing is enabled because CallCredentials in grapl_client.py doesn't support CallCredentials | None syntax.
+# For keep-runtime-typing to work we also can't use py30-plus
+args = ["--py39-plus", "--keep-runtime-typing"]
 
 [tailor]
 ignore_paths = [
