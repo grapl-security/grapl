@@ -16,11 +16,12 @@ use rust_proto::{
         },
     },
     protocol::{
+        error::ServeError,
         healthcheck::{
             client::HealthcheckClient,
             HealthcheckStatus,
         },
-        status::Status, error::ServeError,
+        status::Status,
     },
 };
 use test_context::{

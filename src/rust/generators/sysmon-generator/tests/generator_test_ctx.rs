@@ -3,16 +3,17 @@ use rust_proto::{
     graplinc::{
         common::v1beta1::Duration,
         grapl::api::plugin_sdk::generators::v1beta1::{
-            client::{
-                GeneratorServiceClient,
-            },
+            client::GeneratorServiceClient,
             server::GeneratorServer,
         },
     },
-    protocol::{healthcheck::{
-        client::HealthcheckClient,
-        HealthcheckStatus,
-    }, error::ServeError},
+    protocol::{
+        error::ServeError,
+        healthcheck::{
+            client::HealthcheckClient,
+            HealthcheckStatus,
+        },
+    },
 };
 use sysmon_generator::api::SysmonGenerator;
 use test_context::AsyncTestContext;
@@ -21,14 +22,14 @@ use tokio::{
     task::JoinHandle,
 };
 
-pub(crate) struct SysmonGeneratorTestContext {
-    pub(crate) client: GeneratorServiceClient,
+pub struct GeneratorTestContext {
+    pub client: GeneratorServiceClient,
     server_handle: JoinHandle<Result<(), ServeError>>,
     shutdown_tx: Sender<()>,
 }
 
 #[async_trait::async_trait]
-impl AsyncTestContext for SysmonGeneratorTestContext {
+impl AsyncTestContext for GeneratorTestContext {
     async fn setup() -> Self {
         // binding the tcp listener on port 0 tells the operating system to
         // reserve an unused, ephemeral port
@@ -45,7 +46,9 @@ impl AsyncTestContext for SysmonGeneratorTestContext {
         // the port.
         let endpoint = format!("http://{}:{}", socket_address.ip(), socket_address.port());
 
+        // TODO: Figure out a way to make this generic!
         let api = SysmonGenerator {};
+
         let (server, shutdown_tx) = GeneratorServer::new(
             api,
             tcp_listener,
@@ -70,7 +73,7 @@ impl AsyncTestContext for SysmonGeneratorTestContext {
             .await
             .expect("could not configure client");
 
-        SysmonGeneratorTestContext {
+        GeneratorTestContext {
             client,
             server_handle,
             shutdown_tx,

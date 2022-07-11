@@ -38,8 +38,9 @@ use rust_proto::{
         },
     },
     protocol::{
+        error::ServeError,
         healthcheck::HealthcheckStatus,
-        status::Status, error::ServeError,
+        status::Status,
     },
 };
 use thiserror::Error;

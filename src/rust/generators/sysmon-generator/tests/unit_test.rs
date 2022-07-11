@@ -1,27 +1,17 @@
-mod sysmon_generator_ctx;
+mod generator_test_ctx;
 
 use bytes::Bytes;
-use rust_proto::{
-    graplinc::grapl::{
-        api::{
-            graph::v1beta1::{
-                GraphDescription,
-                ImmutableUintProp,
-                NodeDescription,
-                Property,
-            },
-        },
-    },
-};
+use generator_test_ctx::GeneratorTestContext;
 use rust_proto::graplinc::grapl::api::{
-    plugin_sdk::generators::v1beta1::{
-        RunGeneratorRequest,
+    graph::v1beta1::{
+        GraphDescription,
+        ImmutableUintProp,
+        NodeDescription,
+        Property,
     },
+    plugin_sdk::generators::v1beta1::RunGeneratorRequest,
 };
-use sysmon_generator_ctx::SysmonGeneratorTestContext;
-use test_context::{
-    test_context,
-};
+use test_context::test_context;
 
 fn find_node<'a>(
     graph: &'a GraphDescription,
@@ -83,9 +73,11 @@ fn log_bytes() -> Bytes {
     log_event
 }
 
-#[test_context(SysmonGeneratorTestContext)]
+#[test_context(GeneratorTestContext)]
 #[tokio::test]
-async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTestContext) -> Result<(), Box<dyn std::error::Error>> {
+async fn test_sysmon_event_produces_expected_graph(
+    ctx: &mut SysmonGeneratorTestContext,
+) -> Result<(), Box<dyn std::error::Error>> {
     let result = ctx
         .client
         .run_generator(RunGeneratorRequest { data: log_bytes() })
