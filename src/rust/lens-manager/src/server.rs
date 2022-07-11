@@ -31,12 +31,13 @@ impl LensManagerApi for LensManager {
     async fn create_lens(&self, request: CreateLensRequest) -> Result<CreateLensResponse, Status> {
         let mut client = self.graph_mutation_client.clone();
 
-        let response = client.create_node(CreateNodeRequest {
+        let create_request = CreateNodeRequest {
             tenant_id: request.tenant_id,
             node_type: NodeType {value: "Lens".to_owned()},
-        }).await?;
+        };
 
-        println!("{:?}", response);
+        let response = client.create_node(create_request).await?;
+
 
         Ok(CreateLensResponse{
             lens_uid: response.uid.as_u64(),
@@ -44,11 +45,32 @@ impl LensManagerApi for LensManager {
     }
 
     async fn merge_lens(&self, request: MergeLensRequest) -> Result<MergeLensResponse, Status> {
-        todo!()
+        let mut client = self.graph_mutation_client.clone();
+
+        let create_request = MergeLensRequest {
+            tenant_id: request.tenant_id,
+            source_lens_uid: request.source_lens_uid,
+            target_lens_uid: request.target_lens_uid,
+            merge_behavior: request.merge_behavior,
+        };
+
+        client.merge_lens(create_request).await?;
+
+        Ok(MergeLensResponse{})
+
     }
 
     async fn close_lens(&self, request: CloseLensRequest) -> Result<CloseLensResponse, Status> {
-        todo!()
+        let mut client = self.graph_mutation_client.clone();
+
+        let create_request = CloseLensRequest {
+            tenant_id: request.tenant_id,
+            lens_uid: request.lens_uid,
+        };
+
+        client.close_lens(create_request).await?;
+
+        Ok(CloseLensResponse{})
     }
 
     async fn add_node_to_scope(&self, request: AddNodeToScopeRequest) -> Result<AddNodeToScopeResponse, Status> {
@@ -64,18 +86,37 @@ impl LensManagerApi for LensManager {
             dest_node_type: request.node_type
         };
 
-        let create_response = client.create_edge(create_request).await?;
+        client.create_edge(create_request).await?;
 
-        println!("{:?}", create_response.into_inner().todo);
-
-        Ok(AddNodeToScopeResponse())
+        Ok(AddNodeToScopeResponse{})
     }
 
     async fn remove_node_from_scope(&self, request: RemoveNodeFromScopeRequest) -> Result<RemoveNodeFromScopeResponse, Status> {
-        todo!()
+        let mut client = self.graph_mutation_client.clone();
+
+        let create_request = AddNodeToScopeRequest {
+            tenant_id: request.tenant_id,
+            lens_uid: request.lens_uid,
+            uid: request.uid,
+            node_type: NodeType {value: "Lens".to_owned()},
+        };
+
+        client.remove_node_from_scope(create_request).await?;
+
+        Ok(RemoveNodeFromScopeResponse{})
     }
 
     async fn remove_node_from_all_scopes(&self, request: RemoveNodeFromAllScopesRequest) -> Result<RemoveNodeFromAllScopesResponse, Status> {
-        todo!()
+        let mut client = self.graph_mutation_client.clone();
+
+        let create_request = RemoveNodeFromScopeRequest {
+            tenant_id: request.tenant_id,
+            lens_uid: request.uid, // RemoveNodeFromAllScopesRequest does not have lens_uid field - do we need one?
+            uid: request.uid
+        };
+
+        client.remove_node_from_scope(create_request).await?;
+
+        Ok(RemoveNodeFromAllScopesResponse{})
     }
 }
