@@ -8,7 +8,6 @@ use rust_proto::{
         grapl::api::pipeline_ingress::v1beta1::{
             client::PipelineIngressClient,
             server::{
-                ConfigurationError,
                 PipelineIngressApi,
                 PipelineIngressServer,
             },

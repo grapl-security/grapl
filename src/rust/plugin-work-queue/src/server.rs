@@ -223,5 +223,5 @@ pub async fn exec_service(
         socket_address = %addr,
     );
 
-    server.serve().await
+    Ok(server.serve().await?)
 }

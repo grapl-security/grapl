@@ -307,7 +307,7 @@ pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn st
         socket_address = %addr,
     );
 
-    server.serve().await
+    Ok(server.serve().await?)
 }
 
 fn generate_artifact_s3_key(
