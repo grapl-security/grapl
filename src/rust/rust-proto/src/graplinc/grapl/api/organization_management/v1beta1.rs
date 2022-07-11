@@ -295,7 +295,6 @@ pub mod server {
         Future,
         FutureExt,
     };
-    use thiserror::Error;
     use tokio::net::TcpListener;
     use tokio_stream::wrappers::TcpListenerStream;
     use tonic::transport::{
@@ -326,7 +325,7 @@ pub mod server {
                 HealthcheckError,
                 HealthcheckStatus,
             },
-            status::Status,
+            status::Status, error::ServeError,
         },
         server_internals::GrpcApi,
         SerDeError,
@@ -397,13 +396,6 @@ pub mod server {
         ) -> Result<CreateUserResponse, Self::Error>;
     }
 
-    #[non_exhaustive]
-    #[derive(Debug, Error)]
-    pub enum ConfigurationError {
-        #[error("encountered tonic error {0}")]
-        TonicError(#[from] tonic::transport::Error),
-    }
-
     /// The organization management server serves the organization management
     /// API
     pub struct OrganizationManagementServer<T, H, F>
@@ -459,8 +451,8 @@ pub mod server {
         }
 
         /// Run the gRPC server and serve the API on this server's socket
-        /// address. Returns a ConfigurationError if the gRPC server cannot run.
-        pub async fn serve(self) -> Result<(), ConfigurationError> {
+        /// address. Returns a ServeError if the gRPC server cannot run.
+        pub async fn serve(self) -> Result<(), ServeError> {
             let service_name = &(*self.service_name());
             let (healthcheck_handle, health_service) =
                 init_health_service::<OrganizationManagementServiceServerProto<GrpcApi<T>>, _, _>(

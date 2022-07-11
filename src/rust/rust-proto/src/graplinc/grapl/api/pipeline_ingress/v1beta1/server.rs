@@ -16,7 +16,6 @@ use futures::{
     Future,
     FutureExt,
 };
-use thiserror::Error;
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::{
@@ -44,7 +43,7 @@ use crate::{
             HealthcheckError,
             HealthcheckStatus,
         },
-        status::Status,
+        status::Status, error::ServeError,
     },
     server_internals::GrpcApi,
     SerDeError,
@@ -79,13 +78,6 @@ pub trait PipelineIngressApi {
         &self,
         request: PublishRawLogRequest,
     ) -> Result<PublishRawLogResponse, Self::Error>;
-}
-
-#[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum ConfigurationError {
-    #[error("encountered tonic error {0}")]
-    TonicError(#[from] tonic::transport::Error),
 }
 
 /// The pipeline-ingress server serves the pipeline-ingress API
@@ -142,8 +134,8 @@ where
     }
 
     /// Run the gRPC server and serve the API on this server's socket
-    /// address. Returns a ConfigurationError if the gRPC server cannot run.
-    pub async fn serve(self) -> Result<(), ConfigurationError> {
+    /// address. Returns a ServeError if the gRPC server cannot run.
+    pub async fn serve(self) -> Result<(), ServeError> {
         // TODO: add tower tracing, tls_config, concurrency limits
         let (healthcheck_handle, health_service) =
             init_health_service::<PipelineIngressServiceServerProto<GrpcApi<T>>, _, _>(
