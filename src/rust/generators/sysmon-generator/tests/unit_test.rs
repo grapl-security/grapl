@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use generator_sdk::test_utils::test_ctx::{GeneratorTestContext, NewGeneratorApi};
+use generator_sdk::test_utils::test_ctx::GeneratorTestContext;
 use rust_proto::graplinc::grapl::api::{
     graph::v1beta1::{
         GraphDescription,
@@ -72,20 +72,14 @@ fn log_bytes() -> Bytes {
     log_event
 }
 
-type SysmonGeneratorTestContext = GeneratorTestContext<SysmonGenerator>;
-impl NewGeneratorApi<SysmonGenerator> for SysmonGeneratorTestContext {
-    fn new_generator_api() -> SysmonGenerator {
-        SysmonGenerator {  }
-    }
-}
-
-#[test_context(SysmonGeneratorTestContext)]
+#[test_context(GeneratorTestContext)]
 #[tokio::test]
 async fn test_sysmon_event_produces_expected_graph(
-    ctx: &mut SysmonGeneratorTestContext,
+    ctx: &mut GeneratorTestContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let result = ctx
-        .client
+    let mut client = ctx.get_client(SysmonGenerator{}).await;
+
+    let result = client
         .run_generator(RunGeneratorRequest { data: log_bytes() })
         .await?;
     let generated_graph = result.generated_graph.graph_description;
