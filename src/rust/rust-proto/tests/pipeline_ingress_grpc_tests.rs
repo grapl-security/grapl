@@ -20,7 +20,7 @@ use rust_proto::{
             client::HealthcheckClient,
             HealthcheckStatus,
         },
-        status::Status,
+        status::Status, error::ServeError,
     },
 };
 use test_context::{
@@ -103,7 +103,7 @@ impl PipelineIngressApi for MockPipelineIngressApi {
 
 struct PipelineIngressTestContext {
     client: PipelineIngressClient,
-    server_handle: JoinHandle<Result<(), ConfigurationError>>,
+    server_handle: JoinHandle<Result<(), ServeError>>,
     shutdown_tx: Sender<()>,
 }
 
