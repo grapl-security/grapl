@@ -114,9 +114,8 @@ impl AsyncTestContext for GeneratorTestContext {
         Self { internals: None }
     }
     async fn teardown(self) {
-        match self.internals {
-            Some(i) => i.teardown().await,
-            _ => (),
+        if let Some(i) = self.internals {
+            i.teardown().await;
         }
     }
 }

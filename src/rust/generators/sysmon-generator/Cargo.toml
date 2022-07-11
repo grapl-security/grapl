@@ -15,7 +15,6 @@ clap = { version = "3.0", default_features = false, features = [
 endpoint-plugin = { path = "../../endpoint-plugin", version = "*" }
 futures = "0.3"
 generator-sdk = { path = "../../plugin-sdk/generator-sdk" }
-kafka = { path = "../../kafka", version = "*" }
 opentelemetry = { version = "0.16", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.15", features = [
   "collector_client",
@@ -41,9 +40,9 @@ uuid = { version = "1.0", features = ["v4"] }
 [dev-dependencies]
 async-trait = "0.1"
 bytes = "1.1"
-generator-sdk = { path = "../../plugin-sdk/generator-sdk" , features = [
+generator-sdk = { path = "../../plugin-sdk/generator-sdk", features = [
   "test_utils"
-]}
+] }
 test-context = "0.1"
 
 [features]

@@ -59,7 +59,6 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
-
 #[test_log::test(tokio::test)]
 async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = PluginRegistryServiceClient::from_env().await?;
