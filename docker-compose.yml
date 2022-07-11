@@ -51,6 +51,9 @@ services:
         source: ./dist
         target: /home/grapl/dist
         read_only: true
+    build:
+      args:
+        PYTHON_VERSION: "${PYTHON_VERSION}"
     environment:
       IMAGE_TAG:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
