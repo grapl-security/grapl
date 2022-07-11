@@ -1,4 +1,3 @@
-use test_context::futures::channel::oneshot::Sender;
 use rust_proto::{
     graplinc::{
         common::v1beta1::Duration,
@@ -18,7 +17,10 @@ use rust_proto::{
         },
     },
 };
-use test_context::AsyncTestContext;
+use test_context::{
+    futures::channel::oneshot::Sender,
+    AsyncTestContext,
+};
 use tokio::{
     net::TcpListener,
     task::JoinHandle,
@@ -28,8 +30,8 @@ use tokio::{
 We have to do this silly Internals song-and-dance for a couple reasons:
 
 - TestContext doesn't really allow parameterization (which GeneratorApi is
-  under test?), which I introduce here as .get_client()'s parameter. 
-  We can pass in any type of concrete GeneratorApi we want, while reusing the 
+  under test?), which I introduce here as .get_client()'s parameter.
+  We can pass in any type of concrete GeneratorApi we want, while reusing the
   test_context stuff for any and all Generators.
 - We could have skipped using TestContext entirely, and just done roughly
   `let ctx = SomeGeneratorHelper::new(SysmonGenerator{})` - except that the

@@ -77,7 +77,7 @@ fn log_bytes() -> Bytes {
 async fn test_sysmon_event_produces_expected_graph(
     ctx: &mut GeneratorTestContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = ctx.get_client(SysmonGenerator{}).await;
+    let mut client = ctx.get_client(SysmonGenerator {}).await;
 
     let result = client
         .run_generator(RunGeneratorRequest { data: log_bytes() })

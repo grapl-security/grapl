@@ -940,48 +940,6 @@ job "grapl-core" {
     }
   }
 
-  group "sysmon-generator" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-    }
-
-    task "sysmon-generator" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["sysmon-generator"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        AWS_REGION = var.aws_region
-
-        RUST_LOG       = var.rust_log
-        RUST_BACKTRACE = local.rust_backtrace
-
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
-
-        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME       = var.kafka_credentials["graph-generator"].sasl_username
-        KAFKA_SASL_PASSWORD       = var.kafka_credentials["graph-generator"].sasl_password
-        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["graph-generator"]
-
-        # Temp, until we change sysmon-generator to use the real Plugin SDK
-        KAFKA_CONSUMER_TOPIC = "raw-logs"
-        KAFKA_PRODUCER_TOPIC = "generated-graphs"
-      }
-    }
-  }
-
   group "organization-management" {
     network {
       mode = "bridge"
