@@ -697,7 +697,7 @@ impl TryFrom<PluginHealthStatusProto> for PluginHealthStatus {
 
     fn try_from(value: PluginHealthStatusProto) -> Result<Self, Self::Error> {
         match value {
-            PluginHealthStatusProto::Unknown => {
+            PluginHealthStatusProto::Unspecified => {
                 Err(SerDeError::UnknownVariant("PluginHealthStatus"))
             }
             PluginHealthStatusProto::NotDeployed => Ok(PluginHealthStatus::NotDeployed),

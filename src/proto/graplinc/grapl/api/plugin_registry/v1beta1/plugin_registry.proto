@@ -84,12 +84,12 @@ message GetPluginHealthRequest {
 
 message GetPluginHealthResponse {
   enum PluginHealthStatus {
-    UNKNOWN = 0;
-    NOT_DEPLOYED = 1;
+    PLUGIN_HEALTH_STATUS_UNSPECIFIED = 0;
+    PLUGIN_HEALTH_STATUS_NOT_DEPLOYED = 1;
     // These map to https://www.nomadproject.io/api-docs/jobs#status
-    PENDING = 2;
-    RUNNING = 3;
-    DEAD = 4;
+    PLUGIN_HEALTH_STATUS_PENDING = 2;
+    PLUGIN_HEALTH_STATUS_RUNNING = 3;
+    PLUGIN_HEALTH_STATUS_DEAD = 4;
   }
   PluginHealthStatus health_status = 1;
 }
