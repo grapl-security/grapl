@@ -23,7 +23,6 @@ use rust_proto::{
     graplinc::grapl::{
         api::pipeline_ingress::v1beta1::{
             server::{
-                ConfigurationError as ServerConfigurationError,
                 PipelineIngressApi,
                 PipelineIngressServer,
             },
@@ -39,6 +38,7 @@ use rust_proto::{
         },
     },
     protocol::{
+        error::ServeError,
         healthcheck::HealthcheckStatus,
         status::Status,
     },
@@ -116,8 +116,8 @@ enum ConfigurationError {
     #[error("failed to configure kafka client {0}")]
     Kafka(#[from] KafkaConfigurationError),
 
-    #[error("failed to configure gRPC server {0}")]
-    Server(#[from] ServerConfigurationError),
+    #[error("ServeError {0}")]
+    ServeError(#[from] ServeError),
 
     #[error("missing environment variable {0}")]
     EnvironmentVariable(#[from] VarError),

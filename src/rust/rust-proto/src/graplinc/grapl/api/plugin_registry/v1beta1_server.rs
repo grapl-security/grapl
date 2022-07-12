@@ -44,6 +44,7 @@ use crate::{
         plugin_registry_service_server::PluginRegistryServiceServer as PluginRegistryServiceProto,
     },
     protocol::{
+        error::ServeError,
         healthcheck::{
             server::init_health_service,
             HealthcheckError,
@@ -230,8 +231,8 @@ where
     }
 
     /// Run the gRPC server and serve the API on this server's socket
-    /// address. Returns a ConfigurationError if the gRPC server cannot run.
-    pub async fn serve(self) -> Result<(), Box<dyn std::error::Error>> {
+    /// address. Returns a ServeError if the gRPC server cannot run.
+    pub async fn serve(self) -> Result<(), ServeError> {
         let (healthcheck_handle, health_service) =
             init_health_service::<PluginRegistryServiceProto<GrpcApi<T>>, _, _>(
                 self.healthcheck,
