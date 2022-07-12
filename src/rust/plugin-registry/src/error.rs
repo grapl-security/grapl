@@ -51,6 +51,8 @@ pub enum PluginRegistryServiceError {
     NomadJobAllocationError,
     #[error("StreamInputError {0}")]
     StreamInputError(&'static str),
+    #[error("DeploymentStateError {0}")]
+    DeploymentStateError(String),
     // TODO: These errs are meant to be human-readable and are not directly
     // sent over the wire, so add {0}s to them!
 }
