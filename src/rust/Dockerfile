@@ -254,8 +254,8 @@ ENTRYPOINT ["/node-identifier"]
 ##### sysmon-generator
 FROM rust-dist AS sysmon-generator-deploy
 
-COPY --from=build /outputs/sysmon-generator /
-ENTRYPOINT ["/sysmon-generator"]
+COPY --from=build /outputs/sysmon-generator-kafka-legacy /
+ENTRYPOINT ["/sysmon-generator-kafka-legacy"]
 
 ##### generator-executor
 FROM rust-dist AS generator-executor-deploy

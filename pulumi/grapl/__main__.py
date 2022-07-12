@@ -180,6 +180,7 @@ def main() -> None:
 
     kafka_services = (
         "generator-dispatcher",
+        "graph-generator",
         "graph-merger",
         "node-identifier",
         "pipeline-ingress",
@@ -192,6 +193,7 @@ def main() -> None:
     }
     kafka_consumer_services = (
         "generator-dispatcher",
+        "graph-generator",
         "graph-merger",
         "node-identifier",
     )

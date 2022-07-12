@@ -20,6 +20,21 @@ pub enum SysmonGeneratorError {
 
     #[error("error configuring tracing {0}")]
     TraceError(#[from] opentelemetry::trace::TraceError),
+
+    // TODO Delete when main_legacy is removed
+    #[error("error processing event {0}")]
+    StreamProcessorError(#[from] kafka::StreamProcessorError),
+
+    // TODO Delete when main_legacy is removed
+    #[error("kafka configuration error {0}")]
+    KafkaConfigurationError(#[from] kafka::ConfigurationError),
+}
+
+// TODO Delete when main_legacy is removed
+impl From<SysmonGeneratorError> for kafka::StreamProcessorError {
+    fn from(val: SysmonGeneratorError) -> Self {
+        kafka::StreamProcessorError::EventHandlerError(val.to_string())
+    }
 }
 
 impl From<SysmonGeneratorError> for Status {
