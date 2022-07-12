@@ -1,15 +1,15 @@
 import json
-from typing import List, Tuple, Optional, Sequence
+from typing import Sequence
 
 
-class ExecutionHit(object):
+class ExecutionHit:
     def __init__(
         self,
         analyzer_name: str,
         node_view: "EntityView",
         risk_score: int,
-        lenses: List[Tuple[str, str]],
-        risky_node_keys: Optional[Sequence[str]] = None,
+        lenses: list[tuple[str, str]],
+        risky_node_keys: Sequence[str] | None = None,
     ) -> None:
         """
         When an Analyzer finds a risk, its :py:meth:`~grapl_analyzerlib.analyzer.Analyzer.on_response` method will
@@ -40,11 +40,11 @@ class ExecutionHit(object):
                 raise TypeError(f"Found an unexpected None k/v in lenses: {lenses}")
 
 
-class ExecutionComplete(object):
+class ExecutionComplete:
     pass
 
 
-class ExecutionFailed(object):
+class ExecutionFailed:
     pass
 
 

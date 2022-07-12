@@ -131,9 +131,8 @@ impl<T: SerDe> Producer<T> {
 
     #[tracing::instrument(err, skip(self))]
     pub async fn send(&self, msg: T) -> Result<(), ProducerError> {
-        let serialized = msg.serialize()?.to_vec();
-        let record: FutureRecord<Vec<u8>, Vec<u8>> =
-            FutureRecord::to(&self.topic).payload(&serialized);
+        let serialized = msg.serialize()?;
+        let record: FutureRecord<[u8], [u8]> = FutureRecord::to(&self.topic).payload(&serialized);
 
         self.producer
             .send(record, Timeout::Never)

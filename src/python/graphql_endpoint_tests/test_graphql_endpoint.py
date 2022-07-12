@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Any, Dict, List, cast
+from typing import Any, cast
 from unittest import TestCase
 
 import hypothesis
@@ -16,7 +16,7 @@ from grapl_tests_common.scenarios.create_lens_with_nodes_in_scope import *
 
 LOGGER = get_module_grapl_logger()
 
-GqlLensDict = Dict[str, Any]
+GqlLensDict = dict[str, Any]
 
 
 @lru_cache(maxsize=1)
@@ -36,7 +36,7 @@ def hacky_memoized_actix_session() -> str:
 @pytest.mark.integration_test
 class TestGraphqlEndpoint(TestCase):
     def __init__(self, *args, **kwargs) -> None:  # type: ignore
-        super(TestGraphqlEndpoint, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         wait_for_vsc_debugger(service="graphql_endpoint_tests")
 
     @hypothesis.given(
@@ -89,7 +89,7 @@ class TestGraphqlEndpoint(TestCase):
 
 def _query_graphql_endpoint_for_lenses(
     gql_client: GraphqlEndpointClient,
-) -> List[GqlLensDict]:
+) -> list[GqlLensDict]:
     # Just get *all* lenses
     query = """
     {
@@ -103,4 +103,4 @@ def _query_graphql_endpoint_for_lenses(
     }
     """
     resp = gql_client.query(query)
-    return cast(List[Dict[str, Any]], resp["lenses"])
+    return cast(list[dict[str, Any]], resp["lenses"])

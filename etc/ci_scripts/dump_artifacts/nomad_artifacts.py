@@ -7,7 +7,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, cast
 
 from nomad import Nomad
 from nomad.api.exceptions import URLNotFoundNomadException
@@ -18,14 +18,14 @@ LOGGER.setLevel(logging.INFO)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 OutOrErr = Literal["stdout", "stderr"]
-OUTPUT_TYPES: List[OutOrErr] = ["stdout", "stderr"]
+OUTPUT_TYPES: list[OutOrErr] = ["stdout", "stderr"]
 
 nomad_agent_log_path = Path("/tmp/nomad-agent.log").resolve()
 consul_agent_log_path = Path("/tmp/consul-agent.log").resolve()
 vault_agent_log_path = Path("/tmp/vault-agent.log").resolve()
 
 
-def _get_nomad_client(namespace: Optional[str] = None) -> Nomad:
+def _get_nomad_client(namespace: str | None = None) -> Nomad:
     address = os.getenv("NOMAD_ADDRESS") or "http://localhost:4646"
     assert address.startswith("http"), f"Your nomad address needs a protocol: {address}"
     nomad_client = Nomad(address=address, timeout=10, namespace=namespace)
@@ -38,7 +38,7 @@ def dump_all(artifacts_dir: Path, dump_agent_logs: bool) -> None:
 
     # Get every namespace.
     nomad_client = _get_nomad_client()
-    namespaces: List[NomadNamespace] = [
+    namespaces: list[NomadNamespace] = [
         NomadNamespace(ns) for ns in nomad_client.namespaces
     ]
 
@@ -69,7 +69,7 @@ def _dump_hashicorp_agent_logs(artifacts_dir: Path) -> None:
 class NomadNamespace:
     name: str
 
-    def __init__(self, input: Dict[str, Any]) -> None:
+    def __init__(self, input: dict[str, Any]) -> None:
         self.name = input["Name"]
 
 
@@ -79,9 +79,9 @@ class NomadAllocation:
     allocation_id: str
     allocation_name: str
     status: str
-    tasks: List[NomadTask]
+    tasks: list[NomadTask]
 
-    def __init__(self, input: Dict[str, Any], parent: NomadNamespace) -> None:
+    def __init__(self, input: dict[str, Any], parent: NomadNamespace) -> None:
         self.parent = parent
         self.allocation_id = input["ID"]
         self.allocation_name = input["Name"]
@@ -112,11 +112,11 @@ class NomadAllocation:
 class NomadTask:
     parent: NomadAllocation = dataclasses.field(repr=False)
     name: str
-    events: List[dict]
+    events: list[dict]
     state: str
     restarts: int
 
-    def get_logs(self, nomad_client: Nomad, type: OutOrErr) -> Optional[str]:
+    def get_logs(self, nomad_client: Nomad, type: OutOrErr) -> str | None:
         try:
             return cast(
                 str,
@@ -137,7 +137,7 @@ class NomadTask:
         return ""
 
 
-JobToAllocDict = Dict[str, List[NomadAllocation]]
+JobToAllocDict = dict[str, list[NomadAllocation]]
 
 
 def _get_allocations(nomad_client: Nomad, parent: NomadNamespace) -> JobToAllocDict:
@@ -152,14 +152,14 @@ def _get_allocations(nomad_client: Nomad, parent: NomadNamespace) -> JobToAllocD
     return job_to_allocs
 
 
-def _get_nomad_job_names(nomad_client: Nomad) -> List[str]:
+def _get_nomad_job_names(nomad_client: Nomad) -> list[str]:
     # Filter out the Parameterized Batch jobs, because those don't themselves have logs;
     # the dispatched instances of them have jobs.
     # Otherwise you'd see both of these:
     # - integration_tests (param batch job) (no logs since nothing ran)
     # - integration_tests/dispatch-12345 (a dispatched instance of integration_tests)
 
-    jobs: List[str] = [j["ID"] for j in nomad_client.jobs if not j["ParameterizedJob"]]
+    jobs: list[str] = [j["ID"] for j in nomad_client.jobs if not j["ParameterizedJob"]]
     return jobs
 
 
@@ -167,7 +167,7 @@ def _get_nomad_logs_for_each_service(
     artifacts_dir: Path,
     nomad_client: Nomad,
     job_to_allocs: JobToAllocDict,
-) -> Dict[str, List[NomadAllocation]]:
+) -> dict[str, list[NomadAllocation]]:
     for job, allocs in job_to_allocs.items():
         # Dispatch job names look like `integration-tests/dispatch-1632277984-ad265cfe`
         # the second part is largely useless for us.
@@ -183,7 +183,7 @@ def _write_nomad_logs(
     nomad_client: Nomad,
     artifacts_dir: Path,
     job_name: str,
-    allocs: List[NomadAllocation],
+    allocs: list[NomadAllocation],
 ) -> None:
     write_to_dir = artifacts_dir / job_name
     os.makedirs(write_to_dir, exist_ok=True)
@@ -210,15 +210,13 @@ def _write_nomad_logs(
 
 def _write_allocation_task_statuses(
     job_dir: Path,
-    allocs: List[NomadAllocation],
+    allocs: list[NomadAllocation],
 ) -> None:
     statuses = "\n".join(
         sorted(
-            [
-                f"{t.name}: state = {t.state}, restarts = {t.restarts}"
-                for alloc in allocs
-                for t in alloc.tasks
-            ]
+            f"{t.name}: state = {t.state}, restarts = {t.restarts}"
+            for alloc in allocs
+            for t in alloc.tasks
         )
     )
     with (job_dir / f"task_statuses.txt").open("w") as file:

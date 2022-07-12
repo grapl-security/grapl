@@ -2,7 +2,9 @@
 # We use the above syntax for here documents:
 # https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#user-content-here-documents
 
-FROM rust:1-slim-bullseye AS base
+ARG RUST_VERSION
+
+FROM rust:${RUST_VERSION}-slim-bullseye AS base
 
 ARG RUST_BUILD=dev-local-grapl
 
@@ -137,7 +139,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/integration_tests,graph-merger/integration_tests,model-plugin-deployer/integration_tests,node-identifier/integration_tests,pipeline-ingress/integration_tests,plugin-registry/integration_tests,sysmon-generator/integration_tests,organization-management/integration_tests"
+ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/integration_tests,graph-merger/integration_tests,node-identifier/integration_tests,pipeline-ingress/integration_tests,plugin-registry/integration_tests,sysmon-generator/integration_tests,organization-management/integration_tests"
 ENV TEST_DIR=/grapl/tests
 
 # This will build the integration test binaries and parse the manifest to find
@@ -268,12 +270,6 @@ COPY --from=build /outputs/grapl-web-ui /
 # hadolint ignore=DL3022
 COPY --from=dist-ctx frontend /frontend
 ENTRYPOINT ["/grapl-web-ui"]
-
-##### model plugin deployer
-FROM rust-dist AS model-plugin-deployer
-
-COPY --from=build /outputs/model-plugin-deployer /
-ENTRYPOINT ["/model-plugin-deployer"]
 
 ##### organization-management
 FROM rust-dist AS organization-management-deploy

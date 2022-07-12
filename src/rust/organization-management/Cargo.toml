@@ -23,13 +23,13 @@ sqlx = { version = "0.6", features = [
   "uuid",
   "migrate",
 ] }
-tracing = "0.1.29"
+tracing = "0.1"
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "fmt"
 ] }
 rust-proto = { path = "../rust-proto", version = "*" }
-thiserror = "1.0.26"
+thiserror = "1.0"
 argon2 = { version = "0.4", features = ["std"] }
 clap = { version = "3.0", default_features = false, features = [
   "std",

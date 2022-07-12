@@ -5,7 +5,7 @@ grapl-common is beneath grapl_analyzerlib in the stack, so that's a bad candidat
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, cast
+from typing import Any, TYPE_CHECKING, cast
 from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.provision.meta_into import meta_into_predicate
 from grapl_analyzerlib.provision.queries import query_dgraph_type
@@ -39,12 +39,12 @@ class SchemaPropertyDict(TypedDict):
 class SchemaDict(TypedDict):
     properties: List[SchemaPropertyDict]
 """
-SchemaPropertyDict = Dict[str, Any]
-SchemaDict = Dict[str, Any]
+SchemaPropertyDict = dict[str, Any]
+SchemaDict = dict[str, Any]
 
 
 def store_schema_properties(table: Table, schema: Schema) -> None:
-    properties: List[SchemaPropertyDict] = [
+    properties: list[SchemaPropertyDict] = [
         {
             "name": prop_name,
             # Special case: treat uids as int
@@ -56,7 +56,7 @@ def store_schema_properties(table: Table, schema: Schema) -> None:
 
     # Don't send over these edges
     denylist_edges = ("in_scope",)
-    edges: List[SchemaPropertyDict] = [
+    edges: list[SchemaPropertyDict] = [
         {
             "name": edge_name,
             "primitive": edge_tuple[
@@ -72,7 +72,7 @@ def store_schema_properties(table: Table, schema: Schema) -> None:
         Item={
             "node_type": schema.self_type(),
             # Dynamodb doesn't like my fancy typedict
-            "type_definition": cast(Dict[str, Any], type_definition),
+            "type_definition": cast(dict[str, Any], type_definition),
             "display_property": schema.get_display_property(),
         }
     )
@@ -100,7 +100,7 @@ def store_schema(table: Table, schema: Schema) -> None:
         )
 
 
-def format_schemas(schema_defs: List[BaseSchema]) -> str:
+def format_schemas(schema_defs: list[BaseSchema]) -> str:
     schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])

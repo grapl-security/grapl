@@ -1,7 +1,4 @@
-from typing import Optional, Union
-
-
-def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
+def to_bool(input: str | bool | None) -> bool | None:
     if isinstance(input, bool):
         return input
     elif input is None:

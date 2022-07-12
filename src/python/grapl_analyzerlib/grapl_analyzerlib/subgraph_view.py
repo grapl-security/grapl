@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import (
-    Dict,
     Iterator,
     MutableMapping,
 )
@@ -9,9 +8,9 @@ from python_proto.api import MergedEdgeList, MergedGraph
 from grapl_analyzerlib.grapl_client import GraphClient
 
 
-class SubgraphView(object):
+class SubgraphView:
     def __init__(
-        self, nodes: Dict[str, BaseView], edges: MutableMapping[str, MergedEdgeList]
+        self, nodes: dict[str, BaseView], edges: MutableMapping[str, MergedEdgeList]
     ) -> None:
         self.nodes = nodes
         self.edges = edges
@@ -27,8 +26,7 @@ class SubgraphView(object):
         return SubgraphView(nodes, subgraph.edges)
 
     def node_iter(self) -> Iterator[BaseView]:
-        for node in self.nodes.values():
-            yield node
+        yield from self.nodes.values()
 
 
 from grapl_analyzerlib.prelude import BaseView

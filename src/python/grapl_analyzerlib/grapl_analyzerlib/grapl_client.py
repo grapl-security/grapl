@@ -1,6 +1,6 @@
 import os
 
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, Optional
 from grpc import CallCredentials
 
 from pydgraph import DgraphClient, DgraphClientStub, Txn, RetriableError, Operation
@@ -12,10 +12,10 @@ from grapl_common.time_utils import SecsDuration
 LOGGER = get_module_grapl_logger()
 
 # https://dgraph.io/docs/clients/python/#setting-metadata-headers
-DgraphMetadata = List[Tuple[str, str]]
+DgraphMetadata = list[tuple[str, str]]
 
 
-def mg_alphas() -> Iterator[Tuple[str, int]]:
+def mg_alphas() -> Iterator[tuple[str, int]]:
     # MG_ALPHAS being the list of "master graph alphas"
     # (master graph is an outdated term we don't really use in grapl anymore)
     # alpha being one of the Dgraph cluster's node types
@@ -28,7 +28,7 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
 
 class GraphClient(DgraphClient):
     def __init__(self) -> None:
-        super(GraphClient, self).__init__(
+        super().__init__(
             *(DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
         )
 
@@ -59,11 +59,11 @@ class GraphClient(DgraphClient):
     def alter(
         self,
         operation: Operation,
-        timeout: Optional[SecsDuration] = None,
-        metadata: Optional[DgraphMetadata] = None,
+        timeout: SecsDuration | None = None,
+        metadata: DgraphMetadata | None = None,
         credentials: Optional[CallCredentials] = None,
     ) -> None:
-        super(GraphClient, self).alter(
+        super().alter(
             operation=operation,
             timeout=timeout,
             metadata=metadata,

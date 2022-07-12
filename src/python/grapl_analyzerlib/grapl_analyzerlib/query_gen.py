@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from typing import Dict, Set, Optional, Iterator, Tuple, List, NewType
+from typing import Iterator, NewType, Optional
 
 # Represents a string like "$a" or "$b"
 VarPlaceholder = NewType("VarPlaceholder", str)
@@ -20,15 +20,15 @@ def _placeholder_generator(prefix: str) -> Iterator[VarPlaceholder]:
             curr = VarPlaceholder(curr[:-1] + chr(ord(last_char) + 1))
 
 
-class VarAllocator(object):
-    def __init__(self, prefix: Optional[str] = None):
+class VarAllocator:
+    def __init__(self, prefix: str | None = None):
         self.prefix = prefix
         self.placeholder_generator: Iterator[VarPlaceholder] = _placeholder_generator(
             self.prefix
         )
         # Value to var identifier, i.e. "hello" => "$a"
-        self.allocated: Dict[str, VarPlaceholder] = dict()
-        self.typemap: Dict[VarPlaceholder, str] = dict()
+        self.allocated: dict[str, VarPlaceholder] = dict()
+        self.typemap: dict[VarPlaceholder, str] = dict()
 
     def alloc(self, cmp: "Cmp") -> VarPlaceholder:
         if isinstance(cmp, Has):
@@ -37,7 +37,7 @@ class VarAllocator(object):
         else:
             cmp_value = str(extract_value(cmp.value))
 
-            var: Optional[VarPlaceholder] = self.allocated.get(cmp_value, None)
+            var: VarPlaceholder | None = self.allocated.get(cmp_value, None)
             if not var:
                 var = next(self.placeholder_generator)
                 self.allocated[cmp_value] = var
@@ -59,7 +59,7 @@ def is_regex_based(cmp: "Cmp") -> bool:
     )
 
 
-def gen_prop_filters(q: "Queryable", var_alloc: VarAllocator) -> Optional[str]:
+def gen_prop_filters(q: "Queryable", var_alloc: VarAllocator) -> str | None:
     prop_filter_str = ""
     prop_filters = []
     for (prop_name, or_filter) in q.property_filters():
@@ -111,7 +111,7 @@ def find_func(q: "Queryable", var_alloc: VarAllocator) -> str:
     :param q:
     :return:
     """
-    and_filter: List[Cmp]
+    and_filter: list[Cmp]
 
     singular_eq_nu = None
 
@@ -189,9 +189,9 @@ def into_query_block(
     depth=None,
     should_filter=True,
     should_alias=True,
-    binding: Optional[str] = None,
+    binding: str | None = None,
     root_node: Optional["Queryable"] = None,
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """
     Returns the property block and the filters
     :param q:
@@ -314,12 +314,12 @@ def into_var_query(
     q: "Queryable",
     var_name: str,
     vars_alloc: VarAllocator,
-    func: Optional[str] = None,
-    first: Optional[int] = None,
-    binding: Optional[str] = None,
+    func: str | None = None,
+    first: int | None = None,
+    binding: str | None = None,
     root_node: Optional["Queryable"] = None,
-    cascade: Optional[bool] = None,
-) -> Tuple[str, str]:
+    cascade: bool | None = None,
+) -> tuple[str, str]:
     func = func or find_func(q, vars_alloc)
     filters, block = into_query_block(
         q, vars_alloc, binding=binding, root_node=root_node
@@ -353,8 +353,8 @@ def into_var_query(
 
 
 def gen_coalescing_query(
-    q: "Queryable", var_alloc: VarAllocator, query_name: str, bindings: List[str]
-) -> Tuple[str, str]:
+    q: "Queryable", var_alloc: VarAllocator, query_name: str, bindings: list[str]
+) -> tuple[str, str]:
 
     __merged_filters, merged_query_block = into_query_block(
         q,
@@ -383,9 +383,9 @@ def gen_query_parameterized(
     query_name: str,
     contains_node_key: str,
     depth: int,
-    binding_modifier: Optional[str] = None,
-    vars_alloc: Optional[VarAllocator] = None,
-) -> Tuple[VarAllocator, str]:
+    binding_modifier: str | None = None,
+    vars_alloc: VarAllocator | None = None,
+) -> tuple[VarAllocator, str]:
     binding_modifier = binding_modifier or ""
     vars_alloc = vars_alloc or VarAllocator()
 
@@ -448,9 +448,9 @@ def gen_query_parameterized(
 def gen_query(
     q: "Queryable",
     query_name: str,
-    first: Optional[int] = None,
+    first: int | None = None,
     count=False,
-) -> Tuple[VarAllocator, str]:
+) -> tuple[VarAllocator, str]:
     if not first:
         first = 1
 
@@ -490,7 +490,7 @@ def gen_query(
 
 
 def traverse_query_iter(
-    root_q: "Queryable", visited: Optional[Set["Queryable"]] = None
+    root_q: "Queryable", visited: set["Queryable"] | None = None
 ) -> Iterator["Queryable"]:
     if visited is None:
         visited = set()
@@ -508,16 +508,14 @@ def traverse_query_iter(
         for neighbor_filter in neighbor_filters:
             if isinstance(neighbor_filter, tuple) or isinstance(neighbor_filter, list):
                 for n_filter in neighbor_filter:
-                    for nested in traverse_query_iter(n_filter, visited):
-                        yield nested
+                    yield from traverse_query_iter(n_filter, visited)
             else:
-                for nested in traverse_query_iter(neighbor_filter, visited):
-                    yield nested
+                yield from traverse_query_iter(neighbor_filter, visited)
 
 
 def traverse_query_neighbors_iter(
-    root_q: "Queryable", visited: Optional[Set["Queryable"]] = None
-) -> Iterator[Tuple["Queryable", str, "EdgeFilter"]]:
+    root_q: "Queryable", visited: set["Queryable"] | None = None
+) -> Iterator[tuple["Queryable", str, "EdgeFilter"]]:
     if visited is None:
         visited = set()
 
@@ -535,11 +533,9 @@ def traverse_query_neighbors_iter(
         for neighbor_filter in neighbor_filters:
             if isinstance(neighbor_filter, tuple) or isinstance(neighbor_filter, list):
                 for n_filter in neighbor_filter:
-                    for nested in traverse_query_neighbors_iter(n_filter, visited):
-                        yield nested
+                    yield from traverse_query_neighbors_iter(n_filter, visited)
             else:
-                for nested in traverse_query_neighbors_iter(neighbor_filter, visited):
-                    yield nested
+                yield from traverse_query_neighbors_iter(neighbor_filter, visited)
 
 
 from grapl_analyzerlib.queryable import Queryable, EdgeFilter

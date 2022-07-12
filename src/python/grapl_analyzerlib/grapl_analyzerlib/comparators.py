@@ -1,9 +1,9 @@
 import re
-from typing import Any, List, Union, TypeVar, Optional, Tuple
+from typing import Any, List, TypeVar, Union
 
 
 T = TypeVar("T")
-OneOrMany = Union[T, List[T]]
+OneOrMany = Union[T, list[T]]
 
 
 def escape_dgraph_regexp(input: str) -> str:
@@ -20,8 +20,8 @@ def escape_dgraph_regexp(input: str) -> str:
     return output
 
 
-class Not(object):
-    def __init__(self, value: Union[str, int]):
+class Not:
+    def __init__(self, value: str | int):
         self.value = value
 
 
@@ -29,7 +29,7 @@ StrOrNot = Union[str, Not]
 IntOrNot = Union[int, Not]
 
 
-class Has(object):
+class Has:
     def __init__(self, predicate: StrOrNot):
         self.predicate = extract_value(predicate)
         self.negated = isinstance(predicate, Not)
@@ -43,8 +43,8 @@ class Has(object):
         return filter_str
 
 
-class Eq(object):
-    def __init__(self, predicate: str, value: Union[Not, str, int]):
+class Eq:
+    def __init__(self, predicate: str, value: Not | str | int):
         self.predicate = predicate
         self.value = extract_value(value)
         self.negated: bool = isinstance(value, Not)
@@ -61,7 +61,7 @@ class Eq(object):
             return filter_str
 
 
-class Gt(object):
+class Gt:
     def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
@@ -79,7 +79,7 @@ class Gt(object):
             return filter_str
 
 
-class Ge(object):
+class Ge:
     def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
@@ -97,7 +97,7 @@ class Ge(object):
             return filter_str
 
 
-class Lt(object):
+class Lt:
     def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
@@ -115,7 +115,7 @@ class Lt(object):
             return filter_str
 
 
-class Le(object):
+class Le:
     def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
@@ -133,7 +133,7 @@ class Le(object):
             return filter_str
 
 
-class Contains(object):
+class Contains:
     def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = re.escape(str(extract_value(value)))
@@ -149,7 +149,7 @@ class Contains(object):
 IntEq = Eq
 
 
-class StartsWith(object):
+class StartsWith:
     def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = re.escape(str(extract_value(value)))
@@ -162,7 +162,7 @@ class StartsWith(object):
             return f"regexp({self.predicate}, /^{self.value}/)"
 
 
-class EndsWith(object):
+class EndsWith:
     def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = re.escape(str(extract_value(value)))
@@ -175,7 +175,7 @@ class EndsWith(object):
             return f"regexp({self.predicate}, /{self.value}$/)"
 
 
-class Rex(object):
+class Rex:
     def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = extract_value(value)
@@ -188,7 +188,7 @@ class Rex(object):
             return f"regexp({self.predicate}, /{self.value}/)"
 
 
-class Distance(object):
+class Distance:
     def __init__(self, predicate: str, value: StrOrNot, distance: int):
         self.predicate = predicate
         self.value = extract_value(value)
@@ -232,13 +232,13 @@ def dgraph_prop_type(cmp: Cmp) -> str:
 
 def _str_cmps(
     predicate: str,
-    eq: Optional[StrOrNot] = None,
-    contains: Optional[OneOrMany[StrOrNot]] = None,
-    ends_with: Optional[StrOrNot] = None,
-    starts_with: Optional[StrOrNot] = None,
-    regexp: Optional[OneOrMany[StrOrNot]] = None,
-    distance_lt: Optional[Tuple[StrOrNot, int]] = None,
-) -> List[List[StrCmp]]:
+    eq: StrOrNot | None = None,
+    contains: OneOrMany[StrOrNot] | None = None,
+    ends_with: StrOrNot | None = None,
+    starts_with: StrOrNot | None = None,
+    regexp: OneOrMany[StrOrNot] | None = None,
+    distance_lt: tuple[StrOrNot, int] | None = None,
+) -> list[list[StrCmp]]:
     cmps = []  # type: List[List[Any]]
 
     if isinstance(eq, str) or isinstance(eq, Not):
@@ -276,12 +276,12 @@ def _str_cmps(
 
 def _int_cmps(
     predicate: str,
-    eq: Optional[IntOrNot] = None,
-    gt: Optional[IntOrNot] = None,
-    ge: Optional[IntOrNot] = None,
-    lt: Optional[IntOrNot] = None,
-    le: Optional[IntOrNot] = None,
-) -> List[List[StrCmp]]:
+    eq: IntOrNot | None = None,
+    gt: IntOrNot | None = None,
+    ge: IntOrNot | None = None,
+    lt: IntOrNot | None = None,
+    le: IntOrNot | None = None,
+) -> list[list[StrCmp]]:
     cmps = []  # type: List[List[Any]]
 
     if isinstance(eq, str) or isinstance(eq, Not):
@@ -305,7 +305,7 @@ def _int_cmps(
     return cmps
 
 
-def extract_value(value: Union[Not, int, str]) -> Union[int, str]:
+def extract_value(value: Not | int | str) -> int | str:
     if isinstance(value, Not):
         return value.value
     else:

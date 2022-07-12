@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping, Optional
+from typing import Mapping
 
 from infra import config
 
@@ -22,7 +22,7 @@ class ArtifactGetter:
         self.artifacts = artifacts
         self.require_artifact = require_artifact
 
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         """
         Try and get the value from artifacts.
         If no such artifact exists, and require_artifact, throw error

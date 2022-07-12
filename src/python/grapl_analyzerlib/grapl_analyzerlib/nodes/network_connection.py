@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, TypeVar, Set, Dict, Tuple, Optional
+from typing import Any, TypeVar
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -28,7 +28,7 @@ def default_network_connection_properties():
     }
 
 
-def default_network_connection_edges() -> Dict[str, Tuple[EdgeT, str]]:
+def default_network_connection_edges() -> dict[str, tuple[EdgeT, str]]:
     from grapl_analyzerlib.nodes.ip_port import IpPortSchema
 
     return {
@@ -41,7 +41,7 @@ def default_network_connection_edges() -> Dict[str, Tuple[EdgeT, str]]:
 
 class NetworkConnectionSchema(EntitySchema):
     def __init__(self):
-        super(NetworkConnectionSchema, self).__init__(
+        super().__init__(
             default_network_connection_properties(),
             default_network_connection_edges(),
             lambda: NetworkConnectionView,
@@ -57,11 +57,11 @@ class NetworkConnectionQuery(EntityQuery[NCV, NCQ]):
     def with_port(
         self,
         *,
-        eq: Optional[IntOrNot] = None,
-        gt: Optional[IntOrNot] = None,
-        ge: Optional[IntOrNot] = None,
-        lt: Optional[IntOrNot] = None,
-        le: Optional[IntOrNot] = None,
+        eq: IntOrNot | None = None,
+        gt: IntOrNot | None = None,
+        ge: IntOrNot | None = None,
+        lt: IntOrNot | None = None,
+        le: IntOrNot | None = None,
     ):
         pass
 
@@ -69,12 +69,12 @@ class NetworkConnectionQuery(EntityQuery[NCV, NCQ]):
     def with_ip_address(
         self,
         *,
-        eq: Optional[StrOrNot] = None,
-        contains: Optional[OneOrMany[StrOrNot]] = None,
-        starts_with: Optional[StrOrNot] = None,
-        ends_with: Optional[StrOrNot] = None,
-        regexp: Optional[OneOrMany[StrOrNot]] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+        eq: StrOrNot | None = None,
+        contains: OneOrMany[StrOrNot] | None = None,
+        starts_with: StrOrNot | None = None,
+        ends_with: StrOrNot | None = None,
+        regexp: OneOrMany[StrOrNot] | None = None,
+        distance_lt: tuple[str, int] | None = None,
     ):
         pass
 
@@ -87,7 +87,7 @@ class NetworkConnectionQuery(EntityQuery[NCV, NCQ]):
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return NetworkConnectionSchema()
 
 
@@ -132,9 +132,9 @@ class NetworkConnectionView(EntityView[NCV, NCQ]):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        port: Optional[int] = None,
-        ip_address: Optional[str] = None,
+        node_types: set[str],
+        port: int | None = None,
+        ip_address: str | None = None,
         **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
@@ -161,7 +161,7 @@ class NetworkConnectionView(EntityView[NCV, NCQ]):
         )
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return NetworkConnectionSchema()
 
 

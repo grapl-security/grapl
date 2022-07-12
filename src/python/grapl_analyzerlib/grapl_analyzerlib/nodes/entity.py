@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, TypeVar, List, Set, Type, Optional, Callable, Union, Dict, Tuple
+from typing import Any, TypeVar, Callable
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -37,11 +37,11 @@ def default_entity_edges():
 class EntitySchema(BaseSchema):
     def __init__(
         self,
-        properties: "Optional[Dict[str, PropType]]" = None,
-        edges: "Optional[Dict[str, Tuple[EdgeT, str]]]" = None,
-        view: "Union[Type[Viewable], Callable[[], Type[Viewable]]]" = None,
+        properties: dict[str, PropType] | None = None,
+        edges: dict[str, tuple[EdgeT, str]] | None = None,
+        view: type[Viewable] | Callable[[], type[Viewable]] = None,
     ):
-        super(EntitySchema, self).__init__(
+        super().__init__(
             properties={**(properties or {})},
             edges={
                 **default_entity_edges(),
@@ -56,14 +56,14 @@ class EntitySchema(BaseSchema):
 
 
 class EntityQuery(BaseQuery[EV, EQ]):
-    def with_lenses(self, *lenses: "LensQuery"):
+    def with_lenses(self, *lenses: LensQuery):
         lenses = lenses or [LensQuery()]
         self.set_neighbor_filters("in_scope", [lenses])
         for lens in lenses:
             lens.set_neighbor_filters("scope", [self])
         return self
 
-    def with_risks(self, *risks: "RiskQuery"):
+    def with_risks(self, *risks: RiskQuery):
         risks = risks or [RiskQuery()]
         self.set_neighbor_filters("risks", [risks])
         for risk in risks:
@@ -83,8 +83,8 @@ class EntityView(BaseView[EV, EQ]):
         uid: int,
         node_key: str,
         graph_client: Any,
-        node_types: Set[str],
-        lenses: "List[LensView]" = None,
+        node_types: set[str],
+        lenses: list[LensView] = None,
         **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
@@ -94,13 +94,13 @@ class EntityView(BaseView[EV, EQ]):
         self.graph_client = graph_client
         self.lenses = lenses or []
 
-    def get_lenses(self, *lenses, cached=False) -> List[LensView]:
+    def get_lenses(self, *lenses, cached=False) -> list[LensView]:
         return self.get_neighbor(LensQuery, "in_scope", "scope", lenses, cached) or []
 
-    def get_risks(self, *risks, cached=False) -> List[RiskView]:
+    def get_risks(self, *risks, cached=False) -> list[RiskView]:
         return self.get_neighbor(RiskQuery, "risks", "risky_nodes", risks, cached) or []
 
-    def into_view(self, v: Type[Viewable]) -> Optional[Viewable]:
+    def into_view(self, v: type[Viewable]) -> Viewable | None:
         if v.node_schema().self_type() in self.node_types:
             self.queryable = v.queryable
             return v(

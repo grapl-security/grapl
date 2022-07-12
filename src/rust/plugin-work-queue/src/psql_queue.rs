@@ -1,3 +1,4 @@
+use bytes::Bytes;
 use grapl_utils::future_ext::GraplFutureExt;
 use sqlx::{
     Pool,
@@ -35,11 +36,10 @@ impl From<ExecutionId> for i64 {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, sqlx::Type)]
 pub struct NextExecutionRequest {
     pub execution_key: ExecutionId,
     pub plugin_id: uuid::Uuid,
-    pub tenant_id: uuid::Uuid,
     pub pipeline_message: Vec<u8>,
 }
 
@@ -86,23 +86,20 @@ impl PsqlQueue {
     pub async fn put_generator_message(
         &self,
         plugin_id: Uuid,
-        pipeline_message: Vec<u8>,
-        tenant_id: Uuid,
+        pipeline_message: Bytes,
     ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
             r"
             INSERT INTO plugin_work_queue.generator_plugin_executions (
                 plugin_id,
                 pipeline_message,
-                tenant_id,
                 current_status,
                 try_count
             )
-            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )
+            VALUES( $1::UUID, $2, 'enqueued', -1 )
         ",
             plugin_id,
-            pipeline_message,
-            &tenant_id,
+            pipeline_message.as_ref(),
         )
         .execute(&self.pool)
         .await?;
@@ -113,23 +110,20 @@ impl PsqlQueue {
     pub async fn put_analyzer_message(
         &self,
         plugin_id: Uuid,
-        pipeline_message: Vec<u8>,
-        tenant_id: Uuid,
+        pipeline_message: Bytes,
     ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
             r"
             INSERT INTO plugin_work_queue.analyzer_plugin_executions (
                 plugin_id,
                 pipeline_message,
-                tenant_id,
                 current_status,
                 try_count
             )
-            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )
+            VALUES( $1::UUID, $2, 'enqueued', -1 )
         ",
             plugin_id,
-            pipeline_message,
-            &tenant_id,
+            pipeline_message.as_ref(),
         )
         .execute(&self.pool)
         .await?;
@@ -165,7 +159,7 @@ impl PsqlQueue {
                 last_updated = CURRENT_TIMESTAMP,
                 visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'
             FROM (
-                 SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after, tenant_id
+                 SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after
                  FROM plugin_work_queue.generator_plugin_executions
                  WHERE current_status = 'enqueued'
                    AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
@@ -178,8 +172,7 @@ impl PsqlQueue {
              RETURNING
                  next_execution.execution_key AS "execution_key!: ExecutionId",
                  next_execution.plugin_id,
-                 next_execution.pipeline_message,
-                 next_execution.tenant_id
+                 next_execution.pipeline_message
         "#).fetch_optional(&self.pool)
             .await?;
 
@@ -215,7 +208,7 @@ impl PsqlQueue {
                 last_updated = CURRENT_TIMESTAMP,
                 visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'
             FROM (
-                 SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after, tenant_id
+                 SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after
                  FROM plugin_work_queue.analyzer_plugin_executions
                  WHERE current_status = 'enqueued'
                    AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
@@ -228,8 +221,7 @@ impl PsqlQueue {
              RETURNING
                  next_execution.execution_key AS "execution_key!: ExecutionId",
                  next_execution.plugin_id,
-                 next_execution.pipeline_message,
-                 next_execution.tenant_id
+                 next_execution.pipeline_message
         "#).fetch_optional(&self.pool)
             .await?;
 

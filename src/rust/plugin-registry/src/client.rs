@@ -28,6 +28,7 @@ impl FromEnv<PluginRegistryServiceClient, PluginRegistryServiceClientError>
     async fn from_env() -> Result<PluginRegistryServiceClient, PluginRegistryServiceClientError> {
         let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
 
+        // TODO: Add a `rust-proto` wrapper around tonic Endpoint
         let endpoint = Endpoint::from_shared(address.to_string())?
             .timeout(Duration::from_secs(10))
             .concurrency_limit(30);

@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import Optional
 
 import requests
 from grapl_common.grapl_logger import get_module_grapl_logger
@@ -34,7 +33,7 @@ class GraplWebClient:
         )
         if resp.status_code != HTTPStatus.OK:
             raise GraplWebClientException(f"{resp.status_code}: {resp.text}")
-        cookie: Optional[str] = resp.cookies.get("actix-session")
+        cookie: str | None = resp.cookies.get("actix-session")
         if not cookie:
             raise GraplWebClientException(
                 f"Couldn't find actix-session cookie in {resp.cookies}"

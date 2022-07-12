@@ -33,7 +33,7 @@ class NomadJob(pulumi.ComponentResource):
         name: str,
         jobspec: Path,
         vars: NomadVars,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:NomadJob", name, None, opts)
 
@@ -57,7 +57,7 @@ class NomadJob(pulumi.ComponentResource):
         self.register_outputs({})
 
     def _file_contents(self, nomad_file: str) -> str:
-        with open(nomad_file, "r") as f:
+        with open(nomad_file) as f:
             jobspec = f.read()
             f.close()
             return jobspec

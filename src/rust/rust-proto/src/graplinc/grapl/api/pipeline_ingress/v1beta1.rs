@@ -43,7 +43,7 @@ impl TryFrom<PublishRawLogRequestProto> for PublishRawLogRequest {
         Ok(PublishRawLogRequest {
             event_source_id: event_source_id.into(),
             tenant_id: tenant_id.into(),
-            log_event: Bytes::from(request_proto.log_event),
+            log_event: request_proto.log_event,
         })
     }
 }
@@ -53,7 +53,7 @@ impl From<PublishRawLogRequest> for PublishRawLogRequestProto {
         PublishRawLogRequestProto {
             event_source_id: Some(request.event_source_id.into()),
             tenant_id: Some(request.tenant_id.into()),
-            log_event: request.log_event.to_vec(),
+            log_event: request.log_event,
         }
     }
 }

@@ -13,6 +13,7 @@ name = "plugin_work_queue"
 
 [dependencies]
 async-trait = "0.1"
+bytes = "1.1"
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",
@@ -21,10 +22,9 @@ clap = { version = "3.0", default_features = false, features = [
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
-thiserror = "1.0.30"
+thiserror = "1.0"
 tokio = { version = "1.17", features = ["full"] }
-tonic-health = "0.5.0"
-tracing = "0.1.29"
+tracing = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
 sqlx = { version = "0.6", features = [
   "chrono",
@@ -34,7 +34,7 @@ sqlx = { version = "0.6", features = [
   "uuid",
   "offline",
 ] }
-chrono = "0.4.19"
+chrono = "0.4"
 futures = "0.3"
 
 [dev-dependencies]

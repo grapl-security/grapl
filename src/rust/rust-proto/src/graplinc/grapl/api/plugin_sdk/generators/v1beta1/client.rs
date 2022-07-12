@@ -7,8 +7,8 @@ use crate::{
     graplinc::grapl::api::plugin_sdk::generators::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as proto,
     protocol::{
+        service_client::NamedService,
         status::Status,
-        tls::ClientTlsConfig,
     },
     SerDeError,
 };
@@ -29,20 +29,12 @@ pub struct GeneratorServiceClient {
 }
 
 impl GeneratorServiceClient {
-    #[tracing::instrument(skip(tls_config), err)]
-    pub async fn connect<T>(
-        endpoint: T,
-        tls_config: Option<ClientTlsConfig>,
-    ) -> Result<Self, GeneratorServiceClientError>
+    #[tracing::instrument(skip(), err)]
+    pub async fn connect<T>(endpoint: T) -> Result<Self, GeneratorServiceClientError>
     where
-        T: std::convert::TryInto<tonic::transport::Endpoint, Error = tonic::transport::Error>
-            + Debug,
+        T: std::convert::TryInto<tonic::transport::Endpoint> + Debug,
         T::Error: std::error::Error + Send + Sync + 'static,
     {
-        let mut endpoint: tonic::transport::Endpoint = endpoint.try_into()?;
-        if let Some(inner_config) = tls_config {
-            endpoint = endpoint.tls_config(inner_config.into())?;
-        }
         Ok(Self {
             proto_client: GeneratorServiceClientProto::connect(endpoint).await?,
         })
@@ -60,4 +52,9 @@ impl GeneratorServiceClient {
         let response = native::RunGeneratorResponse::try_from(response.into_inner())?;
         Ok(response)
     }
+}
+
+impl NamedService for GeneratorServiceClient {
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorService";
 }

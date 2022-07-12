@@ -1,8 +1,6 @@
 from copy import deepcopy
 from enum import Enum, IntEnum
 
-from typing import Type, Optional, List
-
 
 class PropPrimitive(Enum):
     Int = 1
@@ -10,12 +8,12 @@ class PropPrimitive(Enum):
     Bool = 3
 
 
-class PropType(object):
+class PropType:
     def __init__(
         self,
         primitive: PropPrimitive,
         is_set: bool,
-        index: Optional[List[str]] = None,
+        index: list[str] | None = None,
         upsert=False,
     ):
         self.primitive = primitive
@@ -100,9 +98,9 @@ class EdgeRelationship(IntEnum):
         return False
 
 
-class EdgeT(object):
+class EdgeT:
     def __init__(
-        self, source: Type["Schema"], dest: Type["Schema"], rel: EdgeRelationship
+        self, source: type["Schema"], dest: type["Schema"], rel: EdgeRelationship
     ):
         self.source = source
         self.dest = dest

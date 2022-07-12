@@ -9,7 +9,6 @@ of maintenance.
 """
 
 import json
-from typing import Dict, List, Union
 
 import click
 import toml
@@ -28,12 +27,12 @@ class PyrightConfig(TypedDict):
     venv: str
     verboseOutput: bool
     reportMissingImports: bool
-    exclude: List[str]
-    executionEnvironments: List[Dict[str, Union[str, List[str]]]]
+    exclude: list[str]
+    executionEnvironments: list[dict[str, str | list[str]]]
 
 
 BASE_PYRIGHTCONFIG: PyrightConfig = {
-    "pythonVersion": "3.7",
+    "pythonVersion": "3.10",
     "pythonPlatform": "Linux",
     "venvPath": "build-support",
     "venv": "venv",
@@ -45,7 +44,6 @@ BASE_PYRIGHTCONFIG: PyrightConfig = {
     ],
     "executionEnvironments": [
         {"root": "pulumi"},
-        {"root": "pants-plugins"},
         # NOTE: We will augment this with the src/python root in the
         # code below
     ],
@@ -55,7 +53,7 @@ PANTS_TOML = "pants.toml"
 PYRIGHTCONFIG_JSON = "pyrightconfig.json"
 
 
-def src_python_execution_environment() -> Dict[str, Union[str, List[str]]]:
+def src_python_execution_environment() -> dict[str, str | list[str]]:
     """Generate a pyright "executionEnvironments" entry for code in our
     `src/python` directory.
 
@@ -90,7 +88,6 @@ def src_python_execution_environment() -> Dict[str, Union[str, List[str]]]:
         not in (
             "/3rdparty",
             "/build-support",
-            "/pants-plugins",
             "/pulumi",
             "/src/proto",
         )
