@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, Mapping, Optional, Union, cast, get_args
+from typing import Any, Mapping, Optional, Union, cast
 
 import pulumi_nomad as nomad
 from infra.config import STACK_NAME
@@ -116,7 +116,7 @@ class NomadJob(pulumi.ComponentResource):
                     # ) == (str,):
 
                     # we're going to need to parse the hcl file to get the type for the variable
-                    """
+                    r"""
                     import hcl2
                     with open('foo.nomad', 'r') as file:
                         hcl2_dict = hcl2.load(file)
