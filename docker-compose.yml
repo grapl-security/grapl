@@ -22,7 +22,7 @@ services:
         (
           cd grapl
           pulumi stack init local-grapl --non-interactive
-          pulumi up --yes --skip-preview --stack=local-grapl $$TRACING_ARGS
+          pulumi up --yes --stack=local-grapl $$TRACING_ARGS
         )
 
         # Theoretically, we could skip uploading these job definitions for

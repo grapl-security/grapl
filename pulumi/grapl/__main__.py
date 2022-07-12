@@ -222,17 +222,17 @@ def main() -> None:
         plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
         py_log_level=log_levels.PY_LOG_LEVEL,
         rust_log=log_levels.RUST_LOG_LEVELS,
-        schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
-        schema_table_name=dynamodb_tables.schema_table.name,
-        session_table_name=dynamodb_tables.dynamic_session_table.name,
+        schema_properties_table_name=dynamodb_tables.schema_properties_table.id,
+        schema_table_name=dynamodb_tables.schema_table.id,
+        session_table_name=dynamodb_tables.dynamic_session_table.id,
         test_user_name=config.GRAPL_TEST_USER_NAME,
-        user_auth_table=dynamodb_tables.user_auth_table.name,
-        user_session_table=dynamodb_tables.user_session_table.name,
+        user_auth_table=dynamodb_tables.user_auth_table.id,
+        user_session_table=dynamodb_tables.user_session_table.id,
     )
 
-    provision_vars: Final[NomadVars] = {
-        "test_user_password_secret_id": test_user_password.secret_id,
-        **_get_subset(
+    # This is a tuple, even though get_subset should return a dict. Crazy pills
+    provision_subset = (
+        _get_subset(
             nomad_inputs,
             {
                 "aws_env_vars_for_local",
@@ -245,6 +245,12 @@ def main() -> None:
                 "user_auth_table",
             },
         ),
+    )
+    # pulumi.info(f"provision_subset: {provision_subset}")
+
+    provision_vars: Final[NomadVars] = {
+        "test_user_password_secret_id": test_user_password.secret.arn,
+        **provision_subset[0],
     }
 
     nomad_grapl_core_timeout = "5m"
@@ -352,6 +358,8 @@ def main() -> None:
             **nomad_inputs,
         )
 
+        pulumi.info(f"local_grapl_core_vars: {local_grapl_core_vars}")
+
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
@@ -362,6 +370,8 @@ def main() -> None:
                 )
             ),
         )
+
+        pulumi.info(f"provision vars: {provision_vars}")
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
