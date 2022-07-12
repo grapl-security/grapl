@@ -54,9 +54,40 @@ impl LensManagerApi for LensManager {
             merge_behavior: request.merge_behavior,
         };
 
-        client.merge_lens(create_request).await?;
+        // given two lenses A and B,
+        // to merge B into A,
+
+        // query for the scope of B 'BScope',
+        // then create an edge scope from A to every node in 'BScope'
+
+        // what do we do if its closed
+
+
+        // Graph query service client
+
+        if request.merge_behavior == "PRESERVE".to_string() { // ?
+            let create_node_request = CreateNodeRequest {
+                tenant_id: request.tenant_id,
+                node_type: NodeType {value: "Lens".to_owned()},
+            };
+
+            let create_edge_request = CreateEdgeRequest {
+                edge_name: EdgeName {value: "IDKYet".to_owned()},
+                tenant_id: request.tenant_id,
+                from_uid: request.source_lens_uid.as_u64(),
+                to_uid: request.target_lens_uid.as_u64(),
+                source_node_type: NodeType {value: "Lens".to_owned()},
+                dest_node_type: NodeType {value: "Lens".to_owned()},
+            };
+
+            client.create_node(create_node_request);
+
+            client.create_edge(create_edge_request);
+        }
+
 
         Ok(MergeLensResponse{})
+
 
     }
 
