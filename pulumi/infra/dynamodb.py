@@ -64,7 +64,7 @@ class DynamoDB(pulumi.ComponentResource):
             hash_key="node_type",
             opts=pulumi.ResourceOptions(parent=self),
         )
-        pulumi.export("schema-properties-table", self.schema_properties_table.name)
+        pulumi.export("schema-properties-table", self.schema_properties_table.id)
 
         self.schema_table = DynamoDBTable(
             f"{STACK_NAME}-grapl_schema_table",
@@ -72,7 +72,7 @@ class DynamoDB(pulumi.ComponentResource):
             hash_key="f_edge",
             opts=pulumi.ResourceOptions(parent=self),
         )
-        pulumi.export("schema-table", self.schema_table.name)
+        pulumi.export("schema-table", self.schema_table.id)
 
         self.static_mapping_table = DynamoDBTable(
             f"{STACK_NAME}-static_mapping_table",
@@ -80,7 +80,7 @@ class DynamoDB(pulumi.ComponentResource):
             hash_key="pseudo_key",
             opts=pulumi.ResourceOptions(parent=self),
         )
-        pulumi.export("static-mapping-table", self.static_mapping_table.name)
+        pulumi.export("static-mapping-table", self.static_mapping_table.id)
 
         self.user_auth_table = DynamoDBTable(
             f"{STACK_NAME}-user_auth_table",
@@ -88,7 +88,7 @@ class DynamoDB(pulumi.ComponentResource):
             hash_key="username",
             opts=pulumi.ResourceOptions(parent=self),
         )
-        pulumi.export("user-auth-table", self.user_auth_table.name)
+        pulumi.export("user-auth-table", self.user_auth_table.id)
 
         self.user_session_table = DynamoDBTable(
             f"{STACK_NAME}-user_session_table",
@@ -106,7 +106,7 @@ class DynamoDB(pulumi.ComponentResource):
             range_key="create_time",
             opts=pulumi.ResourceOptions(parent=self),
         )
-        pulumi.export("dynamic-session-table", self.dynamic_session_table.name)
+        pulumi.export("dynamic-session-table", self.dynamic_session_table.id)
 
         self.register_outputs({})
 
