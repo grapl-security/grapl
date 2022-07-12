@@ -25,7 +25,7 @@ pub async fn get_plugin_health(
                     Ok(PluginHealthStatus::Dead)
                 }
                 PluginDeploymentStatus::Success => {
-                    query_nomad_for_health(&nomad_client, plugin_id).await
+                    query_nomad_for_health(nomad_client, plugin_id).await
                 }
             }
         }

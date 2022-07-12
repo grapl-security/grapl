@@ -281,7 +281,8 @@ impl PluginRegistryApi for PluginRegistry {
             &self.nomad_client,
             &self.db_client,
             request.plugin_id,
-        );
+        )
+        .await?;
         Ok(GetPluginHealthResponse { health_status })
     }
 }

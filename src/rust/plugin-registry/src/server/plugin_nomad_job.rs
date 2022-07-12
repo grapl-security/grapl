@@ -1,4 +1,3 @@
-
 /// A centralized place for constants and common patterns done on the
 /// `plugin.nomad` (and hax_docker equivalent)
 

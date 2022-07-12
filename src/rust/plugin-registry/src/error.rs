@@ -86,6 +86,7 @@ impl From<PluginRegistryServiceError> for Status {
                 // Since it's regarding user input, we can de-anonymize this message
                 Status::invalid_argument(format!("Unexpected input to Stream RPC: {e}"))
             }
+            Error::DeploymentStateError(_) => Status::internal("Deployment state error."),
         }
     }
 }

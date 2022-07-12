@@ -47,7 +47,7 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
 
     let get_response: GetPluginResponse = client
         .get_plugin(GetPluginRequest {
-            plugin_id,
+            plugin_id: plugin_id.clone(),
             tenant_id,
         })
         .timeout(std::time::Duration::from_secs(5))
@@ -62,5 +62,6 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
         get_response.plugin_metadata.event_source_id,
         Some(event_source_id)
     );
+
     Ok(())
 }
