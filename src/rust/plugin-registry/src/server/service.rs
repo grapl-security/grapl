@@ -16,6 +16,8 @@ use rust_proto::{
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginHealthRequest,
+        GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
         PluginMetadata,
@@ -264,6 +266,14 @@ impl PluginRegistryApi for PluginRegistry {
         &self,
         _request: GetAnalyzersForTenantRequest,
     ) -> Result<GetAnalyzersForTenantResponse, Self::Error> {
+        todo!()
+    }
+
+    #[tracing::instrument(skip(self, _request), err)]
+    async fn get_plugin_health(
+        &self,
+        _request: GetPluginHealthRequest,
+    ) -> Result<GetPluginHealthResponse, Self::Error> {
         todo!()
     }
 }
