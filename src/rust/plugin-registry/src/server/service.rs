@@ -32,7 +32,10 @@ use rust_proto::{
 use tokio::net::TcpListener;
 use tonic::async_trait;
 
-use super::create_plugin::upload_stream_multipart_to_s3;
+use super::{
+    create_plugin::upload_stream_multipart_to_s3,
+    get_plugin_health,
+};
 use crate::{
     db::{
         client::{
@@ -269,12 +272,17 @@ impl PluginRegistryApi for PluginRegistry {
         todo!()
     }
 
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn get_plugin_health(
         &self,
-        _request: GetPluginHealthRequest,
+        request: GetPluginHealthRequest,
     ) -> Result<GetPluginHealthResponse, Self::Error> {
-        todo!()
+        let health_status = get_plugin_health::get_plugin_health(
+            &self.nomad_client,
+            &self.db_client,
+            request.plugin_id,
+        );
+        Ok(GetPluginHealthResponse { health_status })
     }
 }
 
