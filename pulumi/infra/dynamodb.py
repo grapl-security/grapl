@@ -108,6 +108,16 @@ class DynamoDB(pulumi.ComponentResource):
         )
         pulumi.export("dynamic-session-table", self.dynamic_session_table.name)
 
+        self.static_mapping_table = DynamoDBTable(
+            f"{STACK_NAME}-static_mapping_table",
+            attrs=[
+                {"name": "static_id", "type": "S"},
+                {"name": "uid", "type": "N"},
+            ],
+            hash_key="static_id",
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+        pulumi.export("static-mapping-table", self.static_mapping_table.name)
         self.register_outputs({})
 
 

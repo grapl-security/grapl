@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 use clap::Parser;
 use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
@@ -15,9 +17,12 @@ use opentelemetry::{
 };
 use rusoto_dynamodb::DynamoDbClient;
 use rust_proto::graplinc::grapl::{
-    api::graph::v1beta1::{
-        GraphDescription,
-        IdentifiedGraph,
+    api::{
+        graph::v1beta1::{
+            GraphDescription,
+            IdentifiedGraph,
+        },
+        uid_allocator::v1beta1::client::UidAllocatorServiceClient,
     },
     pipeline::{
         v1beta1::Metadata,
@@ -29,12 +34,14 @@ use tracing_subscriber::{
     prelude::*,
     EnvFilter,
 };
+use uid_allocator::client::CachingUidAllocatorServiceClient;
 
 mod dynamic_sessiondb;
 mod error;
 mod node_identifier;
 mod sessiondb;
 mod sessions;
+mod static_mapping_db;
 
 use crate::{
     dynamic_sessiondb::NodeDescriptionIdentifier,
@@ -42,6 +49,7 @@ use crate::{
     node_identifier::NodeIdentifier,
     sessiondb::SessionDb,
 };
+use crate::static_mapping_db::StaticMappingDb;
 
 #[tokio::main]
 async fn main() -> Result<(), NodeIdentifierError> {
@@ -78,7 +86,23 @@ async fn handler() -> Result<(), NodeIdentifierError> {
         dynamo.clone(),
         std::env::var("GRAPL_DYNAMIC_SESSION_TABLE")?,
     );
-    let node_identifier = NodeIdentifier::new(NodeDescriptionIdentifier::new(dyn_session_db, true));
+    let uid_allocator = CachingUidAllocatorServiceClient::new(
+        UidAllocatorServiceClient::connect(std::env::var("UID_ALLOCATOR_URL")?).await?,
+        100,
+    );
+
+    let static_mapping_db = StaticMappingDb::new(
+        dynamo.clone(),
+        uid_allocator.clone(),
+        std::env::var("GRAPL_STATIC_MAPPING_TABLE")?,
+    );
+
+    let node_identifier = NodeIdentifier::new(NodeDescriptionIdentifier::new(
+        dyn_session_db,
+        uid_allocator,
+        static_mapping_db,
+        true,
+    ));
 
     let consumer_config = ConsumerConfig::parse();
     let producer_config = ProducerConfig::parse();
@@ -102,7 +126,10 @@ async fn handler() -> Result<(), NodeIdentifierError> {
             async move {
                 let envelope = event?;
 
-                match identifier.handle_event(envelope.inner_message).await {
+                match identifier
+                    .handle_event(envelope.metadata.tenant_id, envelope.inner_message)
+                    .await
+                {
                     Ok(identified_graph) => Ok(Some(Envelope::new(
                         Metadata::create_from(envelope.metadata),
                         identified_graph,

@@ -43,6 +43,7 @@ rusoto_dynamodb = { version = "0.47", default_features = false, features = [
 ] }
 rusoto_credential = "0.47"
 rust-proto = { path = "../rust-proto", version = "*" }
+uid-allocator = {path = "../uid-allocator", default_features = false, features = ["client"] }
 serde = "1.0"
 serde_dynamodb = { version = "0.9", default_features = false, features = [
   "rustls"
@@ -61,6 +62,7 @@ tracing-appender = "0.2"
 tracing-opentelemetry = "0.16"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "1.0", features = ["v4"] }
+blake2 = "0.10.4"
 
 [dev-dependencies]
 async-trait = "0.1"

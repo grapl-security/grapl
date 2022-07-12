@@ -55,6 +55,11 @@ fn edge_key(
     hasher.finalize().into()
 }
 
+pub enum Write {
+    Dropped,
+    Issued,
+}
+
 pub struct WriteDropper {
     max_i64: dashmap::DashMap<PropertyKey, i64>,
     min_i64: dashmap::DashMap<PropertyKey, i64>,
@@ -91,7 +96,7 @@ impl WriteDropper {
         property_name: PropertyName,
         value: i64,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<Write, E>
     where
         Fut: Future<Output = Result<T, E>>,
     {
@@ -104,16 +109,18 @@ impl WriteDropper {
                 callback().await?;
                 handle_full!(self, max_i64);
                 entry.insert(value);
+                return Ok(Write::Issued);
             }
             Entry::Occupied(mut entry) => {
                 if value > *entry.get() {
                     callback().await?;
                     handle_full!(self, max_i64);
                     entry.insert(value);
+                    return Ok(Write::Issued);
                 }
             }
         }
-        Ok(())
+        Ok(Write::Dropped)
     }
 
     pub async fn check_min_i64<T, E, Fut>(
@@ -123,7 +130,7 @@ impl WriteDropper {
         property_name: PropertyName,
         value: i64,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<Write, E>
     where
         Fut: Future<Output = Result<T, E>>,
     {
@@ -136,16 +143,18 @@ impl WriteDropper {
                 callback().await?;
                 handle_full!(self, min_i64);
                 entry.insert(value);
+                return Ok(Write::Issued);
             }
             Entry::Occupied(mut entry) => {
                 if value < *entry.get() {
                     callback().await?;
                     handle_full!(self, min_i64);
                     entry.insert(value);
+                    return Ok(Write::Issued);
                 }
             }
         }
-        Ok(())
+        Ok(Write::Dropped)
     }
     pub async fn check_imm_i64<T, E, Fut>(
         &self,
@@ -153,7 +162,7 @@ impl WriteDropper {
         node_type: NodeType,
         property_name: PropertyName,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<Write, E>
     where
         Fut: Future<Output = Result<T, E>>,
     {
@@ -166,8 +175,9 @@ impl WriteDropper {
             callback().await?;
             handle_full!(self, imm_i64);
             self.imm_i64.insert(key);
+            return Ok(Write::Issued);
         }
-        Ok(())
+        Ok(Write::Dropped)
     }
 
     pub async fn check_max_u64<T, E, Fut>(
@@ -177,7 +187,7 @@ impl WriteDropper {
         property_name: PropertyName,
         value: u64,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<Write, E>
     where
         Fut: Future<Output = Result<T, E>>,
     {
@@ -190,16 +200,18 @@ impl WriteDropper {
                 callback().await?;
                 handle_full!(self, max_u64);
                 entry.insert(value);
+                return Ok(Write::Issued);
             }
             Entry::Occupied(mut entry) => {
                 if value > *entry.get() {
                     callback().await?;
                     handle_full!(self, max_u64);
                     entry.insert(value);
+                    return Ok(Write::Issued);
                 }
             }
         }
-        Ok(())
+        Ok(Write::Dropped)
     }
 
     pub async fn check_min_u64<T, E, Fut>(
@@ -209,7 +221,7 @@ impl WriteDropper {
         property_name: PropertyName,
         value: u64,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<Write, E>
     where
         Fut: Future<Output = Result<T, E>>,
     {
@@ -222,24 +234,27 @@ impl WriteDropper {
                 callback().await?;
                 handle_full!(self, min_u64);
                 entry.insert(value);
+                return Ok(Write::Issued);
             }
             Entry::Occupied(mut entry) => {
                 if value < *entry.get() {
                     callback().await?;
                     handle_full!(self, min_u64);
                     entry.insert(value);
+                    return Ok(Write::Issued);
                 }
             }
         }
-        Ok(())
+        Ok(Write::Dropped)
     }
+
     pub async fn check_imm_u64<T, E, Fut>(
         &self,
         tenant_id: uuid::Uuid,
         node_type: NodeType,
         property_name: PropertyName,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<Write, E>
     where
         Fut: Future<Output = Result<T, E>>,
     {
@@ -252,8 +267,9 @@ impl WriteDropper {
             callback().await?;
             handle_full!(self, imm_u64);
             self.imm_u64.insert(key);
+            return Ok(Write::Issued);
         }
-        Ok(())
+        Ok(Write::Dropped)
     }
 
     pub async fn check_imm_string<T, E, Fut>(
@@ -262,7 +278,7 @@ impl WriteDropper {
         node_type: NodeType,
         property_name: PropertyName,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<Write, E>
     where
         Fut: Future<Output = Result<T, E>>,
     {
@@ -275,8 +291,9 @@ impl WriteDropper {
             callback().await?;
             handle_full!(self, imm_string);
             self.imm_string.insert(key);
+            return Ok(Write::Issued);
         }
-        Ok(())
+        Ok(Write::Dropped)
     }
 
     pub async fn check_node_type<T, E, Fut>(
@@ -284,7 +301,7 @@ impl WriteDropper {
         tenant_id: uuid::Uuid,
         uid: Uid,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<Write, E>
     where
         Fut: Future<Output = Result<T, E>>,
     {
@@ -293,8 +310,9 @@ impl WriteDropper {
             callback().await?;
             handle_full!(self, node_type);
             self.node_type.insert(key);
+            return Ok(Write::Issued);
         }
-        Ok(())
+        Ok(Write::Dropped)
     }
 
     pub async fn check_edges<T, E, Fut>(
@@ -305,7 +323,7 @@ impl WriteDropper {
         f_edge_name: EdgeName,
         r_edge_name: EdgeName,
         callback: impl FnOnce(EdgeName, EdgeName) -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<Write, E>
     where
         Fut: Future<Output = Result<T, E>>,
     {
@@ -320,7 +338,8 @@ impl WriteDropper {
 
             self.edges.insert(fkey);
             self.edges.insert(rkey);
+            return Ok(Write::Issued);
         }
-        Ok(())
+        Ok(Write::Dropped)
     }
 }

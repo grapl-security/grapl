@@ -246,6 +246,10 @@ pub mod graplinc {
                 pub mod generators {
                     pub mod v1beta1;
                 }
+
+                pub mod analyzers {
+                    pub mod v1beta1;
+                }
             }
 
             pub mod plugin_work_queue {

@@ -2,11 +2,15 @@ use std::collections::HashMap;
 
 use failure::Error;
 use grapl_utils::rusoto_ext::dynamodb::GraplDynamoDbClientExt;
-use rust_proto::graplinc::grapl::api::graph::v1beta1::{
-    GraphDescription,
-    IdentifiedGraph,
-    IdentifiedNode,
-    NodeDescription,
+use rusoto_dynamodb::DynamoDb;
+use rust_proto::graplinc::grapl::{
+    api::graph::v1beta1::{
+        GraphDescription,
+        IdentifiedGraph,
+        IdentifiedNode,
+        NodeDescription,
+    },
+    common::v1beta1::types::Uid,
 };
 use tap::tap::TapOptional;
 
@@ -46,9 +50,15 @@ where
 
     // todo: We should be yielding IdentifiedNode's here
     #[tracing::instrument(fields(node_key=?node.node_key), skip(self, node))]
-    async fn attribute_node_key(&self, node: &NodeDescription) -> Result<IdentifiedNode, Error> {
-        let new_node = self.dynamic_identifier.attribute_dynamic_node(node).await?;
-        Ok(new_node.into())
+    async fn attribute_node_key(
+        &self,
+        tenant_id: uuid::Uuid,
+        node: &NodeDescription,
+    ) -> Result<IdentifiedNode, Error> {
+        Ok(self
+            .dynamic_identifier
+            .attribute_dynamic_node(tenant_id, node)
+            .await?)
     }
 
     /// Performs batch identification of unidentified nodes into identified
@@ -60,15 +70,17 @@ where
     #[tracing::instrument(skip(self, unidentified_subgraph, identified_graph))]
     async fn identify_nodes(
         &self,
+        tenant_id: uuid::Uuid,
         unidentified_subgraph: &GraphDescription,
         identified_graph: &mut IdentifiedGraph,
-    ) -> (HashMap<String, String>, Option<failure::Error>) {
+    ) -> (HashMap<String, Uid>, Option<failure::Error>) {
         let mut identified_nodekey_map = HashMap::new();
         let mut attribution_failure = None;
 
         // new method
         for (unidentified_node_key, unidentified_node) in unidentified_subgraph.nodes.iter() {
-            let identified_node = match self.attribute_node_key(unidentified_node).await {
+            let identified_node = match self.attribute_node_key(tenant_id, &unidentified_node).await
+            {
                 Ok(identified_node) => identified_node,
                 Err(e) => {
                     tracing::warn!(
@@ -81,10 +93,7 @@ where
                 }
             };
 
-            identified_nodekey_map.insert(
-                unidentified_node_key.to_owned(),
-                identified_node.clone_node_key(),
-            );
+            identified_nodekey_map.insert(unidentified_node_key.to_owned(), identified_node.uid);
             identified_graph.add_node(identified_node);
         }
 
@@ -105,7 +114,7 @@ where
         &self,
         unidentified_subgraph: &GraphDescription,
         identified_graph: &mut IdentifiedGraph,
-        identified_nodekey_map: HashMap<String, String>,
+        identified_nodekey_map: HashMap<String, Uid>,
     ) {
         let identified_node_edges = unidentified_subgraph.edges.iter()
             // filter out all edges for nodes that were not identified (also gets our from_key)
@@ -153,6 +162,7 @@ where
     #[tracing::instrument(skip(self, unidentified_subgraph))]
     pub(crate) async fn handle_event(
         &self,
+        tenant_id: uuid::Uuid,
         unidentified_subgraph: GraphDescription,
     ) -> Result<IdentifiedGraph, Result<(IdentifiedGraph, NodeIdentifierError), NodeIdentifierError>>
     {
@@ -185,7 +195,7 @@ where
         let mut identified_graph = IdentifiedGraph::new();
 
         let (identified_nodekey_map, attribution_failure) = self
-            .identify_nodes(&unidentified_subgraph, &mut identified_graph)
+            .identify_nodes(tenant_id, &unidentified_subgraph, &mut identified_graph)
             .await;
 
         tracing::info!(

@@ -195,7 +195,7 @@ impl type_url::TypeUrl for NodeType {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.common.v1beta1.NodeType";
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialOrd, Ord, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Uid {
     value: u64,
 }

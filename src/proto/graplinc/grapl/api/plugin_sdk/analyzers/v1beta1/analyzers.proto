@@ -25,7 +25,7 @@ message EdgeUpdate {
   graplinc.grapl.common.v1beta1.Uid src_uid = 1;
   graplinc.grapl.common.v1beta1.Uid dst_uid = 2;
   graplinc.grapl.common.v1beta1.EdgeName src_edge_name = 3;
-  graplinc.grapl.common.v1beta1.EdgeName dst_edge_name = 4;
+  graplinc.grapl.common.v1beta1.NodeType src_node_type = 4;
 }
 
 message Update {
@@ -35,6 +35,10 @@ message Update {
     Int64PropertyUpdate int64_property_update = 3;
     EdgeUpdate edge_update = 4;
   }
+}
+
+message Updates {
+  repeated Update updates = 1;
 }
 
 message LensRef {

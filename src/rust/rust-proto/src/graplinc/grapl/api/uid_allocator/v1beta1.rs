@@ -197,8 +197,10 @@ pub mod client {
         SerDeError(#[from] SerDeError),
         #[error("Status {0}")]
         Status(Status),
-        #[error("ConnectError")]
+        #[error("ConnectError {0}")]
         ConnectError(tonic::transport::Error),
+        #[error("InvalidUid {0}")]
+        InvalidUid(&'static str),
     }
 
     #[derive(Clone)]

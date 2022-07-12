@@ -1,3 +1,4 @@
+use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorServiceClientError;
 use thiserror::Error;
 
 #[non_exhaustive]
@@ -20,6 +21,9 @@ pub(crate) enum NodeIdentifierError {
 
     #[error("error configuring tracing {0}")]
     TraceError(#[from] opentelemetry::trace::TraceError),
+
+    #[error("UidAllocatorServiceClientError {0}")]
+    UidAllocatorServiceClientError(#[from] UidAllocatorServiceClientError),
 }
 
 impl From<NodeIdentifierError> for kafka::StreamProcessorError {

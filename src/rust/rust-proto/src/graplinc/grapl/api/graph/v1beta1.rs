@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
+    graplinc::grapl::common::v1beta1::types::Uid,
     protobufs::graplinc::grapl::api::graph::v1beta1::{
         DecrementOnlyIntProp as DecrementOnlyIntPropProto,
         DecrementOnlyUintProp as DecrementOnlyUintPropProto,
@@ -9,6 +10,8 @@ use crate::{
         ExecutionHit as ExecutionHitProto,
         GraphDescription as GraphDescriptionProto,
         IdStrategy as IdStrategyProto,
+        IdentifiedEdge as IdentifiedEdgeProto,
+        IdentifiedEdgeList as IdentifiedEdgeListProto,
         IdentifiedGraph as IdentifiedGraphProto,
         IdentifiedNode as IdentifiedNodeProto,
         ImmutableIntProp as ImmutableIntPropProto,
@@ -1114,18 +1117,108 @@ impl serde_impl::ProtobufSerializable for NodeDescription {
 }
 
 //
+// Edge
+//
+
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+pub struct IdentifiedEdge {
+    pub to_uid: Uid,
+    pub from_uid: Uid,
+    pub edge_name: String,
+}
+
+impl From<IdentifiedEdgeProto> for IdentifiedEdge {
+    fn from(edge_proto: IdentifiedEdgeProto) -> Self {
+        IdentifiedEdge {
+            to_uid: edge_proto
+                .to_uid
+                .expect("todo: This should be TryFrom")
+                .try_into()
+                .expect("todo: This should be TryFrom"),
+            from_uid: edge_proto
+                .from_uid
+                .expect("todo: This should be TryFrom")
+                .try_into()
+                .expect("todo: This should be TryFrom"),
+            edge_name: edge_proto.edge_name,
+        }
+    }
+}
+
+impl From<IdentifiedEdge> for IdentifiedEdgeProto {
+    fn from(edge: IdentifiedEdge) -> Self {
+        IdentifiedEdgeProto {
+            to_uid: Some(edge.to_uid.into()),
+            from_uid: Some(edge.from_uid.into()),
+            edge_name: edge.edge_name,
+        }
+    }
+}
+
+impl type_url::TypeUrl for IdentifiedEdge {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdentifiedEdge";
+}
+
+impl serde_impl::ProtobufSerializable for IdentifiedEdge {
+    type ProtobufMessage = IdentifiedEdgeProto;
+}
+
+//
+// EdgeList
+//
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct IdentifiedEdgeList {
+    pub edges: Vec<IdentifiedEdge>,
+}
+
+impl From<IdentifiedEdgeListProto> for IdentifiedEdgeList {
+    fn from(edge_list_proto: IdentifiedEdgeListProto) -> Self {
+        let mut edges = Vec::with_capacity(edge_list_proto.edges.len());
+        for edge in edge_list_proto.edges {
+            edges.push(IdentifiedEdge::from(edge));
+        }
+
+        IdentifiedEdgeList { edges }
+    }
+}
+
+impl From<IdentifiedEdgeList> for IdentifiedEdgeListProto {
+    fn from(edge_list: IdentifiedEdgeList) -> Self {
+        let mut edges = Vec::with_capacity(edge_list.edges.len());
+        for edge in edge_list.edges {
+            edges.push(IdentifiedEdgeProto::from(edge));
+        }
+
+        IdentifiedEdgeListProto { edges }
+    }
+}
+
+impl type_url::TypeUrl for IdentifiedEdgeList {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdentifiedEdgeList";
+}
+
+impl serde_impl::ProtobufSerializable for IdentifiedEdgeList {
+    type ProtobufMessage = IdentifiedEdgeListProto;
+}
+
+//
 // IdentifiedNode
 //
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct IdentifiedNode {
     pub properties: HashMap<String, NodeProperty>,
+    pub uid: Uid,
     pub node_key: String,
     pub node_type: String,
 }
 
 impl IdentifiedNode {
     pub fn merge(&mut self, other: &Self) {
+        debug_assert_eq!(self.uid, other.uid);
         debug_assert_eq!(self.node_type, other.node_type);
         debug_assert_eq!(self.node_key, other.node_key);
         for (prop_name, prop_value) in other.properties.iter() {
@@ -1139,9 +1232,9 @@ impl IdentifiedNode {
         }
     }
 
-    pub fn into(self, uid: u64) -> MergedNode {
+    pub fn into(self) -> MergedNode {
         MergedNode {
-            uid,
+            uid: self.uid.as_u64(),
             properties: self.properties,
             node_key: self.node_key,
             node_type: self.node_type,
@@ -1166,6 +1259,10 @@ impl TryFrom<IdentifiedNodeProto> for IdentifiedNode {
         }
 
         Ok(IdentifiedNode {
+            uid: identified_node_proto
+                .uid
+                .ok_or(SerDeError::MissingField("uid"))?
+                .try_into()?,
             properties,
             node_key: identified_node_proto.node_key,
             node_type: identified_node_proto.node_type,
@@ -1181,6 +1278,7 @@ impl From<IdentifiedNode> for IdentifiedNodeProto {
         }
 
         IdentifiedNodeProto {
+            uid: Some(identified_node.uid.into()),
             properties,
             node_key: identified_node.node_key,
             node_type: identified_node.node_type,
@@ -1197,16 +1295,6 @@ impl serde_impl::ProtobufSerializable for IdentifiedNode {
     type ProtobufMessage = IdentifiedNodeProto;
 }
 
-impl From<NodeDescription> for IdentifiedNode {
-    fn from(n: NodeDescription) -> Self {
-        IdentifiedNode {
-            properties: n.properties,
-            node_key: n.node_key,
-            node_type: n.node_type,
-        }
-    }
-}
-
 //
 // MergedNode
 //
@@ -1220,9 +1308,9 @@ pub struct MergedNode {
 }
 
 impl MergedNode {
-    pub fn from(n: IdentifiedNode, uid: u64) -> Self {
+    pub fn from(n: IdentifiedNode) -> Self {
         Self {
-            uid,
+            uid: n.uid.as_u64(),
             properties: n.properties,
             node_key: n.node_key,
             node_type: n.node_type,
@@ -1230,6 +1318,7 @@ impl MergedNode {
     }
 
     pub fn merge(&mut self, other: &Self) {
+        debug_assert_eq!(self.uid, other.uid);
         debug_assert_eq!(self.node_type, other.node_type);
         debug_assert_eq!(self.node_key, other.node_key);
         for (prop_name, prop_value) in other.properties.iter() {
@@ -1711,8 +1800,8 @@ impl serde_impl::ProtobufSerializable for GraphDescription {
 
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct IdentifiedGraph {
-    pub nodes: HashMap<String, IdentifiedNode>,
-    pub edges: HashMap<String, EdgeList>,
+    pub nodes: HashMap<Uid, IdentifiedNode>,
+    pub edges: HashMap<Uid, IdentifiedEdgeList>,
 }
 
 impl IdentifiedGraph {
@@ -1724,35 +1813,28 @@ impl IdentifiedGraph {
     }
 
     pub fn add_node(&mut self, node: IdentifiedNode) {
-        match self.nodes.get_mut(&node.node_key) {
+        match self.nodes.get_mut(&node.uid) {
             Some(n) => n.merge(&node),
             None => {
-                self.nodes.insert(node.clone_node_key(), node);
+                self.nodes.insert(node.uid, node);
             }
         };
     }
 
-    pub fn add_edge(
-        &mut self,
-        edge_name: impl Into<String>,
-        from_node_key: impl Into<String>,
-        to_node_key: impl Into<String>,
-    ) {
-        let from_node_key = from_node_key.into();
-        let to_node_key = to_node_key.into();
-        assert_ne!(from_node_key, to_node_key);
+    pub fn add_edge(&mut self, edge_name: impl Into<String>, from_uid: Uid, to_uid: Uid) {
+        assert_ne!(from_uid, to_uid);
 
         let edge_name = edge_name.into();
-        let edge = Edge {
-            from_node_key: from_node_key.clone(),
-            to_node_key,
+        let edge = IdentifiedEdge {
+            from_uid,
+            to_uid,
             edge_name,
         };
 
-        let edge_list: &mut Vec<Edge> = &mut self
+        let edge_list: &mut Vec<IdentifiedEdge> = &mut self
             .edges
-            .entry(from_node_key)
-            .or_insert_with(|| EdgeList {
+            .entry(from_uid)
+            .or_insert_with(|| IdentifiedEdgeList {
                 edges: Vec::with_capacity(1),
             })
             .edges;
@@ -1760,22 +1842,18 @@ impl IdentifiedGraph {
     }
 
     pub fn merge(&mut self, other: &Self) {
-        for (node_key, other_node) in other.nodes.iter() {
-            match self.nodes.get_mut(node_key) {
+        for (node_uid, other_node) in other.nodes.iter() {
+            match self.nodes.get_mut(node_uid) {
                 Some(n) => n.merge(other_node),
                 None => {
-                    self.nodes.insert(node_key.clone(), other_node.clone());
+                    self.nodes.insert(*node_uid, other_node.clone());
                 }
             };
         }
 
         for edge_list in other.edges.values() {
             for edge in edge_list.edges.iter() {
-                self.add_edge(
-                    edge.edge_name.clone(),
-                    edge.from_node_key.clone(),
-                    edge.to_node_key.clone(),
-                );
+                self.add_edge(edge.edge_name.clone(), edge.from_uid, edge.to_uid);
             }
         }
     }
@@ -1791,12 +1869,18 @@ impl TryFrom<IdentifiedGraphProto> for IdentifiedGraph {
     fn try_from(identified_graph_proto: IdentifiedGraphProto) -> Result<Self, Self::Error> {
         let mut nodes = HashMap::with_capacity(identified_graph_proto.nodes.len());
         for (key, identified_node) in identified_graph_proto.nodes {
-            nodes.insert(key, IdentifiedNode::try_from(identified_node)?);
+            nodes.insert(
+                Uid::from_u64(key).expect("todo"),
+                IdentifiedNode::try_from(identified_node)?,
+            );
         }
 
         let mut edges = HashMap::with_capacity(identified_graph_proto.edges.len());
         for (key, edge_list) in identified_graph_proto.edges {
-            edges.insert(key, EdgeList::from(edge_list));
+            edges.insert(
+                Uid::from_u64(key).expect("todo"),
+                IdentifiedEdgeList::from(edge_list),
+            );
         }
 
         Ok(IdentifiedGraph { nodes, edges })
@@ -1807,12 +1891,12 @@ impl From<IdentifiedGraph> for IdentifiedGraphProto {
     fn from(identified_graph: IdentifiedGraph) -> Self {
         let mut nodes = HashMap::with_capacity(identified_graph.nodes.len());
         for (key, identified_node) in identified_graph.nodes {
-            nodes.insert(key, IdentifiedNodeProto::from(identified_node));
+            nodes.insert(key.as_u64(), IdentifiedNodeProto::from(identified_node));
         }
 
         let mut edges = HashMap::with_capacity(identified_graph.edges.len());
         for (key, edge_list) in identified_graph.edges {
-            edges.insert(key, EdgeListProto::from(edge_list));
+            edges.insert(key.as_u64(), IdentifiedEdgeListProto::from(edge_list));
         }
 
         IdentifiedGraphProto { nodes, edges }

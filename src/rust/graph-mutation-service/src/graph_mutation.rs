@@ -47,7 +47,10 @@ use crate::{
         MIN_I_64_TABLE_NAME,
         MIN_U_64_TABLE_NAME,
     },
-    write_dropper::WriteDropper,
+    write_dropper::{
+        Write,
+        WriteDropper,
+    },
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -113,7 +116,7 @@ impl GraphMutationManager {
         node_type: NodeType,
         property_name: PropertyName,
         property_value: u64,
-    ) -> Result<(), GraphMutationManagerError> {
+    ) -> Result<Write, GraphMutationManagerError> {
         self.write_dropper
             .check_max_u64(
                 tenant_keyspace,
@@ -153,7 +156,7 @@ impl GraphMutationManager {
         node_type: NodeType,
         property_name: PropertyName,
         property_value: u64,
-    ) -> Result<(), GraphMutationManagerError> {
+    ) -> Result<Write, GraphMutationManagerError> {
         self.write_dropper
             .check_min_u64(
                 tenant_keyspace,
@@ -194,7 +197,7 @@ impl GraphMutationManager {
         node_type: NodeType,
         property_name: PropertyName,
         property_value: u64,
-    ) -> Result<(), GraphMutationManagerError> {
+    ) -> Result<Write, GraphMutationManagerError> {
         self.write_dropper
             .check_imm_u64(
                 tenant_keyspace,
@@ -235,7 +238,7 @@ impl GraphMutationManager {
         node_type: NodeType,
         property_name: PropertyName,
         property_value: i64,
-    ) -> Result<(), GraphMutationManagerError> {
+    ) -> Result<Write, GraphMutationManagerError> {
         self.write_dropper
             .check_max_i64(
                 tenant_keyspace,
@@ -274,7 +277,7 @@ impl GraphMutationManager {
         node_type: NodeType,
         property_name: PropertyName,
         property_value: i64,
-    ) -> Result<(), GraphMutationManagerError> {
+    ) -> Result<Write, GraphMutationManagerError> {
         self.write_dropper
             .check_min_i64(
                 tenant_keyspace,
@@ -314,7 +317,7 @@ impl GraphMutationManager {
         node_type: NodeType,
         property_name: PropertyName,
         property_value: i64,
-    ) -> Result<(), GraphMutationManagerError> {
+    ) -> Result<Write, GraphMutationManagerError> {
         self.write_dropper
             .check_imm_i64(
                 tenant_keyspace,
@@ -349,7 +352,7 @@ impl GraphMutationManager {
         tenant_keyspace: uuid::Uuid,
         uid: Uid,
         node_type: NodeType,
-    ) -> Result<(), GraphMutationManagerError> {
+    ) -> Result<Write, GraphMutationManagerError> {
         self.write_dropper
             .check_node_type(tenant_keyspace, uid, || async move {
                 let tenant_urn = tenant_keyspace.urn();
@@ -375,7 +378,7 @@ impl GraphMutationManager {
         node_type: NodeType,
         property_name: PropertyName,
         property_value: String,
-    ) -> Result<(), GraphMutationManagerError> {
+    ) -> Result<Write, GraphMutationManagerError> {
         self.write_dropper
             .check_imm_string(
                 tenant_keyspace,
@@ -413,7 +416,7 @@ impl GraphMutationManager {
         to_uid: Uid,
         f_edge_name: EdgeName,
         r_edge_name: EdgeName,
-    ) -> Result<(), GraphMutationManagerError> {
+    ) -> Result<Write, GraphMutationManagerError> {
         self.write_dropper
             .check_edges(
                 tenant_keyspace,
@@ -485,7 +488,6 @@ impl GraphMutationApi for GraphMutationManager {
             .uid_allocator_client
             .allocate_id(request.tenant_id)
             .await?;
-        let uid = Uid::from_u64(uid).ok_or_else(|| GraphMutationManagerError::ZeroUid)?;
 
         self.set_node_type(request.tenant_id, uid, request.node_type)
             .await?;
@@ -506,30 +508,30 @@ impl GraphMutationApi for GraphMutationManager {
             property_name,
             property,
         } = request;
-        match property.property {
+        let write = match property.property {
             Property::IncrementOnlyUintProp(property) => {
                 self.upsert_max_u64(tenant_id, uid, node_type, property_name, property.prop)
-                    .await?;
+                    .await?
             }
             Property::DecrementOnlyUintProp(property) => {
                 self.upsert_min_u64(tenant_id, uid, node_type, property_name, property.prop)
-                    .await?;
+                    .await?
             }
             Property::ImmutableUintProp(property) => {
                 self.upsert_immutable_u64(tenant_id, uid, node_type, property_name, property.prop)
-                    .await?;
+                    .await?
             }
             Property::IncrementOnlyIntProp(property) => {
                 self.upsert_max_i64(tenant_id, uid, node_type, property_name, property.prop)
-                    .await?;
+                    .await?
             }
             Property::DecrementOnlyIntProp(property) => {
                 self.upsert_min_i64(tenant_id, uid, node_type, property_name, property.prop)
-                    .await?;
+                    .await?
             }
             Property::ImmutableIntProp(property) => {
                 self.upsert_immutable_i64(tenant_id, uid, node_type, property_name, property.prop)
-                    .await?;
+                    .await?
             }
             Property::ImmutableStrProp(property) => {
                 self.upsert_immutable_string(
@@ -539,15 +541,16 @@ impl GraphMutationApi for GraphMutationManager {
                     property_name,
                     property.prop,
                 )
-                .await?;
+                .await?
             }
         };
 
+        let mutation_redundancy = match write {
+            Write::Dropped => MutationRedundancy::True,
+            Write::Issued => MutationRedundancy::Maybe,
+        };
         Ok(SetNodePropertyResponse {
-            // todo: At this point we can't tell if the update was redundant
-            //       but it is always safe (albeit suboptimal) to assume that
-            //       it was not.
-            mutation_redundancy: MutationRedundancy::Maybe,
+            mutation_redundancy,
         })
     }
 
@@ -570,14 +573,17 @@ impl GraphMutationApi for GraphMutationManager {
             .resolve_reverse_edge(tenant_id, source_node_type.clone(), edge_name.clone())
             .await?;
 
-        self.upsert_edges(tenant_id, from_uid, to_uid, edge_name, reverse_edge_name)
+        let write = self
+            .upsert_edges(tenant_id, from_uid, to_uid, edge_name, reverse_edge_name)
             .await?;
 
+        let mutation_redundancy = match write {
+            Write::Dropped => MutationRedundancy::True,
+            Write::Issued => MutationRedundancy::Maybe,
+        };
+
         Ok(CreateEdgeResponse {
-            // todo: At this point we don't track if the update was redundant
-            //       but it is always safe (albeit suboptimal) to assume that
-            //       it was not.
-            mutation_redundancy: MutationRedundancy::Maybe,
+            mutation_redundancy,
         })
     }
 }

@@ -19,10 +19,12 @@ use rusoto_dynamodb::{
     TransactWriteItemsInput,
     UpdateItemInput,
 };
+use rust_proto::graplinc::grapl::common::v1beta1::types::Uid;
 use tracing::{
     info,
     warn,
 };
+use uid_allocator::client::CachingUidAllocatorServiceClient;
 use uuid::Uuid;
 
 use crate::sessions::*;
@@ -331,8 +333,13 @@ where
         Ok(())
     }
 
-    #[tracing::instrument(skip(self, unid), err)]
-    pub(crate) async fn handle_creation_event(&self, unid: UnidSession) -> Result<String, Error> {
+    #[tracing::instrument(skip(self, unid, uid_allocator), err)]
+    pub(crate) async fn handle_creation_event(
+        &self,
+        tenant_id: Uuid,
+        unid: UnidSession,
+        uid_allocator: &CachingUidAllocatorServiceClient,
+    ) -> Result<Uid, Error> {
         info!(
             message="Handling unid session creation",
             pseudo_key=?unid.pseudo_key, timestamp=?unid.timestamp
@@ -342,6 +349,10 @@ where
         let session = self.find_first_session_after(&unid).await?;
 
         if let Some(session) = session {
+            let session_id = match Uid::from_u64(session.session_id) {
+                Some(uid) => uid,
+                None => bail!("Invalid session_id: {}", session.session_id),
+            };
             // If session.is_create_canon is false,
             // This means that there is a 'Guessed' session in the future,
             // and we should consider this the canonical ID for that session
@@ -349,7 +360,7 @@ where
                 info!(message = "Extending session create_time");
                 self.update_session_create_time(&session, unid.timestamp, true)
                     .await?;
-                return Ok(session.session_id);
+                return Ok(session_id);
             }
 
             tracing::debug!(
@@ -364,7 +375,7 @@ where
             // with an accurate timestamp
             if skewed_cmp(unid.timestamp, session.create_time) {
                 info!(message = "Found existing session with exact create time");
-                return Ok(session.session_id);
+                return Ok(session_id);
             }
 
             // We should never be looking at a case where the query returned
@@ -397,9 +408,10 @@ where
             }
         }
 
+        let session_id = uid_allocator.allocate_id(tenant_id).await?;
         // Create new session, return new session id
         let session = Session {
-            session_id: Uuid::new_v4().to_string(),
+            session_id: session_id.as_u64(),
             create_time: unid.timestamp,
             end_time: unid.timestamp + 101,
             is_create_canon: true,
@@ -410,15 +422,17 @@ where
 
         info!(message = "Creating session");
         self.create_session(&session).await?;
-        Ok(session.session_id)
+        Ok(session_id)
     }
 
-    #[tracing::instrument(skip(self, unid), err)]
+    #[tracing::instrument(skip(self, unid, uid_allocator), err)]
     pub(crate) async fn handle_last_seen(
         &self,
+        tenant_id: Uuid,
         unid: UnidSession,
+        uid_allocator: &CachingUidAllocatorServiceClient,
         should_default: bool,
-    ) -> Result<String, Error> {
+    ) -> Result<Uid, Error> {
         info!(
             message="Handling unid session",
             pseudo_key=?unid.pseudo_key, timestamp=?unid.timestamp
@@ -428,9 +442,13 @@ where
         // Look for last session where session.create_time <= unid.create_time
         let session = self.find_last_session_before(&unid).await?;
         if let Some(mut session) = session {
+            let session_id = match Uid::from_u64(session.session_id) {
+                Some(uid) => uid,
+                None => bail!("Invalid session_id: {}", session.session_id),
+            };
             if unid.timestamp < session.end_time || skewed_cmp(unid.timestamp, session.end_time) {
                 info!(message = "Identified session because it fell within a timeline.");
-                return Ok(session.session_id);
+                return Ok(session_id);
             }
 
             if !session.is_end_canon {
@@ -438,7 +456,7 @@ where
                 info!(message = "Updating session end_time.");
                 //                self.update_session_end_time(&session, unid.timestamp, false)?;
 
-                return Ok(session.session_id);
+                return Ok(session_id);
             }
         }
 
@@ -446,18 +464,24 @@ where
         if let Some(session) = session {
             if !session.is_create_canon {
                 info!(message = "Found a later, non canonical session. Extending create_time.");
+                let session_id = match Uid::from_u64(session.session_id) {
+                    Some(uid) => uid,
+                    None => bail!("Invalid session_id: {}", session.session_id),
+                };
 
                 self.update_session_create_time(&session, unid.timestamp, false)
                     .await?;
-                return Ok(session.session_id);
+                return Ok(session_id);
             }
         }
 
         if should_default {
             info!(message = "Defaulting and creating new session.");
-            let session_id = Uuid::new_v4().to_string();
+            // Replace with a call to UidAllocator
+            let session_id = uid_allocator.allocate_id(tenant_id).await?;
+
             let session = Session {
-                session_id: session_id.clone(),
+                session_id: session_id.as_u64(),
                 create_time: unid.timestamp,
                 end_time: unid.timestamp + 101,
                 is_create_canon: false,
@@ -481,14 +505,18 @@ where
     #[tracing::instrument(skip(self), err)]
     pub async fn handle_unid_session(
         &self,
+        tenant_id: Uuid,
         mut unid: UnidSession,
+        uid_allocator: &CachingUidAllocatorServiceClient,
         should_default: bool,
-    ) -> Result<String, Error> {
+    ) -> Result<Uid, Error> {
         unid.timestamp = shave_int(unid.timestamp, 1);
         if unid.is_creation {
-            self.handle_creation_event(unid).await
+            self.handle_creation_event(tenant_id, unid, uid_allocator)
+                .await
         } else {
-            self.handle_last_seen(unid, should_default).await
+            self.handle_last_seen(tenant_id, unid, uid_allocator, should_default)
+                .await
         }
     }
 }
