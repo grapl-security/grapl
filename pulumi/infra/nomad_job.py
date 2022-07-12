@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, Mapping, Optional, Union, cast, get_args
+from typing import Any, Mapping, Optional, Union, cast
 
 import pulumi_nomad as nomad
 from infra.config import STACK_NAME
@@ -99,13 +99,47 @@ class NomadJob(pulumi.ComponentResource):
             nomad_vars = {}
             for key, value in vars.items():
 
-                # This checks to see if this is a pulumi.Output[str] using _undocumented python implementation details_
-                # https://twitter.com/chompie1337/status/1435775022694555652?cxt=HHwWiICz0dXx8uwnAAAA
-                # SO thread on the python undocumented implementation details in question:
-                # https://stackoverflow.com/questions/57706180/generict-base-class-how-to-get-type-of-t-from-within-instance/60984681#60984681
-                if isinstance(value, pulumi.Output) and get_args(
-                    value.__orig_class__
-                ) == (str,):
+                if isinstance(value, pulumi.Output):
+                    inner_type = value.__orig_class__.__args__[0].__name__
+                    pulumi.info(
+                        f"{key} is a pulumi output with inner type {inner_type}"
+                    )
+                    # This checks to see if this is a pulumi.Output[str] using _undocumented python implementation details_
+                    # https://twitter.com/chompie1337/status/1435775022694555652?cxt=HHwWiICz0dXx8uwnAAAA
+                    # SO thread on the python undocumented implementation details in question:
+                    # https://stackoverflow.com/questions/57706180/generict-base-class-how-to-get-type-of-t-from-within-instance/60984681#60984681
+                    #     if get_args(
+                    #     value.__orig_class__
+                    # ) == (str,):
+
+                    # we're going to need to parse the hcl file to get the type for the variable
+                    r"""
+                    import hcl2
+                    with open('foo.nomad', 'r') as file:
+                        hcl2_dict = hcl2.load(file)
+                        # flatten the list of dicts into a dict
+                        variable_dict = {k:v for variable in hcl_dict['variable'] for k, v in variable.items()}
+                        nomad_variable = variable_dict[key]:
+                            if 'type' not in nomad_variable:
+                                throw exception(f"{key} doesn't have a type defined in Nomad. "
+                            else:
+                                mock_nomad_variable # recursive function that walks the type definition and replaces strings, numbers etc
+                                
+                                
+                                
+                                def mock_nomad_variables(
+                                    nomad_type = regex \$\{a+[\}\(]
+                                    if nomad_type== "string"
+                                        return MOCK_STRING
+                                    if nomad_type == "number"
+                                        return 7
+                                    if nomad_type == object
+                                        split
+                                        for k,v in object:
+                                            mock_nomad_variables
+                            
+                    """
+
                     value = pulumi_preview_replacement_string
                     if key == "redis_endpoint":
                         value = redis_endpoint

@@ -48,6 +48,7 @@ BUILD @christophermaier
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
 /src/python/grapl-tests-common/ @wimax-grapl
+/src/python/hcl2_type_reflection @twunderlich-grapl
 /src/python/mypy.ini @christophermaier @wimax-grapl
 /src/python/provisioner/ @jgrillo-grapl
 /src/python/python-proto/ @grapl-security/wg-data-infra
