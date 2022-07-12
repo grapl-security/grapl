@@ -2,7 +2,7 @@ import sys
 
 sys.path.insert(0, "..")
 
-from typing import Mapping, Optional, cast
+from typing import Mapping, cast
 
 import pulumi_aws as aws
 from infra import config, log_levels
@@ -47,7 +47,7 @@ def main() -> None:
         {"pulumi:project": pulumi.get_project(), "pulumi:stack": stack_name}
     )
 
-    nomad_provider: Optional[pulumi.ProviderResource] = None
+    nomad_provider: pulumi.ProviderResource | None = None
     if not config.LOCAL_GRAPL:
         nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{stack_name}")
         nomad_provider = get_nomad_provider_address(nomad_server_stack)

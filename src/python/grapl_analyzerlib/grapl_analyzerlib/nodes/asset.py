@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, TypeVar, List, Union
+from typing import Any, TypeVar, Union
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -15,7 +15,7 @@ AV = TypeVar("AV", bound="AssetView")
 
 T = TypeVar("T")
 
-OneOrMany = Union[List[T], T]
+OneOrMany = Union[list[T], T]
 
 
 def default_asset_properties() -> dict[str, PropType]:

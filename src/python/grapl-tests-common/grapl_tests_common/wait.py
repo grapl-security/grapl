@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from itertools import cycle
 from time import sleep
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import botocore
 from grapl_analyzerlib.grapl_client import GraphClient
@@ -16,10 +16,10 @@ LOGGER = get_module_grapl_logger()
 
 
 class WaitForResource(Protocol):
-    def acquire(self) -> Optional[Any]:
+    def acquire(self) -> Any | None:
         pass
 
-    def failure_reason(self) -> Optional[Exception]:
+    def failure_reason(self) -> Exception | None:
         return None
 
 
@@ -28,7 +28,7 @@ class WaitForS3Bucket(WaitForResource):
         self.s3_client = s3_client
         self.bucket_name = bucket_name
 
-    def acquire(self) -> Optional[Any]:
+    def acquire(self) -> Any | None:
         try:
             return self.s3_client.head_bucket(Bucket=self.bucket_name.strip())
         except self.s3_client.exceptions.NoSuchBucket:
@@ -43,7 +43,7 @@ class WaitForSqsQueue(WaitForResource):
         self.sqs_client = sqs_client
         self.queue_name = queue_name
 
-    def acquire(self) -> Optional[Any]:
+    def acquire(self) -> Any | None:
         try:
             return self.sqs_client.get_queue_url(QueueName=self.queue_name)
         except (
@@ -61,10 +61,10 @@ class WaitForCondition(WaitForResource):
     Retry a Callable until it returns true
     """
 
-    def __init__(self, fn: Callable[[], Optional[bool]]) -> None:
+    def __init__(self, fn: Callable[[], bool | None]) -> None:
         self.fn = fn
 
-    def acquire(self) -> Optional[Any]:
+    def acquire(self) -> Any | None:
         result = self.fn()
         if result:
             return self  # just anything non-None
@@ -82,9 +82,9 @@ class WaitForNoException(WaitForResource):
 
     def __init__(self, fn: Callable) -> None:
         self.fn = fn
-        self.last_failure: Optional[Exception] = None
+        self.last_failure: Exception | None = None
 
-    def acquire(self) -> Optional[Any]:
+    def acquire(self) -> Any | None:
         try:
             return self.fn() or "success"
         except Exception as e:
@@ -94,7 +94,7 @@ class WaitForNoException(WaitForResource):
     def __str__(self) -> str:
         return f"WaitForNoException({inspect.getsource(self.fn)})"
 
-    def failure_reason(self) -> Optional[Exception]:
+    def failure_reason(self) -> Exception | None:
         return self.last_failure
 
 
@@ -104,7 +104,7 @@ class WaitForQuery(WaitForResource):
         self.graph_client = graph_client or GraphClient()
 
     @retry(exception_cls=Exception, logger=LOGGER)
-    def acquire(self) -> Optional[BaseView]:
+    def acquire(self) -> BaseView | None:
         result = self.query.query_first(self.graph_client)
         return result
 
@@ -118,7 +118,7 @@ def wait_for(
     sleep_secs: int = 5,
 ) -> Mapping[WaitForResource, Any]:
     __tracebackhide__ = True  # hide this helper function's traceback from pytest
-    completed: Dict[WaitForResource, Any] = {}
+    completed: dict[WaitForResource, Any] = {}
 
     get_now = lambda: datetime.now(tz=timezone.utc)
 

@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from grapl_common.time_utils import MillisDuration
@@ -66,7 +65,7 @@ class Fixture:
 
 class MockWriteable:
     def __init__(self) -> None:
-        self.writes: List[str] = []
+        self.writes: list[str] = []
 
     def write(self, some_str: str) -> int:
         self.writes.append(some_str)
