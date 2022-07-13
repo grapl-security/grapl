@@ -11,6 +11,11 @@ set -euo pipefail
 source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/version.sh
 
+RUST_VERSION="$(./build-support/rust_version.sh)"
+export RUST_VERSION
+PYTHON_VERSION="$(./build-support/python_version.sh)"
+export PYTHON_VERSION
+
 # While we have Docker Compose files present, we have to explicitly
 # declare we're using an HCL file (compose YAML files are used
 # preferentially, in the absence of explicit overrides).
