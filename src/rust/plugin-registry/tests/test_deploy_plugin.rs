@@ -1,5 +1,7 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use bytes::Bytes;
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::FromEnv;
@@ -100,7 +102,11 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
+    tokio::time::sleep(Duration::from_secs(10)).await;
+
     // Ensure that a now-deployed plugin is now Running
+    // If it's Pending, it's possible the agent is out of mem or disk
+    // and was unable to allocate it.
     assert_health(&mut client, &plugin_id, PluginHealthStatus::Running).await?;
 
     Ok(())
