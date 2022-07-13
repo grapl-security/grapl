@@ -8,7 +8,7 @@ FROM python:${PYTHON_VERSION}-slim-bullseye AS grapl-python-base
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
-        bash=5.1-2+b3 \
+        bash=5.1-2+deb11u1 \
         libstdc++6=10.2.1-6 \
         curl=7.74.0-1.3+deb11u1 \
     && rm -rf /var/lib/apt/lists/* \
@@ -18,6 +18,9 @@ RUN apt-get update \
         --home /home/grapl \
         --shell /bin/bash \
         grapl
+# Uncomment to get the versions for pins
+#RUN dpkg-query -l && exit 5
+
 USER grapl
 WORKDIR /home/grapl
 ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]

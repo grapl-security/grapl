@@ -34,6 +34,8 @@ use crate::{
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginHealthRequest,
+        GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
         TearDownPluginRequest,
@@ -78,6 +80,11 @@ pub trait PluginRegistryApi {
         &self,
         request: TearDownPluginRequest,
     ) -> Result<TearDownPluginResponse, Self::Error>;
+
+    async fn get_plugin_health(
+        &self,
+        request: GetPluginHealthRequest,
+    ) -> Result<GetPluginHealthResponse, Self::Error>;
 
     async fn get_generators_for_event_source(
         &self,
@@ -149,6 +156,12 @@ where
         request: Request<proto::DeployPluginRequest>,
     ) -> Result<Response<proto::DeployPluginResponse>, tonic::Status> {
         execute_rpc!(self, request, deploy_plugin)
+    }
+    async fn get_plugin_health(
+        &self,
+        request: Request<proto::GetPluginHealthRequest>,
+    ) -> Result<Response<proto::GetPluginHealthResponse>, tonic::Status> {
+        execute_rpc!(self, request, get_plugin_health)
     }
 
     async fn tear_down_plugin(
