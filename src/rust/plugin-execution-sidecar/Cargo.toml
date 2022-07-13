@@ -11,9 +11,6 @@ path = "analyzer-execution-sidecar.rs"
 name = "generator-execution-sidecar"
 path = "generator-execution-sidecar.rs"
 
-[lib]
-name = "plugin_executor"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-trait = "0.1"

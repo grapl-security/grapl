@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use async_trait;
 use rust_proto::{
     graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::{
         GeneratorServiceClient,
