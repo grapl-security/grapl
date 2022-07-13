@@ -1,10 +1,15 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use bytes::Bytes;
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::FromEnv;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     DeployPluginRequest,
+    GetPluginHealthRequest,
+    GetPluginHealthResponse,
+    PluginHealthStatus,
     PluginMetadata,
     PluginRegistryServiceClient,
     PluginRegistryServiceClientError,
@@ -32,7 +37,7 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
         let display_name = uuid::Uuid::new_v4().to_string();
         let artifact = get_example_generator()?;
         let metadata = PluginMetadata {
-            tenant_id: tenant_id.clone(),
+            tenant_id,
             display_name: display_name.clone(),
             plugin_type: PluginType::Generator,
             event_source_id: Some(event_source_id.clone()),
@@ -70,7 +75,7 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
         let display_name = "sysmon-generator";
         let artifact = get_sysmon_generator()?;
         let metadata = PluginMetadata {
-            tenant_id: tenant_id.clone(),
+            tenant_id,
             display_name: display_name.to_owned(),
             plugin_type: PluginType::Generator,
             event_source_id: Some(event_source_id.clone()),
@@ -87,12 +92,20 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
 
     let plugin_id = create_response.plugin_id;
 
-    let request = DeployPluginRequest { plugin_id };
+    // Ensure that an un-deployed plugin is NotDeployed
+    assert_health(&mut client, plugin_id, PluginHealthStatus::NotDeployed).await?;
 
-    let _response = client
-        .deploy_plugin(request)
+    let _deploy_response = client
+        .deploy_plugin(DeployPluginRequest { plugin_id })
         .timeout(std::time::Duration::from_secs(5))
         .await??;
+
+    tokio::time::sleep(Duration::from_secs(10)).await;
+
+    // Ensure that a now-deployed plugin is now Running
+    // If it's Pending, it's possible the agent is out of mem or disk
+    // and was unable to allocate it.
+    assert_health(&mut client, plugin_id, PluginHealthStatus::Running).await?;
 
     Ok(())
 }
@@ -102,6 +115,24 @@ fn assert_contains(input: &str, expected_substr: &str) {
         input.contains(expected_substr),
         "Expected input '{input}' to contain '{expected_substr}'"
     )
+}
+
+async fn assert_health(
+    client: &mut PluginRegistryServiceClient,
+    plugin_id: uuid::Uuid,
+    expected: PluginHealthStatus,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let get_health_response: GetPluginHealthResponse = client
+        .get_plugin_health(GetPluginHealthRequest { plugin_id })
+        .timeout(std::time::Duration::from_secs(5))
+        .await??;
+
+    let actual = get_health_response.health_status;
+    if expected == actual {
+        Ok(())
+    } else {
+        Err(format!("Expected one of {expected:?}, got {actual:?}").into())
+    }
 }
 
 #[test_log::test(tokio::test)]

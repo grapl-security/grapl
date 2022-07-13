@@ -41,7 +41,7 @@ impl FromEnv<GeneratorServiceClient, GeneratorServiceClientError> for GeneratorS
             endpoint.clone(),
             Self::SERVICE_NAME,
             Duration::from_millis(10000),
-            Duration::from_millis(500),
+            Duration::from_millis(5000),
         )
         .await
         .expect("Generator plugin never reported healthy");

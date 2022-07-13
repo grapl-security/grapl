@@ -25,20 +25,21 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
     let event_source_id = uuid::Uuid::new_v4();
 
     let generator1_metadata = PluginMetadata {
-        tenant_id: tenant_id.clone(),
+        tenant_id,
         display_name: generator1_display_name.clone(),
         plugin_type: PluginType::Generator,
         event_source_id: Some(event_source_id),
     };
+
     let generator2_metadata = PluginMetadata {
-        tenant_id: tenant_id.clone(),
+        tenant_id,
         display_name: generator2_display_name.clone(),
         plugin_type: PluginType::Generator,
         event_source_id: Some(event_source_id),
     };
 
     let analyzer_metadata = PluginMetadata {
-        tenant_id: tenant_id.clone(),
+        tenant_id,
         display_name: analyzer_display_name.clone(),
         plugin_type: PluginType::Analyzer,
         event_source_id: None,

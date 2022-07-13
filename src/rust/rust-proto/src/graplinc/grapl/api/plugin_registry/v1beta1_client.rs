@@ -114,6 +114,18 @@ impl PluginRegistryServiceClient {
         todo!()
     }
 
+    pub async fn get_plugin_health(
+        &mut self,
+        request: native::GetPluginHealthRequest,
+    ) -> Result<native::GetPluginHealthResponse, PluginRegistryServiceClientError> {
+        let response = self
+            .proto_client
+            .get_plugin_health(proto::GetPluginHealthRequest::from(request))
+            .await?;
+        let response = native::GetPluginHealthResponse::try_from(response.into_inner())?;
+        Ok(response)
+    }
+
     /// Given information about an event source, return all generators that handle that event source
     #[tracing::instrument(skip(self, request), err)]
     pub async fn get_generators_for_event_source(
