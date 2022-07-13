@@ -1,25 +1,38 @@
 use std::time::SystemTime;
+
 use prost_types::Timestamp;
-use crate::graplinc::grapl::api::graph_query_service::v1beta1::messages::GraphView;
-use crate::graplinc::grapl::common::v1beta1::types::{EdgeName, NodeType, PropertyName, Uid};
-use crate::protobufs::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::{
-    AnalyzerName as AnalyzerNameProto,
-    EdgeUpdate as EdgeUpdateProto,
-    StringPropertyUpdate as StringPropertyUpdateProto,
-    UInt64PropertyUpdate as UInt64PropertyUpdateProto,
-    Int64PropertyUpdate as Int64PropertyUpdateProto,
-    Update as UpdateProto,
-    Updates as UpdatesProto,
-    LensRef as LensRefProto,
-    ExecutionHit as ExecutionHitProto,
-    ExecutionMiss as ExecutionMissProto,
-    ExecutionResult as ExecutionResultProto,
-    RunAnalyzerRequest as RunAnalyzerRequestProto,
-    RunAnalyzerResponse as RunAnalyzerResponseProto,
-    update::Inner as UpdateInnerProto,
-    execution_result::Inner as ExecutionResultInnerProto,
+
+use crate::{
+    graplinc::grapl::{
+        api::graph_query_service::v1beta1::messages::GraphView,
+        common::v1beta1::types::{
+            EdgeName,
+            NodeType,
+            PropertyName,
+            Uid,
+        },
+    },
+    protobufs::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::{
+        execution_result::Inner as ExecutionResultInnerProto,
+        update::Inner as UpdateInnerProto,
+        AnalyzerName as AnalyzerNameProto,
+        EdgeUpdate as EdgeUpdateProto,
+        ExecutionHit as ExecutionHitProto,
+        ExecutionMiss as ExecutionMissProto,
+        ExecutionResult as ExecutionResultProto,
+        Int64PropertyUpdate as Int64PropertyUpdateProto,
+        LensRef as LensRefProto,
+        RunAnalyzerRequest as RunAnalyzerRequestProto,
+        RunAnalyzerResponse as RunAnalyzerResponseProto,
+        StringPropertyUpdate as StringPropertyUpdateProto,
+        UInt64PropertyUpdate as UInt64PropertyUpdateProto,
+        Update as UpdateProto,
+        Updates as UpdatesProto,
+    },
+    serde_impl,
+    type_url,
+    SerDeError,
 };
-use crate::{serde_impl, SerDeError, type_url};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StringPropertyUpdate {
@@ -31,8 +44,14 @@ impl TryFrom<StringPropertyUpdateProto> for StringPropertyUpdate {
     type Error = SerDeError;
     fn try_from(value: StringPropertyUpdateProto) -> Result<Self, Self::Error> {
         Ok(Self {
-            uid: value.uid.ok_or(SerDeError::MissingField("uid"))?.try_into()?,
-            property_name: value.property_name.ok_or(SerDeError::MissingField("property_name"))?.try_into()?,
+            uid: value
+                .uid
+                .ok_or(SerDeError::MissingField("uid"))?
+                .try_into()?,
+            property_name: value
+                .property_name
+                .ok_or(SerDeError::MissingField("property_name"))?
+                .try_into()?,
         })
     }
 }
@@ -56,8 +75,14 @@ impl TryFrom<UInt64PropertyUpdateProto> for UInt64PropertyUpdate {
     type Error = SerDeError;
     fn try_from(value: UInt64PropertyUpdateProto) -> Result<Self, Self::Error> {
         Ok(Self {
-            uid: value.uid.ok_or(SerDeError::MissingField("uid"))?.try_into()?,
-            property_name: value.property_name.ok_or(SerDeError::MissingField("property_name"))?.try_into()?,
+            uid: value
+                .uid
+                .ok_or(SerDeError::MissingField("uid"))?
+                .try_into()?,
+            property_name: value
+                .property_name
+                .ok_or(SerDeError::MissingField("property_name"))?
+                .try_into()?,
         })
     }
 }
@@ -81,8 +106,14 @@ impl TryFrom<Int64PropertyUpdateProto> for Int64PropertyUpdate {
     type Error = SerDeError;
     fn try_from(value: Int64PropertyUpdateProto) -> Result<Self, Self::Error> {
         Ok(Self {
-            uid: value.uid.ok_or(SerDeError::MissingField("uid"))?.try_into()?,
-            property_name: value.property_name.ok_or(SerDeError::MissingField("property_name"))?.try_into()?,
+            uid: value
+                .uid
+                .ok_or(SerDeError::MissingField("uid"))?
+                .try_into()?,
+            property_name: value
+                .property_name
+                .ok_or(SerDeError::MissingField("property_name"))?
+                .try_into()?,
         })
     }
 }
@@ -95,7 +126,6 @@ impl From<Int64PropertyUpdate> for Int64PropertyUpdateProto {
         }
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EdgeUpdate {
@@ -153,23 +183,38 @@ impl TryFrom<UpdateProto> for Update {
     type Error = SerDeError;
     fn try_from(value: UpdateProto) -> Result<Self, Self::Error> {
         match value.inner {
-            Some(UpdateInnerProto::StringPropertyUpdate(update)) => Ok(Update::StringPropertyUpdate(update.try_into()?)),
-            Some(UpdateInnerProto::Uint64PropertyUpdate(update)) => Ok(Update::Uint64PropertyUpdate(update.try_into()?)),
-            Some(UpdateInnerProto::Int64PropertyUpdate(update)) => Ok(Update::Int64PropertyUpdate(update.try_into()?)),
-            Some(UpdateInnerProto::EdgeUpdate(update)) => Ok(Update::EdgeUpdate(update.try_into()?)),
+            Some(UpdateInnerProto::StringPropertyUpdate(update)) => {
+                Ok(Update::StringPropertyUpdate(update.try_into()?))
+            }
+            Some(UpdateInnerProto::Uint64PropertyUpdate(update)) => {
+                Ok(Update::Uint64PropertyUpdate(update.try_into()?))
+            }
+            Some(UpdateInnerProto::Int64PropertyUpdate(update)) => {
+                Ok(Update::Int64PropertyUpdate(update.try_into()?))
+            }
+            Some(UpdateInnerProto::EdgeUpdate(update)) => {
+                Ok(Update::EdgeUpdate(update.try_into()?))
+            }
             None => Err(SerDeError::UnknownVariant("Update")),
         }
     }
 }
 
-
 impl From<Update> for UpdateProto {
     fn from(value: Update) -> Self {
         match value {
-            Update::StringPropertyUpdate(update) => UpdateProto{inner: Some(UpdateInnerProto::StringPropertyUpdate(update.into()))},
-            Update::Uint64PropertyUpdate(update) => UpdateProto{inner: Some(UpdateInnerProto::Uint64PropertyUpdate(update.into()))},
-            Update::Int64PropertyUpdate(update) => UpdateProto{inner: Some(UpdateInnerProto::Int64PropertyUpdate(update.into()))},
-            Update::EdgeUpdate(update) => UpdateProto{inner: Some(UpdateInnerProto::EdgeUpdate(update.into()))},
+            Update::StringPropertyUpdate(update) => UpdateProto {
+                inner: Some(UpdateInnerProto::StringPropertyUpdate(update.into())),
+            },
+            Update::Uint64PropertyUpdate(update) => UpdateProto {
+                inner: Some(UpdateInnerProto::Uint64PropertyUpdate(update.into())),
+            },
+            Update::Int64PropertyUpdate(update) => UpdateProto {
+                inner: Some(UpdateInnerProto::Int64PropertyUpdate(update.into())),
+            },
+            Update::EdgeUpdate(update) => UpdateProto {
+                inner: Some(UpdateInnerProto::EdgeUpdate(update.into())),
+            },
         }
     }
 }
@@ -187,9 +232,7 @@ impl TryFrom<UpdatesProto> for Updates {
             .into_iter()
             .map(|update| update.try_into())
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(Self {
-            updates,
-        })
+        Ok(Self { updates })
     }
 }
 
@@ -202,14 +245,13 @@ impl From<Updates> for UpdatesProto {
 }
 
 impl type_url::TypeUrl for Updates {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.Updates";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.Updates";
 }
 
 impl serde_impl::ProtobufSerializable for Updates {
     type ProtobufMessage = UpdatesProto;
 }
-
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LensRef {
@@ -241,24 +283,18 @@ pub struct AnalyzerName {
     pub value: String,
 }
 
-
 impl TryFrom<AnalyzerNameProto> for AnalyzerName {
     type Error = SerDeError;
     fn try_from(value: AnalyzerNameProto) -> Result<Self, Self::Error> {
-        Ok(AnalyzerName {
-            value: value.value,
-        })
+        Ok(AnalyzerName { value: value.value })
     }
 }
 
 impl From<AnalyzerName> for AnalyzerNameProto {
     fn from(value: AnalyzerName) -> Self {
-        AnalyzerNameProto {
-            value: value.value,
-        }
+        AnalyzerNameProto { value: value.value }
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct ExecutionHit {
@@ -304,7 +340,6 @@ pub struct RunAnalyzerResponse {
     pub execution_result: ExecutionResult,
 }
 
-
 impl TryFrom<RunAnalyzerResponseProto> for RunAnalyzerResponse {
     type Error = SerDeError;
     fn try_from(value: RunAnalyzerResponseProto) -> Result<Self, Self::Error> {
@@ -317,13 +352,3 @@ impl From<RunAnalyzerResponse> for RunAnalyzerResponseProto {
         todo!()
     }
 }
-
-
-
-
-
-
-
-
-
-

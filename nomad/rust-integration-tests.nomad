@@ -131,11 +131,6 @@ job "rust-integration-tests" {
             }
 
             upstreams {
-              destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 1003
-            }
-
-            upstreams {
               destination_name = "organization-management"
               local_bind_port  = 1004
             }
@@ -168,8 +163,6 @@ job "rust-integration-tests" {
 
         RUST_BACKTRACE = 1
         RUST_LOG       = var.rust_log
-
-        MG_ALPHAS = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-grpc-public}"
 
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS   = "0.0.0.0:1004" # not used but required due to clap
         ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"

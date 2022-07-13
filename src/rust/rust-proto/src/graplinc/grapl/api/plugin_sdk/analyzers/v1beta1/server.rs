@@ -50,9 +50,9 @@ pub trait AnalyzerApi {
 
 #[tonic::async_trait]
 impl<T, E> AnalyzerServiceProto for T
-    where
-        T: AnalyzerApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: AnalyzerApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     async fn run_analyzer(
         &self,
@@ -68,14 +68,13 @@ impl<T, E> AnalyzerServiceProto for T
 
         Ok(tonic::Response::new(response.into()))
     }
-
 }
 
 /// A server construct that drives the AnalyzerApi implementation.
 pub struct AnalyzerServiceServer<T, E>
-    where
-        T: AnalyzerApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: AnalyzerApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     server: AnalyzerServiceServerProto<T>,
     addr: SocketAddr,
@@ -83,9 +82,9 @@ pub struct AnalyzerServiceServer<T, E>
 }
 
 impl<T, E> AnalyzerServiceServer<T, E>
-    where
-        T: AnalyzerApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: AnalyzerApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     pub fn builder(
         service: T,
@@ -101,7 +100,7 @@ impl<T, E> AnalyzerServiceServer<T, E>
                 || async { Ok(HealthcheckStatus::Serving) },
                 std::time::Duration::from_millis(500),
             )
-                .await;
+            .await;
 
         let listener = TcpListener::bind(self.addr)
             .await
@@ -133,9 +132,9 @@ impl<T, E> AnalyzerServiceServer<T, E>
 }
 
 pub struct AnalyzerServiceServerBuilder<T, E>
-    where
-        T: AnalyzerApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: AnalyzerApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     server: AnalyzerServiceServerProto<T>,
     addr: SocketAddr,
@@ -143,9 +142,9 @@ pub struct AnalyzerServiceServerBuilder<T, E>
 }
 
 impl<T, E> AnalyzerServiceServerBuilder<T, E>
-    where
-        T: AnalyzerApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+where
+    T: AnalyzerApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     /// Create a new builder for a AnalyzerServiceServer,
     /// taking the required arguments upfront.

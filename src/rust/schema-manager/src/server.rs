@@ -67,7 +67,7 @@ impl SchemaManagerApi for SchemaManager {
     ) -> Result<DeployModelResponse, Self::Error> {
         match request.schema_type {
             SchemaType::GraphqlV0 => {
-                let schema = String::from_utf8(request.schema)
+                let schema = String::from_utf8(request.schema.to_vec())
                     .map_err(SchemaManagerServiceError::NonUtf8GraphQLSchema)?;
 
                 crate::deploy_graphql_plugin(

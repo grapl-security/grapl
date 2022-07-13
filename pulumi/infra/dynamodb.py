@@ -74,14 +74,6 @@ class DynamoDB(pulumi.ComponentResource):
         )
         pulumi.export("schema-table", self.schema_table.name)
 
-        self.static_mapping_table = DynamoDBTable(
-            f"{STACK_NAME}-static_mapping_table",
-            attrs=[{"name": "pseudo_key", "type": "S"}],
-            hash_key="pseudo_key",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-        pulumi.export("static-mapping-table", self.static_mapping_table.name)
-
         self.user_auth_table = DynamoDBTable(
             f"{STACK_NAME}-user_auth_table",
             attrs=[{"name": "username", "type": "S"}],
@@ -112,7 +104,6 @@ class DynamoDB(pulumi.ComponentResource):
             f"{STACK_NAME}-static_mapping_table",
             attrs=[
                 {"name": "static_id", "type": "S"},
-                {"name": "uid", "type": "N"},
             ],
             hash_key="static_id",
             opts=pulumi.ResourceOptions(parent=self),

@@ -30,8 +30,11 @@ use sha2::{
 };
 use uid_allocator::client::CachingUidAllocatorServiceClient;
 
-use crate::{sessiondb::SessionDb, sessions::UnidSession, StaticMappingDb};
-
+use crate::{
+    sessiondb::SessionDb,
+    sessions::UnidSession,
+    StaticMappingDb,
+};
 
 #[derive(Debug, Clone)]
 pub(crate) struct NodeDescriptionIdentifier<D>
@@ -146,9 +149,10 @@ where
         node: &NodeDescription,
         strategy: &Static,
     ) -> Result<IdentifiedNode, Error> {
-        let uid = self.static_mapping_db.map_unid(
-            tenant_id, node, strategy,
-        ).await?;
+        let uid = self
+            .static_mapping_db
+            .map_unid(tenant_id, node, strategy)
+            .await?;
 
         Ok(IdentifiedNode {
             properties: node.properties.clone(),
@@ -174,7 +178,8 @@ where
             }
             Strategy::Static(ref strategy) => {
                 tracing::info!("Attributing dynamic node via static mapping");
-                self.attribute_static_mapping(tenant_id, node, strategy).await
+                self.attribute_static_mapping(tenant_id, node, strategy)
+                    .await
             }
         }
     }

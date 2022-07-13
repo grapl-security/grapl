@@ -1,6 +1,7 @@
 # This job is separate from `grapl-core.nomad` because
 # we want to have this job depend on
 # the successful, complete startup of `dgraph` in grapl-core.
+# ^ No longer true, but maybe scylla?
 # There are more-robust ways to do this, that could bring
 # `grapl-provisioner` back  into the `grapl-core` fold, but
 # this will get the job done for the time being.
@@ -90,12 +91,6 @@ job "grapl-provision" {
         image      = var.container_images["provisioner"]
         entrypoint = ["/bin/bash", "-c", "-o", "errexit", "-o", "nounset", "-c"]
         command = trimspace(<<EOF
-if [[ "${DGRAPH_DROP_ALL_DATA}" -ne 0 ]]; then
-  # Drop all existing data from dgraph
-  # from https://discuss.dgraph.io/t/drop-all-data-from-dgraph/5866 
-  curl -X POST "${DGRAPH_HTTP_ADDRESS}"/alter -d '{"drop_op": "ALL"}'
-fi
-
 ./provisioner.pex
 EOF
         )
@@ -117,11 +112,8 @@ EOF
       env {
         # This is a hack, because IDK how to share locals across files.
         # It's fine if `provision` only hits one alpha.
-        MG_ALPHAS = "localhost:${NOMAD_UPSTREAM_PORT_dgraph-alpha-0-grpc-public}"
 
         AWS_DEFAULT_REGION                 = var.aws_region
-        DGRAPH_DROP_ALL_DATA               = 1
-        DGRAPH_HTTP_ADDRESS                = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-http}"
         GRAPL_SCHEMA_TABLE                 = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE              = var.user_auth_table
@@ -136,23 +128,6 @@ EOF
       name = "provisioner"
       connect {
         sidecar_service {
-          proxy {
-            upstreams {
-              # This non-dynamic upstream is a hack, 
-              # because IDK how to share locals across files
-              destination_name = "dgraph-alpha-0-grpc-public"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1000
-            }
-
-            upstreams {
-              # This non-dynamic upstream is a hack, 
-              # because IDK how to share locals across files
-              destination_name = "dgraph-alpha-0-http"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1001
-            }
-          }
         }
       }
     }

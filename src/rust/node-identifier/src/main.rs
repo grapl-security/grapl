@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 #![allow(warnings)]
 
 use clap::Parser;
@@ -42,14 +43,16 @@ mod node_identifier;
 mod sessiondb;
 mod sessions;
 mod static_mapping_db;
+mod config;
 
 use crate::{
+    config::NodeIdentifierConfig,
     dynamic_sessiondb::NodeDescriptionIdentifier,
     error::NodeIdentifierError,
     node_identifier::NodeIdentifier,
     sessiondb::SessionDb,
+    static_mapping_db::StaticMappingDb,
 };
-use crate::static_mapping_db::StaticMappingDb;
 
 #[tokio::main]
 async fn main() -> Result<(), NodeIdentifierError> {
@@ -81,20 +84,21 @@ async fn main() -> Result<(), NodeIdentifierError> {
 
 #[tracing::instrument]
 async fn handler() -> Result<(), NodeIdentifierError> {
+    let service_config = NodeIdentifierConfig::parse();
     let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(
         dynamo.clone(),
-        std::env::var("GRAPL_DYNAMIC_SESSION_TABLE")?,
+        service_config.grapl_dynamic_session_table,
     );
     let uid_allocator = CachingUidAllocatorServiceClient::new(
-        UidAllocatorServiceClient::connect(std::env::var("UID_ALLOCATOR_URL")?).await?,
+        UidAllocatorServiceClient::connect(service_config.uid_allocator_url).await?,
         100,
     );
 
     let static_mapping_db = StaticMappingDb::new(
         dynamo.clone(),
         uid_allocator.clone(),
-        std::env::var("GRAPL_STATIC_MAPPING_TABLE")?,
+        service_config.grapl_static_mapping_table,
     );
 
     let node_identifier = NodeIdentifier::new(NodeDescriptionIdentifier::new(

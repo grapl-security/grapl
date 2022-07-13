@@ -134,6 +134,10 @@ locals {
       name = "event-source-db",
       port = 5436
     },
+    {
+      name = "schema-manager-db"
+      port = 5437
+    }
   ]
 }
 
@@ -251,27 +255,6 @@ job "grapl-local-infra" {
     }
   }
 
-  group "ratel" {
-    network {
-      mode = "bridge"
-      port "ratel" {
-        static = 8000
-      }
-    }
-
-    task "ratel" {
-      driver = "docker"
-
-      config {
-        image = "dgraph/ratel:latest"
-        ports = ["ratel"]
-      }
-
-      service {
-        name = "ratel"
-      }
-    }
-  }
 
   group "kafka" {
     network {
@@ -511,135 +494,6 @@ job "grapl-local-infra" {
       resources {
         cpu    = 50
         memory = 100
-      }
-    }
-  }
-
-  group "organization-management-db" {
-    network {
-      mode = "bridge"
-      port "postgres" {
-        static = var.organization_management_db.port
-        to     = 5432
-      }
-    }
-
-    task "organization-management-db" {
-      driver = "docker"
-
-      config {
-        image = "postgres-ext:${var.image_tag}"
-        ports = ["postgres"]
-      }
-
-      env {
-        POSTGRES_USER     = var.organization_management_db.username
-        POSTGRES_PASSWORD = var.organization_management_db.password
-      }
-
-      service {
-        name = "organization-management-db"
-
-        check {
-          type     = "script"
-          name     = "check_postgres"
-          command  = "pg_isready"
-          args     = ["--username", "${var.organization_management_db.username}"]
-          interval = "20s"
-          timeout  = "10s"
-
-          check_restart {
-            limit           = 2
-            grace           = "30s"
-            ignore_warnings = false
-          }
-        }
-      }
-    }
-  }
-
-  group "uid-allocator-db" {
-    network {
-      mode = "bridge"
-      port "postgres" {
-        static = var.uid_allocator_db.port
-        to     = 5432
-      }
-    }
-
-    task "uid-allocator-db" {
-      driver = "docker"
-
-      config {
-        image = "postgres-ext:${var.image_tag}"
-        ports = ["postgres"]
-      }
-
-      env {
-        POSTGRES_USER     = var.uid_allocator_db.username
-        POSTGRES_PASSWORD = var.uid_allocator_db.password
-      }
-
-      service {
-        name = "uid-allocator-db"
-
-        check {
-          type     = "script"
-          name     = "check_postgres"
-          command  = "pg_isready"
-          args     = ["--username", "${var.uid_allocator_db.username}"]
-          interval = "20s"
-          timeout  = "10s"
-
-          check_restart {
-            limit           = 2
-            grace           = "30s"
-            ignore_warnings = false
-          }
-        }
-      }
-    }
-  }
-
-  group "schema-manager-db" {
-    network {
-      mode = "bridge"
-      port "postgres" {
-        static = var.schema_manager_db.port
-        to     = 5432
-      }
-    }
-
-    task "schema-manager-db" {
-      driver = "docker"
-
-      config {
-        image = "postgres-ext:${var.image_tag}"
-        ports = ["postgres"]
-      }
-
-      env {
-        POSTGRES_USER     = var.schema_manager_db.username
-        POSTGRES_PASSWORD = var.schema_manager_db.password
-      }
-
-      service {
-        name = "schema-manager-db"
-
-        check {
-          type     = "script"
-          name     = "check_postgres"
-          command  = "pg_isready"
-          args     = ["--username", "${var.schema_manager_db.username}"]
-          interval = "20s"
-          timeout  = "10s"
-
-          check_restart {
-            limit           = 2
-            grace           = "30s"
-            ignore_warnings = false
-          }
-        }
       }
     }
   }

@@ -42,8 +42,16 @@ impl<D> StaticMappingDb<D>
 where
     D: DynamoDb,
 {
-    pub fn new(static_mapping_db: D, uid_allocator_client: CachingUidAllocatorServiceClient, table_name: String) -> Self {
-        Self { static_mapping_db, uid_allocator_client, table_name }
+    pub fn new(
+        static_mapping_db: D,
+        uid_allocator_client: CachingUidAllocatorServiceClient,
+        table_name: String,
+    ) -> Self {
+        Self {
+            static_mapping_db,
+            uid_allocator_client,
+            table_name,
+        }
     }
 
     pub async fn map_unid(

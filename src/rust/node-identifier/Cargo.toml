@@ -43,7 +43,9 @@ rusoto_dynamodb = { version = "0.47", default_features = false, features = [
 ] }
 rusoto_credential = "0.47"
 rust-proto = { path = "../rust-proto", version = "*" }
-uid-allocator = {path = "../uid-allocator", default_features = false, features = ["client"] }
+uid-allocator = { path = "../uid-allocator", default_features = false, features = [
+  "client"
+] }
 serde = "1.0"
 serde_dynamodb = { version = "0.9", default_features = false, features = [
   "rustls"

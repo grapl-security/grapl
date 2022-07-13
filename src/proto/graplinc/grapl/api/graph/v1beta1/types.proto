@@ -133,7 +133,7 @@ message IdentifiedEdge {
   // The node_key associated with the 'source' of the edge
   graplinc.grapl.common.v1beta1.Uid from_uid = 1;
   // The node_key associated with the 'destination' of the edge
-  graplinc.grapl.common.v1beta1.Uid to_uid= 2;
+  graplinc.grapl.common.v1beta1.Uid to_uid = 2;
   // The name of the edge
   string edge_name = 3;
 }

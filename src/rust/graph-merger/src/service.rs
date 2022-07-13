@@ -1,13 +1,43 @@
 use std::{
+    collections::HashMap,
     fmt::Debug,
 };
-use std::collections::HashMap;
 
-use rust_proto::graplinc::grapl::api::graph::v1beta1::{IdentifiedEdge, IdentifiedGraph, Property};
-use rust_proto::graplinc::grapl::api::graph_mutation::v1beta1::client::{GraphMutationClient, GraphMutationClientError};
-use rust_proto::graplinc::grapl::api::graph_mutation::v1beta1::messages::{CreateEdgeRequest, CreateNodeRequest, MutationRedundancy, SetNodePropertyRequest};
-use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::{EdgeUpdate, Int64PropertyUpdate, StringPropertyUpdate, UInt64PropertyUpdate, Update, Updates};
-use rust_proto::graplinc::grapl::common::v1beta1::types::{EdgeName, NodeType, PropertyName, Uid};
+use rust_proto::graplinc::grapl::{
+    api::{
+        graph::v1beta1::{
+            IdentifiedEdge,
+            IdentifiedGraph,
+            Property,
+        },
+        graph_mutation::v1beta1::{
+            client::{
+                GraphMutationClient,
+                GraphMutationClientError,
+            },
+            messages::{
+                CreateEdgeRequest,
+                CreateNodeRequest,
+                MutationRedundancy,
+                SetNodePropertyRequest,
+            },
+        },
+        plugin_sdk::analyzers::v1beta1::messages::{
+            EdgeUpdate,
+            Int64PropertyUpdate,
+            StringPropertyUpdate,
+            UInt64PropertyUpdate,
+            Update,
+            Updates,
+        },
+    },
+    common::v1beta1::types::{
+        EdgeName,
+        NodeType,
+        PropertyName,
+        Uid,
+    },
+};
 
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
@@ -53,9 +83,7 @@ pub struct GraphMerger {
 
 impl GraphMerger {
     pub fn new(mg_client: GraphMutationClient) -> Self {
-        Self {
-            mg_client,
-        }
+        Self { mg_client }
     }
 
     #[tracing::instrument(skip(self, subgraph))]
@@ -77,30 +105,41 @@ impl GraphMerger {
 
         let mut updates = Vec::with_capacity(subgraph.nodes.len() + subgraph.edges.len());
 
-        let node_types: HashMap<Uid, String> = subgraph.nodes.iter().map(|(uid, n)| (*uid, n.node_type.clone())).collect();
+        let node_types: HashMap<Uid, String> = subgraph
+            .nodes
+            .iter()
+            .map(|(uid, n)| (*uid, n.node_type.clone()))
+            .collect();
         let nodes = subgraph.nodes;
         let edges = subgraph.edges;
 
         for node in nodes.into_values() {
-            self.mg_client.create_node(CreateNodeRequest {
-                tenant_id,
-                node_type: NodeType { value: node.node_type.clone() },
-            }).await?;
+            self.mg_client
+                .create_node(CreateNodeRequest {
+                    tenant_id,
+                    node_type: NodeType {
+                        value: node.node_type.clone(),
+                    },
+                })
+                .await?;
 
             for (prop_name, prop_value) in node.properties {
-                let update = property_to_update(
-                    node.uid,
-                    prop_name.clone(),
-                    &prop_value.property,
-                );
+                let update = property_to_update(node.uid, prop_name.clone(), &prop_value.property);
 
-                let response = self.mg_client.set_node_property(SetNodePropertyRequest {
-                    tenant_id,
-                    node_type: NodeType { value: node.node_type.clone() },
-                    uid: node.uid,
-                    property_name: PropertyName { value: prop_name.clone() },
-                    property: prop_value,
-                }).await?;
+                let response = self
+                    .mg_client
+                    .set_node_property(SetNodePropertyRequest {
+                        tenant_id,
+                        node_type: NodeType {
+                            value: node.node_type.clone(),
+                        },
+                        uid: node.uid,
+                        property_name: PropertyName {
+                            value: prop_name.clone(),
+                        },
+                        property: prop_value,
+                    })
+                    .await?;
 
                 if let MutationRedundancy::True = response.mutation_redundancy {
                     continue;
@@ -112,21 +151,34 @@ impl GraphMerger {
         for edge_list in edges.into_values() {
             for edge in edge_list.edges {
                 let IdentifiedEdge {
-                    to_uid, from_uid, edge_name,
-                } = edge;
-                let response = self.mg_client.create_edge(CreateEdgeRequest {
-                    tenant_id,
-                    edge_name: EdgeName { value: edge_name.clone() },
-                    from_uid,
                     to_uid,
-                    source_node_type: NodeType { value: node_types[&from_uid].clone() },
-                }).await?;
+                    from_uid,
+                    edge_name,
+                } = edge;
+                let response = self
+                    .mg_client
+                    .create_edge(CreateEdgeRequest {
+                        tenant_id,
+                        edge_name: EdgeName {
+                            value: edge_name.clone(),
+                        },
+                        from_uid,
+                        to_uid,
+                        source_node_type: NodeType {
+                            value: node_types[&from_uid].clone(),
+                        },
+                    })
+                    .await?;
                 if let MutationRedundancy::True = response.mutation_redundancy {
                     continue;
                 }
                 updates.push(Update::EdgeUpdate(EdgeUpdate {
-                    src_edge_name: EdgeName { value: edge_name.clone() },
-                    src_node_type: NodeType { value: node_types[&from_uid].clone() },
+                    src_edge_name: EdgeName {
+                        value: edge_name.clone(),
+                    },
+                    src_node_type: NodeType {
+                        value: node_types[&from_uid].clone(),
+                    },
                     src_uid: from_uid,
                     dst_uid: to_uid,
                 }));
@@ -136,50 +188,49 @@ impl GraphMerger {
     }
 }
 
-
 fn property_to_update(uid: Uid, property_name: String, property: &Property) -> Update {
     match property {
-        Property::IncrementOnlyUintProp(_) => {
-            Update::Uint64PropertyUpdate(UInt64PropertyUpdate {
-                uid,
-                property_name: PropertyName { value: property_name },
-            })
-        }
-        Property::DecrementOnlyUintProp(_) => {
-            Update::Uint64PropertyUpdate(UInt64PropertyUpdate {
-                uid,
-                property_name: PropertyName { value: property_name },
-            })
-        }
-        Property::ImmutableUintProp(_) => {
-            Update::Uint64PropertyUpdate(UInt64PropertyUpdate {
-                uid,
-                property_name: PropertyName { value: property_name },
-            })
-        }
-        Property::IncrementOnlyIntProp(_) => {
-            Update::Int64PropertyUpdate(Int64PropertyUpdate {
-                uid,
-                property_name: PropertyName { value: property_name },
-            })
-        }
-        Property::DecrementOnlyIntProp(_) => {
-            Update::Int64PropertyUpdate(Int64PropertyUpdate {
-                uid,
-                property_name: PropertyName { value: property_name },
-            })
-        }
-        Property::ImmutableIntProp(_) => {
-            Update::Int64PropertyUpdate(Int64PropertyUpdate {
-                uid,
-                property_name: PropertyName { value: property_name },
-            })
-        }
-        Property::ImmutableStrProp(_) => {
-            Update::StringPropertyUpdate(StringPropertyUpdate {
-                uid,
-                property_name: PropertyName { value: property_name },
-            })
-        }
+        Property::IncrementOnlyUintProp(_) => Update::Uint64PropertyUpdate(UInt64PropertyUpdate {
+            uid,
+            property_name: PropertyName {
+                value: property_name,
+            },
+        }),
+        Property::DecrementOnlyUintProp(_) => Update::Uint64PropertyUpdate(UInt64PropertyUpdate {
+            uid,
+            property_name: PropertyName {
+                value: property_name,
+            },
+        }),
+        Property::ImmutableUintProp(_) => Update::Uint64PropertyUpdate(UInt64PropertyUpdate {
+            uid,
+            property_name: PropertyName {
+                value: property_name,
+            },
+        }),
+        Property::IncrementOnlyIntProp(_) => Update::Int64PropertyUpdate(Int64PropertyUpdate {
+            uid,
+            property_name: PropertyName {
+                value: property_name,
+            },
+        }),
+        Property::DecrementOnlyIntProp(_) => Update::Int64PropertyUpdate(Int64PropertyUpdate {
+            uid,
+            property_name: PropertyName {
+                value: property_name,
+            },
+        }),
+        Property::ImmutableIntProp(_) => Update::Int64PropertyUpdate(Int64PropertyUpdate {
+            uid,
+            property_name: PropertyName {
+                value: property_name,
+            },
+        }),
+        Property::ImmutableStrProp(_) => Update::StringPropertyUpdate(StringPropertyUpdate {
+            uid,
+            property_name: PropertyName {
+                value: property_name,
+            },
+        }),
     }
 }

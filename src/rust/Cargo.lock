@@ -3891,6 +3891,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "schema-manager"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "clap 3.2.8",
+ "dashmap",
+ "grapl-graphql-codegen",
+ "rust-proto",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4249,6 +4264,7 @@ dependencies = [
  "sqlx-rt",
  "stringprep",
  "thiserror",
+ "time 0.3.11",
  "tokio-stream",
  "url",
  "uuid",
