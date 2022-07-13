@@ -1333,6 +1333,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "engagement-creator"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "blake2",
+ "bytes",
+ "chrono",
+ "clap 3.2.8",
+ "failure",
+ "futures",
+ "grapl-config",
+ "grapl-utils",
+ "kafka",
+ "opentelemetry 0.16.0",
+ "opentelemetry-jaeger",
+ "quickcheck",
+ "quickcheck_macros",
+ "rust-proto",
+ "serde",
+ "serde_dynamodb",
+ "sha2 0.9.9",
+ "tap",
+ "test-context",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry 0.16.0",
+ "tracing-subscriber",
+ "uid-allocator",
+ "uuid",
+]
+
+[[package]]
 name = "enum-as-inner"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

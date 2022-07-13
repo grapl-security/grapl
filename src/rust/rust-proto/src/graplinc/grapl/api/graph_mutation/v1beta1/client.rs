@@ -63,7 +63,6 @@ impl GraphMutationClient {
         &mut self,
         request: SetNodePropertyRequest,
     ) -> Result<SetNodePropertyResponse, GraphMutationClientError> {
-        // todo: maintain a client cache
         let raw_request: SetNodePropertyRequestProto = request.into();
         let raw_response = self
             .inner

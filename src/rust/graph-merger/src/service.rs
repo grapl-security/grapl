@@ -17,7 +17,6 @@ use rust_proto::graplinc::grapl::{
             },
             messages::{
                 CreateEdgeRequest,
-                CreateNodeRequest,
                 MutationRedundancy,
                 SetNodePropertyRequest,
             },
@@ -114,14 +113,15 @@ impl GraphMerger {
         let edges = subgraph.edges;
 
         for node in nodes.into_values() {
-            self.mg_client
-                .create_node(CreateNodeRequest {
-                    tenant_id,
-                    node_type: NodeType {
-                        value: node.node_type.clone(),
-                    },
-                })
-                .await?;
+            // todo: Set the node's type here
+            // self.mg_client
+            //     .set_node_type(SetNodeTypeRequest {
+            //         tenant_id,
+            //         node_type: NodeType {
+            //             value: node.node_type.clone(),
+            //         },
+            //     })
+            //     .await?;
 
             for (prop_name, prop_value) in node.properties {
                 let update = property_to_update(node.uid, prop_name.clone(), &prop_value.property);
@@ -135,7 +135,7 @@ impl GraphMerger {
                         },
                         uid: node.uid,
                         property_name: PropertyName {
-                            value: prop_name.clone(),
+                            value: prop_name,
                         },
                         property: prop_value,
                     })
