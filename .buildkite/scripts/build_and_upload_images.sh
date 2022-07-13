@@ -10,11 +10,10 @@ set -euo pipefail
 
 source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/version.sh
-source .buildkite/scripts/lib/lang_version.sh
 
-RUST_VERSION="$(rust_version)"
+RUST_VERSION="$(./build-support/rust_version.sh)"
 export RUST_VERSION
-PYTHON_VERSION="$(python_version)"
+PYTHON_VERSION="$(./build-support/python_version.sh)"
 export PYTHON_VERSION
 
 # While we have Docker Compose files present, we have to explicitly

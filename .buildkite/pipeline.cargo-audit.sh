@@ -16,9 +16,7 @@
 
 set -euo pipefail
 
-source .buildkite/scripts/lib/lang_version.sh
-
-rust_version="$(rust_version)"
+rust_version="$(./build-support/rust_version.sh)"
 readonly rust_version
 
 if [ "${BUILDKITE_PIPELINE_NAME}" == "grapl/cargo-audit" ]; then
