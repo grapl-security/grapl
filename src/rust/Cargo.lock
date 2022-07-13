@@ -1233,7 +1233,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "syn",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -1428,7 +1428,7 @@ dependencies = [
  "derive-dynamic-node",
  "rust-proto",
  "thiserror",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -1496,7 +1496,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -1724,7 +1724,7 @@ dependencies = [
  "tracing-appender",
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -1742,7 +1742,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -1830,7 +1830,7 @@ dependencies = [
  "tracing-appender",
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -1851,7 +1851,7 @@ dependencies = [
  "tokio",
  "tracing",
  "uid-allocator",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -1879,7 +1879,7 @@ dependencies = [
  "tonic-build 0.6.2",
  "tracing",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -2381,7 +2381,7 @@ dependencies = [
  "grapl-config",
  "grapl-utils",
  "prost 0.9.0",
- "rust-proto-new",
+ "rust-proto",
  "thiserror",
  "tokio",
  "tonic 0.6.2",
@@ -2637,7 +2637,7 @@ dependencies = [
  "tagptr",
  "thiserror",
  "triomphe",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -2680,7 +2680,7 @@ dependencies = [
  "tracing-appender",
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -2943,7 +2943,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -2980,7 +2980,7 @@ dependencies = [
  "tracing-appender",
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -3127,7 +3127,7 @@ dependencies = [
  "tracing-appender",
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -3177,7 +3177,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -3192,7 +3192,7 @@ dependencies = [
  "tokio",
  "tonic 0.7.2",
  "tracing",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -3219,7 +3219,7 @@ dependencies = [
  "tonic 0.7.2",
  "tracing",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -3239,7 +3239,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -3938,7 +3938,7 @@ dependencies = [
  "tonic-health",
  "tracing",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -4120,7 +4120,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -4428,7 +4428,7 @@ dependencies = [
  "thiserror",
  "tokio-stream",
  "url",
- "uuid",
+ "uuid 1.1.2",
  "webpki-roots",
  "whoami",
 ]
@@ -4564,7 +4564,7 @@ dependencies = [
  "tracing-appender",
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -4577,7 +4577,7 @@ dependencies = [
  "memchr",
  "serde",
  "thiserror",
- "uuid",
+ "uuid 1.1.2",
  "xmlparser",
 ]
 
@@ -5274,7 +5274,7 @@ dependencies = [
  "tracing-appender",
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
- "uuid",
+ "uuid 1.1.2",
 ]
 
 [[package]]
@@ -5366,6 +5366,16 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+]
+
+[[package]]
+name = "uuid"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+dependencies = [
+ "getrandom 0.2.7",
+ "serde",
 ]
 
 [[package]]
