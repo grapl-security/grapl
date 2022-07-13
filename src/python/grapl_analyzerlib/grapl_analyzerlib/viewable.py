@@ -7,7 +7,6 @@ from typing import (
     cast,
     Any,
     Generic,
-    List,
     TypeVar,
     Union,
     Tuple,
@@ -30,7 +29,7 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 V = TypeVar("V", bound="Viewable")
 Q = TypeVar("Q", bound="Queryable")
 T = TypeVar("T")
-OneOrMany = Union[List[T], T]
+OneOrMany = Union[list[T], T]
 
 
 class Viewable(Generic[V, Q], Extendable, abc.ABC):
@@ -196,7 +195,7 @@ EdgeV = TypeVar("EdgeV", bound="Viewable")
 def deserialize_edge(
     edge_viewable: type[EdgeV], edge_ty: EdgeT, value, graph_client
 ) -> EdgeV | list[EdgeV]:
-    if isinstance(value, List):
+    if isinstance(value, list):
         edges = []
         # assert edge_ty.is_to_many()
         for serialized_edge in value:

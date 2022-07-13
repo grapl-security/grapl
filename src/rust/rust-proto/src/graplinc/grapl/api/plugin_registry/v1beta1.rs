@@ -639,3 +639,119 @@ impl From<TearDownPluginResponse> for proto::TearDownPluginResponse {
 impl ProtobufSerializable for TearDownPluginResponse {
     type ProtobufMessage = proto::TearDownPluginResponse;
 }
+
+//
+// GetPluginHealthRequest
+//
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GetPluginHealthRequest {
+    pub plugin_id: uuid::Uuid,
+}
+
+impl type_url::TypeUrl for GetPluginHealthRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetPluginHealthRequest";
+}
+
+impl TryFrom<proto::GetPluginHealthRequest> for GetPluginHealthRequest {
+    type Error = SerDeError;
+
+    fn try_from(value: proto::GetPluginHealthRequest) -> Result<Self, Self::Error> {
+        let plugin_id = value
+            .plugin_id
+            .ok_or(SerDeError::MissingField("CreatePluginResponse.plugin_id"))?
+            .into();
+        Ok(Self { plugin_id })
+    }
+}
+
+impl From<GetPluginHealthRequest> for proto::GetPluginHealthRequest {
+    fn from(value: GetPluginHealthRequest) -> Self {
+        Self {
+            plugin_id: Some(value.plugin_id.into()),
+        }
+    }
+}
+
+impl ProtobufSerializable for GetPluginHealthRequest {
+    type ProtobufMessage = proto::GetPluginHealthRequest;
+}
+
+//
+// PluginHealthStatus
+//
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum PluginHealthStatus {
+    NotDeployed,
+    // These map to https://www.nomadproject.io/api-docs/jobs#status
+    Pending,
+    Running,
+    Dead,
+}
+
+use proto::get_plugin_health_response::PluginHealthStatus as PluginHealthStatusProto;
+impl TryFrom<PluginHealthStatusProto> for PluginHealthStatus {
+    type Error = SerDeError;
+
+    fn try_from(value: PluginHealthStatusProto) -> Result<Self, Self::Error> {
+        match value {
+            PluginHealthStatusProto::Unspecified => {
+                Err(SerDeError::UnknownVariant("PluginHealthStatus"))
+            }
+            PluginHealthStatusProto::NotDeployed => Ok(PluginHealthStatus::NotDeployed),
+            PluginHealthStatusProto::Pending => Ok(PluginHealthStatus::Pending),
+            PluginHealthStatusProto::Running => Ok(PluginHealthStatus::Running),
+            PluginHealthStatusProto::Dead => Ok(PluginHealthStatus::Dead),
+        }
+    }
+}
+
+impl From<PluginHealthStatus> for PluginHealthStatusProto {
+    fn from(value: PluginHealthStatus) -> Self {
+        match value {
+            PluginHealthStatus::NotDeployed => PluginHealthStatusProto::NotDeployed,
+            PluginHealthStatus::Pending => PluginHealthStatusProto::Pending,
+            PluginHealthStatus::Running => PluginHealthStatusProto::Running,
+            PluginHealthStatus::Dead => PluginHealthStatusProto::Dead,
+        }
+    }
+}
+
+//
+// GetPluginHealthResponse
+//
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GetPluginHealthResponse {
+    pub health_status: PluginHealthStatus,
+}
+
+impl type_url::TypeUrl for GetPluginHealthResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetPluginHealthResponse";
+}
+
+impl TryFrom<proto::GetPluginHealthResponse> for GetPluginHealthResponse {
+    type Error = SerDeError;
+
+    fn try_from(value: proto::GetPluginHealthResponse) -> Result<Self, Self::Error> {
+        // Note that the `.some_enum()` has parens after!
+        let health_status = value.health_status().try_into()?;
+        Ok(Self { health_status })
+    }
+}
+
+impl From<GetPluginHealthResponse> for proto::GetPluginHealthResponse {
+    fn from(value: GetPluginHealthResponse) -> Self {
+        let health_status: PluginHealthStatusProto = value.health_status.into();
+        Self {
+            health_status: health_status as i32,
+        }
+    }
+}
+
+impl ProtobufSerializable for GetPluginHealthResponse {
+    type ProtobufMessage = proto::GetPluginHealthResponse;
+}

@@ -243,7 +243,6 @@ pub mod server {
         Future,
         FutureExt,
     };
-    use thiserror::Error;
     use tokio::net::TcpListener;
     use tokio_stream::wrappers::TcpListenerStream;
     use tonic::transport::{
@@ -265,6 +264,7 @@ pub mod server {
             GetBootstrapResponse as GetBootstrapResponseProto,
         },
         protocol::{
+            error::ServeError,
             healthcheck::{
                 server::init_health_service,
                 HealthcheckError,
@@ -316,13 +316,6 @@ pub mod server {
             &self,
             request: GetBootstrapRequest,
         ) -> Result<GetBootstrapResponse, Self::Error>;
-    }
-
-    #[non_exhaustive]
-    #[derive(Debug, Error)]
-    pub enum ConfigurationError {
-        #[error("encountered tonic error {0}")]
-        TonicError(#[from] tonic::transport::Error),
     }
 
     /// The plugin bootstrap server serves the plugin bootstrap API
@@ -379,8 +372,8 @@ pub mod server {
         }
 
         /// Run the gRPC server and serve the API on this server's socket
-        /// address. Returns a ConfigurationError if the gRPC server cannot run.
-        pub async fn serve(self) -> Result<(), ConfigurationError> {
+        /// address. Returns a ServeError if the gRPC server cannot run.
+        pub async fn serve(self) -> Result<(), ServeError> {
             let service_name = &(*self.service_name());
             let (healthcheck_handle, health_service) =
                 init_health_service::<PluginBootstrapServiceServerProto<GrpcApi<T>>, _, _>(

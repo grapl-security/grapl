@@ -694,8 +694,11 @@ pub mod plugin_registry {
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginHealthRequest,
+        GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
+        PluginHealthStatus,
         PluginMetadata,
         PluginType,
         TearDownPluginRequest,
@@ -843,6 +846,37 @@ pub mod plugin_registry {
 
     pub fn tear_down_plugin_responses() -> impl Strategy<Value = TearDownPluginResponse> {
         Just(TearDownPluginResponse {})
+    }
+
+    prop_compose! {
+        pub fn get_plugin_health_requests()(
+            plugin_id in uuids()
+        ) -> GetPluginHealthRequest {
+            GetPluginHealthRequest{
+                plugin_id
+            }
+        }
+    }
+
+    pub fn plugin_health_statuses() -> BoxedStrategy<PluginHealthStatus> {
+        prop_oneof![
+            // For cases without data, `Just` is all you need
+            Just(PluginHealthStatus::NotDeployed),
+            Just(PluginHealthStatus::Pending),
+            Just(PluginHealthStatus::Running),
+            Just(PluginHealthStatus::Dead),
+        ]
+        .boxed()
+    }
+
+    prop_compose! {
+        pub fn get_plugin_health_responses()(
+            health_status in plugin_health_statuses()
+        ) -> GetPluginHealthResponse{
+            GetPluginHealthResponse{
+                health_status
+            }
+        }
     }
 }
 

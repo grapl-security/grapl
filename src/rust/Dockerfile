@@ -184,6 +184,7 @@ COPY --from=build /nomad/nomad /bin
 # Grab the example generator so we can deploy it in test_deploy_plugin
 RUN mkdir -p /test-fixtures
 COPY --from=build /outputs/example-generator /test-fixtures
+COPY --from=build /outputs/sysmon-generator /test-fixtures
 
 COPY --from=build-test-integration /grapl/tests /tests
 # Named context support https://github.com/hadolint/hadolint/issues/830
@@ -253,8 +254,8 @@ ENTRYPOINT ["/node-identifier"]
 ##### sysmon-generator
 FROM rust-dist AS sysmon-generator-deploy
 
-COPY --from=build /outputs/sysmon-generator /
-ENTRYPOINT ["/sysmon-generator"]
+COPY --from=build /outputs/sysmon-generator-kafka-legacy /
+ENTRYPOINT ["/sysmon-generator-kafka-legacy"]
 
 ##### generator-executor
 FROM rust-dist AS generator-executor-deploy

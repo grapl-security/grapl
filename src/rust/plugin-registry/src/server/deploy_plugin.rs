@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use nomad_client_gen::models;
 
 use super::{
+    plugin_nomad_job,
     s3_url::get_s3_url,
     service::PluginRegistryServiceConfig,
 };
@@ -129,12 +130,12 @@ pub async fn deploy_plugin(
     service_config: &PluginRegistryServiceConfig,
 ) -> Result<(), PluginRegistryServiceError> {
     // --- Convert HCL to JSON Job model
-    let job_name = "grapl-plugin"; // Matches what's in `plugin.nomad`
+    let job_name = plugin_nomad_job::job_name();
 
     let job = get_job(&plugin, service_config, cli, &HARDCODED_PLUGIN_RUNTIME)?;
 
     // --- Deploy namespace
-    let namespace_name = format!("plugin-{id}", id = plugin.plugin_id);
+    let namespace_name = plugin_nomad_job::namespace_name(&plugin.plugin_id);
     let namespace_description = format!("Plugin for {name}", name = plugin.display_name);
     client
         .create_update_namespace(models::Namespace {

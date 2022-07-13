@@ -11,7 +11,7 @@ use crate::{
     SerDeError,
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct GeneratedGraph {
     pub graph_description: GraphDescription,
 }
@@ -80,7 +80,7 @@ impl serde_impl::ProtobufSerializable for RunGeneratorRequest {
     type ProtobufMessage = proto::RunGeneratorRequest;
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct RunGeneratorResponse {
     pub generated_graph: GeneratedGraph,
 }

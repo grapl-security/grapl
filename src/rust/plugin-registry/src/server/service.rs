@@ -16,6 +16,8 @@ use rust_proto::{
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginHealthRequest,
+        GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
         PluginMetadata,
@@ -30,7 +32,10 @@ use rust_proto::{
 use tokio::net::TcpListener;
 use tonic::async_trait;
 
-use super::create_plugin::upload_stream_multipart_to_s3;
+use super::{
+    create_plugin::upload_stream_multipart_to_s3,
+    get_plugin_health,
+};
 use crate::{
     db::{
         client::{
@@ -266,6 +271,20 @@ impl PluginRegistryApi for PluginRegistry {
     ) -> Result<GetAnalyzersForTenantResponse, Self::Error> {
         todo!()
     }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn get_plugin_health(
+        &self,
+        request: GetPluginHealthRequest,
+    ) -> Result<GetPluginHealthResponse, Self::Error> {
+        let health_status = get_plugin_health::get_plugin_health(
+            &self.nomad_client,
+            &self.db_client,
+            request.plugin_id,
+        )
+        .await?;
+        Ok(GetPluginHealthResponse { health_status })
+    }
 }
 
 pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn std::error::Error>> {
@@ -307,7 +326,7 @@ pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn st
         socket_address = %addr,
     );
 
-    server.serve().await
+    Ok(server.serve().await?)
 }
 
 fn generate_artifact_s3_key(

@@ -1,5 +1,5 @@
 import unittest
-from typing import NewType, Dict
+from typing import NewType
 
 import hypothesis.strategies as st
 
@@ -9,7 +9,7 @@ from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.test_utils.dgraph_utils import random_key_for_test, upsert
 from grapl_analyzerlib.test_utils.strategies.misc import text_dgraph_compat
 
-ProcessProps = NewType("ProcessProps", Dict[str, PropType])
+ProcessProps = NewType("ProcessProps", dict[str, PropType])
 
 
 def process_props_strategy() -> st.SearchStrategy[ProcessProps]:

@@ -7,7 +7,6 @@ It'd be pretty easy to add the PyCharm/IntelliJ debugger too (which uses pydevd)
 import os
 import subprocess
 import sys
-from typing import Optional
 
 from grapl_common.grapl_logger import get_module_grapl_logger
 from typing_extensions import Literal
@@ -46,7 +45,7 @@ def _should_debug_service(service: ServiceIdentifier) -> bool:
     return service in debug_services
 
 
-def _get_debug_port() -> Optional[int]:
+def _get_debug_port() -> int | None:
     port = os.getenv("VSC_DEBUGGER_PORT")
     if not port:
         return None

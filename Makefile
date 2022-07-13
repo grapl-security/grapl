@@ -13,6 +13,9 @@
 # required for our local usage of Nomad, because Nomad won't resolve a
 # `latest` tag from the host machine.)
 IMAGE_TAG ?= dev
+# This is a build argument for our Python images, and is thus used in
+# docker-bake.hcl
+PYTHON_VERSION ?= $(shell cat .python-version)
 # This is a build argument for our Rust images, and is thus used in
 # docker-bake.hcl
 RUST_VERSION ?= $(shell build-support/rust_version.sh)
