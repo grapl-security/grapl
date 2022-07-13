@@ -24,7 +24,7 @@ use rust_proto::{
                     RemoveNodeFromScopeRequest,
                     RemoveNodeFromScopeResponse,
                 },
-                server::server::LensManagerApi,
+                server::LensManagerApi,
             },
         },
         common::v1beta1::types::{
@@ -83,6 +83,8 @@ impl LensManagerApi for LensManager {
             merge_behavior: request.merge_behavior,
         };
 
+        // client.create_edge((create_request));
+
         // given two lenses A and B,
         // to merge B into A,
 
@@ -93,34 +95,6 @@ impl LensManagerApi for LensManager {
 
         // Graph query service client
 
-        if request.merge_behavior == "PRESERVE".to_string() {
-            // ?
-            let create_node_request = CreateNodeRequest {
-                tenant_id: request.tenant_id,
-                node_type: NodeType {
-                    value: "Lens".to_owned(),
-                },
-            };
-
-            let create_edge_request = CreateEdgeRequest {
-                edge_name: EdgeName {
-                    value: "IDKYet".to_owned(),
-                },
-                tenant_id: request.tenant_id,
-                from_uid: request.source_lens_uid.as_u64(),
-                to_uid: request.target_lens_uid.as_u64(),
-                source_node_type: NodeType {
-                    value: "Lens".to_owned(),
-                },
-                dest_node_type: NodeType {
-                    value: "Lens".to_owned(),
-                },
-            };
-
-            client.create_node(create_node_request);
-
-            client.create_edge(create_edge_request);
-        }
 
         Ok(MergeLensResponse {})
     }
@@ -133,7 +107,8 @@ impl LensManagerApi for LensManager {
             lens_uid: request.lens_uid,
         };
 
-        client.close_lens(create_request).await?;
+
+        // client.close_lens(create_request).await?;
 
         Ok(CloseLensResponse {})
     }
@@ -154,10 +129,9 @@ impl LensManagerApi for LensManager {
             source_node_type: NodeType {
                 value: "Lens".to_owned(),
             },
-            dest_node_type: request.node_type,
         };
 
-        client.create_edge(create_request).await?;
+        // client.create_edge(create_request).await?;
 
         Ok(AddNodeToScopeResponse {})
     }
@@ -177,7 +151,7 @@ impl LensManagerApi for LensManager {
             },
         };
 
-        client.remove_node_from_scope(create_request).await?;
+        // client.remove_node_from_scope(create_request).await?;
 
         Ok(RemoveNodeFromScopeResponse {})
     }
@@ -194,7 +168,7 @@ impl LensManagerApi for LensManager {
             uid: request.uid,
         };
 
-        client.remove_node_from_scope(create_request).await?;
+        // client.remove_node_from_scope(create_request).await?;
 
         Ok(RemoveNodeFromAllScopesResponse {})
     }
