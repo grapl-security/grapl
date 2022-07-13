@@ -3011,7 +3011,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "plugin-executor"
+name = "plugin-execution-sidecar"
 version = "0.0.1"
 dependencies = [
  "async-trait",

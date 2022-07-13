@@ -1,15 +1,15 @@
 [package]
-name = "plugin-executor"
+name = "plugin-execution-sidecar"
 version = "0.0.1"
 edition = "2021"
 
 [[bin]]
-name = "analyzer-executor"
-path = "analyzer-executor.rs"
+name = "analyzer-execution-sidecar"
+path = "analyzer-execution-sidecar.rs"
 
 [[bin]]
-name = "generator-executor"
-path = "generator-executor.rs"
+name = "generator-execution-sidecar"
+path = "generator-execution-sidecar.rs"
 
 [lib]
 name = "plugin_executor"
