@@ -27,7 +27,7 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
     let event_source_id = uuid::Uuid::new_v4();
 
     let meta = PluginMetadata {
-        tenant_id: tenant_id.clone(),
+        tenant_id,
         display_name: display_name.clone(),
         plugin_type: PluginType::Generator,
         event_source_id: Some(event_source_id),
@@ -47,7 +47,7 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
 
     let get_response: GetPluginResponse = client
         .get_plugin(GetPluginRequest {
-            plugin_id: plugin_id.clone(),
+            plugin_id,
             tenant_id,
         })
         .timeout(std::time::Duration::from_secs(5))

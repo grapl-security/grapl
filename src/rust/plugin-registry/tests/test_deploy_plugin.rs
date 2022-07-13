@@ -37,7 +37,7 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
         let display_name = uuid::Uuid::new_v4().to_string();
         let artifact = get_example_generator()?;
         let metadata = PluginMetadata {
-            tenant_id: tenant_id.clone(),
+            tenant_id,
             display_name: display_name.clone(),
             plugin_type: PluginType::Generator,
             event_source_id: Some(event_source_id.clone()),
@@ -75,7 +75,7 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
         let display_name = "sysmon-generator";
         let artifact = get_sysmon_generator()?;
         let metadata = PluginMetadata {
-            tenant_id: tenant_id.clone(),
+            tenant_id,
             display_name: display_name.to_owned(),
             plugin_type: PluginType::Generator,
             event_source_id: Some(event_source_id.clone()),
@@ -93,12 +93,10 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
     let plugin_id = create_response.plugin_id;
 
     // Ensure that an un-deployed plugin is NotDeployed
-    assert_health(&mut client, &plugin_id, PluginHealthStatus::NotDeployed).await?;
+    assert_health(&mut client, plugin_id, PluginHealthStatus::NotDeployed).await?;
 
     let _deploy_response = client
-        .deploy_plugin(DeployPluginRequest {
-            plugin_id: plugin_id.clone(),
-        })
+        .deploy_plugin(DeployPluginRequest { plugin_id })
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
@@ -107,7 +105,7 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
     // Ensure that a now-deployed plugin is now Running
     // If it's Pending, it's possible the agent is out of mem or disk
     // and was unable to allocate it.
-    assert_health(&mut client, &plugin_id, PluginHealthStatus::Running).await?;
+    assert_health(&mut client, plugin_id, PluginHealthStatus::Running).await?;
 
     Ok(())
 }
@@ -121,13 +119,11 @@ fn assert_contains(input: &str, expected_substr: &str) {
 
 async fn assert_health(
     client: &mut PluginRegistryServiceClient,
-    plugin_id: &uuid::Uuid,
+    plugin_id: uuid::Uuid,
     expected: PluginHealthStatus,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let get_health_response: GetPluginHealthResponse = client
-        .get_plugin_health(GetPluginHealthRequest {
-            plugin_id: plugin_id.clone(),
-        })
+        .get_plugin_health(GetPluginHealthRequest { plugin_id })
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
