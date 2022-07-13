@@ -16,14 +16,14 @@ use rust_proto::graplinc::grapl::api::{
     },
 };
 
-use crate::{
-    generator_client::FromEnv,
-    plugin_executor::{
-        PluginWorkProcessor,
+use super::{
+    plugin_work_processor::{
         RequestId,
         Workload,
     },
+    PluginWorkProcessor,
 };
+use crate::sidecar_client::generator_client::FromEnv;
 
 impl Workload for GetExecuteGeneratorResponse {
     fn request_id(&self) -> i64 {

@@ -1,6 +1,6 @@
 use plugin_execution_sidecar::{
-    generator_work_processor::GeneratorWorkProcessor,
     plugin_executor::PluginExecutor,
+    work::GeneratorWorkProcessor,
 };
 
 #[tokio::main]
