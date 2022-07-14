@@ -3,7 +3,7 @@ import unittest
 from typing import Any
 
 import hcl2
-from hcl2_type_reflection.hcl2_type_reflection import HCL2TypeParser
+from hcl2_type_reflection.hcl2_type_reflection import HCL2TypeParser, mock_hcl2_type
 from lark import Lark
 
 
@@ -52,4 +52,44 @@ class TestHCL2TypeReflection(unittest.TestCase):
         parsed_type = self.parser.parse(type_variable)
         assert parsed_type == {
             "string": {"sasl_username": "string", "sasl_password": "string"}
+        }
+
+    def test__mock_str_type(self) -> None:
+        type_variable = self.hcl2_type_dict["string_var"]["type"]
+        parsed_type = self.parser.parse(type_variable)
+        mocked_type = mock_hcl2_type(parsed_type)
+        assert mocked_type == "MOCK_STRING"
+
+    def test__mock_number_type(self) -> None:
+        type_variable = self.hcl2_type_dict["number_var"]["type"]
+        parsed_type = self.parser.parse(type_variable)
+        mocked_type = mock_hcl2_type(parsed_type)
+        assert mocked_type == 1
+
+    def test__mock_map_str_type(self) -> None:
+        type_variable = self.hcl2_type_dict["map_string_var"]["type"]
+        parsed_type = self.parser.parse(type_variable)
+        mocked_type = mock_hcl2_type(parsed_type)
+        assert mocked_type == {"MOCK_STRING": "MOCK_STRING"}
+
+    def test__mock_obj_type(self) -> None:
+        type_variable = self.hcl2_type_dict["object_var"]["type"]
+        parsed_type = self.parser.parse(type_variable)
+        mocked_type = mock_hcl2_type(parsed_type)
+        assert mocked_type == {
+            "hostname": "MOCK_STRING",
+            "port": 1,
+            "username": "MOCK_STRING",
+            "password": "MOCK_STRING",
+        }
+
+    def test__mock_map_obj_type(self) -> None:
+        type_variable = self.hcl2_type_dict["map_object_var"]["type"]
+        parsed_type = self.parser.parse(type_variable)
+        mocked_type = mock_hcl2_type(parsed_type)
+        assert mocked_type == {
+            "MOCK_STRING": {
+                "sasl_username": "MOCK_STRING",
+                "sasl_password": "MOCK_STRING",
+            }
         }

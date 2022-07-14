@@ -57,3 +57,24 @@ class HCL2TypeParser:
             # Using an internal transformer is faster and more memory efficient
             transformer=HCL2TypeTransformer(),
         )
+
+
+def mock_hcl2_type(hcl2_type: Any) -> Any:
+    mock_string = "MOCK_STRING"
+    mock_bool = True
+    mock_number = 1
+    if isinstance(hcl2_type, str):
+        if hcl2_type == "string":
+            return mock_string
+        elif hcl2_type == "bool":
+            return mock_bool
+        elif hcl2_type == "number":
+            return mock_number
+        else:
+            return hcl2_type
+    if isinstance(hcl2_type, dict):
+        mocked_dict = {
+            mock_hcl2_type(k): mock_hcl2_type(v) for (k, v) in hcl2_type.items()
+        }
+        return mocked_dict
+    return hcl2_type
