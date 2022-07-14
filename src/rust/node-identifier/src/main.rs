@@ -145,7 +145,7 @@ async fn handler() -> Result<(), NodeIdentifierError> {
                 }
             }
         },
-    )?;
+    );
 
     stream
         .for_each_concurrent(

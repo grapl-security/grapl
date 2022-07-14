@@ -172,7 +172,7 @@ async fn handler(
                 }
             }
         },
-    )?;
+    );
 
     stream
         .for_each_concurrent(
