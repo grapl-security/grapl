@@ -270,8 +270,8 @@ install_hashicorp_tools() {
     CONSUL_VERSION="1.12.3-1"
     NOMAD_VERSION="1.3.2-1"
     # packer doesn't have the -1s at the end for some reason, until 1.8.1. When upgrading please confirm with `apt-cache showpkg packer`
-    PACKER_VERSION="1.8.1-1"
-    VAULT_VERSION="1.10.3-1"
+    PACKER_VERSION="1.8.2-1"
+    VAULT_VERSION="1.10.4-1"
 
     sudo apt-get install --yes --allow-downgrades \
         consul="${CONSUL_VERSION}" \
