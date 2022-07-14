@@ -629,6 +629,7 @@ job "grapl-core" {
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher"]
         KAFKA_CONSUMER_TOPIC      = "raw-logs"
         KAFKA_PRODUCER_TOPIC      = "generated-graphs"
+        KAFKA_RETRY_TOPIC         = "raw-logs-retry"
 
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
@@ -649,6 +650,42 @@ job "grapl-core" {
           }
         }
       }
+    }
+  }
+
+  group "generator-dispatcher-retry" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+    }
+
+    task "generator-dispatcher-retry" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["generator-dispatcher-retry"]
+      }
+
+      env {
+        # Kafka
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["generator-dispatcher-retry"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["generator-dispatcher-retry"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher-retry"]
+        KAFKA_RETRY_TOPIC         = "raw-logs-retry"
+        KAFKA_PRODUCER_TOPIC      = "raw-logs"
+
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "generator-dispatcher-retry"
     }
   }
 

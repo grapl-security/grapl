@@ -1655,11 +1655,16 @@ dependencies = [
  "futures",
  "grapl-config",
  "kafka",
+ "lru",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
+ "parking_lot 0.12.1",
+ "plugin-registry",
  "plugin-work-queue",
+ "rand 0.8.5",
  "rust-proto",
  "test-context",
+ "thiserror",
  "tokio",
  "tracing",
  "tracing-appender",
@@ -2223,6 +2228,22 @@ dependencies = [
  "rust-proto",
  "thiserror",
  "tracing",
+]
+
+[[package]]
+name = "kafka-retry"
+version = "0.1.0"
+dependencies = [
+ "clap 3.1.18",
+ "futures",
+ "kafka",
+ "opentelemetry 0.16.0",
+ "opentelemetry-jaeger",
+ "tokio",
+ "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry 0.16.0",
+ "tracing-subscriber",
 ]
 
 [[package]]

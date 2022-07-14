@@ -79,7 +79,7 @@ async fn handler() -> Result<(), SysmonGeneratorError> {
 
     tracing::info!(message = "Kafka StreamProcessor configured successfully");
 
-    let stream = stream_processor.stream(event_handler)?;
+    let stream = stream_processor.stream(event_handler);
 
     stream
         .for_each_concurrent(

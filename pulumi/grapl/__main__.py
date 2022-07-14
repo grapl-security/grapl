@@ -68,6 +68,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "engagement-creator": builder.build_with_tag("engagement-creator"),
         "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
+        "generator-dispatcher-retry": builder.build_with_tag("generator-dispatcher-retry"),
         "generator-executor": builder.build_with_tag("generator-executor"),
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
@@ -180,6 +181,7 @@ def main() -> None:
 
     kafka_services = (
         "generator-dispatcher",
+        "generator-dispatcher-retry",
         "graph-generator",
         "graph-merger",
         "node-identifier",

@@ -13,6 +13,7 @@ members = [
   "./grapl-web-ui",
   "./grapl-utils",
   "./kafka",
+  "./kafka-retry/",
   "./node-identifier",
   "./nomad-client-gen",
   "./organization-management",
