@@ -164,7 +164,7 @@ group "rust-services" {
   targets = [
     "event-source",
     "generator-dispatcher",
-    "generator-executor",
+    "generator-execution-sidecar",
     "graph-merger",
     "grapl-web-ui",
     "node-identifier",
@@ -378,11 +378,11 @@ target "plugin-work-queue" {
   ]
 }
 
-target "generator-executor" {
+target "generator-execution-sidecar" {
   inherits = ["_rust-base"]
-  target   = "generator-executor-deploy"
+  target   = "generator-execution-sidecar-deploy"
   tags = [
-    upstream_aware_tag("generator-executor")
+    upstream_aware_tag("generator-execution-sidecar")
   ]
 }
 

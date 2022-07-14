@@ -1680,6 +1680,7 @@ dependencies = [
  "moka",
  "rust-proto",
  "serde",
+ "test-context",
  "thiserror",
  "tokio",
  "tracing",
@@ -3010,7 +3011,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "plugin-executor"
+name = "plugin-execution-sidecar"
 version = "0.0.1"
 dependencies = [
  "async-trait",
@@ -4309,6 +4310,7 @@ dependencies = [
  "clap 3.1.18",
  "endpoint-plugin",
  "futures",
+ "generator-sdk",
  "kafka",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",

@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use async_trait;
 use rust_proto::{
     graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::{
         GeneratorServiceClient,
@@ -41,7 +40,7 @@ impl FromEnv<GeneratorServiceClient, GeneratorServiceClientError> for GeneratorS
             endpoint.clone(),
             Self::SERVICE_NAME,
             Duration::from_millis(10000),
-            Duration::from_millis(500),
+            Duration::from_millis(5000),
         )
         .await
         .expect("Generator plugin never reported healthy");

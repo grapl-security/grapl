@@ -54,6 +54,11 @@ job "grapl-plugin" {
   namespace   = "plugin-${var.plugin_id}"
   type        = "service"
 
+  reschedule {
+    # Make this a one-shot job
+    attempts = 0
+  }
+
   # We'll want to make sure we have the opposite constraint on other services
   # This is set in the Nomad agent's `client` stanza:
   # https://www.nomadproject.io/docs/configuration/client#meta
@@ -113,7 +118,7 @@ job "grapl-plugin" {
       }
 
       env {
-        PLUGIN_ID = "${var.plugin_id}"
+        PLUGIN_EXECUTOR_PLUGIN_ID = "${var.plugin_id}"
 
         // FYI: the upstream plugin's address is discovered at runtime, not
         // env{}, because the upstream's name is based on ${PLUGIN_ID}.
@@ -129,6 +134,11 @@ job "grapl-plugin" {
     }
 
     // TODO: task "tenant-plugin-graph-query-sidecar"
+
+    restart {
+      attempts = 1
+      delay    = "5s"
+    }
   }
 
   group "plugin" {
@@ -139,10 +149,6 @@ job "grapl-plugin" {
       //   servers = local.dns_servers
       // }
       port "plugin" {}
-    }
-
-    restart {
-      attempts = 1
     }
 
     count = var.plugin_count
@@ -218,6 +224,11 @@ EOF
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
       }
+    }
+
+    restart {
+      attempts = 1
+      delay    = "5s"
     }
   }
 }
