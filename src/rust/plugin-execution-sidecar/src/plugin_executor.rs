@@ -1,13 +1,17 @@
 use std::time::Duration;
 
+use clap::Parser;
 use plugin_work_queue::client::{
     FromEnv as pwq_from_env,
     PluginWorkQueueServiceClient,
 };
 
-use crate::work::{
-    PluginWorkProcessor,
-    Workload,
+use crate::{
+    config::PluginExecutorConfig,
+    work::{
+        PluginWorkProcessor,
+        Workload,
+    },
 };
 
 pub struct PluginExecutor<P: PluginWorkProcessor> {
@@ -21,11 +25,9 @@ where
     P: PluginWorkProcessor,
 {
     pub async fn new(plugin_work_processor: P) -> Result<Self, Box<dyn std::error::Error>> {
-        let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
+        let PluginExecutorConfig { plugin_id } = PluginExecutorConfig::parse();
 
-        // TODO: perhaps change to Clap
-        let plugin_id = std::env::var("PLUGIN_ID").expect("PLUGIN_ID");
-        let plugin_id = uuid::Uuid::parse_str(&plugin_id)?;
+        let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
 
         Ok(Self {
             plugin_work_processor,
@@ -59,11 +61,10 @@ where
                     )
                     .await?;
             } else {
-                tokio::time::sleep(Duration::from_secs(5)).await;
+                tokio::time::sleep(Duration::from_secs(1)).await;
                 continue;
             }
         }
-        // Should we let the process exit if that while-let fails?
-        Ok(())
+        Err("Unable to get new work".into())
     }
 }
