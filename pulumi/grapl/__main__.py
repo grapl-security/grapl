@@ -68,7 +68,9 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "engagement-creator": builder.build_with_tag("engagement-creator"),
         "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
-        "generator-execution-sidecar": builder.build_with_tag("generator-execution-sidecar"),
+        "generator-execution-sidecar": builder.build_with_tag(
+            "generator-execution-sidecar"
+        ),
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),

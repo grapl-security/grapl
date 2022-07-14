@@ -1,8 +1,7 @@
-# plugin-executor
+# plugin-execution-sidecar
 
-This is a home for shared code between an analyzer-execution-sidecar and 
-a generator-execution-sidecar, as well as an entry-point for those 
-two services.
+This is a home for shared code between an analyzer-execution-sidecar and a
+generator-execution-sidecar, as well as an entry-point for those two services.
 
 The gist of a generator-execution-sidecar is this:
 
@@ -16,5 +15,5 @@ while true {
 }
 ```
 
-The gist of an analyzer-execution-sidecar is basically the same, except how we grab
-analyzer work and which Kafka topic we put the result on.
+The gist of an analyzer-execution-sidecar is basically the same, except how we
+grab analyzer work and which Kafka topic we put the result on.
