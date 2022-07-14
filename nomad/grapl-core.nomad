@@ -1128,7 +1128,7 @@ job "grapl-core" {
         PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL             = var.plugin_registry_kernel_artifact_url
         PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL             = var.plugin_registry_rootfs_artifact_url
         PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE = var.container_images["hax-docker-plugin-runtime"]
-        PLUGIN_EXECUTION_IMAGE                          = var.container_images["generator-executor"] # TODO: add support for analyzer too
+        PLUGIN_EXECUTION_IMAGE                          = var.container_images["generator-execution-sidecar"] # TODO: add support for analyzer too
         PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID           = var.plugin_registry_bucket_aws_account_id
         PLUGIN_REGISTRY_BUCKET_NAME                     = var.plugin_registry_bucket_name
 
