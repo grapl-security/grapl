@@ -118,7 +118,8 @@ job "grapl-plugin" {
       }
 
       env {
-        PLUGIN_EXECUTOR_PLUGIN_ID = "${var.plugin_id}"
+        PLUGIN_EXECUTOR_PLUGIN_ID = var.plugin_id
+        PLUGIN_EXECUTOR_TENANT_ID = var.tenant_id
 
         // FYI: the upstream plugin's address is discovered at runtime, not
         // env{}, because the upstream's name is based on ${PLUGIN_ID}.

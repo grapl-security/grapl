@@ -4,6 +4,8 @@ use rust_proto::graplinc::grapl::api::plugin_work_queue::v1beta1::{
     PluginWorkQueueServiceClientError,
 };
 
+use crate::config::PluginExecutorConfig;
+
 pub type RequestId = i64;
 
 // Abstract out between Get[Generator/Analyzer]ExecutionResponse,
@@ -18,17 +20,21 @@ pub trait PluginWorkProcessor {
 
     async fn get_work(
         &self,
+        config: &PluginExecutorConfig,
         pwq_client: &mut PluginWorkQueueServiceClient,
-        plugin_id: uuid::Uuid,
     ) -> Result<Self::Work, PluginWorkQueueServiceClientError>;
 
     async fn ack_work(
         &self,
+        config: &PluginExecutorConfig,
         pwq_client: &mut PluginWorkQueueServiceClient,
-        plugin_id: uuid::Uuid,
         request_id: RequestId,
         success: bool,
     ) -> Result<(), PluginWorkQueueServiceClientError>;
 
-    async fn process_job(&mut self, work: ExecutionJob) -> Result<(), Box<dyn std::error::Error>>;
+    async fn process_job(
+        &mut self,
+        config: &PluginExecutorConfig,
+        work: ExecutionJob,
+    ) -> Result<(), Box<dyn std::error::Error>>;
 }

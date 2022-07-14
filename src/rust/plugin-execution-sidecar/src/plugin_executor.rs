@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use clap::Parser;
 use plugin_work_queue::client::{
     FromEnv as pwq_from_env,
     PluginWorkQueueServiceClient,
@@ -17,22 +16,23 @@ use crate::{
 pub struct PluginExecutor<P: PluginWorkProcessor> {
     plugin_work_processor: P,
     plugin_work_queue_client: PluginWorkQueueServiceClient,
-    plugin_id: uuid::Uuid,
+    config: PluginExecutorConfig,
 }
 
 impl<P> PluginExecutor<P>
 where
     P: PluginWorkProcessor,
 {
-    pub async fn new(plugin_work_processor: P) -> Result<Self, Box<dyn std::error::Error>> {
-        let PluginExecutorConfig { plugin_id } = PluginExecutorConfig::parse();
-
+    pub async fn new(
+        config: PluginExecutorConfig,
+        plugin_work_processor: P,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
 
         Ok(Self {
             plugin_work_processor,
             plugin_work_queue_client,
-            plugin_id,
+            config,
         })
     }
 
@@ -41,21 +41,24 @@ where
         // Continually scan for new work for this Plugin.
         while let Ok(work) = self
             .plugin_work_processor
-            .get_work(&mut self.plugin_work_queue_client, self.plugin_id)
+            .get_work(&self.config, &mut self.plugin_work_queue_client)
             .await
         {
             let request_id = work.request_id();
             if let Some(job) = work.maybe_job() {
                 // Process the job
-                let process_result = self.plugin_work_processor.process_job(job).await;
+                let process_result = self
+                    .plugin_work_processor
+                    .process_job(&self.config, job)
+                    .await;
                 let success = process_result.is_ok();
 
                 // Inform plugin-work-queue whether it worked or if we need
                 // to retry
                 self.plugin_work_processor
                     .ack_work(
+                        &self.config,
                         &mut self.plugin_work_queue_client,
-                        self.plugin_id,
                         request_id,
                         success,
                     )

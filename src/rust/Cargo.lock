@@ -3017,6 +3017,7 @@ dependencies = [
  "async-trait",
  "clap 3.1.18",
  "grapl-config",
+ "kafka",
  "plugin-work-queue",
  "rust-proto",
  "tokio",

@@ -20,6 +20,7 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 grapl-config = { path = "../grapl-config" }
+kafka = { path = "../kafka" }
 plugin-work-queue = { path = "../plugin-work-queue" }
 rust-proto = { path = "../rust-proto" }
 tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
