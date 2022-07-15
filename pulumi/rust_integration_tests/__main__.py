@@ -98,7 +98,6 @@ class GraplStack:
 
         # FIXME: audit these, they're not all required for rust integration tests
         self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
-        self.analyzer_bucket = require_str("analyzers-bucket")
         self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")

@@ -1,8 +1,13 @@
 import json
 from pathlib import Path
-from typing import Any, Mapping, Optional, Union, cast, get_args
+from typing import Any, Mapping, Optional, Union, cast
 
+import hcl2
 import pulumi_nomad as nomad
+from hcl2_type_reflection.hcl2_type_reflection.hcl2_type_reflection import (
+    HCL2TypeParser,
+    mock_hcl2_type,
+)
 from infra.config import STACK_NAME
 from infra.kafka import NomadServiceKafkaCredentials
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
@@ -35,7 +40,7 @@ class NomadJob(pulumi.ComponentResource):
     ) -> None:
         super().__init__("grapl:NomadJob", name, None, opts)
 
-        vars = self._fix_pulumi_preview(vars)
+        vars = self._fix_pulumi_preview(vars, jobspec)
         vars = self._json_dump_complex_types(vars)
 
         self.job = nomad.Job(
@@ -86,29 +91,49 @@ class NomadJob(pulumi.ComponentResource):
             k: pulumi.Output.from_input(v).apply(dump_value) for (k, v) in vars.items()
         }
 
-    def _fix_pulumi_preview(self, vars: NomadVars) -> NomadVars:
+    def _fix_pulumi_preview(
+        self,
+        vars: NomadVars,
+        jobspec: Path,
+    ) -> NomadVars:
         """
-        This is an ugly hack to deal with pulumi preview never resolving Outputs into a real string.
-        Without this, the vars gets unset if there's a single key with an unresolved output
+        This is a hack to deal with issues around pulumi preview.
+        The Problem: Specifically, during pulumi preview, pulumi Output objects never resolve into strings or other types. This means that if a PR creates a new resource and then tries to use that resource's attributes in a Nomad variable, there's a type error because Pulumi object != string. Frustratingly, this manifests as a variable unset error for ALL Nomad variables in the file. This can also happen if a project is being pulumi'd up with no existing resources.
+
+        The Solution:
+        We're using reflection to parse the Nomad file's input variable types. We're then mocking the primitives types (str, bool, number) with fake value
+
+
+
+
         """
         if pulumi.runtime.is_dry_run():
-            pulumi_preview_replacement_string = "PULUMI_PREVIEW_STRING"
+
             # special rule since we string-split the redis endpoint
             redis_endpoint = "redis://some-fake-host-for-preview-only:1111"
+
+            hcl2_parser = HCL2TypeParser().parser
+            with open(jobspec) as file:
+                hcl2_dict = hcl2.load(file)
+                # flatten the list of dicts into a dict
+                hcl2_type_dict = {
+                    k: v
+                    for variable in hcl2_dict["variable"]
+                    for k, v in variable.items()
+                }
 
             nomad_vars = {}
             for key, value in vars.items():
 
-                # This checks to see if this is a pulumi.Output[str] using _undocumented python implementation details_
-                # https://twitter.com/chompie1337/status/1435775022694555652?cxt=HHwWiICz0dXx8uwnAAAA
-                # SO thread on the python undocumented implementation details in question:
-                # https://stackoverflow.com/questions/57706180/generict-base-class-how-to-get-type-of-t-from-within-instance/60984681#60984681
-                if isinstance(value, pulumi.Output) and get_args(
-                    value.__orig_class__
-                ) == (str,):
-                    value = pulumi_preview_replacement_string
+                if isinstance(value, pulumi.Output):
+                    # special cases
                     if key == "redis_endpoint":
                         value = redis_endpoint
+                    else:
+                        raw_type = hcl2_type_dict[key]["type"]
+                        parsed_type = hcl2_parser.parse(raw_type)
+                        # now we replace the strings
+                        value = mock_hcl2_type(parsed_type)
 
                 nomad_vars[key] = value
             return nomad_vars

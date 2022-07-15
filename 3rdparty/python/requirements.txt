@@ -9,14 +9,15 @@ click
 confluent-kafka
 cookiecutter==1.7.3
 hypothesis
+lark-parser
 opentelemetry-api
 opentelemetry-exporter-zipkin-json
 opentelemetry-instrumentation
 opentelemetry-instrumentation-botocore
 opentelemetry-sdk
 protobuf>=3.15.8,<3.16.0
-pulumi>=3.0.0,<4.0.0
-pulumi-aws>=5.0.0,<6.0.0
+pulumi==3.33.1
+pulumi-aws==5.9.2
 pulumi_consul
 pulumi_docker
 pulumi-kafka
@@ -28,6 +29,7 @@ pydantic==1.8.2
 pydgraph
 pyjwt
 pytest
+python-hcl2
 python-nomad==1.4.1
 redis
 requests
