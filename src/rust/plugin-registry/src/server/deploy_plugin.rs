@@ -56,6 +56,11 @@ pub fn get_job(
         get_s3_url(bucket, key)
     };
     let passthru = service_config.passthrough_vars;
+    let plugin_execution_sidecar_image = match plugin_type {
+        PluginType::Generator => passthru.generator_sidecar_image,
+        PluginType::Analyzer => passthru.analyzer_sidecar_image,
+    }
+    .to_string();
     match plugin_runtime {
         PluginRuntime::HaxDocker => {
             let job_file_hcl = static_files::HAX_DOCKER_PLUGIN_JOB;
@@ -67,8 +72,8 @@ pub fn get_job(
                     service_config.hax_docker_plugin_runtime_image,
                 ),
                 (
-                    "plugin_execution_image",
-                    service_config.plugin_execution_image,
+                    "plugin_execution_sidecar_image",
+                    plugin_execution_sidecar_image,
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("tenant_id", plugin.tenant_id.to_string()),

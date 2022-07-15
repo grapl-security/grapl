@@ -29,7 +29,7 @@ variable "plugin_runtime_image" {
   description = "The container that will load and run the plugin"
 }
 
-variable "plugin_execution_image" {
+variable "plugin_execution_sidecar_image" {
   type        = string
   description = "The container that will load and run the Generator Executor or Analyzer Executor"
 }
@@ -112,7 +112,7 @@ job "grapl-plugin" {
       driver = "docker"
 
       config {
-        image = var.plugin_execution_image
+        image = var.plugin_execution_sidecar_image
       }
 
       template {
