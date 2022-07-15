@@ -3,7 +3,7 @@ members = [
   "./derive-dynamic-node",
   "./consul-connect",
   "./endpoint-plugin",
-  "./engagement-creator",
+  "./lens-creator",
   "./event-source",
   "./generator-dispatcher",
   "./generators/sysmon-generator",

@@ -29,6 +29,11 @@ impl EngagementCreator {
         execution_hit: ExecutionHit,
     ) -> Result<(), EngagementCreatorError> {
 
+        // Check if lens exists already
+        // If not, create it
+        // If yes, merge nodes into scope
+        // Calculate lens score
+
         Ok(())
     }
 }

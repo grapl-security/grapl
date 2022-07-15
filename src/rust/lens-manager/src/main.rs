@@ -1,28 +1,14 @@
-use rust_proto_new::graplinc::grapl::api::graph_mutation::v1beta1::client::GraphMutationClient;
-use rust_proto_new::graplinc::grapl::api::graph_mutation::v1beta1::messages::CreateNodeRequest;
-use rust_proto_new::graplinc::grapl::common::v1beta1::NodeType;
+#![allow(warnings)]
+use std::error::Error;
 
-struct LensManager {
-    graph_mutation_client: GraphMutationClient,
-}
+use tonic::transport::Server;
+use tracing::info;
 
-impl LensManager {
+// hook to grpc
+// write off to kafka
+// pipeline ingress uses kafka crate src/rust
 
-    async fn create_lens(&self, tenant_id: uuid::Uuid) -> Result<Uid, Box<dyn std::error::Error>> {
-        self.graph_mutation_client.create_node(
-            CreateNodeRequest {
-                tenant_id,
-                NodeType { value: "Lens".to_owned() },
-            }
-        ).await?;
-
-        // todo: Publish update to lens-updates topic
-
-        todo!()
-    }
-}
-
-
-fn main() {
-    println!("Hello, world!");
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    Ok(())
 }
