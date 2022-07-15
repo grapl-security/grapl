@@ -7,11 +7,14 @@ use std::{
 };
 
 use futures::{
-    channel::mpsc::Sender,
+    channel::mpsc::{
+        Sender,
+        TrySendError,
+    },
     StreamExt,
 };
 use lru::LruCache;
-use parking_lot::Mutex;
+use parking_lot::RwLock;
 use plugin_registry::client::{
     FromEnv as PRFromEnv,
     PluginRegistryServiceClient,
@@ -40,6 +43,18 @@ pub enum GeneratorIdsCacheError {
     Retryable(String),
 }
 
+impl From<TrySendError<Uuid>> for GeneratorIdsCacheError {
+    fn from(try_send_error: TrySendError<Uuid>) -> Self {
+        if try_send_error.is_full() {
+            GeneratorIdsCacheError::Retryable("update queue is full".to_string())
+        } else if try_send_error.is_disconnected() {
+            GeneratorIdsCacheError::Fatal("update queue is disconnected".to_string())
+        } else {
+            GeneratorIdsCacheError::Retryable(format!("unknown TrySendError: {}", try_send_error,))
+        }
+    }
+}
+
 struct GeneratorIdsEntry {
     generator_ids: Vec<Uuid>,
     evict_after: SystemTime,
@@ -65,7 +80,7 @@ impl GeneratorIdsEntry {
 /// and a miss.
 #[derive(Clone, Debug)]
 pub struct GeneratorIdsCache {
-    generator_ids_cache: Arc<Mutex<LruCache<Uuid, GeneratorIdsEntry>>>,
+    generator_ids_cache: Arc<RwLock<LruCache<Uuid, GeneratorIdsEntry>>>,
     updater_tx: Sender<Uuid>,
 }
 
@@ -88,8 +103,8 @@ impl GeneratorIdsCache {
         updater_pool_size: usize,
         updater_queue_depth: usize,
     ) -> Result<Self, ConfigurationError> {
-        let generator_ids_cache: Arc<Mutex<LruCache<Uuid, GeneratorIdsEntry>>> =
-            Arc::new(Mutex::new(LruCache::new(capacity)));
+        let generator_ids_cache: Arc<RwLock<LruCache<Uuid, GeneratorIdsEntry>>> =
+            Arc::new(RwLock::new(LruCache::new(capacity)));
         let evictor_generator_ids_cache = generator_ids_cache.clone();
         let updater_generator_ids_cache = generator_ids_cache.clone();
 
@@ -107,11 +122,13 @@ impl GeneratorIdsCache {
                 // up" to entries which are not yet stale.
                 loop {
                     let generator_ids_cache = Arc::clone(&evictor_generator_ids_cache);
-                    let mut cache_guard = generator_ids_cache.lock();
+                    let cache_read_guard = generator_ids_cache.read();
 
-                    if let Some((event_source_id, entry)) = cache_guard.peek_lru() {
+                    if let Some((event_source_id, entry)) = cache_read_guard.peek_lru() {
                         if SystemTime::now() > entry.evict_after {
-                            cache_guard.pop(event_source_id);
+                            let mut cache_write_guard = generator_ids_cache.write();
+                            cache_write_guard.pop(event_source_id);
+                            drop(cache_write_guard);
                         } else {
                             break;
                         }
@@ -200,16 +217,14 @@ impl GeneratorIdsCache {
                                 },
                             };
 
-
-
                         let generator_ids_cache = Arc::clone(&generator_ids_cache);
-                        let mut cache_guard = generator_ids_cache.lock();
+                        let mut cache_write_guard = generator_ids_cache.write();
 
-                        cache_guard.push(
+                        cache_write_guard.push(
                             event_source_id,
                             GeneratorIdsEntry::new(generator_ids, ttl),
                         );
-                    } // release the cache lock
+                    } // release the cache write lock
                 })
                 .await;
         });
@@ -254,28 +269,30 @@ impl GeneratorIdsCache {
         event_source_id: Uuid,
     ) -> Result<Option<Vec<Uuid>>, GeneratorIdsCacheError> {
         let generator_ids_cache = self.generator_ids_cache.clone();
-        let mut cache_guard = generator_ids_cache.lock();
+        let cache_read_guard = generator_ids_cache.read();
 
-        if let Some(entry) = cache_guard.get(&event_source_id) {
-            Ok(Some(entry.generator_ids.clone())) // cache hit!
-        } else if let Err(e) = self.updater_tx.try_send(event_source_id) {
-            // cache miss, failed to enqueue an update
-            if e.is_full() {
-                Err(GeneratorIdsCacheError::Retryable(
-                    "update queue is full".to_string(),
-                ))
-            } else if e.is_disconnected() {
-                Err(GeneratorIdsCacheError::Fatal(
-                    "update queue is disconnected".to_string(),
-                ))
+        if let Some(_) = cache_read_guard.peek(&event_source_id) {
+            let mut cache_write_guard = generator_ids_cache.write();
+
+            if let Some(entry) = cache_write_guard.get(&event_source_id) {
+                let generator_ids = entry.generator_ids.clone();
+
+                drop(cache_write_guard);
+
+                Ok(Some(generator_ids)) // cache hit!
             } else {
-                Err(GeneratorIdsCacheError::Retryable(format!(
-                    "unknown TrySendError: {}",
-                    e
-                )))
+                drop(cache_write_guard);
+
+                if let Err(e) = self.updater_tx.try_send(event_source_id) {
+                    Err(e.into()) // cache miss, failed to enqueue an update
+                } else {
+                    Ok(None) // cache miss, successfully enqueued update
+                }
             }
+        } else if let Err(e) = self.updater_tx.try_send(event_source_id) {
+            Err(e.into()) // cache miss, failed to enqueue an update
         } else {
             Ok(None) // cache miss, successfully enqueued update
         }
-    }
+    } // release the cache read lock
 }
