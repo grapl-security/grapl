@@ -72,7 +72,6 @@ root_patterns = [
   "/src/python/grapl-common",
   "/src/python/graplctl",
   "/src/python/grapl-tests-common",
-  "/src/python/hcl2_type_reflection",
   "/src/python/provisioner",
   "/src/python/python-proto",
   "/src/python/repl",

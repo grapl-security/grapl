@@ -3,7 +3,10 @@ import unittest
 from typing import Any
 
 import hcl2
-from hcl2_type_reflection.hcl2_type_reflection import HCL2TypeParser, mock_hcl2_type
+from hcl2_type_reflection.hcl2_type_reflection.hcl2_type_reflection import (
+    HCL2TypeParser,
+    mock_hcl2_type,
+)
 from lark import Lark
 
 

@@ -4,7 +4,10 @@ from typing import Any, Mapping, Optional, Union, cast
 
 import hcl2
 import pulumi_nomad as nomad
-from hcl2_type_reflection.hcl2_type_reflection import HCL2TypeParser, mock_hcl2_type
+from hcl2_type_reflection.hcl2_type_reflection.hcl2_type_reflection import (
+    HCL2TypeParser,
+    mock_hcl2_type,
+)
 from infra.config import STACK_NAME
 from infra.kafka import NomadServiceKafkaCredentials
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
