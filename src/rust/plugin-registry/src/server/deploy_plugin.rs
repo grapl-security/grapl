@@ -207,7 +207,7 @@ mod tests {
             plugin_id: arbitrary_uuid,
             tenant_id: arbitrary_uuid,
             display_name: "arbitrary".to_owned(),
-            plugin_type: "analyzer".to_owned(),
+            plugin_type: "generator".to_owned(),
             event_source_id: None,
             artifact_s3_key: "arbitrary".to_owned(),
         };
