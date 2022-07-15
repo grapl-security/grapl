@@ -61,6 +61,7 @@ impl PluginRegistryDbClient {
         .await
     }
 
+    #[allow(dead_code)]
     #[tracing::instrument(skip(self), err)]
     pub async fn get_plugin_deployment(
         &self,

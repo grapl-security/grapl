@@ -7,7 +7,7 @@
 # https://www.pulumi.com/blog/automatically-enforcing-aws-resource-tagging-policies/
 # for further details.
 
-from typing import Mapping, Optional
+from typing import Mapping
 
 import pulumi
 
@@ -23,7 +23,7 @@ def register_auto_tags(auto_tags: Mapping[str, str]) -> None:
 
 def auto_tag(
     args: pulumi.ResourceTransformationArgs, auto_tags: Mapping[str, str]
-) -> Optional[pulumi.ResourceTransformationResult]:
+) -> pulumi.ResourceTransformationResult | None:
     """Applies the given tags to the resource properties if applicable."""
     if is_taggable(args.type_):
         # Ignore the typing because this is code we didn't actually

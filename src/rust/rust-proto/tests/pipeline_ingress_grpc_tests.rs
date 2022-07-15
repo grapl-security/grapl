@@ -8,7 +8,6 @@ use rust_proto::{
         grapl::api::pipeline_ingress::v1beta1::{
             client::PipelineIngressClient,
             server::{
-                ConfigurationError,
                 PipelineIngressApi,
                 PipelineIngressServer,
             },
@@ -17,6 +16,7 @@ use rust_proto::{
         },
     },
     protocol::{
+        error::ServeError,
         healthcheck::{
             client::HealthcheckClient,
             HealthcheckStatus,
@@ -104,7 +104,7 @@ impl PipelineIngressApi for MockPipelineIngressApi {
 
 struct PipelineIngressTestContext {
     client: PipelineIngressClient,
-    server_handle: JoinHandle<Result<(), ConfigurationError>>,
+    server_handle: JoinHandle<Result<(), ServeError>>,
     shutdown_tx: Sender<()>,
 }
 

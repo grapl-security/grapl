@@ -1,8 +1,6 @@
-#[cfg(feature = "client")]
 pub mod server;
 
-#[cfg(feature = "client")]
-pub mod client;
-
-#[cfg(feature = "client")]
-pub mod client_config;
+#[cfg(feature = "test_utils")]
+pub mod test_utils {
+    pub mod test_ctx;
+}

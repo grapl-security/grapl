@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 import types
-from typing import cast, Callable, Type, TypeVar, Any
+from typing import Any, Callable, TypeVar, cast
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
@@ -35,7 +35,7 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
-ViewableType = Type["Viewable"]
+ViewableType = type["Viewable"]
 ReturnsViewableType = Callable[[], ViewableType]
 
 

@@ -25,6 +25,7 @@ use crate::{
     graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
     protocol::{
+        error::ServeError,
         healthcheck::{
             server::init_health_service,
             HealthcheckError,
@@ -40,15 +41,15 @@ use crate::{
 #[tonic::async_trait]
 pub trait PluginWorkQueueApi {
     type Error: Into<Status>;
-    async fn put_execute_generator(
+    async fn push_execute_generator(
         &self,
-        request: native::PutExecuteGeneratorRequest,
-    ) -> Result<native::PutExecuteGeneratorResponse, Self::Error>;
+        request: native::PushExecuteGeneratorRequest,
+    ) -> Result<native::PushExecuteGeneratorResponse, Self::Error>;
 
-    async fn put_execute_analyzer(
+    async fn push_execute_analyzer(
         &self,
-        request: native::PutExecuteAnalyzerRequest,
-    ) -> Result<native::PutExecuteAnalyzerResponse, Self::Error>;
+        request: native::PushExecuteAnalyzerRequest,
+    ) -> Result<native::PushExecuteAnalyzerResponse, Self::Error>;
 
     async fn get_execute_generator(
         &self,
@@ -76,18 +77,18 @@ impl<T> PluginWorkQueueService for GrpcApi<T>
 where
     T: PluginWorkQueueApi + Send + Sync + 'static,
 {
-    async fn put_execute_generator(
+    async fn push_execute_generator(
         &self,
-        request: tonic::Request<proto::PutExecuteGeneratorRequest>,
-    ) -> Result<tonic::Response<proto::PutExecuteGeneratorResponse>, tonic::Status> {
-        execute_rpc!(self, request, put_execute_generator)
+        request: tonic::Request<proto::PushExecuteGeneratorRequest>,
+    ) -> Result<tonic::Response<proto::PushExecuteGeneratorResponse>, tonic::Status> {
+        execute_rpc!(self, request, push_execute_generator)
     }
 
-    async fn put_execute_analyzer(
+    async fn push_execute_analyzer(
         &self,
-        request: tonic::Request<proto::PutExecuteAnalyzerRequest>,
-    ) -> Result<tonic::Response<proto::PutExecuteAnalyzerResponse>, tonic::Status> {
-        execute_rpc!(self, request, put_execute_analyzer)
+        request: tonic::Request<proto::PushExecuteAnalyzerRequest>,
+    ) -> Result<tonic::Response<proto::PushExecuteAnalyzerResponse>, tonic::Status> {
+        execute_rpc!(self, request, push_execute_analyzer)
     }
 
     async fn get_execute_generator(
@@ -177,8 +178,8 @@ where
     }
 
     /// Run the gRPC server and serve the API on this server's socket
-    /// address. Returns a ConfigurationError if the gRPC server cannot run.
-    pub async fn serve(self) -> Result<(), Box<dyn std::error::Error>> {
+    /// address. Returns a ServeError if the gRPC server cannot run.
+    pub async fn serve(self) -> Result<(), ServeError> {
         let (healthcheck_handle, health_service) =
             init_health_service::<ServerProto<GrpcApi<T>>, _, _>(
                 self.healthcheck,

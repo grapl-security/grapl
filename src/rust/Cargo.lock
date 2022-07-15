@@ -1681,9 +1681,11 @@ dependencies = [
  "bytes",
  "clap 3.1.18",
  "consul-connect",
+ "grapl-config",
  "moka",
  "rust-proto",
  "serde",
+ "test-context",
  "thiserror",
  "tokio",
  "tracing",
@@ -3030,17 +3032,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "plugin-executor"
+name = "plugin-execution-sidecar"
 version = "0.0.1"
 dependencies = [
  "async-trait",
  "clap 3.1.18",
- "generator-sdk",
  "grapl-config",
  "plugin-work-queue",
  "rust-proto",
  "tokio",
+ "tonic 0.7.2",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -4328,6 +4331,7 @@ dependencies = [
  "clap 3.1.18",
  "endpoint-plugin",
  "futures",
+ "generator-sdk",
  "kafka",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",

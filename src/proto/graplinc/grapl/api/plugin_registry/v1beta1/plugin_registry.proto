@@ -78,6 +78,22 @@ message DeployPluginRequest {
 // A response indicating that a plugin has been deployed
 message DeployPluginResponse {}
 
+message GetPluginHealthRequest {
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
+
+message GetPluginHealthResponse {
+  enum PluginHealthStatus {
+    PLUGIN_HEALTH_STATUS_UNSPECIFIED = 0;
+    PLUGIN_HEALTH_STATUS_NOT_DEPLOYED = 1;
+    // These map to https://www.nomadproject.io/api-docs/jobs#status
+    PLUGIN_HEALTH_STATUS_PENDING = 2;
+    PLUGIN_HEALTH_STATUS_RUNNING = 3;
+    PLUGIN_HEALTH_STATUS_DEAD = 4;
+  }
+  PluginHealthStatus health_status = 1;
+}
+
 // A request to disable a deployed plugin
 message TearDownPluginRequest {
   // The identity of the plugin to be disabled
@@ -121,6 +137,9 @@ service PluginRegistryService {
 
   // turn on a particular plugin's code
   rpc DeployPlugin(DeployPluginRequest) returns (DeployPluginResponse);
+
+  // Get the health of a given deployed plugin ID
+  rpc GetPluginHealth(GetPluginHealthRequest) returns (GetPluginHealthResponse);
 
   // turn off a particular plugin's code
   rpc TearDownPlugin(TearDownPluginRequest) returns (TearDownPluginResponse);

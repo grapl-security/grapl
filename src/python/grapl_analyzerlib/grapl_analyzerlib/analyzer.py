@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Type, TypeVar, List, Union
+from typing import Any, TypeVar, Union
 
 from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.queryable import Queryable
@@ -8,7 +8,7 @@ from grapl_analyzerlib.grapl_client import GraphClient
 A = TypeVar("A", bound="Analyzer")
 
 T = TypeVar("T")
-OneOrMany = Union[T, List[T]]
+OneOrMany = Union[T, list[T]]
 
 
 class Analyzer(abc.ABC):
@@ -16,7 +16,7 @@ class Analyzer(abc.ABC):
         self.graph_client = graph_client
 
     @classmethod
-    def build(cls: Type[A], graph_client: GraphClient) -> A:
+    def build(cls: type[A], graph_client: GraphClient) -> A:
         return cls(graph_client)
 
     @abc.abstractmethod

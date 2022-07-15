@@ -11,20 +11,22 @@ path = "src/examples/example_generator.rs"
 [dependencies]
 async-trait = "0.1"
 bytes = "1.1"
-consul-connect = { path = "../../consul-connect" }
-moka = { version = "0.8", features = ["future"] }
-rust-proto = { path = "../../rust-proto" }
-serde = { version = "1.0", features = ["derive"] }
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",
   "derive"
 ] }
+consul-connect = { path = "../../consul-connect" }
+grapl-config = { path = "../../grapl-config" }
+moka = { version = "0.8", features = ["future"] }
+rust-proto = { path = "../../rust-proto" }
+serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
 tokio = { version = "1.17", features = ["full"] }
 tracing = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
+# Only for test_utils
+test-context = { version = "0.1", optional = true }
 
 [features]
-internal = ["client"]
-client = []
+test_utils = ["test-context"]

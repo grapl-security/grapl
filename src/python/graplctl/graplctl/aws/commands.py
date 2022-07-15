@@ -18,7 +18,7 @@ def aws(
     ctx: click.Context,
 ) -> None:
     """commands for managing grapl aws resources"""
-    pass
+    pass  # noqa
 
 
 @aws.command()

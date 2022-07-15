@@ -1,5 +1,5 @@
 import enum
-from typing import Optional, Any
+from typing import Any
 
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.prelude import ProcessQuery
@@ -57,7 +57,7 @@ class ParentChildCounter:
     def get_count_for(
         self,
         parent_process_name: str,
-        child_process_name: Optional[str] = None,
+        child_process_name: str | None = None,
         max_count: int = 4,
     ) -> int:
         """

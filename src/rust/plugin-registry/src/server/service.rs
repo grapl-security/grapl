@@ -16,6 +16,8 @@ use rust_proto::{
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginHealthRequest,
+        GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
         PluginMetadata,
@@ -30,7 +32,10 @@ use rust_proto::{
 use tokio::net::TcpListener;
 use tonic::async_trait;
 
-use super::create_plugin::upload_stream_multipart_to_s3;
+use super::{
+    create_plugin::upload_stream_multipart_to_s3,
+    get_plugin_health,
+};
 use crate::{
     db::{
         client::{
@@ -82,7 +87,7 @@ pub struct PluginRegistryServiceConfig {
     #[clap(long, env)]
     pub plugin_bootstrap_container_image: String,
     #[clap(long, env)]
-    pub plugin_execution_container_image: String,
+    pub plugin_execution_image: String,
     #[clap(long, env = "PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL")]
     pub kernel_artifact_url: String,
     #[clap(long, env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]
@@ -95,6 +100,13 @@ pub struct PluginRegistryServiceConfig {
         default_value = "250"
     )]
     pub artifact_size_limit_mb: usize,
+    // --- Pass through a couple env vars also used for this binary
+    #[clap(long, env)]
+    pub rust_log: String,
+    #[clap(long, env)]
+    pub otel_exporter_jaeger_agent_host: String,
+    #[clap(long, env)]
+    pub otel_exporter_jaeger_agent_port: String,
 }
 
 pub struct PluginRegistry {
@@ -259,6 +271,20 @@ impl PluginRegistryApi for PluginRegistry {
     ) -> Result<GetAnalyzersForTenantResponse, Self::Error> {
         todo!()
     }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn get_plugin_health(
+        &self,
+        request: GetPluginHealthRequest,
+    ) -> Result<GetPluginHealthResponse, Self::Error> {
+        let health_status = get_plugin_health::get_plugin_health(
+            &self.nomad_client,
+            &self.db_client,
+            request.plugin_id,
+        )
+        .await?;
+        Ok(GetPluginHealthResponse { health_status })
+    }
 }
 
 pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn std::error::Error>> {
@@ -300,7 +326,7 @@ pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn st
         socket_address = %addr,
     );
 
-    server.serve().await
+    Ok(server.serve().await?)
 }
 
 fn generate_artifact_s3_key(

@@ -23,7 +23,7 @@ use rust_proto::graplinc::grapl::{
     api::plugin_work_queue::v1beta1::{
         ExecutionJob,
         PluginWorkQueueServiceClientError,
-        PutExecuteGeneratorRequest,
+        PushExecuteGeneratorRequest,
     },
     pipeline::{
         v1beta1::RawLog,
@@ -225,13 +225,14 @@ async fn enqueue_plugin_work(
             async move {
                 let execution_job = ExecutionJob {
                     data: payload.clone(),
-                    plugin_id: generator_id,
-                    tenant_id: envelope.metadata.tenant_id,
                 };
 
                 // TODO: retries, backpressure signalling, etc.
                 plugin_work_queue_client
-                    .put_execute_generator(PutExecuteGeneratorRequest { execution_job })
+                    .push_execute_generator(PushExecuteGeneratorRequest {
+                        execution_job,
+                        plugin_id: generator_id,
+                    })
                     .await
                     .map(|_| ())
                     .map_err(|e| GeneratorDispatcherError::from(e))

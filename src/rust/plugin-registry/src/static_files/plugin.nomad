@@ -39,7 +39,7 @@ variable "plugin_bootstrap_container_image" {
   description = "The tenant-plugin-bootstrap-sidecar task's DockerImageId."
 }
 
-variable "plugin_execution_container_image" {
+variable "plugin_execution_image" {
   type        = string
   description = "The tenant-plugin-execution-sidecar task's DockerImageId."
 }
@@ -92,7 +92,7 @@ job "grapl-plugin" {
       }
 
       config {
-        image = var.plugin_execution_container_image
+        image = var.plugin_execution_image
         ports = [
         "plugin_sidecar_grpc_receiver"]
       }
