@@ -1,7 +1,14 @@
+use kafka::Producer;
 use plugin_work_queue::client::PluginWorkQueueServiceClient;
-use rust_proto::graplinc::grapl::api::plugin_work_queue::v1beta1::{
-    ExecutionJob,
-    PluginWorkQueueServiceClientError,
+use rust_proto::{
+    graplinc::grapl::{
+        api::plugin_work_queue::v1beta1::{
+            ExecutionJob,
+            PluginWorkQueueServiceClientError,
+        },
+        pipeline::v1beta2::Envelope,
+    },
+    SerDe,
 };
 
 use crate::config::PluginExecutorConfig;
@@ -17,6 +24,7 @@ pub trait Workload {
 #[async_trait::async_trait]
 pub trait PluginWorkProcessor {
     type Work: Workload;
+    type ProducedMessage: SerDe;
 
     async fn get_work(
         &self,
@@ -35,6 +43,7 @@ pub trait PluginWorkProcessor {
     async fn process_job(
         &mut self,
         config: &PluginExecutorConfig,
+        producer: &Producer<Envelope<Self::ProducedMessage>>,
         work: ExecutionJob,
     ) -> Result<(), Box<dyn std::error::Error>>;
 }

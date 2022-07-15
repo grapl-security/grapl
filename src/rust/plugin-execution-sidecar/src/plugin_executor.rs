@@ -1,9 +1,14 @@
 use std::time::Duration;
 
+use kafka::{
+    config::ProducerConfig,
+    Producer,
+};
 use plugin_work_queue::client::{
     FromEnv as pwq_from_env,
     PluginWorkQueueServiceClient,
 };
+use rust_proto::graplinc::grapl::pipeline::v1beta2::Envelope;
 
 use crate::{
     config::PluginExecutorConfig,
@@ -16,6 +21,7 @@ use crate::{
 pub struct PluginExecutor<P: PluginWorkProcessor> {
     plugin_work_processor: P,
     plugin_work_queue_client: PluginWorkQueueServiceClient,
+    kafka_producer: Producer<Envelope<P::ProducedMessage>>,
     config: PluginExecutorConfig,
 }
 
@@ -25,13 +31,16 @@ where
 {
     pub async fn new(
         config: PluginExecutorConfig,
+        producer_config: ProducerConfig,
         plugin_work_processor: P,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
+        let kafka_producer = Producer::new(producer_config)?;
 
         Ok(Self {
             plugin_work_processor,
             plugin_work_queue_client,
+            kafka_producer,
             config,
         })
     }
@@ -49,7 +58,7 @@ where
                 // Process the job
                 let process_result = self
                     .plugin_work_processor
-                    .process_job(&self.config, job)
+                    .process_job(&self.config, &self.kafka_producer, job)
                     .await;
                 let success = process_result.is_ok();
 

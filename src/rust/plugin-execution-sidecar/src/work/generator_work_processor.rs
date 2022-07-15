@@ -1,9 +1,6 @@
 use std::time::SystemTime;
 
-use kafka::{
-    config::ProducerConfig,
-    Producer,
-};
+use kafka::Producer;
 use plugin_work_queue::client::PluginWorkQueueServiceClient;
 use rust_proto::graplinc::grapl::{
     api::{
@@ -49,19 +46,13 @@ impl Workload for GetExecuteGeneratorResponse {
 
 pub struct GeneratorWorkProcessor {
     generator_service_client: GeneratorServiceClient,
-    kafka_producer: Producer<Envelope<GraphDescription>>,
 }
 
 impl GeneratorWorkProcessor {
-    pub async fn new(
-        config: &PluginExecutorConfig,
-        producer_config: ProducerConfig,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(config: &PluginExecutorConfig) -> Result<Self, Box<dyn std::error::Error>> {
         let generator_service_client = get_generator_client(config.plugin_id).await?;
-        let kafka_producer = Producer::new(producer_config)?;
         Ok(GeneratorWorkProcessor {
             generator_service_client,
-            kafka_producer,
         })
     }
 }
@@ -69,6 +60,7 @@ impl GeneratorWorkProcessor {
 #[async_trait::async_trait]
 impl PluginWorkProcessor for GeneratorWorkProcessor {
     type Work = GetExecuteGeneratorResponse;
+    type ProducedMessage = GraphDescription;
 
     async fn get_work(
         &self,
@@ -102,6 +94,7 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
     async fn process_job(
         &mut self,
         config: &PluginExecutorConfig,
+        producer: &Producer<Envelope<Self::ProducedMessage>>,
         job: ExecutionJob,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let run_generator_response = self
@@ -130,7 +123,7 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
             )
         };
 
-        self.kafka_producer.send(kafka_msg).await?;
+        producer.send(kafka_msg).await?;
         Ok(()) // TODO replace with above
     }
 }
