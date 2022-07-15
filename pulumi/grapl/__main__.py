@@ -186,6 +186,7 @@ def main() -> None:
         "graph-merger",
         "node-identifier",
         "pipeline-ingress",
+        "plugin-execution",
     )
     kafka_service_credentials = {
         service: kafka.service_credentials(service).apply(

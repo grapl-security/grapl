@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use nomad_client_gen::models;
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginType;
 
 use super::{
     plugin_nomad_job,
@@ -46,7 +47,7 @@ static HARDCODED_PLUGIN_RUNTIME: PluginRuntime = PluginRuntime::HaxDocker;
 
 pub fn get_job(
     plugin: &PluginRow,
-    service_config: &PluginRegistryServiceConfig,
+    service_config: PluginRegistryServiceConfig,
     cli: &NomadCli,
     plugin_runtime: &PluginRuntime,
 ) -> Result<models::Job, NomadCliError> {
@@ -55,34 +56,45 @@ pub fn get_job(
         let bucket = &service_config.bucket_name;
         get_s3_url(bucket, key)
     };
+    let plugin_type = PluginType::try_from(plugin.plugin_type.as_str()).expect("plugin_type");
+    // (In the rest of our codebase, these Kafka topics are hardcoded at the
+    // Nomad level. I could pass it in there, but that's a tad weird?)
+    let kafka_producer_topic = match plugin_type {
+        PluginType::Generator => "generated-graphs",
+        _ => panic!("analyzers not yet supported"),
+    }
+    .to_string();
+    let passthru = service_config.passthrough_vars;
     match plugin_runtime {
         PluginRuntime::HaxDocker => {
             let job_file_hcl = static_files::HAX_DOCKER_PLUGIN_JOB;
             let job_file_vars: NomadVars = HashMap::from([
-                (
-                    "aws_account_id",
-                    service_config.bucket_aws_account_id.to_owned(),
-                ),
+                ("aws_account_id", service_config.bucket_aws_account_id),
                 ("plugin_artifact_url", plugin_artifact_url),
                 (
                     "plugin_runtime_image",
-                    service_config.hax_docker_plugin_runtime_image.to_owned(),
+                    service_config.hax_docker_plugin_runtime_image,
                 ),
                 (
                     "plugin_execution_image",
-                    service_config.plugin_execution_image.to_owned(),
+                    service_config.plugin_execution_image,
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("tenant_id", plugin.tenant_id.to_string()),
-                ("rust_log", service_config.rust_log.to_owned()),
+                // Passthrough vars
+                ("rust_log", passthru.rust_log),
                 (
                     "otel_exporter_jaeger_agent_host",
-                    service_config.otel_exporter_jaeger_agent_host.to_owned(),
+                    passthru.otel_exporter_jaeger_agent_host,
                 ),
                 (
                     "otel_exporter_jaeger_agent_port",
-                    service_config.otel_exporter_jaeger_agent_port.to_owned(),
+                    passthru.otel_exporter_jaeger_agent_port,
                 ),
+                ("kafka_bootstrap_servers", passthru.kafka_bootstrap_servers),
+                ("kafka_sasl_username", passthru.kafka_sasl_username),
+                ("kafka_sasl_password", passthru.kafka_sasl_password),
+                ("kafka_producer_topic", kafka_producer_topic),
             ]);
             cli.parse_hcl2(job_file_hcl, job_file_vars)
         }
@@ -91,28 +103,19 @@ pub fn get_job(
             // efforts.
             let job_file_hcl = static_files::PLUGIN_JOB;
             let job_file_vars: NomadVars = HashMap::from([
-                (
-                    "aws_account_id",
-                    service_config.bucket_aws_account_id.to_owned(),
-                ),
-                (
-                    "kernel_artifact_url",
-                    service_config.kernel_artifact_url.to_owned(),
-                ),
+                ("aws_account_id", service_config.bucket_aws_account_id),
+                ("kernel_artifact_url", service_config.kernel_artifact_url),
                 ("plugin_artifact_url", plugin_artifact_url),
                 (
                     "plugin_bootstrap_container_image",
-                    service_config.plugin_bootstrap_container_image.to_owned(),
+                    service_config.plugin_bootstrap_container_image,
                 ),
                 (
                     "plugin_execution_image",
-                    service_config.plugin_execution_image.to_owned(),
+                    service_config.plugin_execution_image,
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
-                (
-                    "rootfs_artifact_url",
-                    service_config.rootfs_artifact_url.to_owned(),
-                ),
+                ("rootfs_artifact_url", service_config.rootfs_artifact_url),
                 ("tenant_id", plugin.tenant_id.to_string()),
             ]);
             cli.parse_hcl2(job_file_hcl, job_file_vars)
@@ -132,7 +135,12 @@ pub async fn deploy_plugin(
     // --- Convert HCL to JSON Job model
     let job_name = plugin_nomad_job::job_name();
 
-    let job = get_job(&plugin, service_config, cli, &HARDCODED_PLUGIN_RUNTIME)?;
+    let job = get_job(
+        &plugin,
+        service_config.clone(),
+        cli,
+        &HARDCODED_PLUGIN_RUNTIME,
+    )?;
 
     // --- Deploy namespace
     let namespace_name = plugin_nomad_job::namespace_name(&plugin.plugin_id);
@@ -187,9 +195,7 @@ mod tests {
             bucket_name: Default::default(),
             rootfs_artifact_url: Default::default(),
             artifact_size_limit_mb: Default::default(),
-            otel_exporter_jaeger_agent_host: Default::default(),
-            otel_exporter_jaeger_agent_port: Default::default(),
-            rust_log: Default::default(),
+            passthrough_vars: Default::default(),
         }
     }
     /// This is used to keep test coverage on the eventually-desirable-but-
@@ -208,7 +214,7 @@ mod tests {
         let service_config = arbitrary_service_config();
         let cli = NomadCli::default();
         let plugin_runtime = PluginRuntime::Firecracker;
-        get_job(&plugin, &service_config, &cli, &plugin_runtime)?;
+        get_job(&plugin, service_config, &cli, &plugin_runtime)?;
         Ok(())
     }
 }

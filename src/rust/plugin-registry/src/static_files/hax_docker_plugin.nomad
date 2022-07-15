@@ -49,6 +49,23 @@ variable "otel_exporter_jaeger_agent_port" {
   description = "Jaeger configuration"
 }
 
+variable "kafka_bootstrap_servers" {
+  type        = string
+  description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
+}
+
+variable "kafka_sasl_username" {
+  type = string
+}
+
+variable "kafka_sasl_password" {
+  type = string
+}
+
+variable "kafka_producer_topic" {
+  type = string
+}
+
 job "grapl-plugin" {
   datacenters = ["dc1"]
   namespace   = "plugin-${var.plugin_id}"
@@ -125,6 +142,11 @@ job "grapl-plugin" {
         // env{}, because the upstream's name is based on ${PLUGIN_ID}.
 
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+
+        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME     = var.kafka_sasl_username
+        KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
+        KAFKA_PRODUCER_TOPIC    = var.kafka_producer_topic
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1

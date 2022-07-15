@@ -1132,6 +1132,11 @@ job "grapl-core" {
         PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID           = var.plugin_registry_bucket_aws_account_id
         PLUGIN_REGISTRY_BUCKET_NAME                     = var.plugin_registry_bucket_name
 
+        # Some vars that are forwarded to plugin-execution-sidecar
+        PLUGIN_EXECUTION_KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
+        PLUGIN_EXECUTION_KAFKA_SASL_USERNAME     = var.kafka_credentials["plugin-execution"].sasl_username
+        PLUGIN_EXECUTION_KAFKA_SASL_PASSWORD     = var.kafka_credentials["plugin-execution"].sasl_password
+
         # common Rust env vars
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log

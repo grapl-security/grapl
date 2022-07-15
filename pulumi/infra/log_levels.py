@@ -7,6 +7,7 @@ RUST_LOG_LEVELS = ",".join(
         "hyper=WARN",
         "rusoto_core=WARN",
         "rustls=WARN",
+        "tower=WARN",
     ]
 )
 PY_LOG_LEVEL = "DEBUG"
