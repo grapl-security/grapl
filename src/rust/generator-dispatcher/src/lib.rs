@@ -76,10 +76,10 @@ impl GeneratorDispatcher {
         let raw_logs_retry_producer: RetryProducer<RawLog> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
         let generator_ids_cache = GeneratorIdsCache::new(
-            config.generator_ids_cache_capacity,
-            Duration::from_millis(config.generator_ids_cache_ttl_ms),
-            config.generator_ids_cache_updater_pool_size,
-            config.generator_ids_cache_updater_queue_depth,
+            config.params.generator_ids_cache_capacity,
+            Duration::from_millis(config.params.generator_ids_cache_ttl_ms),
+            config.params.generator_ids_cache_updater_pool_size,
+            config.params.generator_ids_cache_updater_queue_depth,
         )
         .await?;
 

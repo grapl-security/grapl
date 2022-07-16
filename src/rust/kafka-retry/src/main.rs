@@ -20,14 +20,24 @@ use tracing_subscriber::{
 
 #[derive(clap::Parser, Clone, Debug)]
 struct Config {
-    #[clap(flatten)]
-    kafka_retry_consumer_config: RetryConsumerConfig,
-
-    #[clap(flatten)]
-    kafka_producer_config: ProducerConfig,
-
     #[clap(long, env = "KAFKA_RETRY_WORKER_POOL_SIZE")]
     kafka_retry_worker_pool_size: usize,
+}
+
+struct KafkaRetryConfig {
+    kafka_retry_consumer_config: RetryConsumerConfig,
+    kafka_producer_config: ProducerConfig,
+    config: Config,
+}
+
+impl KafkaRetryConfig {
+    fn parse() -> Self {
+        KafkaRetryConfig {
+            kafka_retry_consumer_config: RetryConsumerConfig::parse(),
+            kafka_producer_config: ProducerConfig::parse(),
+            config: Config::parse(),
+        }
+    }
 }
 
 #[tokio::main]
@@ -60,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn handler() -> Result<(), ConfigurationError> {
-    let config = Config::parse();
+    let config = KafkaRetryConfig::parse();
     let retry_processor = RetryProcessor::new(
         config.kafka_retry_consumer_config,
         config.kafka_producer_config,
@@ -68,17 +78,20 @@ async fn handler() -> Result<(), ConfigurationError> {
 
     retry_processor
         .stream()
-        .for_each_concurrent(config.kafka_retry_worker_pool_size, |res| async move {
-            if let Err(e) = res {
-                tracing::error!(
-                    message = "Error processing Kafka message",
-                    reason =% e,
-                );
-            } else {
-                // TODO: collect metrics
-                tracing::debug!("Processed Kafka message");
-            }
-        })
+        .for_each_concurrent(
+            config.config.kafka_retry_worker_pool_size,
+            |res| async move {
+                if let Err(e) = res {
+                    tracing::error!(
+                        message = "Error processing Kafka message",
+                        reason =% e,
+                    );
+                } else {
+                    // TODO: collect metrics
+                    tracing::debug!("Processed Kafka message");
+                }
+            },
+        )
         .with_current_subscriber()
         .await;
 
