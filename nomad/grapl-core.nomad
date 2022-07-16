@@ -621,7 +621,7 @@ job "grapl-core" {
       env {
         # Upstreams
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
-        PLUGIN_REGISTRY_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+        PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
 
         # Kafka
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
