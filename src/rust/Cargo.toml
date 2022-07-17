@@ -17,6 +17,7 @@ members = [
   "./grapl-utils",
   "./kafka",
   "./lens-manager",
+  "./lens-subscriptions",
   "./node-identifier",
   "./nomad-client-gen",
   "./organization-management",

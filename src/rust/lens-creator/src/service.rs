@@ -32,7 +32,7 @@ impl LensCreator {
         tenant_id: uuid::Uuid,
         execution_hit: ExecutionHit,
     ) -> Result<(), LensCreatorError> {
-        // todo: We can cache that the lens already exists
+        // todo: We can cache th elens uids
         let mut lens_manager_client = self.lens_manager_client.clone();
 
         let ExecutionHit {

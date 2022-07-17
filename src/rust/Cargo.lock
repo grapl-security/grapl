@@ -815,9 +815,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.10"
+version = "3.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69c5a7f9997be616e47f0577ee38c91decb33392c5be4866494f34cdf329a9aa"
+checksum = "ab8b79fe3946ceb4a0b1c080b4018992b8d27e9ff363644c1c9b6387c854614d"
 dependencies = [
  "bitflags",
  "clap_derive",
@@ -911,7 +911,7 @@ dependencies = [
 name = "consul-connect"
 version = "1.0.0"
 dependencies = [
- "clap 3.2.10",
+ "clap 3.2.12",
  "thiserror",
  "tokio",
  "tracing",
@@ -1387,7 +1387,7 @@ name = "event-source"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "clap 3.2.10",
+ "clap 3.2.12",
  "grapl-config",
  "grapl-utils",
  "rust-proto",
@@ -1611,7 +1611,7 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.10",
+ "clap 3.2.12",
  "futures",
  "grapl-config",
  "kafka",
@@ -1634,7 +1634,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.10",
+ "clap 3.2.12",
  "consul-connect",
  "grapl-config",
  "moka",
@@ -1696,7 +1696,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "bytes",
- "clap 3.2.10",
+ "clap 3.2.12",
  "futures",
  "futures-retry",
  "grapl-config",
@@ -1727,7 +1727,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "blake2",
- "clap 3.2.10",
+ "clap 3.2.12",
  "dashmap",
  "grapl-utils",
  "hash_hasher",
@@ -1807,7 +1807,7 @@ dependencies = [
 name = "grapl-graphql-codegen"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.10",
+ "clap 3.2.12",
  "color-eyre",
  "graphql-parser",
  "serde_json",
@@ -2217,7 +2217,7 @@ name = "kafka"
 version = "0.1.0"
 dependencies = [
  "bytes",
- "clap 3.2.10",
+ "clap 3.2.12",
  "futures",
  "rdkafka",
  "rust-proto",
@@ -2254,7 +2254,7 @@ dependencies = [
  "blake2",
  "bytes",
  "chrono",
- "clap 3.2.10",
+ "clap 3.2.12",
  "failure",
  "futures",
  "grapl-config",
@@ -2299,6 +2299,28 @@ dependencies = [
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "lens-subscriptions"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "clap 3.2.12",
+ "dashmap",
+ "futures",
+ "grapl-config",
+ "grapl-utils",
+ "rust-proto",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "tonic 0.7.2",
+ "tracing",
  "uuid",
 ]
 
@@ -2564,7 +2586,7 @@ dependencies = [
  "blake2",
  "bytes",
  "chrono",
- "clap 3.2.10",
+ "clap 3.2.12",
  "failure",
  "futures",
  "grapl-config",
@@ -2845,7 +2867,7 @@ version = "0.1.0"
 dependencies = [
  "argon2",
  "async-trait",
- "clap 3.2.10",
+ "clap 3.2.12",
  "grapl-config",
  "grapl-utils",
  "rust-proto",
@@ -3026,7 +3048,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.10",
+ "clap 3.2.12",
  "futures",
  "kafka",
  "opentelemetry 0.16.0",
@@ -3081,7 +3103,7 @@ name = "plugin-bootstrap"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.10",
+ "clap 3.2.12",
  "futures",
  "grapl-config",
  "grapl-utils",
@@ -3097,7 +3119,7 @@ name = "plugin-executor"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "clap 3.2.10",
+ "clap 3.2.12",
  "grapl-config",
  "plugin-work-queue",
  "rust-proto",
@@ -3113,7 +3135,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.10",
+ "clap 3.2.12",
  "futures",
  "futures-retry",
  "grapl-config",
@@ -3141,7 +3163,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "clap 3.2.10",
+ "clap 3.2.12",
  "futures",
  "grapl-config",
  "grapl-utils",
@@ -3943,7 +3965,7 @@ name = "schema-manager"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.10",
+ "clap 3.2.12",
  "dashmap",
  "grapl-graphql-codegen",
  "rust-proto",
@@ -4430,7 +4452,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "clap 3.2.10",
+ "clap 3.2.12",
  "endpoint-plugin",
  "futures",
  "kafka",
@@ -4651,10 +4673,11 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.19.2"
+version = "1.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c51a52ed6686dd62c320f9b89299e9dfb46f730c7a48e635c19f21d116cb1439"
+checksum = "57aec3cfa4c296db7255446efb4928a6be304b431a806216105542a67b6ca82e"
 dependencies = [
+ "autocfg",
  "bytes",
  "libc",
  "memchr",
@@ -5131,7 +5154,7 @@ dependencies = [
  "async-recursion",
  "async-trait",
  "chrono",
- "clap 3.2.10",
+ "clap 3.2.12",
  "dashmap",
  "env_logger 0.9.0",
  "futures",

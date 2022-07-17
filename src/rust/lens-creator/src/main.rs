@@ -64,32 +64,67 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let lens_manager_client =
         LensManagerServiceClient::connect(service_config.lens_manager_client_url).await?;
-    let engagement_creator = LensCreator::new(lens_manager_client);
+    let lens_creator = LensCreator::new(lens_manager_client);
 
     let consumer_config = ConsumerConfig::parse();
+    let producer_config = ProducerConfig::parse();
 
-    handler(engagement_creator, consumer_config).await
+    handler(lens_creator, consumer_config, producer_config).await
 }
 
-#[tracing::instrument(skip(engagement_creator))]
+#[tracing::instrument(skip(lens_creator))]
 async fn handler(
-    engagement_creator: LensCreator,
+    lens_creator: LensCreator,
     consumer_config: ConsumerConfig,
+    producer_config: ProducerConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!(
         message = "configuring kafka stream processor",
         bootstrap_servers = %consumer_config.bootstrap_servers,
         consumer_group_name = %consumer_config.consumer_group_name,
         consumer_topic = %consumer_config.topic,
+        producer_topic = %producer_config.topic,
     );
 
     // TODO: also construct a stream processor for retries
 
-    let stream_consumer: Consumer<Envelope<ExecutionHit>> = Consumer::new(consumer_config)?;
+    let stream_processor: StreamProcessor<Envelope<ExecutionHit>, Envelope<LensUpdates>> =
+        StreamProcessor::new(consumer_config, producer_config)?;
 
     tracing::info!(message = "kafka stream processor configured successfully",);
 
-    let stream = stream_consumer.stream()?;
+    let stream = stream_processor.stream::<_, _, StreamProcessorError>(
+        move |event: Result<Envelope<ExecutionHit>, StreamProcessorError>| async move {
+            let envelope = event.unwrap();
+            let updates = lens_creator.handle_event(
+                envelope.metadata.tenant_id,
+                envelope.inner_message,
+            ).await;
+
+            match updates {
+                Ok(lens) => Ok(Some(Envelope::new(
+                    Metadata::create_from(envelope.metadata),
+                    lens,
+                ))),
+                Err(e) => match e {
+                    GraphMergerError::Unexpected(reason) => {
+                        tracing::warn!(
+                                message = "unexpected error",
+                                reason = %reason,
+                            );
+                        Ok(None)
+                    }
+                    _ => {
+                        tracing::error!(
+                                message = "unknown error",
+                                error = %e,
+                            );
+                        Err(StreamProcessorError::from(e))
+                    }
+                },
+            }
+        }
+    );
 
 
     stream
@@ -99,17 +134,17 @@ async fn handler(
                 let envelope = match event {
                     Ok(envelope) => envelope,
                     Err(e) => {
-                        tracing::error!(message = "error while deserializing Envelope<ExecutionHit>", error = ?e);
-                        return
+                        tracing::error!(message = "error while deserializing Envelope<ExecutionHit>", error = ? e);
+                        return;
                     }
                 };
-                let res = engagement_creator
+                let res = lens_creator
                     .handle_event(envelope.metadata.tenant_id, envelope.inner_message)
                     .await;
 
                 match res {
-                    Ok(_) => tracing::info!(message = "event handled successfully",),
-                    Err(e) => tracing::error!(message = "error while handling event", error = ?e),
+                    Ok(_) => tracing::info!(message = "event handled successfully", ),
+                    Err(e) => tracing::error!(message = "error while handling event", error = ? e),
                 }
             },
         )

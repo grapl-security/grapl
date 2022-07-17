@@ -81,8 +81,19 @@ pub(crate) mod protobufs {
                 pub(crate) mod lens_manager {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
-                            env!("OUT_DIR"),
-                            "/graplinc.grapl.api.lens_manager.v1beta1.rs"
+                        env!("OUT_DIR"),
+                        "/graplinc.grapl.api.lens_manager.v1beta1.rs"
+                        ));
+                    }
+                }
+
+
+                // todo: make this pub(crate)
+                pub mod lens_subscription_service {
+                    pub mod v1beta1 {
+                        include!(concat!(
+                        env!("OUT_DIR"),
+                        "/graplinc.grapl.api.lens_subscription_service.v1beta1.rs"
                         ));
                     }
                 }
@@ -230,6 +241,10 @@ pub mod graplinc {
             }
 
             pub mod lens_manager {
+                pub mod v1beta1;
+            }
+
+            pub mod lens_subscription_service {
                 pub mod v1beta1;
             }
 

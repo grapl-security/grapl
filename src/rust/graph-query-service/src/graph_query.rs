@@ -228,6 +228,8 @@ mod tests {
 
         println!("created imm");
 
+        // TODO: Create a secondary index on the edge table
+        //       and stop inserting both edges
         session
             .session
             .query(

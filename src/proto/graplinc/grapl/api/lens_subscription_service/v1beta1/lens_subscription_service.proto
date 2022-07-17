@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.lens_subscription_service.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+//import "graplinc/grapl/api/graph/v1beta1/types.proto";
+import "graplinc/grapl/common/v1beta1/types.proto";
+
+
+message NodeAddedToLensScope {
+    // The tenant that the operation pertains to
+    graplinc.common.v1beta1.Uuid tenant_id = 1;
+    // The uid of the lens that had its scope updated
+    graplinc.grapl.common.v1beta1.Uid lens_uid = 2;
+    // The uid of the node added to the lens's scope
+    graplinc.grapl.common.v1beta1.Uid node_uid = 3;
+    // The type of the node added to the lens's scope
+    graplinc.grapl.common.v1beta1.NodeType node_type = 4;
+}
+
+message NodeRemovedFromLensScope {
+    // The tenant that the operation pertains to
+    graplinc.common.v1beta1.Uuid tenant_id = 1;
+    // The uid of the lens that had its scope updated
+    graplinc.grapl.common.v1beta1.Uid lens_uid = 2;
+    // The uid of the node removed from the lens's scope
+    graplinc.grapl.common.v1beta1.Uid node_uid = 3;
+    // The type of the node removed from the lens's scope
+    graplinc.grapl.common.v1beta1.NodeType node_type = 4;
+}
+
+message LensUpdate {
+    oneof inner {
+        NodeAddedToLensScope node_added_to_lens_scope = 1;
+        NodeRemovedFromLensScope node_removed_from_lens_scope = 2;
+    }
+}
+
+message SubscribeToLensRequest {
+    graplinc.common.v1beta1.Uuid tenant_id = 1;
+    graplinc.grapl.common.v1beta1.Uid lens_uid = 2;
+}
+
+message SubscribeToLensResponse {
+    LensUpdate lens_update = 1;
+    uint64 update_offset = 2;
+}
+
+
+service LensSubscriptionService {
+    rpc SubscribeToLens(SubscribeToLensRequest) returns (stream SubscribeToLensResponse);
+}

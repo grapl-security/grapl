@@ -242,15 +242,6 @@ impl LensManagerApi for LensManager {
             }).await?;
         }
 
-        // let mut client = self.graph_mutation_client.clone();
-        //
-        // let create_request = RemoveNodeFromScopeRequest {
-        //     tenant_id: request.tenant_id,
-        //     lens_uid: request.uid, // RemoveNodeFromAllScopesRequest does not have lens_uid field - do we need one?
-        //     uid: request.uid,
-        // };
-
-        // client.remove_node_from_scope(create_request).await?;
 
         Ok(RemoveNodeFromAllScopesResponse {})
     }
@@ -280,7 +271,9 @@ async fn provision_lens_table(
                        uid bigint,
                        namespace text,
                        name text,
-                       PRIMARY KEY (uid, namespace, name)
+                       score bigint,
+                       PRIMARY KEY (uid, score)
+                       CLUSTERING ORDER (score DESC)
                 )
                 WITH compression = {{
                     'sstable_compression': 'LZ4Compressor',
