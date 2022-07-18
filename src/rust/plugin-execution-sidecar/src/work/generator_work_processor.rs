@@ -2,9 +2,7 @@ use plugin_work_queue::client::PluginWorkQueueServiceClient;
 use rust_proto::graplinc::grapl::api::{
     graph::v1beta1::GraphDescription,
     plugin_sdk::generators::v1beta1::{
-        client::{
-            GeneratorServiceClient,
-        },
+        client::GeneratorServiceClient,
         RunGeneratorRequest,
     },
     plugin_work_queue::v1beta1::{
@@ -24,7 +22,8 @@ use super::{
     PluginWorkProcessor,
 };
 use crate::{
-    config::PluginExecutorConfig, sidecar_client::generator_client::get_generator_client,
+    config::PluginExecutorConfig,
+    sidecar_client::generator_client::get_generator_client,
 };
 
 impl Workload for GetExecuteGeneratorResponse {
