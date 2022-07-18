@@ -1,3 +1,4 @@
+use grapl_tracing::SetupTracingError;
 use thiserror::Error;
 
 #[non_exhaustive]
@@ -18,8 +19,8 @@ pub(crate) enum NodeIdentifierError {
     #[error("kafka configuration error {0}")]
     KafkaConfigurationError(#[from] kafka::ConfigurationError),
 
-    #[error("error configuring tracing {0}")]
-    TraceError(#[from] opentelemetry::trace::TraceError),
+    #[error("failed to configure tracing {0}")]
+    SetupTracingError(#[from] SetupTracingError),
 }
 
 impl From<NodeIdentifierError> for kafka::StreamProcessorError {

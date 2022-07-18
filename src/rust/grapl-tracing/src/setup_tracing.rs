@@ -1,7 +1,6 @@
 use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
-    trace::TraceError,
 };
 pub use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{
@@ -9,7 +8,13 @@ use tracing_subscriber::{
     EnvFilter,
 };
 
-pub fn setup_tracing(service_name: &str) -> Result<WorkerGuard, TraceError> {
+#[derive(thiserror::Error, Debug)]
+pub enum SetupTracingError {
+    #[error("TraceError")]
+    TraceError(#[from] opentelemetry::trace::TraceError),
+}
+
+pub fn setup_tracing(service_name: &str) -> Result<WorkerGuard, SetupTracingError> {
     let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
 
     // initialize json logging layer

@@ -35,6 +35,7 @@ pub mod test {
         Query,
     };
     use graph_merger::upserter::GraphMergeHelper;
+    use grapl_tracing::setup_tracing;
     use rust_proto::graplinc::grapl::api::graph::v1beta1::{
         IdentifiedGraph,
         IdentifiedNode,
@@ -114,10 +115,7 @@ pub mod test {
     }
 
     fn init_test_env() {
-        let subscriber = ::tracing_subscriber::FmtSubscriber::builder()
-            .with_env_filter(::tracing_subscriber::EnvFilter::from_default_env())
-            .finish();
-        let _ = ::tracing::subscriber::set_global_default(subscriber);
+        let _guard = setup_tracing("graph-merger-test-merging").unwrap();
 
         static START: Once = Once::new();
         START.call_once(|| {

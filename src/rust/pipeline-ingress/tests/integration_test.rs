@@ -5,14 +5,11 @@ use std::time::Duration;
 use bytes::Bytes;
 use clap::Parser;
 use futures::StreamExt;
+use grapl_tracing::{WorkerGuard, setup_tracing};
 use kafka::{
     config::ConsumerConfig,
     Consumer,
     ConsumerError,
-};
-use opentelemetry::{
-    global,
-    sdk::propagation::TraceContextPropagator,
 };
 use rust_proto::{
     graplinc::grapl::{
@@ -36,11 +33,6 @@ use test_context::{
 };
 use tokio::sync::oneshot;
 use tracing::Instrument;
-use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::{
-    prelude::*,
-    EnvFilter,
-};
 use uuid::Uuid;
 
 static CONSUMER_TOPIC: &'static str = "raw-logs";
@@ -54,29 +46,7 @@ struct PipelineIngressTestContext {
 #[async_trait::async_trait]
 impl AsyncTestContext for PipelineIngressTestContext {
     async fn setup() -> Self {
-        let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
-
-        // initialize json logging layer
-        let log_layer = tracing_subscriber::fmt::layer()
-            .json()
-            .with_writer(non_blocking);
-
-        // initialize tracing layer
-        global::set_text_map_propagator(TraceContextPropagator::new());
-        let tracer = opentelemetry_jaeger::new_pipeline()
-            .with_service_name("pipeline-ingress-integration-tests")
-            .install_batch(opentelemetry::runtime::Tokio)
-            .expect("could not configure tracer");
-
-        // register a subscriber
-        let filter = EnvFilter::from_default_env();
-        tracing_subscriber::registry()
-            .with(filter)
-            .with(log_layer)
-            .with(tracing_opentelemetry::layer().with_tracer(tracer))
-            .init();
-
-        tracing::info!("logger configured successfully");
+        let _guard = setup_tracing("pipeline-ingress-integration-tests").unwrap();
 
         let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
             .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");

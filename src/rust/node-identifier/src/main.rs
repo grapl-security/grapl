@@ -1,6 +1,7 @@
 use clap::Parser;
 use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
+use grapl_tracing::setup_tracing;
 use kafka::{
     config::{
         ConsumerConfig,
@@ -8,10 +9,6 @@ use kafka::{
     },
     StreamProcessor,
     StreamProcessorError,
-};
-use opentelemetry::{
-    global,
-    sdk::propagation::TraceContextPropagator,
 };
 use rusoto_dynamodb::DynamoDbClient;
 use rust_proto::graplinc::grapl::{
@@ -25,10 +22,6 @@ use rust_proto::graplinc::grapl::{
     },
 };
 use tracing::instrument::WithSubscriber;
-use tracing_subscriber::{
-    prelude::*,
-    EnvFilter,
-};
 
 mod dynamic_sessiondb;
 mod error;
@@ -43,30 +36,11 @@ use crate::{
     sessiondb::SessionDb,
 };
 
+const SERVICE_NAME: &'static str = "node-identifier";
+
 #[tokio::main]
 async fn main() -> Result<(), NodeIdentifierError> {
-    let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
-
-    // initialize json logging layer
-    let log_layer = tracing_subscriber::fmt::layer()
-        .json()
-        .with_writer(non_blocking);
-
-    // initialize tracing layer
-    global::set_text_map_propagator(TraceContextPropagator::new());
-    let tracer = opentelemetry_jaeger::new_pipeline()
-        .with_service_name("pipeline-ingress")
-        .install_batch(opentelemetry::runtime::Tokio)?;
-
-    // register a subscriber
-    let filter = EnvFilter::from_default_env();
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(log_layer)
-        .with(tracing_opentelemetry::layer().with_tracer(tracer))
-        .init();
-
-    tracing::info!("logger configured successfully");
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
     handler().await
 }

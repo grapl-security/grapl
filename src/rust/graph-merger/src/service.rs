@@ -8,6 +8,7 @@ use std::{
 };
 
 use dgraph_tonic::Client as DgraphClient;
+use grapl_tracing::SetupTracingError;
 use rust_proto::graplinc::grapl::api::graph::v1beta1::{
     IdentifiedGraph,
     MergedGraph,
@@ -33,8 +34,8 @@ pub enum GraphMergerError {
     #[error("kafka configuration error {0}")]
     KafkaConfigurationError(#[from] kafka::ConfigurationError),
 
-    #[error("error configuring tracing {0}")]
-    TraceError(#[from] opentelemetry::trace::TraceError),
+    #[error("failed to configure tracing {0}")]
+    SetupTracingError(#[from] SetupTracingError),
 
     #[error("anyhow error {0}")]
     AnyhowError(#[from] anyhow::Error),
