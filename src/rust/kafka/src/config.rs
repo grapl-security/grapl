@@ -45,8 +45,10 @@ impl ProducerConfig {
     // we'll specify the env-var containing the topic name instead of depending
     // on the default KAFKA_PRODUCER_TOPIC.
     pub fn with_topic_env_var(key: &'static str) -> Self {
+        let app_args = std::env::args();
         let topic = std::env::var(key).expect(key);
-        ProducerConfig::parse_from(["--topic".to_string(), topic])
+        let extra_args = ["--topic".to_string(), topic];
+        ProducerConfig::parse_from(app_args.chain(extra_args.into_iter()))
     }
 }
 
