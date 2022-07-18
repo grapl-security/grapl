@@ -14,6 +14,17 @@ pub struct ConsumerConfig {
     pub topic: String,
 }
 
+impl ConsumerConfig {
+    // In some applications, where we need to produce to >1 topic,
+    // we'll specify the env-var containing the topic name instead of depending
+    // on the default KAFKA_PRODUCER_TOPIC.
+    pub fn with_topic(topic: &'static str) -> Self {
+        let app_args = std::env::args();
+        let extra_args = ["--topic".to_string(), topic.to_string()];
+        Self::parse_from(app_args.chain(extra_args.into_iter()))
+    }
+}
+
 #[derive(clap::Parser, Clone, Debug)]
 pub struct RetryConsumerConfig {
     #[clap(long, env = "KAFKA_BOOTSTRAP_SERVERS")]
@@ -48,7 +59,7 @@ impl ProducerConfig {
         let app_args = std::env::args();
         let topic = std::env::var(key).expect(key);
         let extra_args = ["--topic".to_string(), topic];
-        ProducerConfig::parse_from(app_args.chain(extra_args.into_iter()))
+        Self::parse_from(app_args.chain(extra_args.into_iter()))
     }
 }
 
