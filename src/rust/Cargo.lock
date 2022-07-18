@@ -3019,6 +3019,7 @@ dependencies = [
  "grapl-config",
  "plugin-work-queue",
  "rust-proto",
+ "thiserror",
  "tokio",
  "tonic 0.7.2",
  "tracing",

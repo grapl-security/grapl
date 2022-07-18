@@ -39,6 +39,18 @@ impl PluginType {
     }
 }
 
+impl TryFrom<&str> for PluginType {
+    type Error = SerDeError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "generator" => Ok(PluginType::Generator),
+            "analyzer" => Ok(PluginType::Analyzer),
+            _ => Err(SerDeError::UnknownVariant("PluginType")),
+        }
+    }
+}
+
 impl TryFrom<proto::PluginType> for PluginType {
     type Error = SerDeError;
 
