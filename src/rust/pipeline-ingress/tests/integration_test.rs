@@ -5,7 +5,10 @@ use std::time::Duration;
 use bytes::Bytes;
 use clap::Parser;
 use futures::StreamExt;
-use grapl_tracing::{WorkerGuard, setup_tracing};
+use grapl_tracing::{
+    setup_tracing,
+    WorkerGuard,
+};
 use kafka::{
     config::ConsumerConfig,
     Consumer,

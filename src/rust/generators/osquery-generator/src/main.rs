@@ -12,8 +12,7 @@ mod parsers;
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
-pub enum OsqueryGeneratorError {
-}
+pub enum OsqueryGeneratorError {}
 
 const SERVICE_NAME: &'static str = "pipeline-ingress";
 

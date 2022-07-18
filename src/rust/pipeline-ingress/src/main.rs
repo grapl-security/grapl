@@ -8,7 +8,10 @@ use std::{
 };
 
 use clap::Parser;
-use grapl_tracing::{setup_tracing, SetupTracingError};
+use grapl_tracing::{
+    setup_tracing,
+    SetupTracingError,
+};
 use kafka::{
     config::ProducerConfig,
     ConfigurationError as KafkaConfigurationError,
