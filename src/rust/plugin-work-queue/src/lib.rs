@@ -1,10 +1,22 @@
 use std::net::SocketAddr;
 
+use kafka::config::ProducerConfig;
+
 pub mod client;
+mod kafka_produce;
 pub mod psql_queue;
 pub mod server;
 #[cfg(feature = "integration_tests")]
 pub mod test_utils;
+
+// Intentionally not clap::Parser, since ProducerConfigs are
+// manually constructed. Contains configs for all dependencies needed
+// to construct a PluginWorkQueue.
+pub struct ConfigUnion {
+    pub service_config: PluginWorkQueueServiceConfig,
+    pub db_config: PluginWorkQueueDbConfig,
+    pub generator_producer_config: ProducerConfig,
+}
 
 #[derive(clap::Parser, Clone, Debug)]
 pub struct PluginWorkQueueServiceConfig {
@@ -12,8 +24,6 @@ pub struct PluginWorkQueueServiceConfig {
     pub plugin_work_queue_bind_address: SocketAddr,
     #[clap(long, env)]
     pub plugin_work_queue_healthcheck_polling_interval_ms: u64,
-    #[clap(flatten)]
-    pub db_config: PluginWorkQueueDbConfig,
 }
 
 #[derive(clap::Parser, Clone, Debug)]

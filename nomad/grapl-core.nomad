@@ -1290,6 +1290,13 @@ job "grapl-core" {
         # Hardcoded, but makes little sense to pipe up through Pulumi
         PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["plugin-work-queue"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["plugin-work-queue"].sasl_password
+
+        KAFKA_PRODUCER_TOPIC_GENERATOR = "generated-graphs"
+        # KAFKA_PRODUCER_TOPIC_ANALYZER = "TODO"
+
         # common Rust env vars
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log

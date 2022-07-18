@@ -1,12 +1,22 @@
 use std::time::Duration;
 
+use kafka::{
+    Producer,
+    ProducerError,
+};
 use rust_proto::{
-    graplinc::grapl::api::plugin_work_queue::{
-        v1beta1,
-        v1beta1::{
-            PluginWorkQueueApi,
-            PluginWorkQueueServer,
+    graplinc::grapl::{
+        api::{
+            graph::v1beta1::GraphDescription,
+            plugin_work_queue::{
+                v1beta1,
+                v1beta1::{
+                    PluginWorkQueueApi,
+                    PluginWorkQueueServer,
+                },
+            },
         },
+        pipeline::v1beta2::Envelope,
     },
     protocol::{
         healthcheck::HealthcheckStatus,
@@ -14,19 +24,16 @@ use rust_proto::{
     },
     SerDeError,
 };
-use sqlx::{
-    Pool,
-    Postgres,
-};
 use tokio::net::TcpListener;
 
 use crate::{
+    kafka_produce,
     psql_queue::{
         self,
         PsqlQueue,
         PsqlQueueError,
     },
-    PluginWorkQueueServiceConfig,
+    ConfigUnion,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -35,6 +42,8 @@ pub enum PluginWorkQueueError {
     PsqlQueueError(#[from] PsqlQueueError),
     #[error("PluginWorkQueueDeserializationError {0}")]
     DeserializationError(#[from] SerDeError),
+    #[error("KafkaProducerError {0}")]
+    KafkaProducerError(#[from] ProducerError),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -43,12 +52,15 @@ pub enum PluginWorkQueueInitError {
     Timeout(#[from] tokio::time::error::Elapsed),
     #[error("Sqlx {0}")]
     Sqlx(#[from] sqlx::Error),
+    #[error("Kafka {0}")]
+    Kafka(#[from] kafka::ConfigurationError),
 }
 
 impl From<PluginWorkQueueError> for Status {
     fn from(err: PluginWorkQueueError) -> Self {
         match err {
             PluginWorkQueueError::PsqlQueueError(_) => Status::internal("Sql Error"),
+            PluginWorkQueueError::KafkaProducerError(_) => Status::internal("Kafka Produce error"),
             PluginWorkQueueError::DeserializationError(_) => {
                 Status::invalid_argument("Invalid argument")
             }
@@ -56,32 +68,20 @@ impl From<PluginWorkQueueError> for Status {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct PluginWorkQueue {
     queue: PsqlQueue,
-}
-
-impl From<PsqlQueue> for PluginWorkQueue {
-    fn from(queue: PsqlQueue) -> Self {
-        Self { queue }
-    }
-}
-
-impl From<Pool<Postgres>> for PluginWorkQueue {
-    fn from(pool: Pool<Postgres>) -> Self {
-        Self {
-            queue: PsqlQueue { pool },
-        }
-    }
+    generator_producer: Producer<Envelope<GraphDescription>>,
 }
 
 impl PluginWorkQueue {
-    pub async fn try_from(
-        service_config: &PluginWorkQueueServiceConfig,
-    ) -> Result<Self, PluginWorkQueueInitError> {
-        Ok(Self::from(
-            PsqlQueue::try_from(service_config.db_config.clone()).await?,
-        ))
+    pub async fn try_from(configs: &ConfigUnion) -> Result<Self, PluginWorkQueueInitError> {
+        let psql_queue = PsqlQueue::try_from(configs.db_config.clone()).await?;
+        let generator_producer = Producer::new(configs.generator_producer_config.clone())?;
+        Ok(Self {
+            queue: psql_queue,
+            generator_producer,
+        })
     }
 }
 #[async_trait::async_trait]
@@ -168,8 +168,12 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         request: v1beta1::AcknowledgeGeneratorRequest,
     ) -> Result<v1beta1::AcknowledgeGeneratorResponse, PluginWorkQueueError> {
         let status = match request.graph_description {
-            Some(_graph_description) => {
-                // TODO: KAFKA IT
+            Some(graph_description) => {
+                self.generator_producer
+                    .send(kafka_produce::generator_produce_graph_description(
+                        graph_description,
+                    ))
+                    .await?;
                 psql_queue::Status::Processed
             }
             None => psql_queue::Status::Failed,
@@ -196,23 +200,22 @@ impl PluginWorkQueueApi for PluginWorkQueue {
     }
 }
 
-pub async fn exec_service(
-    service_config: PluginWorkQueueServiceConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn exec_service(configs: ConfigUnion) -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!(
         message="Connecting to plugin-work-queue table",
-        service_config=?service_config,
+        db_config=?configs.db_config,
     );
 
-    let plugin_work_queue = PluginWorkQueue::try_from(&service_config).await?;
+    let plugin_work_queue = PluginWorkQueue::try_from(&configs).await?;
 
     tracing::info!(message = "Performing migration",);
     sqlx::migrate!().run(&plugin_work_queue.queue.pool).await?;
 
     tracing::info!(message = "Binding service",);
-    let addr = service_config.plugin_work_queue_bind_address;
-    let healthcheck_polling_interval_ms =
-        service_config.plugin_work_queue_healthcheck_polling_interval_ms;
+    let addr = configs.service_config.plugin_work_queue_bind_address;
+    let healthcheck_polling_interval_ms = configs
+        .service_config
+        .plugin_work_queue_healthcheck_polling_interval_ms;
 
     let (server, _shutdown_tx) = PluginWorkQueueServer::new(
         plugin_work_queue,

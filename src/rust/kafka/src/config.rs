@@ -1,3 +1,5 @@
+use clap::Parser;
+
 #[derive(clap::Parser, Clone, Debug)]
 pub struct ConsumerConfig {
     #[clap(long, env = "KAFKA_BOOTSTRAP_SERVERS")]
@@ -26,7 +28,7 @@ pub struct RetryConsumerConfig {
     pub topic: String,
 }
 
-#[derive(clap::Parser, Clone, Debug)]
+#[derive(clap::Parser, Clone, Debug, Default)]
 pub struct ProducerConfig {
     #[clap(long, env = "KAFKA_BOOTSTRAP_SERVERS")]
     pub bootstrap_servers: String,
@@ -36,6 +38,16 @@ pub struct ProducerConfig {
     pub sasl_password: String,
     #[clap(long, env = "KAFKA_PRODUCER_TOPIC")]
     pub topic: String,
+}
+
+impl ProducerConfig {
+    // In some applications, where we need to produce to >1 topic,
+    // we'll specify the env-var containing the topic name instead of depending
+    // on the default KAFKA_PRODUCER_TOPIC.
+    pub fn with_topic_env_var(key: &'static str) -> Self {
+        let topic = std::env::var(key).expect(key);
+        ProducerConfig::parse_from(["--topic".to_string(), topic])
+    }
 }
 
 #[derive(clap::Parser, Clone, Debug)]
@@ -48,4 +60,4 @@ pub struct RetryProducerConfig {
     pub sasl_password: String,
     #[clap(long, env = "KAFKA_RETRY_TOPIC")]
     pub topic: String,
-}
+    
