@@ -108,7 +108,7 @@ variable "pipeline_ingress_healthcheck_polling_interval_ms" {
 
 variable "kafka_credentials" {
   description = "Map from service-name to kafka credentials for that service"
-  type        = map(object({
+  type = map(object({
     # The username to authenticate with Confluent Cloud cluster.
     sasl_username = string
     # The password to authenticate with Confluent Cloud cluster.
@@ -217,7 +217,7 @@ variable "user_session_table" {
 }
 
 variable "tracing_endpoint" {
-  type    = string
+  type = string
   # if nothing is passed in we default to "${attr.unique.network.ip-address}" in locals.
   # Using a variable isn't allowed here though :(
   default = ""
@@ -264,12 +264,12 @@ job "grapl-core" {
 
   update {
     # Automatically promotes to canaries if all canaries are healthy during an update / deployment
-    auto_promote     = true
+    auto_promote = true
     # Auto reverts to the last stable job variant if the update fails
-    auto_revert      = true
+    auto_revert = true
     # Spins up a "canary" instance of potentially destructive updates, validates that they are healthy, then promotes the instance to update
-    canary           = 1
-    max_parallel     = 1
+    canary       = 1
+    max_parallel = 1
     # The min amount of reported "healthy" time before a instance is considered healthy and an allocation is opened up for further updates
     min_healthy_time = "15s"
   }
@@ -522,9 +522,9 @@ job "grapl-core" {
       }
 
       env {
-        RUST_LOG                      = var.rust_log
+        RUST_LOG = var.rust_log
         # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
-        AWS_REGION                    = var.aws_region
+        AWS_REGION = var.aws_region
         # Add the graph mutation service
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
@@ -803,8 +803,8 @@ job "grapl-core" {
         PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE = var.container_images["hax-docker-plugin-runtime"]
         PLUGIN_EXECUTION_IMAGE                          = var.container_images["generator-executor"]
         # TODO: add support for analyzer too
-        PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID           = var.plugin_registry_bucket_aws_account_id
-        PLUGIN_REGISTRY_BUCKET_NAME                     = var.plugin_registry_bucket_name
+        PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID = var.plugin_registry_bucket_aws_account_id
+        PLUGIN_REGISTRY_BUCKET_NAME           = var.plugin_registry_bucket_name
 
         # common Rust env vars
         RUST_BACKTRACE                  = local.rust_backtrace
@@ -862,11 +862,11 @@ job "grapl-core" {
       }
 
       env {
-        PLUGIN_WORK_QUEUE_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME                     = var.plugin_work_queue_db.hostname
-        PLUGIN_WORK_QUEUE_DB_PASSWORD                     = var.plugin_work_queue_db.password
-        PLUGIN_WORK_QUEUE_DB_PORT                         = var.plugin_work_queue_db.port
-        PLUGIN_WORK_QUEUE_DB_USERNAME                     = var.plugin_work_queue_db.username
+        PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME  = var.plugin_work_queue_db.hostname
+        PLUGIN_WORK_QUEUE_DB_PASSWORD  = var.plugin_work_queue_db.password
+        PLUGIN_WORK_QUEUE_DB_PORT      = var.plugin_work_queue_db.port
+        PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db.username
         # Hardcoded, but makes little sense to pipe up through Pulumi
         PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
@@ -1074,11 +1074,11 @@ job "grapl-core" {
       }
 
       env {
-        EVENT_SOURCE_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_event-source-port}"
-        EVENT_SOURCE_DB_HOSTNAME                     = var.event_source_db.hostname
-        EVENT_SOURCE_DB_PASSWORD                     = var.event_source_db.password
-        EVENT_SOURCE_DB_PORT                         = var.event_source_db.port
-        EVENT_SOURCE_DB_USERNAME                     = var.event_source_db.username
+        EVENT_SOURCE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_event-source-port}"
+        EVENT_SOURCE_DB_HOSTNAME  = var.event_source_db.hostname
+        EVENT_SOURCE_DB_PASSWORD  = var.event_source_db.password
+        EVENT_SOURCE_DB_PORT      = var.event_source_db.port
+        EVENT_SOURCE_DB_USERNAME  = var.event_source_db.username
         # Hardcoded, but makes little sense to pipe up through Pulumi
         EVENT_SOURCE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 

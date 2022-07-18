@@ -1,18 +1,26 @@
 #![allow(warnings)]
-use std::pin::Pin;
-use futures::Stream;
-use tonic::Response;
+use std::{
+    net::SocketAddr,
+    pin::Pin,
+};
 
-use std::net::SocketAddr;
-
-use futures::FutureExt;
+use futures::{
+    FutureExt,
+    Stream,
+    StreamExt,
+};
 use tokio::{
     net::TcpListener,
     sync::oneshot::Receiver,
 };
-use tokio_stream::wrappers::{ReceiverStream, TcpListenerStream};
-use tonic::transport::Server;
-use futures::StreamExt;
+use tokio_stream::wrappers::{
+    ReceiverStream,
+    TcpListenerStream,
+};
+use tonic::{
+    transport::Server,
+    Response,
+};
 
 use crate::{
     graplinc::grapl::api::lens_subscription_service::v1beta1::messages::{
@@ -40,8 +48,8 @@ use crate::{
     SerDeError,
 };
 
-
-type ResponseStreamProto = Pin<Box<dyn Stream<Item=Result<SubscribeToLensResponseProto, tonic::Status>> + Send>>;
+type ResponseStreamProto =
+    Pin<Box<dyn Stream<Item = Result<SubscribeToLensResponseProto, tonic::Status>> + Send>>;
 type SubscribeToLensResultProto<T> = Result<Response<T>, tonic::Status>;
 
 #[derive(thiserror::Error, Debug)]
@@ -56,44 +64,54 @@ pub enum LensSubscriptionServiceServerError {
 pub trait LensSubscriptionApi {
     type Error: Into<Status>;
     type SubscribeToLensStream: Stream<Item = Result<SubscribeToLensResponse, Self::Error>>
-                                + Send + 'static;
-    async fn subscribe_to_lens(&self, request: SubscribeToLensRequest) -> Result<Self::SubscribeToLensStream, Self::Error>;
+        + Send
+        + 'static;
+    async fn subscribe_to_lens(
+        &self,
+        request: SubscribeToLensRequest,
+    ) -> Result<Self::SubscribeToLensStream, Self::Error>;
 }
 
 #[tonic::async_trait]
 impl<T, E> LensSubscriptionServiceProto for T
-    where
-        T: LensSubscriptionApi<Error = E> + Send + Sync + 'static,
-        E: Send + Sync + 'static,
-        Status: From<E>,
+where
+    T: LensSubscriptionApi<Error = E> + Send + Sync + 'static,
+    E: Send + Sync + 'static,
+    Status: From<E>,
 {
     type SubscribeToLensStream = ResponseStreamProto;
 
     /// Create Node allocates a new node in the graph, returning the uid of the new node.
-    async fn subscribe_to_lens(&self, request: tonic::Request<SubscribeToLensRequestProto>) -> SubscribeToLensResultProto<Self::SubscribeToLensStream> {
+    async fn subscribe_to_lens(
+        &self,
+        request: tonic::Request<SubscribeToLensRequestProto>,
+    ) -> SubscribeToLensResultProto<Self::SubscribeToLensStream> {
         let request = request.into_inner();
         let request = request
             .try_into()
             .map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
-        let response = LensSubscriptionApi::subscribe_to_lens(self, request).await
-            .map_err(Status::from).map_err(tonic::Status::from)?;
+        let response = LensSubscriptionApi::subscribe_to_lens(self, request)
+            .await
+            .map_err(Status::from)
+            .map_err(tonic::Status::from)?;
         let response = StreamExt::map(response, |response| {
-            response.map(Into::into).map_err(Status::from).map_err(tonic::Status::from)
+            response
+                .map(Into::into)
+                .map_err(Status::from)
+                .map_err(tonic::Status::from)
         });
 
         let s = Box::pin(response) as Self::SubscribeToLensStream;
-        Ok(Response::new(
-            s
-        ))
+        Ok(Response::new(s))
     }
 }
 
 /// A server construct that drives the LensSubscriptionApi implementation.
 pub struct LensSubscriptionServiceServer<T, E>
-    where
-        T: LensSubscriptionApi<Error = E> + Send + Sync + 'static,
-        E: Send + Sync + 'static,
-        Status: From<E>,
+where
+    T: LensSubscriptionApi<Error = E> + Send + Sync + 'static,
+    E: Send + Sync + 'static,
+    Status: From<E>,
 {
     server: LensSubscriptionServiceServerProto<T>,
     addr: SocketAddr,
@@ -101,10 +119,10 @@ pub struct LensSubscriptionServiceServer<T, E>
 }
 
 impl<T, E> LensSubscriptionServiceServer<T, E>
-    where
-        T: LensSubscriptionApi<Error = E> + Send + Sync + 'static,
-        E: Send + Sync + 'static,
-        Status: From<E>,
+where
+    T: LensSubscriptionApi<Error = E> + Send + Sync + 'static,
+    E: Send + Sync + 'static,
+    Status: From<E>,
 {
     pub fn builder(
         service: T,
@@ -120,7 +138,7 @@ impl<T, E> LensSubscriptionServiceServer<T, E>
                 || async { Ok(HealthcheckStatus::Serving) },
                 std::time::Duration::from_millis(500),
             )
-                .await;
+            .await;
 
         let listener = TcpListener::bind(self.addr)
             .await
@@ -152,10 +170,10 @@ impl<T, E> LensSubscriptionServiceServer<T, E>
 }
 
 pub struct LensSubscriptionServiceServerBuilder<T, E>
-    where
-        T: LensSubscriptionApi<Error = E> + Send + Sync + 'static,
-        E: Send + Sync + 'static,
-        Status: From<E>,
+where
+    T: LensSubscriptionApi<Error = E> + Send + Sync + 'static,
+    E: Send + Sync + 'static,
+    Status: From<E>,
 {
     server: LensSubscriptionServiceServerProto<T>,
     addr: SocketAddr,
@@ -163,10 +181,10 @@ pub struct LensSubscriptionServiceServerBuilder<T, E>
 }
 
 impl<T, E> LensSubscriptionServiceServerBuilder<T, E>
-    where
-        T: LensSubscriptionApi<Error = E> + Send + Sync + 'static,
-        E: Send + Sync + 'static,
-        Status: From<E>,
+where
+    T: LensSubscriptionApi<Error = E> + Send + Sync + 'static,
+    E: Send + Sync + 'static,
+    Status: From<E>,
 {
     /// Create a new builder for a LensSubscriptionServiceServer,
     /// taking the required arguments upfront.

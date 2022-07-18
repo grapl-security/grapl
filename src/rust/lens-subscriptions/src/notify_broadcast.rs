@@ -1,18 +1,34 @@
 use std::sync::Arc;
 
-use dashmap::DashMap;
-use dashmap::mapref::entry::Entry;
-use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
-use sqlx::postgres::PgListener;
-use uuid::Uuid;
-use rust_proto::graplinc::grapl::common::v1beta1::types::Uid;
-use tokio::sync::broadcast::{Sender as BroadcastSender, Receiver as BroadcastReceiver, channel as broadcast_channel};
-use tokio::task::JoinHandle;
+use dashmap::{
+    mapref::entry::Entry,
+    DashMap,
+};
+use rust_proto::{
+    graplinc::grapl::{
+        api::lens_subscription_service::v1beta1::messages::LensUpdate,
+        common::v1beta1::types::Uid,
+    },
+    SerDe,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use sqlx::{
+    postgres::PgListener,
+    PgPool,
+};
+use tokio::{
+    sync::broadcast::{
+        channel as broadcast_channel,
+        Receiver as BroadcastReceiver,
+        Sender as BroadcastSender,
+    },
+    task::JoinHandle,
+};
 use tracing::Instrument;
-use rust_proto::graplinc::grapl::api::lens_subscription_service::v1beta1::messages::LensUpdate;
-
-use rust_proto::SerDe;
+use uuid::Uuid;
 
 type TenantId = Uuid;
 pub type LensUpdateReceiver = BroadcastReceiver<(LensUpdate, i64)>;
@@ -49,10 +65,13 @@ pub struct NotifyBroadcaster {
 impl NotifyBroadcaster {
     /// Ensure your listener is already listening
     pub async fn listen(pool: &PgPool, channel: &str) -> Result<Self, NotifyBroadcasterInitError> {
-        let mut listener = PgListener::connect_with(&pool).await
+        let mut listener = PgListener::connect_with(&pool)
+            .await
             .map_err(|e| NotifyBroadcasterInitError::AcquireConnection { source: e })?;
 
-        listener.listen(channel).await
+        listener
+            .listen(channel)
+            .await
             .map_err(|e| NotifyBroadcasterInitError::FailedListener { source: e })?;
 
         let subscriptions: Subscriptions = DashMap::new();
@@ -68,9 +87,7 @@ impl NotifyBroadcaster {
         {
             // Can't recovery from poison error, so just panic
             if self.listener_task.is_finished() {
-                tracing::error!(
-                    message="Background task has failed, must be restarted",
-                );
+                tracing::error!(message = "Background task has failed, must be restarted",);
                 self.subscriptions.clear();
                 panic!("Background task has failed, must be restarted");
             }
@@ -78,9 +95,7 @@ impl NotifyBroadcaster {
 
         let lens_uid = lens_uid.as_i64();
         match self.subscriptions.entry((tenant_id, lens_uid)) {
-            Entry::Occupied(tx) => {
-                tx.get().subscribe()
-            },
+            Entry::Occupied(tx) => tx.get().subscribe(),
             Entry::Vacant(vacancy) => {
                 let (tx, rx) = broadcast_channel(1_000);
                 vacancy.insert(tx);
@@ -91,60 +106,60 @@ impl NotifyBroadcaster {
 }
 
 #[tracing::instrument]
-fn listener_loop(
-    mut listener: PgListener,
-    subscriptions: Subscriptions,
-) -> JoinHandle<()> {
-    tokio::task::spawn(async move {
-        loop {
-            let update = match listener.try_recv().await {
-                Ok(Some(update)) => update,
-                Ok(None) => {
-                    // Set "force re-establish flag,
-                    continue;
-                }
-                Err(e) => {
-                    tracing::error!(
-                                message="Failed to receive next update",
-                                error=?e
-                            );
-                    continue;
-                }
-            };
+fn listener_loop(mut listener: PgListener, subscriptions: Subscriptions) -> JoinHandle<()> {
+    tokio::task::spawn(
+        async move {
+            loop {
+                let update = match listener.try_recv().await {
+                    Ok(Some(update)) => update,
+                    Ok(None) => {
+                        // Set "force re-establish flag,
+                        continue;
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            message="Failed to receive next update",
+                            error=?e
+                        );
+                        continue;
+                    }
+                };
 
-            let update: LensUpdateRow = match serde_json::from_str(update.payload()) {
-                Ok(update) => update,
-                Err(e) => {
-                    tracing::error!(
-                                message="Failed to deserialize update row",
-                                error=?e
-                            );
-                    continue;
-                }
-            };
+                let update: LensUpdateRow = match serde_json::from_str(update.payload()) {
+                    Ok(update) => update,
+                    Err(e) => {
+                        tracing::error!(
+                            message="Failed to deserialize update row",
+                            error=?e
+                        );
+                        continue;
+                    }
+                };
 
-            let tx = match subscriptions.get(&(update.tenant_id, update.lens_uid)) {
-                Some(tx) => tx,
-                // No one cares about these updates
-                None => continue,
-            };
+                let tx = match subscriptions.get(&(update.tenant_id, update.lens_uid)) {
+                    Some(tx) => tx,
+                    // No one cares about these updates
+                    None => continue,
+                };
 
-            let lens_update = match LensUpdate::deserialize(&update.lens_update[..]) {
-                Ok(update) => update,
-                Err(e) => {
-                    tracing::error!(
-                        message="Failed to deserialize update protobuf",
-                        error=?e
-                    );
-                    continue;
-                }
-            };
-            if let Err(e) = tx.send((lens_update, update.update_offset)) {
-                tracing::debug!(
+                let lens_update = match LensUpdate::deserialize(&update.lens_update[..]) {
+                    Ok(update) => update,
+                    Err(e) => {
+                        tracing::error!(
+                            message="Failed to deserialize update protobuf",
+                            error=?e
+                        );
+                        continue;
+                    }
+                };
+                if let Err(e) = tx.send((lens_update, update.update_offset)) {
+                    tracing::debug!(
                         message="All receivers closed, dropping message",
                         error=?e,
                     );
-            };
+                };
+            }
         }
-    }.instrument(tracing::info_span!("listener_task")))
+        .instrument(tracing::info_span!("listener_task")),
+    )
 }

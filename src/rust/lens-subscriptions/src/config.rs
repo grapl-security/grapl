@@ -21,5 +21,3 @@ pub struct LensSubscriptionDbConfig {
     #[clap(long, env)]
     pub lens_subscription_service_db_password: String,
 }
-
-

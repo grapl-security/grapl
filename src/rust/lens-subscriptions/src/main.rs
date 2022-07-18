@@ -1,14 +1,15 @@
+mod config;
 mod notify_broadcast;
 mod service;
-mod config;
-
-
-use grapl_utils::future_ext::GraplFutureExt;
 
 use clap::Parser;
+use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::lens_subscription_service::v1beta1::server::LensSubscriptionServiceServer;
-use crate::config::LensSubscriptionServiceConfig;
-use crate::service::LensSubscriptionService;
+
+use crate::{
+    config::LensSubscriptionServiceConfig,
+    service::LensSubscriptionService,
+};
 
 #[tracing::instrument]
 async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
@@ -27,8 +28,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
-    let lens_subscription_service = LensSubscriptionService::new(pool)
-        .await?;
+    let lens_subscription_service = LensSubscriptionService::new(pool).await?;
 
     let (_tx, rx) = tokio::sync::oneshot::channel();
     LensSubscriptionServiceServer::builder(
@@ -36,9 +36,9 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
         service_config.lens_subscription_service_bind_address,
         rx,
     )
-        .build()
-        .serve()
-        .await?;
+    .build()
+    .serve()
+    .await?;
 
     Ok(())
 }

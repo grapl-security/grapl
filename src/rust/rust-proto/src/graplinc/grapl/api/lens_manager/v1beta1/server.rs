@@ -1,4 +1,3 @@
-
 use std::net::SocketAddr;
 
 use futures::FutureExt;
@@ -60,11 +59,16 @@ pub trait LensManagerApi {
     type Error: Into<Status>;
 
     /// Creates a new lens with an empty scope
-    async fn create_lens(&self, request: CreateLensRequest) -> Result<CreateLensResponse, Self::Error>;
+    async fn create_lens(
+        &self,
+        request: CreateLensRequest,
+    ) -> Result<CreateLensResponse, Self::Error>;
     /// MergeLens adds the scope of one lens to another
-    async fn merge_lens(&self, request: MergeLensRequest) -> Result<MergeLensResponse, Self::Error>;
+    async fn merge_lens(&self, request: MergeLensRequest)
+        -> Result<MergeLensResponse, Self::Error>;
     /// CloseLens will remove a Lens node from the graph, detaching it from its scope
-    async fn close_lens(&self, request: CloseLensRequest) -> Result<CloseLensResponse, Self::Error>;
+    async fn close_lens(&self, request: CloseLensRequest)
+        -> Result<CloseLensResponse, Self::Error>;
     /// Adds a given entity node to the scope of a lens
     async fn add_node_to_scope(
         &self,
@@ -98,7 +102,8 @@ where
             Ok(request) => request,
             Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
         };
-        let response = LensManagerApi::create_lens(self, request.into()).await
+        let response = LensManagerApi::create_lens(self, request.into())
+            .await
             .map_err(|e| e.into())?;
 
         Ok(Response::new(response.into()))
@@ -113,7 +118,8 @@ where
             Ok(request) => request,
             Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
         };
-        let response = LensManagerApi::merge_lens(self, request.into()).await
+        let response = LensManagerApi::merge_lens(self, request.into())
+            .await
             .map_err(|e| e.into())?;
 
         Ok(Response::new(response.into()))
@@ -128,7 +134,8 @@ where
             Ok(request) => request,
             Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
         };
-        let response = LensManagerApi::close_lens(self, request.into()).await
+        let response = LensManagerApi::close_lens(self, request.into())
+            .await
             .map_err(|e| e.into())?;
 
         Ok(Response::new(response.into()))
@@ -143,7 +150,8 @@ where
             Ok(request) => request,
             Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
         };
-        let response = LensManagerApi::add_node_to_scope(self, request.into()).await
+        let response = LensManagerApi::add_node_to_scope(self, request.into())
+            .await
             .map_err(|e| e.into())?;
 
         Ok(Response::new(response.into()))
@@ -158,7 +166,8 @@ where
             Ok(request) => request,
             Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
         };
-        let response = LensManagerApi::remove_node_from_scope(self, request.into()).await
+        let response = LensManagerApi::remove_node_from_scope(self, request.into())
+            .await
             .map_err(|e| e.into())?;
 
         Ok(Response::new(response.into()))
@@ -173,7 +182,8 @@ where
             Ok(request) => request,
             Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
         };
-        let response = LensManagerApi::remove_node_from_all_scopes(self, request.into()).await
+        let response = LensManagerApi::remove_node_from_all_scopes(self, request.into())
+            .await
             .map_err(|e| e.into())?;
 
         Ok(Response::new(response.into()))

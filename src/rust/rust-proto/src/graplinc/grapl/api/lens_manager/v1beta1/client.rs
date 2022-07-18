@@ -1,4 +1,3 @@
-
 use crate::{
     graplinc::grapl::api::lens_manager::v1beta1::messages::{
         AddNodeToScopeRequest,

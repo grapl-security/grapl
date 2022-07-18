@@ -37,13 +37,13 @@ use tracing_subscriber::{
 };
 use uid_allocator::client::CachingUidAllocatorServiceClient;
 
+mod config;
 mod dynamic_sessiondb;
 mod error;
 mod node_identifier;
 mod sessiondb;
 mod sessions;
 mod static_mapping_db;
-mod config;
 
 use crate::{
     config::NodeIdentifierConfig,
@@ -86,10 +86,7 @@ async fn main() -> Result<(), NodeIdentifierError> {
 async fn handler() -> Result<(), NodeIdentifierError> {
     let service_config = NodeIdentifierConfig::parse();
     let dynamo = DynamoDbClient::from_env();
-    let dyn_session_db = SessionDb::new(
-        dynamo.clone(),
-        service_config.grapl_dynamic_session_table,
-    );
+    let dyn_session_db = SessionDb::new(dynamo.clone(), service_config.grapl_dynamic_session_table);
     let uid_allocator = CachingUidAllocatorServiceClient::new(
         UidAllocatorServiceClient::connect(service_config.uid_allocator_url).await?,
         100,

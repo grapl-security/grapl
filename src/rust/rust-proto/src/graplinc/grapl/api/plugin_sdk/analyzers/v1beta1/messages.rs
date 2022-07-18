@@ -311,11 +311,27 @@ impl TryFrom<ExecutionHitProto> for ExecutionHit {
     type Error = SerDeError;
     fn try_from(value: ExecutionHitProto) -> Result<Self, Self::Error> {
         Ok(Self {
-            graph_view: value.graph_view.ok_or(SerDeError::MissingField("graph_view"))?.try_into()?,
-            root_uid: value.root_uid.ok_or(SerDeError::MissingField("root_uid"))?.try_into()?,
-            lens_refs: value.lens_refs.into_iter().map(LensRef::try_from).collect::<Result<_, _>>()?,
-            analyzer_name: value.analyzer_name.ok_or(SerDeError::MissingField("analyzer_name"))?.try_into()?,
-            time_of_match: value.time_of_match.ok_or(SerDeError::MissingField("time_of_match"))?.try_into()?,
+            graph_view: value
+                .graph_view
+                .ok_or(SerDeError::MissingField("graph_view"))?
+                .try_into()?,
+            root_uid: value
+                .root_uid
+                .ok_or(SerDeError::MissingField("root_uid"))?
+                .try_into()?,
+            lens_refs: value
+                .lens_refs
+                .into_iter()
+                .map(LensRef::try_from)
+                .collect::<Result<_, _>>()?,
+            analyzer_name: value
+                .analyzer_name
+                .ok_or(SerDeError::MissingField("analyzer_name"))?
+                .try_into()?,
+            time_of_match: value
+                .time_of_match
+                .ok_or(SerDeError::MissingField("time_of_match"))?
+                .try_into()?,
             idempotency_key: value.idempotency_key,
             score: value.score,
         })
@@ -329,13 +345,12 @@ impl From<ExecutionHit> for ExecutionHitProto {
             root_uid: Some(value.root_uid.into()),
             lens_refs: value.lens_refs.into_iter().map(LensRef::into).collect(),
             analyzer_name: Some(value.analyzer_name.into()),
-            time_of_match: Some(value.time_of_match.try_into().unwrap()),  // This can't actually fail
+            time_of_match: Some(value.time_of_match.try_into().unwrap()), // This can't actually fail
             idempotency_key: value.idempotency_key,
             score: value.score,
         }
     }
 }
-
 
 impl type_url::TypeUrl for ExecutionHit {
     const TYPE_URL: &'static str =
@@ -345,7 +360,6 @@ impl type_url::TypeUrl for ExecutionHit {
 impl serde_impl::ProtobufSerializable for ExecutionHit {
     type ProtobufMessage = ExecutionHitProto;
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecutionMiss {}

@@ -1,11 +1,28 @@
 #![allow(warnings)]
 
 use std::collections::HashSet;
+
 use futures::future::try_join_all;
-use rust_proto::graplinc::grapl::api::graph_mutation::v1beta1::client::{GraphMutationClient, GraphMutationClientError};
-use rust_proto::graplinc::grapl::api::lens_manager::v1beta1::client::{LensManagerServiceClient, LensManagerServiceClientError};
-use rust_proto::graplinc::grapl::api::lens_manager::v1beta1::messages::{AddNodeToScopeRequest, CreateLensRequest};
-use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::{ExecutionHit, LensRef};
+use rust_proto::graplinc::grapl::api::{
+    graph_mutation::v1beta1::client::{
+        GraphMutationClient,
+        GraphMutationClientError,
+    },
+    lens_manager::v1beta1::{
+        client::{
+            LensManagerServiceClient,
+            LensManagerServiceClientError,
+        },
+        messages::{
+            AddNodeToScopeRequest,
+            CreateLensRequest,
+        },
+    },
+    plugin_sdk::analyzers::v1beta1::messages::{
+        ExecutionHit,
+        LensRef,
+    },
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum LensCreatorError {
@@ -50,42 +67,54 @@ impl LensCreator {
         let _idempotency_key = idempotency_key;
         let _score = score;
 
-        let lens_uids = try_join_all(lens_refs
-            .into_iter()
-            .map(|lens_ref| (lens_ref, lens_manager_client.clone()))
-            .map(|(lens_ref, mut lens_manager_client)| async move {
-                let LensRef {
-                    lens_namespace, lens_name
-                } = lens_ref;
+        let lens_uids = try_join_all(
+            lens_refs
+                .into_iter()
+                .map(|lens_ref| (lens_ref, lens_manager_client.clone()))
+                .map(|(lens_ref, mut lens_manager_client)| async move {
+                    let LensRef {
+                        lens_namespace,
+                        lens_name,
+                    } = lens_ref;
 
-                lens_manager_client.create_lens(CreateLensRequest {
-                    tenant_id,
-                    lens_type: lens_namespace,
-                    lens_name,
-                    is_engagement: false,
-                }).await
-            })).await?;
+                    lens_manager_client
+                        .create_lens(CreateLensRequest {
+                            tenant_id,
+                            lens_type: lens_namespace,
+                            lens_name,
+                            is_engagement: false,
+                        })
+                        .await
+                }),
+        )
+        .await?;
 
-        try_join_all(lens_uids
-            .into_iter()
-            .map(|lens_uid| (lens_uid, lens_manager_client.clone()))
-            .flat_map(|(lens_uid, lens_manager_client)| {
-                let lens_uid = lens_uid.lens_uid;
-                graph_view
-                    .nodes
-                    .iter()
-                    .map(move |(uid, node)| (uid, &node.node_type, lens_manager_client.clone()))
-                    .map(move |(uid, node_type, mut lens_manager_client)| async move {
-
-                    // todo: We can cache that the node is already a part of the lens's scope
-                    lens_manager_client.add_node_to_scope(AddNodeToScopeRequest {
-                        tenant_id,
-                        lens_uid,
-                        uid: uid.as_u64(),
-                        node_type: node_type.clone(),
-                    }).await
-                })
-            })).await?;
+        try_join_all(
+            lens_uids
+                .into_iter()
+                .map(|lens_uid| (lens_uid, lens_manager_client.clone()))
+                .flat_map(|(lens_uid, lens_manager_client)| {
+                    let lens_uid = lens_uid.lens_uid;
+                    graph_view
+                        .nodes
+                        .iter()
+                        .map(move |(uid, node)| (uid, &node.node_type, lens_manager_client.clone()))
+                        .map(
+                            move |(uid, node_type, mut lens_manager_client)| async move {
+                                // todo: We can cache that the node is already a part of the lens's scope
+                                lens_manager_client
+                                    .add_node_to_scope(AddNodeToScopeRequest {
+                                        tenant_id,
+                                        lens_uid,
+                                        uid: uid.as_u64(),
+                                        node_type: node_type.clone(),
+                                    })
+                                    .await
+                            },
+                        )
+                }),
+        )
+        .await?;
 
         Ok(())
     }

@@ -1,11 +1,19 @@
 #![allow(warnings)]
 
 use clap::Parser;
-use futures::{pin_mut, StreamExt};
-use kafka::{config::{
-    ConsumerConfig,
-    ProducerConfig,
-}, Consumer, StreamProcessor, StreamProcessorError};
+use futures::{
+    pin_mut,
+    StreamExt,
+};
+use kafka::{
+    config::{
+        ConsumerConfig,
+        ProducerConfig,
+    },
+    Consumer,
+    StreamProcessor,
+    StreamProcessorError,
+};
 use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
@@ -14,6 +22,7 @@ use rust_proto::graplinc::grapl::{
     api::{
         graph::v1beta1::IdentifiedGraph,
         graph_mutation::v1beta1::client::GraphMutationClient,
+        lens_manager::v1beta1::client::LensManagerServiceClient,
         plugin_sdk::analyzers::v1beta1::messages::ExecutionHit,
     },
     pipeline::{
@@ -26,16 +35,17 @@ use tracing_subscriber::{
     prelude::*,
     EnvFilter,
 };
-use rust_proto::graplinc::grapl::api::lens_manager::v1beta1::client::LensManagerServiceClient;
-use crate::config::LensCreatorConfig;
 
-use crate::service::{
-    LensCreator,
-    LensCreatorError,
+use crate::{
+    config::LensCreatorConfig,
+    service::{
+        LensCreator,
+        LensCreatorError,
+    },
 };
 
-pub mod service;
 mod config;
+pub mod service;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -96,10 +106,9 @@ async fn handler(
     let stream = stream_processor.stream::<_, _, StreamProcessorError>(
         move |event: Result<Envelope<ExecutionHit>, StreamProcessorError>| async move {
             let envelope = event.unwrap();
-            let updates = lens_creator.handle_event(
-                envelope.metadata.tenant_id,
-                envelope.inner_message,
-            ).await;
+            let updates = lens_creator
+                .handle_event(envelope.metadata.tenant_id, envelope.inner_message)
+                .await;
 
             match updates {
                 Ok(lens) => Ok(Some(Envelope::new(
@@ -109,23 +118,22 @@ async fn handler(
                 Err(e) => match e {
                     GraphMergerError::Unexpected(reason) => {
                         tracing::warn!(
-                                message = "unexpected error",
-                                reason = %reason,
-                            );
+                            message = "unexpected error",
+                            reason = %reason,
+                        );
                         Ok(None)
                     }
                     _ => {
                         tracing::error!(
-                                message = "unknown error",
-                                error = %e,
-                            );
+                            message = "unknown error",
+                            error = %e,
+                        );
                         Err(StreamProcessorError::from(e))
                     }
                 },
             }
-        }
+        },
     );
-
 
     stream
         .for_each_concurrent(

@@ -28,15 +28,17 @@ use tracing_subscriber::{
     prelude::*,
     EnvFilter,
 };
-use crate::config::GraphMergerConfig;
 
-use crate::service::{
-    GraphMerger,
-    GraphMergerError,
+use crate::{
+    config::GraphMergerConfig,
+    service::{
+        GraphMerger,
+        GraphMergerError,
+    },
 };
 
-pub mod service;
 mod config;
+pub mod service;
 
 #[tokio::main]
 async fn main() -> Result<(), GraphMergerError> {

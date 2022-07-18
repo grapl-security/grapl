@@ -134,9 +134,7 @@ impl GraphMerger {
                             value: node.node_type.clone(),
                         },
                         uid: node.uid,
-                        property_name: PropertyName {
-                            value: prop_name,
-                        },
+                        property_name: PropertyName { value: prop_name },
                         property: prop_value,
                     })
                     .await?;
