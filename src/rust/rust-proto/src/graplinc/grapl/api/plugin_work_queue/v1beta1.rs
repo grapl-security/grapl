@@ -22,7 +22,7 @@ use crate::{
     protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
     serde_impl::ProtobufSerializable,
     type_url,
-    SerDeError,
+    SerDeError, graplinc::grapl::api::graph::v1beta1::GraphDescription,
 };
 
 #[derive(Clone, PartialEq)]
@@ -70,7 +70,7 @@ impl type_url::TypeUrl for ExecutionJob {
 #[derive(Debug, Clone, PartialEq)]
 pub struct AcknowledgeGeneratorRequest {
     pub request_id: i64,
-    pub success: bool,
+    pub graph_description: Option<GraphDescription>,
     pub plugin_id: uuid::Uuid,
 }
 
@@ -79,14 +79,14 @@ impl TryFrom<proto::AcknowledgeGeneratorRequest> for AcknowledgeGeneratorRequest
 
     fn try_from(value: proto::AcknowledgeGeneratorRequest) -> Result<Self, Self::Error> {
         let request_id = value.request_id;
-        let success = value.success;
+        let graph_description = value.graph_description.map(TryFrom::try_from?;
         let plugin_id = value
             .plugin_id
             .ok_or(Self::Error::MissingField("plugin_id"))?
             .into();
         Ok(Self {
             request_id,
-            success,
+            graph_description,
             plugin_id,
         })
     }
@@ -96,7 +96,7 @@ impl From<AcknowledgeGeneratorRequest> for proto::AcknowledgeGeneratorRequest {
     fn from(value: AcknowledgeGeneratorRequest) -> Self {
         Self {
             request_id: value.request_id,
-            success: value.success,
+            graph_description: value.graph_description.into(),
             plugin_id: Some(value.plugin_id.into()),
         }
     }
