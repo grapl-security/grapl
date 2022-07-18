@@ -4,9 +4,9 @@ use std::{
 };
 
 use color_eyre::Help;
-use opentelemetry::{
-    global,
-    sdk::propagation::TraceContextPropagator,
+use grapl_tracing::{
+    setup_tracing,
+    WorkerGuard,
 };
 use rusoto_core::{
     Region,
@@ -17,10 +17,6 @@ use rusoto_sqs::{
     Sqs,
 };
 use tracing::debug;
-use tracing_subscriber::{
-    prelude::*,
-    EnvFilter,
-};
 
 pub mod env_helpers;
 
@@ -39,9 +35,7 @@ pub struct ServiceEnv {
     pub service_name: String,
 }
 
-pub fn _init_grapl_env(
-    service_name: &str,
-) -> (ServiceEnv, tracing_appender::non_blocking::WorkerGuard) {
+pub fn _init_grapl_env(service_name: &str) -> (ServiceEnv, WorkerGuard) {
     let env = ServiceEnv {
         service_name: service_name.to_string(),
     };
@@ -69,30 +63,8 @@ pub fn region() -> Region {
     }
 }
 
-pub fn _init_grapl_log(service_name: &str) -> tracing_appender::non_blocking::WorkerGuard {
-    let filter = EnvFilter::from_default_env();
-
-    let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
-
-    // init json logging layer
-    let log_layer = tracing_subscriber::fmt::layer()
-        .json()
-        .with_writer(non_blocking);
-
-    // init tracing layer
-    global::set_text_map_propagator(TraceContextPropagator::new());
-    let tracer = opentelemetry_jaeger::new_pipeline()
-        .with_service_name(service_name)
-        .install_batch(opentelemetry::runtime::Tokio)
-        .unwrap();
-
-    // register a subscriber with all the layers
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(log_layer)
-        .with(tracing_opentelemetry::layer().with_tracer(tracer))
-        .init();
-    guard
+pub fn _init_grapl_log(service_name: &str) -> WorkerGuard {
+    setup_tracing(service_name).expect("Setting up tracing")
 }
 
 pub fn source_queue_url() -> String {

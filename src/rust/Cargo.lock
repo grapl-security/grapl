@@ -1654,17 +1654,13 @@ dependencies = [
  "clap 3.1.18",
  "futures",
  "grapl-config",
+ "grapl-tracing",
  "kafka",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
  "plugin-work-queue",
  "rust-proto",
  "test-context",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
  "uuid",
 ]
 
@@ -1792,9 +1788,8 @@ dependencies = [
  "async-trait",
  "color-eyre",
  "eyre",
+ "grapl-tracing",
  "log",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
  "rusoto_cloudwatch",
  "rusoto_core",
  "rusoto_credential",
@@ -1803,9 +1798,6 @@ dependencies = [
  "rusoto_sqs",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -1818,6 +1810,22 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "grapl-tracing"
+version = "0.0.1"
+dependencies = [
+ "opentelemetry 0.16.0",
+ "opentelemetry-jaeger",
+ "serde_json",
+ "test-context",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
 ]
 
@@ -2799,17 +2807,13 @@ dependencies = [
  "async-trait",
  "endpoint-plugin",
  "futures",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
+ "grapl-tracing",
  "rust-proto",
  "serde",
  "serde_json",
  "thiserror",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
  "uuid",
 ]
 
@@ -4312,18 +4316,14 @@ dependencies = [
  "endpoint-plugin",
  "futures",
  "generator-sdk",
+ "grapl-tracing",
  "kafka",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
  "rust-proto",
  "sysmon-parser",
  "test-context",
  "thiserror",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
  "uuid",
 ]
 

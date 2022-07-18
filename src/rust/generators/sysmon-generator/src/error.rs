@@ -18,9 +18,6 @@ pub enum SysmonGeneratorError {
     #[error("error converting bytes to utf-8 {0}")]
     Utf8Error(#[from] std::str::Utf8Error),
 
-    #[error("error configuring tracing {0}")]
-    TraceError(#[from] opentelemetry::trace::TraceError),
-
     // TODO Delete when main_legacy is removed
     #[error("error processing event {0}")]
     StreamProcessorError(#[from] kafka::StreamProcessorError),
