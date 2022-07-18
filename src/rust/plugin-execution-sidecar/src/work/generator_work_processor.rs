@@ -81,7 +81,6 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
             request_id,
             success,
         };
-        // TODO: forward _request_id
         pwq_client.acknowledge_generator(ack_request).await?;
         Ok(())
     }
