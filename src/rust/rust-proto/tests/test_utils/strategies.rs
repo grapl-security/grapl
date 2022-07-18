@@ -934,12 +934,12 @@ pub mod plugin_work_queue {
     prop_compose! {
         pub fn acknowledge_generator_requests()(
             request_id in any::<i64>(),
-            success in any::<bool>(),
+            graph_description in proptest::option::of(graph::graph_descriptions()),
             plugin_id in uuids(),
         ) -> native::AcknowledgeGeneratorRequest {
             native::AcknowledgeGeneratorRequest {
                 request_id,
-                success,
+                graph_description,
                 plugin_id,
             }
         }

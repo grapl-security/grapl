@@ -81,7 +81,7 @@ message GetExecuteAnalyzerResponse {
 message AcknowledgeGeneratorRequest {
   // The request_id of the job that has been completed
   int64 request_id = 1;
-  // 'true' if success, 'false' if failure
+  // Some(GraphDescription) if generator ran successfully, None if it failed.
   optional graplinc.grapl.api.graph.v1beta1.GraphDescription graph_description = 2;
   // The plugin id of the plugin that completed the request
   graplinc.common.v1beta1.Uuid plugin_id = 3;
@@ -95,7 +95,8 @@ message AcknowledgeAnalyzerRequest {
   // The request_id of the job that has been completed
   int64 request_id = 1;
   // 'true' if success, 'false' if failure
-  bool success = 2;
+  // TODO: This will likely become an `optional GeneratedMessage` field like AcknowledgeGeneratorRequest
+  bool success = 2; 
   // The plugin id of the plugin that completed the request
   graplinc.common.v1beta1.Uuid plugin_id = 3;
 }

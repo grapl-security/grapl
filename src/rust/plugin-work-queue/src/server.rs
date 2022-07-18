@@ -167,9 +167,12 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         &self,
         request: v1beta1::AcknowledgeGeneratorRequest,
     ) -> Result<v1beta1::AcknowledgeGeneratorResponse, PluginWorkQueueError> {
-        let status = match request.success {
-            true => psql_queue::Status::Processed,
-            false => psql_queue::Status::Failed,
+        let status = match request.graph_description {
+            Some(_graph_description) => {
+                // TODO: KAFKA IT
+                psql_queue::Status::Processed
+            }
+            None => psql_queue::Status::Failed,
         };
         self.queue
             .ack_generator(request.request_id.into(), status)

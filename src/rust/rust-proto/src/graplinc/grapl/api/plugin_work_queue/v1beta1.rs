@@ -19,10 +19,11 @@ pub use crate::graplinc::grapl::api::plugin_work_queue::{
     },
 };
 use crate::{
+    graplinc::grapl::api::graph::v1beta1::GraphDescription,
     protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
     serde_impl::ProtobufSerializable,
     type_url,
-    SerDeError, graplinc::grapl::api::graph::v1beta1::GraphDescription,
+    SerDeError,
 };
 
 #[derive(Clone, PartialEq)]
@@ -79,7 +80,7 @@ impl TryFrom<proto::AcknowledgeGeneratorRequest> for AcknowledgeGeneratorRequest
 
     fn try_from(value: proto::AcknowledgeGeneratorRequest) -> Result<Self, Self::Error> {
         let request_id = value.request_id;
-        let graph_description = value.graph_description.map(TryFrom::try_from?;
+        let graph_description = value.graph_description.map(TryInto::try_into).transpose()?;
         let plugin_id = value
             .plugin_id
             .ok_or(Self::Error::MissingField("plugin_id"))?
@@ -96,7 +97,7 @@ impl From<AcknowledgeGeneratorRequest> for proto::AcknowledgeGeneratorRequest {
     fn from(value: AcknowledgeGeneratorRequest) -> Self {
         Self {
             request_id: value.request_id,
-            graph_description: value.graph_description.into(),
+            graph_description: value.graph_description.map(Into::into),
             plugin_id: Some(value.plugin_id.into()),
         }
     }
