@@ -1,10 +1,29 @@
 use plugin_work_queue::client::PluginWorkQueueServiceClient;
-use rust_proto::graplinc::grapl::api::plugin_work_queue::v1beta1::{
-    ExecutionJob,
-    PluginWorkQueueServiceClientError,
+use rust_proto::{
+    graplinc::grapl::api::{
+        plugin_sdk::generators::v1beta1::client::GeneratorServiceClientError,
+        plugin_work_queue::v1beta1::{
+            ExecutionJob,
+            PluginWorkQueueServiceClientError,
+        },
+    },
+    SerDe,
 };
 
+use crate::config::PluginExecutorConfig;
+
 pub type RequestId = i64;
+
+#[derive(thiserror::Error, Debug)]
+pub enum PluginWorkProcessorError {
+    #[error("PluginWorkQueueServiceClientError {0}")]
+    PluginWorkQueueServiceClientError(#[from] PluginWorkQueueServiceClientError),
+    #[error("GeneratorServiceClientError {0}")]
+    GeneratorServiceClientError(#[from] GeneratorServiceClientError),
+    // Likely want one for Analyzer as well once that SDK exists
+    #[error("ProcessJob {0}")]
+    ProcessJob(String),
+}
 
 // Abstract out between Get[Generator/Analyzer]ExecutionResponse,
 pub trait Workload {
@@ -15,20 +34,25 @@ pub trait Workload {
 #[async_trait::async_trait]
 pub trait PluginWorkProcessor {
     type Work: Workload;
+    type ProducedMessage: SerDe;
 
     async fn get_work(
         &self,
+        config: &PluginExecutorConfig,
         pwq_client: &mut PluginWorkQueueServiceClient,
-        plugin_id: uuid::Uuid,
-    ) -> Result<Self::Work, PluginWorkQueueServiceClientError>;
+    ) -> Result<Self::Work, PluginWorkProcessorError>;
+
+    async fn process_job(
+        &mut self,
+        config: &PluginExecutorConfig,
+        work: ExecutionJob,
+    ) -> Result<Self::ProducedMessage, PluginWorkProcessorError>;
 
     async fn ack_work(
         &self,
+        config: &PluginExecutorConfig,
         pwq_client: &mut PluginWorkQueueServiceClient,
-        plugin_id: uuid::Uuid,
+        process_result: Result<Self::ProducedMessage, PluginWorkProcessorError>,
         request_id: RequestId,
-        success: bool,
-    ) -> Result<(), PluginWorkQueueServiceClientError>;
-
-    async fn process_job(&mut self, work: ExecutionJob) -> Result<(), Box<dyn std::error::Error>>;
+    ) -> Result<(), PluginWorkProcessorError>;
 }
