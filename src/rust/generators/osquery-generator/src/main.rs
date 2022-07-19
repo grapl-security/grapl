@@ -14,7 +14,7 @@ mod parsers;
 #[derive(Debug, Error)]
 pub enum OsqueryGeneratorError {}
 
-const SERVICE_NAME: &'static str = "pipeline-ingress";
+const SERVICE_NAME: &'static str = "osquery-generator";
 
 #[tokio::main]
 #[tracing::instrument]
