@@ -155,31 +155,12 @@ impl GeneratorDispatcher {
                                 }
                             }
                             Err(e) => {
-                                match e {
-                                    ConsumerError::DeserializationError(e) => {
-                                        tracing::error!(
-                                            message="error deserializing kafka message",
-                                            reason=%e,
-                                        );
-                                        // TODO: dump the message bytes on dead letter topic
-                                        Ok(())
-                                    }
-                                    ConsumerError::KafkaConsumptionFailed(e) => {
-                                        tracing::error!(
-                                            message="failed to consume message from kafka",
-                                            reason=%e,
-                                        );
-                                        Ok(())
-                                    }
-                                    ConsumerError::PayloadAbsent => {
-                                        tracing::error!(message = "kafka payload absent");
-                                        Ok(())
-                                    }
-                                    _ => {
-                                        tracing::error!(message = "unknown kafka consumer error");
-                                        Ok(())
-                                    }
-                                }
+                                tracing::error!(
+                                    message="error processing kafka message",
+                                    reason=%e,
+                                );
+
+                                Ok(())
                             }
                         }
                     }
