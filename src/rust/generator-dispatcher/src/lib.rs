@@ -130,7 +130,7 @@ impl GeneratorDispatcher {
                                             // successfully enqueued so we'll
                                             // retry the message
                                             retry_message(
-                                                raw_logs_retry_producer.clone(),
+                                                &raw_logs_retry_producer,
                                                 envelope
                                             ).await?;
                                             Ok(())
@@ -143,7 +143,7 @@ impl GeneratorDispatcher {
                                                 reason =% reason,
                                             );
                                             retry_message(
-                                                raw_logs_retry_producer.clone(),
+                                                &raw_logs_retry_producer,
                                                 envelope
                                             ).await?;
                                             Ok(())
@@ -183,7 +183,7 @@ impl GeneratorDispatcher {
 }
 
 async fn retry_message(
-    raw_logs_retry_producer: RetryProducer<RawLog>,
+    raw_logs_retry_producer: &RetryProducer<RawLog>,
     envelope: Envelope<RawLog>,
 ) -> Result<(), ProducerError> {
     // TODO: be a little smarter about handling ProducerError here
