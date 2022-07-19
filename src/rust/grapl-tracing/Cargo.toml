@@ -9,19 +9,8 @@ opentelemetry-jaeger = { version = "0.15", features = [
   "collector_client",
   "rt-tokio"
 ] }
-serde_json = "1.0"
 thiserror = "1.0"
-tokio = { version = "1.17", features = [
-  "macros",
-  "rt",
-  "rt-multi-thread",
-  "sync",
-  "time",
-] }
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-opentelemetry = "0.16"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-
-[dev-dependencies]
-test-context = "0.1"

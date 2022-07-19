@@ -1815,10 +1815,7 @@ version = "0.0.1"
 dependencies = [
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
- "serde_json",
- "test-context",
  "thiserror",
- "tokio",
  "tracing",
  "tracing-appender",
  "tracing-opentelemetry 0.16.0",
