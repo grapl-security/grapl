@@ -42,9 +42,9 @@ pub fn setup_tracing(service_name: &str) -> Result<WorkerGuard, SetupTracingErro
             registry
                 .with(tracing_opentelemetry::layer().with_tracer(jaeger_tracer))
                 .init();
-            tracing::warn!("Skipping Jaeger tracer");
         } else {
             registry.init();
+            tracing::warn!("Skipping Jaeger tracer");
         }
     };
 
