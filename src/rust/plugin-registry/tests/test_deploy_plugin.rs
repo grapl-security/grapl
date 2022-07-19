@@ -100,7 +100,11 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
-    tokio::time::sleep(Duration::from_secs(10)).await;
+    // Let the task run for a bit. Tasks may potentially restart - e.g. if the
+    // sidecar comes up before the main task, it'll panic because it expected a
+    // healthy main-task health check.
+    // Anyway: we let it run for a bit and _then_ check task health.
+    tokio::time::sleep(Duration::from_secs(15)).await;
 
     // Ensure that a now-deployed plugin is now Running
     // If it's Pending, it's possible the agent is out of mem or disk
