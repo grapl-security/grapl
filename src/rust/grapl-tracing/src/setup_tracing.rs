@@ -30,11 +30,14 @@ pub fn setup_tracing(service_name: &str) -> Result<WorkerGuard, SetupTracingErro
 
     // register a subscriber
     let filter = EnvFilter::from_default_env();
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(log_layer)
-        .with(tracing_opentelemetry::layer().with_tracer(tracer))
-        .init();
+    {
+        let registry = tracing_subscriber::registry().with(filter).with(log_layer);
+
+        let registry = registry.with(tracing_opentelemetry::layer().with_tracer(tracer));
+
+        registry
+    }
+    .init();
 
     tracing::info!("logger configured successfully");
 

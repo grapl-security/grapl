@@ -29,6 +29,14 @@ weird nomad state parse error.
 EOF
 }
 
+variable "observability_env_vars" {
+  type        = string
+  description = <<EOF
+With local-grapl, we have to inject env vars for Opentelemetry.
+In prod, this is currently disabled.
+EOF
+}
+
 variable "aws_region" {
   type = string
 }
@@ -195,13 +203,6 @@ variable "user_session_table" {
   description = "What is the name of the DynamoDB user session table?"
 }
 
-variable "tracing_endpoint" {
-  type = string
-  # if nothing is passed in we default to "${attr.unique.network.ip-address}" in locals.
-  # Using a variable isn't allowed here though :(
-  default = ""
-}
-
 variable "dns_server" {
   type        = string
   description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
@@ -249,14 +250,6 @@ locals {
   # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
   # added for network.dns as of 1.3.0
   dns_servers = [var.dns_server]
-
-  # Tracing endpoints
-  # We currently use both the zipkin v2 endpoint for consul, python and typescript instrumentation and the jaeger udp
-  # agent endpoint for rust instrumentation. These will be consolidated in the future
-  tracing_endpoint             = (var.tracing_endpoint == "") ? attr.unique.network.ip-address : var.tracing_endpoint
-  tracing_jaeger_endpoint_host = local.tracing_endpoint
-  tracing_jaeger_endpoint_port = 6831
-  tracing_zipkin_endpoint      = "http://${local.tracing_endpoint}:9411/api/v2/spans"
 
   # Grapl services
   graphql_endpoint_port = 5000
@@ -618,6 +611,12 @@ job "grapl-core" {
         image = var.container_images["generator-dispatcher"]
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         # Upstreams
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
@@ -632,8 +631,6 @@ job "grapl-core" {
 
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
     }
 
@@ -669,10 +666,16 @@ job "grapl-core" {
         image = var.container_images["graph-merger"]
       }
 
-      # This writes an env files that gets read by nomad automatically
+      # This writes an env file that gets read by nomad automatically
       template {
         data        = var.aws_env_vars_for_local
         destination = "aws-env-vars-for-local.env"
+        env         = true
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
         env         = true
       }
 
@@ -690,9 +693,6 @@ job "grapl-core" {
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["graph-merger"]
         KAFKA_CONSUMER_TOPIC      = "identified-graphs"
         KAFKA_PRODUCER_TOPIC      = "merged-graphs"
-
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
     }
 
@@ -740,14 +740,17 @@ job "grapl-core" {
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         AWS_REGION = var.aws_region
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = local.rust_backtrace
-
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
 
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME       = var.kafka_credentials["node-identifier"].sasl_username
@@ -787,6 +790,12 @@ job "grapl-core" {
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         AWS_DEFAULT_REGION = var.aws_region
 
@@ -795,8 +804,6 @@ job "grapl-core" {
         MG_ALPHAS = local.alpha_grpc_connect_str
 
         SOURCE_QUEUE_URL = "fake"
-
-        OTEL_EXPORTER_ZIPKIN_ENDPOINT = local.tracing_zipkin_endpoint
       }
     }
 
@@ -843,6 +850,12 @@ job "grapl-core" {
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         RUST_LOG = var.rust_log
         # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
@@ -853,7 +866,6 @@ job "grapl-core" {
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
         PORT                          = "${NOMAD_PORT_graphql-endpoint-port}"
-        OTEL_EXPORTER_ZIPKIN_ENDPOINT = local.tracing_zipkin_endpoint
       }
     }
 
@@ -904,6 +916,12 @@ job "grapl-core" {
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         # For the DynamoDB client
         AWS_REGION = var.aws_region
@@ -916,8 +934,6 @@ job "grapl-core" {
         GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
         RUST_LOG                             = var.rust_log
         RUST_BACKTRACE                       = local.rust_backtrace
-        OTEL_EXPORTER_JAEGER_AGENT_HOST      = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT      = local.tracing_jaeger_endpoint_port
       }
     }
 
@@ -961,14 +977,17 @@ job "grapl-core" {
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         AWS_REGION = var.aws_region
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = local.rust_backtrace
-
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
 
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME       = var.kafka_credentials["graph-generator"].sasl_username
@@ -1006,6 +1025,12 @@ job "grapl-core" {
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         AWS_REGION                           = var.aws_region
         NOMAD_SERVICE_ADDRESS                = "${attr.unique.network.ip-address}:4646"
@@ -1016,8 +1041,6 @@ job "grapl-core" {
         ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db.password
         ORGANIZATION_MANAGEMENT_DB_PORT      = var.organization_management_db.port
         ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db.username
-        OTEL_EXPORTER_JAEGER_AGENT_HOST      = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT      = local.tracing_jaeger_endpoint_port
 
         ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = var.organization_management_healthcheck_polling_interval_ms
       }
@@ -1057,6 +1080,12 @@ job "grapl-core" {
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         AWS_REGION                                       = var.aws_region
         NOMAD_SERVICE_ADDRESS                            = "${attr.unique.network.ip-address}:4646"
@@ -1068,9 +1097,6 @@ job "grapl-core" {
         KAFKA_SASL_USERNAME                              = var.kafka_credentials["pipeline-ingress"].sasl_username
         KAFKA_SASL_PASSWORD                              = var.kafka_credentials["pipeline-ingress"].sasl_password
         KAFKA_PRODUCER_TOPIC                             = "raw-logs"
-
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
     }
 
@@ -1116,6 +1142,12 @@ job "grapl-core" {
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         AWS_REGION                                      = var.aws_region
         NOMAD_SERVICE_ADDRESS                           = "${attr.unique.network.ip-address}:4646"
@@ -1135,8 +1167,6 @@ job "grapl-core" {
         # common Rust env vars
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
 
       resources {
@@ -1187,6 +1217,12 @@ job "grapl-core" {
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
         PLUGIN_WORK_QUEUE_DB_HOSTNAME  = var.plugin_work_queue_db.hostname
@@ -1199,8 +1235,6 @@ job "grapl-core" {
         # common Rust env vars
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
     }
 
@@ -1240,6 +1274,12 @@ job "grapl-core" {
         ports = ["uid-allocator-port"]
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         UID_ALLOCATOR_BIND_ADDRESS      = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
         UID_ALLOCATOR_DB_HOSTNAME       = var.uid_allocator_db.hostname
@@ -1248,8 +1288,6 @@ job "grapl-core" {
         UID_ALLOCATOR_DB_USERNAME       = var.uid_allocator_db.username
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
     }
 
@@ -1288,6 +1326,12 @@ job "grapl-core" {
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         EVENT_SOURCE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_event-source-port}"
         EVENT_SOURCE_DB_HOSTNAME  = var.event_source_db.hostname
@@ -1300,8 +1344,6 @@ job "grapl-core" {
         # common Rust env vars
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
     }
 
