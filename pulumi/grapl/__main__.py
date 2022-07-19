@@ -30,6 +30,7 @@ from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
+from infra.observability_env_vars import observability_env_vars_for_local
 from infra.path import path_from_root
 from infra.postgres import Postgres
 
@@ -203,6 +204,8 @@ def main() -> None:
         service: kafka.consumer_group(service) for service in kafka_consumer_services
     }
 
+    observability_env_vars = observability_env_vars_for_local()
+
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         aws_env_vars_for_local=aws_env_vars_for_local,
@@ -212,6 +215,7 @@ def main() -> None:
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
         kafka_credentials=kafka_service_credentials,
         kafka_consumer_groups=kafka_consumer_groups,
+        observability_env_vars=observability_env_vars,
         organization_management_healthcheck_polling_interval_ms=organization_management_healthcheck_polling_interval_ms,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
         plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
@@ -236,6 +240,7 @@ def main() -> None:
                 "aws_env_vars_for_local",
                 "aws_region",
                 "container_images",
+                "observability_env_vars",
                 "py_log_level",
                 "schema_properties_table_name",
                 "schema_table_name",
