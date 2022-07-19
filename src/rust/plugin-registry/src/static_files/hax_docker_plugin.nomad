@@ -39,14 +39,12 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
-variable "otel_exporter_jaeger_agent_host" {
+variable "observability_env_vars" {
   type        = string
-  description = "Jaeger configuration"
-}
-
-variable "otel_exporter_jaeger_agent_port" {
-  type        = number
-  description = "Jaeger configuration"
+  description = <<EOF
+With local-grapl, we have to inject env vars for Opentelemetry.
+In prod, this is currently disabled.
+EOF
 }
 
 job "grapl-plugin" {
@@ -117,6 +115,12 @@ job "grapl-plugin" {
         image = var.plugin_execution_image
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         PLUGIN_EXECUTOR_PLUGIN_ID = var.plugin_id
 
@@ -127,9 +131,6 @@ job "grapl-plugin" {
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
-
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = var.otel_exporter_jaeger_agent_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = var.otel_exporter_jaeger_agent_port
       }
     }
 
@@ -210,15 +211,18 @@ EOF
         }
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         TENANT_ID  = "${var.tenant_id}"
         PLUGIN_ID  = "${var.plugin_id}"
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
         # Consumed by GeneratorServiceConfig
         PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
-
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = var.otel_exporter_jaeger_agent_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = var.otel_exporter_jaeger_agent_port
 
         # Should we make these eventually customizable?
         RUST_LOG       = var.rust_log

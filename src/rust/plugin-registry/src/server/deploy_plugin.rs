@@ -74,14 +74,7 @@ pub fn get_job(
                 ("tenant_id", plugin.tenant_id.to_string()),
                 // Passthrough vars
                 ("rust_log", passthru.rust_log),
-                (
-                    "otel_exporter_jaeger_agent_host",
-                    passthru.otel_exporter_jaeger_agent_host,
-                ),
-                (
-                    "otel_exporter_jaeger_agent_port",
-                    passthru.otel_exporter_jaeger_agent_port,
-                ),
+                ("observability_env_vars", passthru.observability_env_vars),
             ]);
             cli.parse_hcl2(job_file_hcl, job_file_vars)
         }
