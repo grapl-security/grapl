@@ -66,6 +66,7 @@ BUILD @christophermaier
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
+/src/rust/grapl-tracing/ @wimax-grapl
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/grapl-web-ui/ @inickles-grapl
 /src/rust/kafka/ @grapl-security/wg-data-infra
