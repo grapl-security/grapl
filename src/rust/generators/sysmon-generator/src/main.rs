@@ -9,7 +9,7 @@ const SERVICE_NAME: &'static str = "sysmon-generator";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _guard = setup_tracing(SERVICE_NAME);
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
     let config = GeneratorServiceConfig::from_env_vars();
     let generator = api::SysmonGenerator {};

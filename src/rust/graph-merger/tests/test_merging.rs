@@ -114,8 +114,10 @@ pub mod test {
         serde_json::from_slice(&response.json).expect("response failed to parse")
     }
 
+    const SERVICE_NAME: &'static str = "graph-merger-test-merging";
+
     fn init_test_env() {
-        let _guard = setup_tracing("graph-merger-test-merging").unwrap();
+        let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
         static START: Once = Once::new();
         START.call_once(|| {

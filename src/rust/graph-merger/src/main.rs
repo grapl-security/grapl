@@ -44,7 +44,7 @@ const SERVICE_NAME: &'static str = "graph-merger";
 
 #[tokio::main]
 async fn main() -> Result<(), GraphMergerError> {
-    let _guard = setup_tracing(SERVICE_NAME);
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
     let mg_alphas = grapl_config::mg_alphas();
     let dynamo = DynamoDbClient::from_env();

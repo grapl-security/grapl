@@ -49,7 +49,7 @@ struct PipelineIngressTestContext {
 #[async_trait::async_trait]
 impl AsyncTestContext for PipelineIngressTestContext {
     async fn setup() -> Self {
-        let _guard = setup_tracing("pipeline-ingress-integration-tests").unwrap();
+        let _guard = setup_tracing("pipeline-ingress-integration-tests").expect("setup_tracing");
 
         let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
             .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");

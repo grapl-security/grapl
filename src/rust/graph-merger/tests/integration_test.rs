@@ -61,12 +61,13 @@ struct GraphMergerTestContext {
     _guard: WorkerGuard,
 }
 
-static CONSUMER_TOPIC: &'static str = "merged-graphs";
+const CONSUMER_TOPIC: &'static str = "merged-graphs";
+const SERVICE_NAME: &'static str = "graph-merger-integration-tests";
 
 #[async_trait::async_trait]
 impl AsyncTestContext for GraphMergerTestContext {
     async fn setup() -> Self {
-        let _guard = setup_tracing("graph-merger-integration-tests").unwrap();
+        let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
         let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
             .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");

@@ -64,6 +64,7 @@ pub fn region() -> Region {
 }
 
 pub fn _init_grapl_log(service_name: &str) -> WorkerGuard {
+    // This should be deprecated and moved to a direct `setup_tracing` call
     setup_tracing(service_name).expect("Setting up tracing")
 }
 

@@ -36,7 +36,7 @@ const SERVICE_NAME: &'static str = "sysmon-generator-legacy";
 
 #[tokio::main]
 async fn main() -> Result<(), SysmonGeneratorError> {
-    let _guard = setup_tracing(SERVICE_NAME);
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
     handler().await
 }

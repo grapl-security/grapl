@@ -170,7 +170,7 @@ const SERVICE_NAME: &'static str = "pipeline-ingress";
 
 #[tokio::main]
 async fn main() -> Result<(), ConfigurationError> {
-    let _guard = setup_tracing(SERVICE_NAME);
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
     tracing::info!("starting up!");
 

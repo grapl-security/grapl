@@ -63,10 +63,12 @@ struct NodeIdentifierTestContext {
     _guard: WorkerGuard,
 }
 
+const SERVICE_NAME: &'static str = "node-identifier-integration-tests";
+
 #[async_trait::async_trait]
 impl AsyncTestContext for NodeIdentifierTestContext {
     async fn setup() -> Self {
-        let _guard = setup_tracing("node-identifier-integration-tests").unwrap();
+        let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
         let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
             .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");

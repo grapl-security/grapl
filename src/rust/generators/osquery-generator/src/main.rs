@@ -19,7 +19,7 @@ const SERVICE_NAME: &'static str = "osquery-generator";
 #[tokio::main]
 #[tracing::instrument]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _guard = setup_tracing(SERVICE_NAME);
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
     // TODO: actually do something here
     Ok(())
