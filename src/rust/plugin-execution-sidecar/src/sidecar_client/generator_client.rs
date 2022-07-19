@@ -12,39 +12,32 @@ use rust_proto::{
 };
 use tonic::transport::Endpoint;
 
-#[async_trait::async_trait]
-pub trait FromEnv<T, E> {
-    async fn from_env() -> Result<T, E>;
-}
-
-fn get_plugin_upstream_address_from_env() -> String {
-    let plugin_id = std::env::var("PLUGIN_ID").expect("PLUGIN_ID");
+fn get_plugin_upstream_address(plugin_id: uuid::Uuid) -> String {
     let upstream_addr_env_var = format!("NOMAD_UPSTREAM_ADDR_plugin-{plugin_id}");
     let upstream_addr = std::env::var(&upstream_addr_env_var).expect(&upstream_addr_env_var);
     let address = format!("http://{upstream_addr}");
     address
 }
 
-#[async_trait::async_trait]
-impl FromEnv<GeneratorServiceClient, GeneratorServiceClientError> for GeneratorServiceClient {
-    /// Create a client from environment
-    async fn from_env() -> Result<GeneratorServiceClient, GeneratorServiceClientError> {
-        let address = get_plugin_upstream_address_from_env();
+/// Create a client from environment
+pub async fn get_generator_client(
+    plugin_id: uuid::Uuid,
+) -> Result<GeneratorServiceClient, GeneratorServiceClientError> {
+    let address = get_plugin_upstream_address(plugin_id);
 
-        // TODO: Add a `rust-proto` wrapper around tonic Endpoint
-        let endpoint = Endpoint::from_shared(address.to_string())?
-            .timeout(Duration::from_secs(10))
-            .concurrency_limit(30);
+    // TODO: Add a `rust-proto` wrapper around tonic Endpoint
+    let endpoint = Endpoint::from_shared(address.to_string())?
+        .timeout(Duration::from_secs(10))
+        .concurrency_limit(30);
 
-        HealthcheckClient::wait_until_healthy(
-            endpoint.clone(),
-            Self::SERVICE_NAME,
-            Duration::from_millis(10000),
-            Duration::from_millis(5000),
-        )
-        .await
-        .expect("Generator plugin never reported healthy");
+    HealthcheckClient::wait_until_healthy(
+        endpoint.clone(),
+        GeneratorServiceClient::SERVICE_NAME,
+        Duration::from_millis(10000),
+        Duration::from_millis(5000),
+    )
+    .await
+    .expect("Generator plugin never reported healthy");
 
-        Self::connect(endpoint).await
-    }
+    GeneratorServiceClient::connect(endpoint).await
 }

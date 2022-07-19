@@ -2,10 +2,7 @@ use plugin_work_queue::client::PluginWorkQueueServiceClient;
 use rust_proto::graplinc::grapl::api::{
     graph::v1beta1::GraphDescription,
     plugin_sdk::generators::v1beta1::{
-        client::{
-            GeneratorServiceClient,
-            GeneratorServiceClientError,
-        },
+        client::GeneratorServiceClient,
         RunGeneratorRequest,
     },
     plugin_work_queue::v1beta1::{
@@ -26,7 +23,7 @@ use super::{
 };
 use crate::{
     config::PluginExecutorConfig,
-    sidecar_client::generator_client::FromEnv,
+    sidecar_client::generator_client::get_generator_client,
 };
 
 impl Workload for GetExecuteGeneratorResponse {
@@ -43,8 +40,8 @@ pub struct GeneratorWorkProcessor {
 }
 
 impl GeneratorWorkProcessor {
-    pub async fn new() -> Result<Self, GeneratorServiceClientError> {
-        let generator_service_client = GeneratorServiceClient::from_env().await?;
+    pub async fn new(config: &PluginExecutorConfig) -> Result<Self, Box<dyn std::error::Error>> {
+        let generator_service_client = get_generator_client(config.plugin_id).await?;
         Ok(GeneratorWorkProcessor {
             generator_service_client,
         })
