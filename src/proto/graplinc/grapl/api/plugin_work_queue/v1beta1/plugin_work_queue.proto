@@ -96,7 +96,7 @@ message AcknowledgeAnalyzerRequest {
   int64 request_id = 1;
   // 'true' if success, 'false' if failure
   // TODO: This will likely become an `optional GeneratedMessage` field like AcknowledgeGeneratorRequest
-  bool success = 2; 
+  bool success = 2;
   // The plugin id of the plugin that completed the request
   graplinc.common.v1beta1.Uuid plugin_id = 3;
 }

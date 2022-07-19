@@ -188,8 +188,8 @@ job "rust-integration-tests" {
 
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_group
-        KAFKA_SASL_USERNAME  = var.kafka_credentials.sasl_username
-        KAFKA_SASL_PASSWORD  = var.kafka_credentials.sasl_password
+        KAFKA_SASL_USERNAME       = var.kafka_credentials.sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials.sasl_password
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
 
