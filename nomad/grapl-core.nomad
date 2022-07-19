@@ -629,8 +629,8 @@ job "grapl-core" {
         KAFKA_CONSUMER_TOPIC      = "raw-logs"
         KAFKA_PRODUCER_TOPIC      = "generated-graphs"
 
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
       }
     }
 
@@ -1163,10 +1163,11 @@ job "grapl-core" {
         PLUGIN_EXECUTION_IMAGE                          = var.container_images["generator-execution-sidecar"] # TODO: add support for analyzer too
         PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID           = var.plugin_registry_bucket_aws_account_id
         PLUGIN_REGISTRY_BUCKET_NAME                     = var.plugin_registry_bucket_name
+        PLUGIN_EXECUTION_OBSERVABILITY_ENV_VARS         = var.observability_env_vars
 
         # common Rust env vars
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
       }
 
       resources {
@@ -1233,8 +1234,8 @@ job "grapl-core" {
         PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
         # common Rust env vars
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
       }
     }
 
@@ -1281,13 +1282,13 @@ job "grapl-core" {
       }
 
       env {
-        UID_ALLOCATOR_BIND_ADDRESS      = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
-        UID_ALLOCATOR_DB_HOSTNAME       = var.uid_allocator_db.hostname
-        UID_ALLOCATOR_DB_PASSWORD       = var.uid_allocator_db.password
-        UID_ALLOCATOR_DB_PORT           = var.uid_allocator_db.port
-        UID_ALLOCATOR_DB_USERNAME       = var.uid_allocator_db.username
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
+        UID_ALLOCATOR_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
+        UID_ALLOCATOR_DB_HOSTNAME  = var.uid_allocator_db.hostname
+        UID_ALLOCATOR_DB_PASSWORD  = var.uid_allocator_db.password
+        UID_ALLOCATOR_DB_PORT      = var.uid_allocator_db.port
+        UID_ALLOCATOR_DB_USERNAME  = var.uid_allocator_db.username
+        RUST_BACKTRACE             = local.rust_backtrace
+        RUST_LOG                   = var.rust_log
       }
     }
 
@@ -1342,8 +1343,8 @@ job "grapl-core" {
         EVENT_SOURCE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
         # common Rust env vars
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
       }
     }
 

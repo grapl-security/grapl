@@ -14,6 +14,11 @@ pub enum SetupTracingError {
     TraceError(#[from] opentelemetry::trace::TraceError),
 }
 
+fn otel_jaeger_enabled() -> bool {
+    // If this environment variable isn't set, don't bother hooking up Jaeger
+    std::env::var("OTEL_EXPORTER_JAEGER_AGENT_HOST").is_ok()
+}
+
 pub fn setup_tracing(service_name: &str) -> Result<WorkerGuard, SetupTracingError> {
     let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
 
@@ -24,22 +29,26 @@ pub fn setup_tracing(service_name: &str) -> Result<WorkerGuard, SetupTracingErro
 
     // initialize tracing layer
     global::set_text_map_propagator(TraceContextPropagator::new());
-    let tracer = opentelemetry_jaeger::new_pipeline()
+    let jaeger_tracer = opentelemetry_jaeger::new_pipeline()
         .with_service_name(service_name)
         .install_batch(opentelemetry::runtime::Tokio)?;
 
     // register a subscriber
     let filter = EnvFilter::from_default_env();
     {
-        let registry = tracing_subscriber::registry().with(filter).with(log_layer);
+        // Builder pattern is difficult here
+        let registry = Box::new(tracing_subscriber::registry()
+            .with(filter)
+            .with(log_layer));
+        if otel_jaeger_enabled() {
+            registry.with(tracing_opentelemetry::layer().with_tracer(jaeger_tracer)).init();
+            tracing::warn!("Skipping Jaeger tracer");
+        } else {
+            registry.init();
+        }
+    };
 
-        let registry = registry.with(tracing_opentelemetry::layer().with_tracer(tracer));
-
-        registry
-    }
-    .init();
-
-    tracing::info!("logger configured successfully");
+    tracing::info!("Tracer configured successfully");
 
     Ok(guard)
 }

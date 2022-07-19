@@ -1,5 +1,5 @@
 from infra import config
-import pulumi_aws as aws
+
 
 def observability_env_vars_for_local() -> str:
     # We currently use both the zipkin v2 endpoint for consul, python and typescript instrumentation and the jaeger udp
@@ -12,7 +12,9 @@ def observability_env_vars_for_local() -> str:
     # gets passed in to a template{} stanza.
     otel_host = '{{ env "attr.unique.network.ip-address" }}'
     otel_port = 6831  # compare with nomad/local/observability.nomad
-    zipkin_endpoint = 'http://{{ env "attr.unique.network.ip-address" }}:9411/api/v2/spans'
+    zipkin_endpoint = (
+        'http://{{ env "attr.unique.network.ip-address" }}:9411/api/v2/spans'
+    )
 
     return f"""
         OTEL_EXPORTER_JAEGER_AGENT_HOST = {otel_host}

@@ -106,15 +106,13 @@ pub struct PluginRegistryServiceConfig {
 
 #[derive(clap::Parser, Clone, Debug, Default)]
 pub struct PluginExecutionPassthroughVars {
+    #[clap(long, env = "PLUGIN_EXECUTION_OBSERVABILITY_ENV_VARS")]
+    pub observability_env_vars: String,
     // Pass through a couple env vars also used for the plugin-registry service
     // Since they're used in both ways - locally for this service, and the
     // spawned plugins - I decided against prefixing PLUGIN_EXECUTION_.
     #[clap(long, env)]
     pub rust_log: String,
-    #[clap(long, env)]
-    pub otel_exporter_jaeger_agent_host: String,
-    #[clap(long, env)]
-    pub otel_exporter_jaeger_agent_port: String,
 }
 
 pub struct PluginRegistry {
