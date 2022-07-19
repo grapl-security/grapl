@@ -77,12 +77,6 @@ variable "plugin_work_queue_db" {
   description = "Vars for plugin-work-queue database"
 }
 
-# https://github.com/grapl-security/grapl/blob/af6f2c197d52e9941047aab813c30d2cbfd54523/pulumi/infra/dynamodb.py#L118
-variable "session_table_name" {
-  type        = string
-  description = "What is the name of the session table?"
-}
-
 locals {
   # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
   # added for network.dns as of 1.3.0
@@ -205,8 +199,6 @@ job "rust-integration-tests" {
         PLUGIN_WORK_QUEUE_DB_PORT     = var.plugin_work_queue_db.port
         PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue_db.username
         PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue_db.password
-
-        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
       }
 
       resources {

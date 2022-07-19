@@ -451,6 +451,10 @@ def main() -> None:
             **nomad_inputs,
         )
 
+        # make it easy to debug nomad var unset issues
+        if pulumi.runtime.is_dry_run():
+            pulumi.export("prod-grapl-core-vars", prod_grapl_core_vars)
+
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
@@ -498,8 +502,6 @@ def main() -> None:
         )
 
     OpsAlarms(name="ops-alarms")
-
-    pulumi.export("dynamic_session_table", dynamodb_tables.dynamic_session_table.name)
 
     pulumi.export(
         "organization-management-db",

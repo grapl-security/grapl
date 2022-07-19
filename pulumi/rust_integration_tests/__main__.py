@@ -76,7 +76,6 @@ def main() -> None:
         "rust_log": log_levels.RUST_LOG_LEVELS,
         "organization_management_db": grapl_stack.organization_management_db,
         "plugin_work_queue_db": grapl_stack.plugin_work_queue_db,
-        "session_table_name": grapl_stack.dynamic_session_table,
     }
 
     rust_integration_tests = NomadJob(
@@ -114,7 +113,6 @@ class GraplStack:
         )
 
         self.test_user_password_secret_id = require_str("test-user-password-secret-id")
-        self.dynamic_session_table = require_str("dynamic-session-table")
 
 
 if __name__ == "__main__":
