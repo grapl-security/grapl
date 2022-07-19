@@ -1655,10 +1655,9 @@ dependencies = [
  "futures",
  "grapl-config",
  "kafka",
- "lru",
+ "moka 0.9.1",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
- "parking_lot 0.12.1",
  "plugin-registry",
  "plugin-work-queue",
  "rand 0.8.5",
@@ -1682,7 +1681,7 @@ dependencies = [
  "clap 3.1.18",
  "consul-connect",
  "grapl-config",
- "moka",
+ "moka 0.8.6",
  "rust-proto",
  "serde",
  "test-context",
@@ -2482,6 +2481,31 @@ name = "moka"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "975fa04238144061e7f8df9746b2e9cd93ef85881da5548d842a7c6a4b614415"
+dependencies = [
+ "async-io",
+ "async-lock",
+ "crossbeam-channel",
+ "crossbeam-epoch 0.8.2",
+ "crossbeam-utils 0.8.8",
+ "futures-util",
+ "num_cpus",
+ "once_cell",
+ "parking_lot 0.12.1",
+ "quanta",
+ "scheduled-thread-pool",
+ "skeptic",
+ "smallvec",
+ "tagptr",
+ "thiserror",
+ "triomphe",
+ "uuid",
+]
+
+[[package]]
+name = "moka"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eef04a813cf3c582ffd4e0246b84beea9a756d95a56652bb8420d86ceed5d911"
 dependencies = [
  "async-io",
  "async-lock",

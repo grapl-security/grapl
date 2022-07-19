@@ -1,9 +1,6 @@
 use std::{
     sync::Arc,
-    time::{
-        Duration,
-        SystemTime,
-    },
+    time::Duration,
 };
 
 use futures::{
@@ -13,8 +10,7 @@ use futures::{
     },
     StreamExt,
 };
-use lru::LruCache;
-use parking_lot::RwLock;
+use moka::future::Cache;
 use plugin_registry::client::{
     FromEnv as PRFromEnv,
     PluginRegistryServiceClient,
@@ -55,20 +51,6 @@ impl From<TrySendError<Uuid>> for GeneratorIdsCacheError {
     }
 }
 
-struct GeneratorIdsEntry {
-    generator_ids: Vec<Uuid>,
-    evict_after: SystemTime,
-}
-
-impl GeneratorIdsEntry {
-    fn new(generator_ids: Vec<Uuid>, ttl: Duration) -> Self {
-        GeneratorIdsEntry {
-            generator_ids,
-            evict_after: SystemTime::now() + ttl,
-        }
-    }
-}
-
 /// A fail-fast, asynchronous, pull-through cache.
 ///
 /// Caches a mapping of {<event_source_id>: [<generator_id>, ...]} in such a way
@@ -80,7 +62,7 @@ impl GeneratorIdsEntry {
 /// and a miss.
 #[derive(Clone, Debug)]
 pub struct GeneratorIdsCache {
-    generator_ids_cache: Arc<RwLock<LruCache<Uuid, GeneratorIdsEntry>>>,
+    generator_ids_cache: Cache<Uuid, Vec<Uuid>>,
     updater_tx: Sender<Uuid>,
 }
 
@@ -98,46 +80,19 @@ impl GeneratorIdsCache {
     ///
     /// * updater_queue_depth - the maximum number of waiting cache updates.
     pub async fn new(
-        capacity: usize,
+        capacity: u64,
         ttl: Duration,
         updater_pool_size: usize,
         updater_queue_depth: usize,
     ) -> Result<Self, ConfigurationError> {
-        let generator_ids_cache: Arc<RwLock<LruCache<Uuid, GeneratorIdsEntry>>> =
-            Arc::new(RwLock::new(LruCache::new(capacity)));
-        let evictor_generator_ids_cache = generator_ids_cache.clone();
-        let updater_generator_ids_cache = generator_ids_cache.clone();
+        let generator_ids_cache = Cache::builder()
+            .max_capacity(capacity)
+            .time_to_live(ttl)
+            .build();
+
+        let generator_ids_cache_retval = generator_ids_cache.clone();
 
         let (updater_tx, updater_rx) = futures::channel::mpsc::channel(updater_queue_depth);
-
-        // The evictor task is responsible for periodically evicting old entries
-        // from the cache.
-        tokio::task::spawn(async move {
-            let mut delay = tokio::time::interval(ttl);
-
-            loop {
-                delay.tick().await;
-                // pop entries from the cache in least-recently-used order
-                // until either there are no more entries or we have "caught
-                // up" to entries which are not yet stale.
-                loop {
-                    let generator_ids_cache = Arc::clone(&evictor_generator_ids_cache);
-                    let cache_read_guard = generator_ids_cache.read();
-
-                    if let Some((event_source_id, entry)) = cache_read_guard.peek_lru() {
-                        if SystemTime::now() > entry.evict_after {
-                            let mut cache_write_guard = generator_ids_cache.write();
-                            cache_write_guard.pop(event_source_id);
-                            drop(cache_write_guard);
-                        } else {
-                            break;
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            }
-        });
 
         let plugin_registry_client = Arc::new(tokio::sync::Mutex::new(
             PluginRegistryServiceClient::from_env().await?,
@@ -148,12 +103,13 @@ impl GeneratorIdsCache {
         // each message.
         tokio::task::spawn(async move {
             let plugin_registry_client = Arc::clone(&plugin_registry_client);
+            let generator_ids_cache = generator_ids_cache.clone();
 
             updater_rx.for_each_concurrent(
                 updater_pool_size,
                 move |event_source_id: Uuid| {
                     let plugin_registry_client = Arc::clone(&plugin_registry_client);
-                    let generator_ids_cache = Arc::clone(&updater_generator_ids_cache);
+                    let generator_ids_cache = generator_ids_cache.clone();
 
                     async move {
                         let plugin_registry_client = Arc::clone(&plugin_registry_client);
@@ -217,20 +173,17 @@ impl GeneratorIdsCache {
                                 },
                             };
 
-                        let generator_ids_cache = Arc::clone(&generator_ids_cache);
-                        let mut cache_write_guard = generator_ids_cache.write();
-
-                        cache_write_guard.push(
+                        generator_ids_cache.insert(
                             event_source_id,
-                            GeneratorIdsEntry::new(generator_ids, ttl),
-                        );
-                    } // release the cache write lock
+                            generator_ids,
+                        ).await;
+                    }
                 })
                 .await;
         });
 
         Ok(Self {
-            generator_ids_cache,
+            generator_ids_cache: generator_ids_cache_retval,
             updater_tx,
         })
     }
@@ -259,7 +212,7 @@ impl GeneratorIdsCache {
     ///   Failures take two forms:
     ///
     ///   - GeneratorIdsCacheError::Retryable - e.g. we failed to enqueue an
-    ///     update request.
+    ///     update request but it should work eventually if retried.
     ///
     ///   - GeneratorIdsCacheError::Fatal - something happened which has
     ///     "poisoned" the GeneratorIdsCache instance such that all future
@@ -268,31 +221,12 @@ impl GeneratorIdsCache {
         &mut self,
         event_source_id: Uuid,
     ) -> Result<Option<Vec<Uuid>>, GeneratorIdsCacheError> {
-        let generator_ids_cache = self.generator_ids_cache.clone();
-        let cache_read_guard = generator_ids_cache.read();
-
-        if let Some(_) = cache_read_guard.peek(&event_source_id) {
-            let mut cache_write_guard = generator_ids_cache.write();
-
-            if let Some(entry) = cache_write_guard.get(&event_source_id) {
-                let generator_ids = entry.generator_ids.clone();
-
-                drop(cache_write_guard);
-
-                Ok(Some(generator_ids)) // cache hit!
-            } else {
-                drop(cache_write_guard);
-
-                if let Err(e) = self.updater_tx.try_send(event_source_id) {
-                    Err(e.into()) // cache miss, failed to enqueue an update
-                } else {
-                    Ok(None) // cache miss, successfully enqueued update
-                }
-            }
+        if let Some(generator_ids) = self.generator_ids_cache.get(&event_source_id) {
+            Ok(Some(generator_ids)) // cache hit
         } else if let Err(e) = self.updater_tx.try_send(event_source_id) {
             Err(e.into()) // cache miss, failed to enqueue an update
         } else {
             Ok(None) // cache miss, successfully enqueued update
         }
-    } // release the cache read lock
+    }
 }

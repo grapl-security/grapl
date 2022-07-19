@@ -10,7 +10,7 @@ pub struct GeneratorDispatcherConfigParams {
     pub worker_pool_size: usize,
 
     #[clap(long, env = "GENERATOR_IDS_CACHE_CAPACITY")]
-    pub generator_ids_cache_capacity: usize,
+    pub generator_ids_cache_capacity: u64,
 
     #[clap(long, env = "GENERATOR_IDS_CACHE_TTL_MS")]
     pub generator_ids_cache_ttl_ms: u64,

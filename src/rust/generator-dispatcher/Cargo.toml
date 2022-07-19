@@ -17,8 +17,7 @@ clap = { version = "3.0", default_features = false, features = [
 futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 kafka = { path = "../kafka", version = "*" }
-lru = { version = "0.7", features = ["hashbrown"] }
-parking_lot = "0.12"
+moka = { version = "0.9", features = ["future"] }
 plugin-registry = { path = "../plugin-registry" }
 plugin-work-queue = { path = "../plugin-work-queue" }
 rand = "0.8"
