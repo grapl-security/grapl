@@ -19,7 +19,7 @@ pub enum SysmonGeneratorError {
     Utf8Error(#[from] std::str::Utf8Error),
 
     #[error("error configuring tracing {0}")]
-    TraceError(#[from] opentelemetry::trace::TraceError),
+    SetupTracingError(#[from] grapl_tracing::SetupTracingError),
 
     // TODO Delete when main_legacy is removed
     #[error("error processing event {0}")]

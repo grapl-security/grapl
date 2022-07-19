@@ -1654,17 +1654,13 @@ dependencies = [
  "clap 3.1.18",
  "futures",
  "grapl-config",
+ "grapl-tracing",
  "kafka",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
  "plugin-work-queue",
  "rust-proto",
  "test-context",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
  "uuid",
 ]
 
@@ -1754,12 +1750,11 @@ dependencies = [
  "futures",
  "futures-retry",
  "grapl-config",
+ "grapl-tracing",
  "grapl-utils",
  "kafka",
  "lazy_static",
  "lru",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
  "rusoto_core",
  "rusoto_credential",
  "rusoto_dynamodb",
@@ -1769,9 +1764,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
  "uuid",
 ]
 
@@ -1792,9 +1784,8 @@ dependencies = [
  "async-trait",
  "color-eyre",
  "eyre",
+ "grapl-tracing",
  "log",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
  "rusoto_cloudwatch",
  "rusoto_core",
  "rusoto_credential",
@@ -1803,9 +1794,6 @@ dependencies = [
  "rusoto_sqs",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -1818,6 +1806,19 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "grapl-tracing"
+version = "0.0.1"
+dependencies = [
+ "opentelemetry 0.16.0",
+ "opentelemetry-jaeger",
+ "thiserror",
+ "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
 ]
 
@@ -2498,12 +2499,11 @@ dependencies = [
  "failure",
  "futures",
  "grapl-config",
+ "grapl-tracing",
  "grapl-utils",
  "hex",
  "hmap",
  "kafka",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
  "quickcheck",
  "quickcheck_macros",
  "rusoto_core",
@@ -2518,9 +2518,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
  "uuid",
 ]
 
@@ -2799,17 +2796,13 @@ dependencies = [
  "async-trait",
  "endpoint-plugin",
  "futures",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
+ "grapl-tracing",
  "rust-proto",
  "serde",
  "serde_json",
  "thiserror",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
  "uuid",
 ]
 
@@ -2946,17 +2939,13 @@ dependencies = [
  "bytes",
  "clap 3.1.18",
  "futures",
+ "grapl-tracing",
  "kafka",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
  "rust-proto",
  "test-context",
  "thiserror",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
  "uuid",
 ]
 
@@ -4312,18 +4301,14 @@ dependencies = [
  "endpoint-plugin",
  "futures",
  "generator-sdk",
+ "grapl-tracing",
  "kafka",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
  "rust-proto",
  "sysmon-parser",
  "test-context",
  "thiserror",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
  "uuid",
 ]
 
