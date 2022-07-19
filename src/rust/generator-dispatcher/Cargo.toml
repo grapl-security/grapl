@@ -15,7 +15,6 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 futures = "0.3"
-grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
 kafka = { path = "../kafka", version = "*" }
 moka = { version = "0.9", features = ["future"] }

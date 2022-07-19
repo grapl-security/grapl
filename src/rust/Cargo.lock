@@ -1650,7 +1650,6 @@ dependencies = [
  "bytes",
  "clap 3.2.12",
  "futures",
- "grapl-config",
  "grapl-tracing",
  "kafka",
  "moka 0.9.1",
@@ -2226,14 +2225,10 @@ version = "0.1.0"
 dependencies = [
  "clap 3.2.12",
  "futures",
+ "grapl-tracing",
  "kafka",
- "opentelemetry 0.16.0",
- "opentelemetry-jaeger",
  "tokio",
  "tracing",
- "tracing-appender",
- "tracing-opentelemetry 0.16.0",
- "tracing-subscriber",
 ]
 
 [[package]]
