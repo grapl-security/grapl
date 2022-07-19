@@ -35,6 +35,7 @@ pub mod test {
         Query,
     };
     use graph_merger::upserter::GraphMergeHelper;
+    use grapl_tracing::setup_tracing;
     use rust_proto::graplinc::grapl::api::graph::v1beta1::{
         IdentifiedGraph,
         IdentifiedNode,
@@ -113,14 +114,13 @@ pub mod test {
         serde_json::from_slice(&response.json).expect("response failed to parse")
     }
 
-    fn init_test_env() {
-        let subscriber = ::tracing_subscriber::FmtSubscriber::builder()
-            .with_env_filter(::tracing_subscriber::EnvFilter::from_default_env())
-            .finish();
-        let _ = ::tracing::subscriber::set_global_default(subscriber);
+    const SERVICE_NAME: &'static str = "graph-merger-test-merging";
 
+    fn init_test_env() {
         static START: Once = Once::new();
         START.call_once(|| {
+            let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
+
             let schema = Schema::new()
                 .add_definition(
                     SchemaDefinition::new("ExampleNode")

@@ -77,7 +77,7 @@ pub struct PluginRegistryDbConfig {
     plugin_registry_db_password: String,
 }
 
-#[derive(clap::Parser, Debug)]
+#[derive(clap::Parser, Clone, Debug)]
 pub struct PluginRegistryServiceConfig {
     #[clap(long, env = "PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID")]
     pub bucket_aws_account_id: String,
@@ -101,7 +101,15 @@ pub struct PluginRegistryServiceConfig {
         default_value = "250"
     )]
     pub artifact_size_limit_mb: usize,
-    // --- Pass through a couple env vars also used for this binary
+    #[clap(flatten)]
+    pub passthrough_vars: PluginExecutionPassthroughVars,
+}
+
+#[derive(clap::Parser, Clone, Debug, Default)]
+pub struct PluginExecutionPassthroughVars {
+    // Pass through a couple env vars also used for the plugin-registry service
+    // Since they're used in both ways - locally for this service, and the
+    // spawned plugins - I decided against prefixing PLUGIN_EXECUTION_.
     #[clap(long, env)]
     pub rust_log: String,
     #[clap(long, env)]

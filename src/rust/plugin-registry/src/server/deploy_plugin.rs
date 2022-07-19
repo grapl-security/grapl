@@ -46,7 +46,7 @@ static HARDCODED_PLUGIN_RUNTIME: PluginRuntime = PluginRuntime::HaxDocker;
 
 pub fn get_job(
     plugin: &PluginRow,
-    service_config: &PluginRegistryServiceConfig,
+    service_config: PluginRegistryServiceConfig,
     cli: &NomadCli,
     plugin_runtime: &PluginRuntime,
 ) -> Result<models::Job, NomadCliError> {
@@ -55,33 +55,32 @@ pub fn get_job(
         let bucket = &service_config.bucket_name;
         get_s3_url(bucket, key)
     };
+    let passthru = service_config.passthrough_vars;
     match plugin_runtime {
         PluginRuntime::HaxDocker => {
             let job_file_hcl = static_files::HAX_DOCKER_PLUGIN_JOB;
             let job_file_vars: NomadVars = HashMap::from([
-                (
-                    "aws_account_id",
-                    service_config.bucket_aws_account_id.to_owned(),
-                ),
+                ("aws_account_id", service_config.bucket_aws_account_id),
                 ("plugin_artifact_url", plugin_artifact_url),
                 (
                     "plugin_runtime_image",
-                    service_config.hax_docker_plugin_runtime_image.to_owned(),
+                    service_config.hax_docker_plugin_runtime_image,
                 ),
                 (
                     "plugin_execution_image",
-                    service_config.plugin_execution_image.to_owned(),
+                    service_config.plugin_execution_image,
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("tenant_id", plugin.tenant_id.to_string()),
-                ("rust_log", service_config.rust_log.to_owned()),
+                // Passthrough vars
+                ("rust_log", passthru.rust_log),
                 (
                     "otel_exporter_jaeger_agent_host",
-                    service_config.otel_exporter_jaeger_agent_host.to_owned(),
+                    passthru.otel_exporter_jaeger_agent_host,
                 ),
                 (
                     "otel_exporter_jaeger_agent_port",
-                    service_config.otel_exporter_jaeger_agent_port.to_owned(),
+                    passthru.otel_exporter_jaeger_agent_port,
                 ),
             ]);
             cli.parse_hcl2(job_file_hcl, job_file_vars)
@@ -91,28 +90,19 @@ pub fn get_job(
             // efforts.
             let job_file_hcl = static_files::PLUGIN_JOB;
             let job_file_vars: NomadVars = HashMap::from([
-                (
-                    "aws_account_id",
-                    service_config.bucket_aws_account_id.to_owned(),
-                ),
-                (
-                    "kernel_artifact_url",
-                    service_config.kernel_artifact_url.to_owned(),
-                ),
+                ("aws_account_id", service_config.bucket_aws_account_id),
+                ("kernel_artifact_url", service_config.kernel_artifact_url),
                 ("plugin_artifact_url", plugin_artifact_url),
                 (
                     "plugin_bootstrap_container_image",
-                    service_config.plugin_bootstrap_container_image.to_owned(),
+                    service_config.plugin_bootstrap_container_image,
                 ),
                 (
                     "plugin_execution_image",
-                    service_config.plugin_execution_image.to_owned(),
+                    service_config.plugin_execution_image,
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
-                (
-                    "rootfs_artifact_url",
-                    service_config.rootfs_artifact_url.to_owned(),
-                ),
+                ("rootfs_artifact_url", service_config.rootfs_artifact_url),
                 ("tenant_id", plugin.tenant_id.to_string()),
             ]);
             cli.parse_hcl2(job_file_hcl, job_file_vars)
@@ -132,7 +122,12 @@ pub async fn deploy_plugin(
     // --- Convert HCL to JSON Job model
     let job_name = plugin_nomad_job::job_name();
 
-    let job = get_job(&plugin, service_config, cli, &HARDCODED_PLUGIN_RUNTIME)?;
+    let job = get_job(
+        &plugin,
+        service_config.clone(),
+        cli,
+        &HARDCODED_PLUGIN_RUNTIME,
+    )?;
 
     // --- Deploy namespace
     let namespace_name = plugin_nomad_job::namespace_name(&plugin.plugin_id);
@@ -187,9 +182,7 @@ mod tests {
             bucket_name: Default::default(),
             rootfs_artifact_url: Default::default(),
             artifact_size_limit_mb: Default::default(),
-            otel_exporter_jaeger_agent_host: Default::default(),
-            otel_exporter_jaeger_agent_port: Default::default(),
-            rust_log: Default::default(),
+            passthrough_vars: Default::default(),
         }
     }
     /// This is used to keep test coverage on the eventually-desirable-but-
@@ -201,14 +194,14 @@ mod tests {
             plugin_id: arbitrary_uuid,
             tenant_id: arbitrary_uuid,
             display_name: "arbitrary".to_owned(),
-            plugin_type: "analyzer".to_owned(),
+            plugin_type: "generator".to_owned(),
             event_source_id: None,
             artifact_s3_key: "arbitrary".to_owned(),
         };
         let service_config = arbitrary_service_config();
         let cli = NomadCli::default();
         let plugin_runtime = PluginRuntime::Firecracker;
-        get_job(&plugin, &service_config, &cli, &plugin_runtime)?;
+        get_job(&plugin, service_config, &cli, &plugin_runtime)?;
         Ok(())
     }
 }

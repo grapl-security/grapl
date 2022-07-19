@@ -1,6 +1,7 @@
 python_requirements(
     module_mapping={
         "pyjwt": ["jwt"],
+        "python-hcl2": ["hcl2"],
         "python-nomad": ["nomad"],
         "argon2-cffi": ["argon2"],
         "opentelemetry-api": ["opentelemetry"],
