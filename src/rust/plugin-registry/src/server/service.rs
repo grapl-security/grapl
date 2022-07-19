@@ -31,6 +31,7 @@ use rust_proto::{
 };
 use tokio::net::TcpListener;
 use tonic::async_trait;
+use uuid::Uuid;
 
 use super::{
     create_plugin::upload_stream_multipart_to_s3,
@@ -252,15 +253,19 @@ impl PluginRegistryApi for PluginRegistry {
         &self,
         request: GetGeneratorsForEventSourceRequest,
     ) -> Result<GetGeneratorsForEventSourceResponse, Self::Error> {
-        Ok(GetGeneratorsForEventSourceResponse {
-            plugin_ids: self
-                .db_client
-                .get_generators_for_event_source(&request.event_source_id)
-                .await?
-                .iter()
-                .map(|row| row.plugin_id)
-                .collect(),
-        })
+        let plugin_ids: Vec<Uuid> = self
+            .db_client
+            .get_generators_for_event_source(&request.event_source_id)
+            .await?
+            .iter()
+            .map(|row| row.plugin_id)
+            .collect();
+
+        if plugin_ids.is_empty() {
+            Err(PluginRegistryServiceError::NotFound)
+        } else {
+            Ok(GetGeneratorsForEventSourceResponse { plugin_ids })
+        }
     }
 
     #[allow(dead_code)]

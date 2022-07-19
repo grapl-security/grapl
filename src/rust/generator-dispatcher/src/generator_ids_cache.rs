@@ -11,15 +11,16 @@ use futures::{
     StreamExt,
 };
 use moka::future::Cache;
-use plugin_registry::client::{
-    FromEnv as PRFromEnv,
-    PluginRegistryServiceClient,
-    PluginRegistryServiceClientError,
-};
+use plugin_registry::client::FromEnv as PRFromEnv;
 use rand::prelude::*;
-use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
-    GetGeneratorsForEventSourceRequest,
-    GetGeneratorsForEventSourceResponse,
+use rust_proto::{
+    graplinc::grapl::api::plugin_registry::v1beta1::{
+        GetGeneratorsForEventSourceRequest,
+        GetGeneratorsForEventSourceResponse,
+        PluginRegistryServiceClient,
+        PluginRegistryServiceClientError,
+    },
+    protocol::status::Code,
 };
 use thiserror::Error;
 use uuid::Uuid;
@@ -135,7 +136,17 @@ impl GeneratorIdsCache {
                                     drop(client_guard); // release the client lock
                                     let mut result: Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> = Err(e);
                                     let mut n = 0;
-                                    while let Err(e) = result {
+                                    while let Err(ref e) = result {
+                                        if let PluginRegistryServiceClientError::ErrorStatus(status) = e {
+                                            if let Code::NotFound = status.code() {
+                                                tracing::warn!(
+                                                    message = "found no generators for event source",
+                                                    event_source_id =% event_source_id,
+                                                );
+                                                break // don't retry NotFound
+                                            }
+                                        }
+
                                         n += 1;
                                         let millis = 2_u64.pow(n) + rand::thread_rng()
                                             .gen_range(0..2_u64.pow(n - 1));

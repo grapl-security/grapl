@@ -1,13 +1,15 @@
 use std::time::Duration;
 
 use async_trait;
-pub use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
-    PluginRegistryServiceClient,
-    PluginRegistryServiceClientError,
-};
-use rust_proto::protocol::{
-    healthcheck::client::HealthcheckClient,
-    service_client::NamedService,
+use rust_proto::{
+    graplinc::grapl::api::plugin_registry::v1beta1::{
+        PluginRegistryServiceClient,
+        PluginRegistryServiceClientError,
+    },
+    protocol::{
+        healthcheck::client::HealthcheckClient,
+        service_client::NamedService,
+    },
 };
 use tonic::transport::Endpoint;
 
