@@ -40,7 +40,7 @@ pub mod service;
 pub mod upsert_util;
 pub mod upserter;
 
-const SERVICE_NAME: &'static str = "grapl-merger";
+const SERVICE_NAME: &'static str = "graph-merger";
 
 #[tokio::main]
 async fn main() -> Result<(), GraphMergerError> {
