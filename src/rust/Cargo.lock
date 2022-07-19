@@ -2229,6 +2229,7 @@ dependencies = [
  "kafka",
  "tokio",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

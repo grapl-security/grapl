@@ -8,6 +8,7 @@ use kafka::{
     ConfigurationError,
     RetryProcessor,
 };
+use tracing::instrument::WithSubscriber;
 
 #[derive(clap::Parser, Clone, Debug)]
 struct Config {
