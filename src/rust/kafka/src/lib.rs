@@ -218,7 +218,7 @@ impl<T: SerDe> RetryProducer<T> {
     #[tracing::instrument(err, skip(self))]
     pub async fn send(&self, mut msg: Envelope<T>) -> Result<(), ProducerError> {
         msg.metadata.retry_count += 1;
-        self.producer.send(msg.clone()).await
+        self.producer.send(msg).await
     }
 }
 
