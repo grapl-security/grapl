@@ -117,10 +117,10 @@ pub mod test {
     const SERVICE_NAME: &'static str = "graph-merger-test-merging";
 
     fn init_test_env() {
-        let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
-
         static START: Once = Once::new();
         START.call_once(|| {
+            let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
+
             let schema = Schema::new()
                 .add_definition(
                     SchemaDefinition::new("ExampleNode")
