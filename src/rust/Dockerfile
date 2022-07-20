@@ -300,3 +300,8 @@ ENTRYPOINT ["/generator-dispatcher"]
 FROM rust-dist as event-source-deploy
 COPY --from=build /outputs/event-source /
 ENTRYPOINT ["/event-source"]
+
+##### kafka-retry
+FROM rust-dist as kafka-retry-deploy
+COPY --from=build /outputs/kafka-retry /
+ENTRYPOINT ["/kafka-retry"]

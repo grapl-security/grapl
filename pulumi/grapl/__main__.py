@@ -75,6 +75,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
+        "kafka-retry": builder.build_with_tag("kafka-retry"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "organization-management": builder.build_with_tag("organization-management"),
         "pipeline-ingress": builder.build_with_tag("pipeline-ingress"),
@@ -183,6 +184,7 @@ def main() -> None:
 
     kafka_services = (
         "generator-dispatcher",
+        "generator-dispatcher-retry",
         "graph-generator",
         "graph-merger",
         "node-identifier",
@@ -196,6 +198,7 @@ def main() -> None:
     }
     kafka_consumer_services = (
         "generator-dispatcher",
+        "generator-dispatcher-retry",
         "graph-generator",
         "graph-merger",
         "node-identifier",

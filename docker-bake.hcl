@@ -167,6 +167,7 @@ group "rust-services" {
     "generator-execution-sidecar",
     "graph-merger",
     "grapl-web-ui",
+    "kafka-retry",
     "node-identifier",
     "organization-management",
     "pipeline-ingress",
@@ -317,6 +318,14 @@ target "event-source" {
   target   = "event-source-deploy"
   tags = [
     upstream_aware_tag("event-source")
+  ]
+}
+
+target "kafka-retry" {
+  inherits = ["_rust-base"]
+  target   = "kafka-retry-deploy"
+  tags = [
+    upstream_aware_tag("kafka-retry")
   ]
 }
 
