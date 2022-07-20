@@ -71,12 +71,11 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
         request_id: RequestId,
     ) -> Result<(), PluginWorkProcessorError> {
         let plugin_id = config.plugin_id;
-        // TODO: Replace this with feeding the process-result back to Plugin Work Queue
-        let success = process_result.is_ok();
+        let graph_description = process_result.ok();
         let ack_request = AcknowledgeGeneratorRequest {
             plugin_id,
             request_id,
-            success,
+            graph_description,
         };
         pwq_client.acknowledge_generator(ack_request).await?;
         Ok(())

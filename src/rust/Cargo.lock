@@ -3053,6 +3053,7 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
+ "kafka",
  "rust-proto",
  "sqlx",
  "thiserror",

@@ -3,7 +3,6 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use clap::Parser;
 use futures::StreamExt;
 use grapl_tracing::{
     setup_tracing,
@@ -92,10 +91,7 @@ impl AsyncTestContext for NodeIdentifierTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        let consumer_config = ConsumerConfig {
-            topic: CONSUMER_TOPIC.to_string(),
-            ..ConsumerConfig::parse()
-        };
+        let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 
         NodeIdentifierTestContext {
             pipeline_ingress_client,
