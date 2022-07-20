@@ -938,8 +938,8 @@ job "grapl-core" {
         # TODO: should equal number of raw-logs-retry partitions
         KAFKA_RETRY_WORKER_POOL_SIZE = 10
 
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
       }
 
       service {
