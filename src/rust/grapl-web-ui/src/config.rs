@@ -24,19 +24,19 @@ fn parse_url(url: String) -> Result<Url, ConfigError> {
     Url::parse(url.as_str()).map_err(|source| ConfigError::UrlParse { url, source })
 }
 
-#[derive(Clone)]
-pub(crate) struct Config {
+pub struct Config {
     pub dynamodb_client: DynamoDbClient,
-    pub bind_address: String,
+    pub listener: std::net::TcpListener,
     pub session_key: [u8; KEY_SIZE],
     pub user_auth_table_name: String,
     pub user_session_table_name: String,
     pub graphql_endpoint: GraphQlEndpointUrl,
     pub model_plugin_deployer_endpoint: ModelPluginDeployerEndpoint,
+    pub google_client_id: String,
 }
 
 #[derive(thiserror::Error, Debug)]
-pub(crate) enum ConfigError {
+pub enum ConfigError {
     #[error("unable to get required environment variable `{variable_name}`: {source}")]
     MissingEnvironmentVariable {
         variable_name: &'static str,
@@ -47,12 +47,16 @@ pub(crate) enum ConfigError {
         url: String,
         source: url::ParseError,
     },
+    #[error(transparent)]
+    BindAddress(#[from] std::io::Error),
 }
 
 impl Config {
     #[tracing::instrument(err)]
     pub fn from_env() -> Result<Self, ConfigError> {
-        let bind_address = get_env_var("GRAPL_WEB_UI_BIND_ADDRESS")?;
+        let bind_address =
+            std::env::var("GRAPL_WEB_UI_BIND_ADDRESS").unwrap_or("127.0.0.1:1234".to_string());
+        let listener = std::net::TcpListener::bind(bind_address)?;
 
         let user_auth_table_name = get_env_var("GRAPL_USER_AUTH_TABLE")?;
         let user_session_table_name = get_env_var("GRAPL_USER_SESSION_TABLE")?;
@@ -72,14 +76,17 @@ impl Config {
             .map(parse_url)?
             .map(ModelPluginDeployerEndpoint::from)?;
 
+        let google_client_id = get_env_var("GRAPL_GOOGLE_CLIENT_ID")?;
+
         Ok(Config {
             dynamodb_client,
-            bind_address,
+            listener,
             session_key,
             user_auth_table_name,
             user_session_table_name,
             graphql_endpoint,
             model_plugin_deployer_endpoint,
+            google_client_id,
         })
     }
 }

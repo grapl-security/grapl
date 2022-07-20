@@ -14,7 +14,7 @@ use crate::authn::AuthenticatedUser;
 // We have a new type for this to differentiate between the URL for this backend service and that
 // for others
 #[derive(Clone, Debug)]
-pub(crate) struct ModelPluginDeployerEndpoint(url::Url);
+pub struct ModelPluginDeployerEndpoint(url::Url);
 
 impl From<url::Url> for ModelPluginDeployerEndpoint {
     fn from(u: url::Url) -> Self {
