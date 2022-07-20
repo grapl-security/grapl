@@ -1294,8 +1294,8 @@ job "grapl-core" {
         KAFKA_SASL_USERNAME     = var.kafka_credentials["plugin-work-queue"].sasl_username
         KAFKA_SASL_PASSWORD     = var.kafka_credentials["plugin-work-queue"].sasl_password
 
-        KAFKA_PRODUCER_TOPIC_GENERATOR = "generated-graphs"
-        # KAFKA_PRODUCER_TOPIC_ANALYZER = "TODO"
+        GENERATOR_KAFKA_PRODUCER_TOPIC = "generated-graphs"
+        # ANALYZER_KAFKA_PRODUCER_TOPIC = "TODO"
 
         # common Rust env vars
         RUST_BACKTRACE = local.rust_backtrace
