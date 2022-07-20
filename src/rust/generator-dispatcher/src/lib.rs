@@ -118,42 +118,48 @@ impl GeneratorDispatcher {
                                     .generator_ids_for_event_source(envelope.metadata.event_source_id)
                                     .await
                                 {
-                                    Ok(ids) => {
-                                        if let Some(generator_ids) = ids {
-                                            enqueue_plugin_work(
-                                                plugin_work_queue_client.clone(),
-                                                generator_ids,
-                                                envelope
-                                            ).await
-                                        } else {
-                                            // cache miss, but an update was
-                                            // successfully enqueued so we'll
-                                            // retry the message
-                                            retry_message(
-                                                &raw_logs_retry_producer,
-                                                envelope
-                                            ).await?;
-                                            Ok(())
-                                        }
-                                    }
+                                    Ok(Some(generator_ids)) => {
+                                        // cache hit
+                                        enqueue_plugin_work(
+                                            plugin_work_queue_client.clone(),
+                                            generator_ids,
+                                            envelope
+                                        ).await?;
+
+                                        Ok(())
+                                    },
+                                    Ok(None) => {
+                                        // cache miss, but an update was
+                                        // successfully enqueued so we'll retry
+                                        // the message
+                                        retry_message(
+                                            &raw_logs_retry_producer,
+                                            envelope
+                                        ).await?;
+
+                                        Ok(())
+                                    },
+                                    Err(GeneratorIdsCacheError::Retryable(reason)) => {
+                                        // retryable cache error, so we'll retry
+                                        // the message
+                                        tracing::warn!(
+                                            message = "generator IDs cache error, retrying message",
+                                            reason =% reason,
+                                        );
+
+                                        retry_message(
+                                            &raw_logs_retry_producer,
+                                            envelope
+                                        ).await?;
+
+                                        Ok(())
+                                    },
                                     Err(cache_err) => {
-                                        if let GeneratorIdsCacheError::Retryable(reason) = cache_err {
-                                            tracing::warn!(
-                                                message = "generator IDs cache error, retrying message",
-                                                reason =% reason,
-                                            );
-                                            retry_message(
-                                                &raw_logs_retry_producer,
-                                                envelope
-                                            ).await?;
-                                            Ok(())
-                                        } else {
-                                            // fatal error, bailing out
-                                            Err(GeneratorDispatcherError::from(cache_err))
-                                        }
+                                        // fatal error, bailing out
+                                        Err(GeneratorDispatcherError::from(cache_err))
                                     }
                                 }
-                            }
+                            },
                             Err(e) => {
                                 tracing::error!(
                                     message="error processing kafka message",
