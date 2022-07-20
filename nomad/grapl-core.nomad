@@ -203,6 +203,11 @@ variable "user_session_table" {
   description = "What is the name of the DynamoDB user session table?"
 }
 
+variable "google_client_id" {
+  type        = string
+  description = "Google client ID used for authenticating web users via Sign In With Google"
+}
+
 variable "dns_server" {
   type        = string
   description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
@@ -989,6 +994,7 @@ job "grapl-core" {
         GRAPL_WEB_UI_BIND_ADDRESS            = "0.0.0.0:${NOMAD_PORT_web-ui-port}"
         GRAPL_GRAPHQL_ENDPOINT               = "http://${NOMAD_UPSTREAM_ADDR_graphql-endpoint}"
         GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
+        GRAPL_GOOGLE_CLIENT_ID               = var.google_client_id
         RUST_LOG                             = var.rust_log
         RUST_BACKTRACE                       = local.rust_backtrace
       }

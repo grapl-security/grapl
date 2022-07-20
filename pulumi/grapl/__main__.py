@@ -210,6 +210,12 @@ def main() -> None:
 
     observability_env_vars = observability_env_vars_for_local()
 
+    # This Google client ID is used by grapl-web-ui for authenticating users via Sign In With Google.
+    # TODO: This should be moved to Pulumi config somehwo, but I'm not sure the best way to do that atm.
+    google_client_id = (
+        "340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com"
+    )
+
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         aws_env_vars_for_local=aws_env_vars_for_local,
@@ -234,6 +240,7 @@ def main() -> None:
         test_user_name=config.GRAPL_TEST_USER_NAME,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
+        google_client_id=google_client_id,
     )
 
     provision_vars: Final[NomadVars] = {
@@ -520,6 +527,10 @@ def main() -> None:
     pulumi.export(
         "plugin-work-queue-db", plugin_work_queue_db.to_nomad_service_db_args()
     )
+
+    pulumi.export("user-auth-table", dynamodb_tables.user_auth_table.name)
+    pulumi.export("user-session-table", dynamodb_tables.user_session_table.name)
+
     # Not currently imported in integration tests:
     # - uid-allocator-db
     # - plugin-registry-db
