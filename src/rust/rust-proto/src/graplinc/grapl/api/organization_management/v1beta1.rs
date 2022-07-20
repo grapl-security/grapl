@@ -194,12 +194,13 @@ impl serde_impl::ProtobufSerializable for CreateUserResponse {
 pub mod client {
     use futures::FutureExt;
     use thiserror::Error;
-    use tokio::time::error::Elapsed;
     use tonic::Request;
+    use crate::protocol::endpoint::Endpoint;
 
+    use crate::protocol::service_client::ConnectError;
     use crate::{
         protobufs::graplinc::grapl::api::organization_management::v1beta1::organization_management_service_client::OrganizationManagementServiceClient as OrganizationManagementServiceClientProto,
-        protocol::healthcheck::HealthcheckError,
+        protocol::{service_client::Connectable},
         SerDeError,
     };
 
@@ -209,19 +210,6 @@ pub mod client {
         CreateUserRequest,
         CreateUserResponse,
     };
-
-    #[non_exhaustive]
-    #[derive(Debug, Error)]
-    pub enum ConfigurationError {
-        #[error("failed to connect {0}")]
-        ConnectionError(#[from] tonic::transport::Error),
-
-        #[error("healthcheck failed {0}")]
-        HealtcheckFailed(#[from] HealthcheckError),
-
-        #[error("timeout elapsed {0}")]
-        TimeoutElapsed(#[from] Elapsed),
-    }
 
     #[non_exhaustive]
     #[derive(Debug, Error)]
@@ -237,17 +225,16 @@ pub mod client {
         proto_client: OrganizationManagementServiceClientProto<tonic::transport::Channel>,
     }
 
-    impl OrganizationManagementClient {
-        pub async fn connect<T>(endpoint: T) -> Result<Self, ConfigurationError>
-        where
-            T: std::convert::TryInto<tonic::transport::Endpoint>,
-            T::Error: std::error::Error + Send + Sync + 'static,
-        {
+    #[async_trait::async_trait]
+    impl Connectable for OrganizationManagementClient {
+        async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
             Ok(OrganizationManagementClient {
                 proto_client: OrganizationManagementServiceClientProto::connect(endpoint).await?,
             })
         }
+    }
 
+    impl OrganizationManagementClient {
         pub async fn create_organization(
             &mut self,
             create_organization_request: CreateOrganizationRequest,

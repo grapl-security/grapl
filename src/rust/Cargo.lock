@@ -1464,6 +1464,7 @@ dependencies = [
  "grapl-config",
  "grapl-utils",
  "rust-proto",
+ "rust-proto-clients",
  "sqlx",
  "test-log",
  "thiserror",
@@ -1711,6 +1712,7 @@ dependencies = [
  "grapl-config",
  "moka 0.8.6",
  "rust-proto",
+ "rust-proto-clients",
  "serde",
  "test-context",
  "thiserror",
@@ -3105,6 +3107,7 @@ dependencies = [
  "grapl-tracing",
  "kafka",
  "rust-proto",
+ "rust-proto-clients",
  "test-context",
  "thiserror",
  "tokio",
@@ -3217,6 +3220,7 @@ dependencies = [
  "rusoto_core",
  "rusoto_s3",
  "rust-proto",
+ "rust-proto-clients",
  "serde_json",
  "sqlx",
  "tempfile",
@@ -3946,6 +3950,7 @@ dependencies = [
 name = "rust-proto"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "bytes",
  "futures",
  "grapl-utils",
@@ -3964,6 +3969,14 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "rust-proto-clients"
+version = "0.0.1"
+dependencies = [
+ "clap 3.2.12",
+ "rust-proto",
 ]
 
 [[package]]

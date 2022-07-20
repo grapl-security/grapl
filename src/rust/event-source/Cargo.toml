@@ -23,6 +23,7 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
   "fmt"
 ] }
 rust-proto = { path = "../rust-proto" }
+rust-proto-clients = { path = "../rust-proto-clients" }
 thiserror = "1.0"
 clap = { version = "3.0", default_features = false, features = [
   "std",

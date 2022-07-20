@@ -7,6 +7,7 @@ description = "Wrapper library for Grapl's protocol buffers"
 license = "MIT"
 
 [dependencies]
+async-trait = "0.1"
 bytes = "1.1"
 futures = "0.3"
 grapl-utils = { path = "../grapl-utils" }

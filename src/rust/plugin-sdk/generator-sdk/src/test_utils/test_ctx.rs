@@ -11,11 +11,12 @@ use rust_proto::{
     },
     protocol::{
         error::ServeError,
-        healthcheck::{
-            client::HealthcheckClient,
-            HealthcheckStatus,
-        },
+        healthcheck::HealthcheckStatus,
     },
+};
+use rust_proto_clients::{
+    get_grpc_client,
+    GeneratorClientConfig,
 };
 use test_context::{
     futures::channel::oneshot::Sender,
@@ -58,10 +59,6 @@ impl GeneratorTestContextInternals {
             .local_addr()
             .expect("failed to obtain socket address");
 
-        // construct an http URI clients can use to connect to server bound to
-        // the port.
-        let endpoint = format!("http://{}:{}", socket_address.ip(), socket_address.port());
-
         let (server, shutdown_tx) = GeneratorServer::new(
             generator_api,
             tcp_listener,
@@ -69,20 +66,14 @@ impl GeneratorTestContextInternals {
             Duration::from_millis(50),
         );
 
-        let service_name = server.service_name();
-
         let server_handle = tokio::task::spawn(server.serve());
 
-        HealthcheckClient::wait_until_healthy(
-            endpoint.clone(),
-            service_name,
-            Duration::from_millis(250),
-            Duration::from_millis(10),
-        )
-        .await
-        .expect("Generator never reported healthy");
+        let client_config = GeneratorClientConfig {
+            generator_client_address: socket_address,
+            generator_healthcheck_polling_interval_ms: 50,
+        };
 
-        let client = GeneratorServiceClient::connect(endpoint)
+        let client = get_grpc_client(client_config)
             .await
             .expect("could not configure client");
 

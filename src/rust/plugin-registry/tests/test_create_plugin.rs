@@ -1,15 +1,15 @@
 #![cfg(feature = "integration_tests")]
 
 use bytes::Bytes;
+use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
-use plugin_registry::client::FromEnv;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     GetPluginRequest,
     GetPluginResponse,
     PluginMetadata,
-    PluginRegistryServiceClient,
     PluginType,
 };
+use rust_proto_clients::{PluginRegistryClientConfig, get_grpc_client};
 
 /// For now, this is just a smoke test. This test can and should evolve as
 /// the service matures.
@@ -18,7 +18,8 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
     tracing::debug!(
         env=?std::env::args(),
     );
-    let mut client = PluginRegistryServiceClient::from_env().await?;
+    let client_config = PluginRegistryClientConfig::parse();
+    let mut client = get_grpc_client(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

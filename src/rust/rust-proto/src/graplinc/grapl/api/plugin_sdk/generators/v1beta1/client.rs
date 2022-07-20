@@ -7,7 +7,12 @@ use crate::{
     graplinc::grapl::api::plugin_sdk::generators::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as proto,
     protocol::{
-        service_client::NamedService,
+        endpoint::Endpoint,
+        service_client::{
+            ConnectError,
+            Connectable,
+            NamedService,
+        },
         status::Status,
     },
     SerDeError,
@@ -27,19 +32,17 @@ pub enum GeneratorServiceClientError {
 pub struct GeneratorServiceClient {
     proto_client: GeneratorServiceClientProto<tonic::transport::Channel>,
 }
-
-impl GeneratorServiceClient {
-    #[tracing::instrument(skip(), err)]
-    pub async fn connect<T>(endpoint: T) -> Result<Self, GeneratorServiceClientError>
-    where
-        T: std::convert::TryInto<tonic::transport::Endpoint> + Debug,
-        T::Error: std::error::Error + Send + Sync + 'static,
-    {
-        Ok(Self {
+#[async_trait::async_trait]
+impl Connectable for GeneratorServiceClient {
+    #[tracing::instrument(err)]
+    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        Ok(GeneratorServiceClient {
             proto_client: GeneratorServiceClientProto::connect(endpoint).await?,
         })
     }
+}
 
+impl GeneratorServiceClient {
     pub async fn run_generator(
         &mut self,
         request: native::RunGeneratorRequest,

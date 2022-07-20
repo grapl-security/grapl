@@ -16,11 +16,13 @@ use rust_proto::{
         },
     },
     protocol::{
+        endpoint::Endpoint,
         error::ServeError,
         healthcheck::{
             client::HealthcheckClient,
             HealthcheckStatus,
         },
+        service_client::Connectable,
         status::Status,
     },
 };
@@ -125,6 +127,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
         // construct an http URI clients can use to connect to server bound to
         // the port.
         let endpoint = format!("http://{}:{}", socket_address.ip(), socket_address.port());
+        let endpoint = Endpoint::from_shared(endpoint).expect("endpoint");
 
         let (server, shutdown_tx) = PipelineIngressServer::new(
             MockPipelineIngressApi {},

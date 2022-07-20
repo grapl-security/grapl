@@ -3,6 +3,7 @@
 use std::time::Duration;
 
 use bytes::Bytes;
+use clap::Parser;
 use futures::StreamExt;
 use grapl_tracing::{
     setup_tracing,
@@ -24,15 +25,12 @@ use rust_proto::{
             v1beta2::Envelope,
         },
     },
-    protocol::{
-        healthcheck::client::HealthcheckClient,
-        service_client::NamedService,
-    },
 };
 use test_context::{
     test_context,
     AsyncTestContext,
 };
+use rust_proto_clients::{PipelineIngressClientConfig, get_grpc_client};
 use tokio::sync::oneshot;
 use tracing::Instrument;
 use uuid::Uuid;
@@ -50,28 +48,8 @@ impl AsyncTestContext for PipelineIngressTestContext {
     async fn setup() -> Self {
         let _guard = setup_tracing("pipeline-ingress-integration-tests").expect("setup_tracing");
 
-        let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
-            .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
-
-        tracing::info!(
-            message = "waiting 10s for pipeline-ingress to report healthy",
-            endpoint = %endpoint,
-        );
-
-        HealthcheckClient::wait_until_healthy(
-            endpoint.clone(),
-            PipelineIngressClient::SERVICE_NAME,
-            Duration::from_millis(10000),
-            Duration::from_millis(500),
-        )
-        .await
-        .expect("pipeline-ingress never reported healthy");
-
-        tracing::info!("connecting pipeline-ingress gRPC client");
-        let grpc_client = PipelineIngressClient::connect(endpoint.clone())
-            .await
-            .expect("could not configure gRPC client");
-
+        let client_config = PipelineIngressClientConfig::parse();
+        let grpc_client = get_grpc_client(client_config).await.expect("client");
         let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 
         PipelineIngressTestContext {

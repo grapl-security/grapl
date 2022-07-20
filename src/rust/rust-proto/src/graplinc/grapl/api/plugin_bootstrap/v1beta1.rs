@@ -163,12 +163,11 @@ impl serde_impl::ProtobufSerializable for PluginPayload {
 pub mod client {
     use futures::FutureExt;
     use thiserror::Error;
-    use tokio::time::error::Elapsed;
     use tonic::Request;
 
     use crate::{
         protobufs::graplinc::grapl::api::plugin_bootstrap::v1beta1::plugin_bootstrap_service_client::PluginBootstrapServiceClient as PluginBootstrapServiceClientProto,
-        protocol::healthcheck::HealthcheckError,
+        protocol::{service_client::{Connectable, ConnectError}},
         SerDeError,
     };
 
@@ -176,19 +175,7 @@ pub mod client {
         GetBootstrapRequest,
         GetBootstrapResponse,
     };
-
-    #[non_exhaustive]
-    #[derive(Debug, Error)]
-    pub enum ConfigurationError {
-        #[error("failed to connect {0}")]
-        ConnectionError(#[from] tonic::transport::Error),
-
-        #[error("healthcheck failed {0}")]
-        HealtcheckFailed(#[from] HealthcheckError),
-
-        #[error("timeout elapsed {0}")]
-        TimeoutElapsed(#[from] Elapsed),
-    }
+    use crate::protocol::endpoint::Endpoint;
 
     #[non_exhaustive]
     #[derive(Debug, Error)]
@@ -204,17 +191,17 @@ pub mod client {
         proto_client: PluginBootstrapServiceClientProto<tonic::transport::Channel>,
     }
 
-    impl PluginBootstrapClient {
-        pub async fn connect<T>(endpoint: T) -> Result<Self, ConfigurationError>
-        where
-            T: std::convert::TryInto<tonic::transport::Endpoint>,
-            T::Error: std::error::Error + Send + Sync + 'static,
-        {
+    #[async_trait::async_trait]
+    impl Connectable for PluginBootstrapClient {
+        #[tracing::instrument(err)]
+        async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
             Ok(PluginBootstrapClient {
                 proto_client: PluginBootstrapServiceClientProto::connect(endpoint).await?,
             })
         }
+    }
 
+    impl PluginBootstrapClient {
         pub async fn get_bootstrap(
             &mut self,
             get_bootstrap_request: GetBootstrapRequest,

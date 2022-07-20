@@ -2,13 +2,18 @@
 
 use std::time::SystemTime;
 
-use event_source::client::FromEnv;
+use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::event_source::v1beta1 as es_api;
+use rust_proto_clients::{
+    get_grpc_client,
+    EventSourceClientConfig,
+};
 
 #[test_log::test(tokio::test)]
 async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = es_api::client::EventSourceServiceClient::from_env().await?;
+    let client_config = EventSourceClientConfig::parse();
+    let mut client = get_grpc_client(client_config).await?;
     let common_timeout = std::time::Duration::from_secs(5);
 
     let tenant_id = uuid::Uuid::new_v4();

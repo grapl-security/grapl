@@ -3,8 +3,9 @@
 use std::time::Duration;
 
 use bytes::Bytes;
+use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
-use plugin_registry::client::FromEnv;
+use rust_proto_clients::{get_grpc_client, PluginRegistryClientConfig};
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     DeployPluginRequest,
     GetPluginHealthRequest,
@@ -28,7 +29,8 @@ fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
 
 #[test_log::test(tokio::test)]
 async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = PluginRegistryServiceClient::from_env().await?;
+    let client_config = PluginRegistryClientConfig::parse();
+    let mut client = get_grpc_client(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -66,7 +68,8 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
 
 #[test_log::test(tokio::test)]
 async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = PluginRegistryServiceClient::from_env().await?;
+    let client_config = PluginRegistryClientConfig::parse();
+    let mut client = get_grpc_client(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -143,7 +146,8 @@ async fn assert_health(
 /// So we *expect* this call to fail since it's an arbitrary PluginID that
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = PluginRegistryServiceClient::from_env().await?;
+    let client_config = PluginRegistryClientConfig::parse();
+    let mut client = get_grpc_client(client_config).await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 
