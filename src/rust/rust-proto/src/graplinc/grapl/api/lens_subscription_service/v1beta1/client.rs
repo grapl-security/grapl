@@ -1,5 +1,3 @@
-#![allow(warnings)]
-
 use futures::Stream;
 use tokio_stream::StreamExt;
 

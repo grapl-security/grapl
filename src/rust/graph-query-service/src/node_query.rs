@@ -1,9 +1,5 @@
 use std::{
     cell::RefCell,
-    collections::{
-        HashMap,
-        HashSet,
-    },
     rc::Rc,
 };
 
@@ -25,6 +21,10 @@ use rust_proto::graplinc::grapl::{
         PropertyName,
         Uid,
     },
+};
+use rustc_hash::{
+    FxHashMap,
+    FxHashSet,
 };
 
 use crate::{
@@ -75,7 +75,7 @@ pub async fn fetch_node_properties(
 ) -> Result<Option<Vec<StringField>>, Box<dyn std::error::Error + Send + Sync + 'static>> {
     let mut fields = vec![];
     if !node_properties_query.string_filters.is_empty() {
-        let mut filter_names: HashSet<_> = node_properties_query.string_filters.keys().collect();
+        let mut filter_names: FxHashSet<_> = node_properties_query.string_filters.keys().collect();
 
         for prop_name in node_properties_query.string_filters.keys() {
             let property = property_query_executor
@@ -105,10 +105,10 @@ pub async fn fetch_edges(
     tenant_id: uuid::Uuid,
     property_query_executor: PropertyQueryExecutor,
 ) -> Result<
-    Option<HashMap<EdgeName, Vec<EdgeRow>>>,
+    Option<FxHashMap<EdgeName, Vec<EdgeRow>>>,
     Box<dyn std::error::Error + Send + Sync + 'static>,
 > {
-    let mut edge_rows = HashMap::new();
+    let mut edge_rows = FxHashMap::default();
     for (src_id, edge_name) in graph_query.edge_filters.keys() {
         if *src_id != node_properties_query.query_id {
             continue;
@@ -146,8 +146,11 @@ pub async fn fetch_node_with_edges(
         return Ok(None);
     }
 
-    let mut node =
-        NodePropertiesView::new(uid, node_properties_query.node_type.clone(), HashMap::new());
+    let mut node = NodePropertiesView::new(
+        uid,
+        node_properties_query.node_type.clone(),
+        FxHashMap::default(),
+    );
 
     let node_properties = fetch_node_properties(
         node_properties_query,
@@ -292,13 +295,16 @@ impl NodeQuery {
         let inner_query = NodePropertyQuery {
             query_id,
             node_type,
+            int_filters: Default::default(),
             string_filters: Default::default(),
             uid_filters: Default::default(),
         };
+        let mut node_property_queries = FxHashMap::default();
+        node_property_queries.insert(query_id, inner_query);
 
         let graph = GraphQuery {
             root_query_id: query_id,
-            node_property_queries: HashMap::from([(query_id, inner_query)]),
+            node_property_queries,
             edge_filters: Default::default(),
             edge_map: Default::default(),
         };
@@ -367,12 +373,12 @@ impl NodeQuery {
             graph
                 .edge_filters
                 .entry((self.query_id, edge_name.clone()))
-                .or_insert(HashSet::new())
+                .or_insert(FxHashSet::default())
                 .insert(neighbor_query_id);
             graph
                 .edge_filters
                 .entry((neighbor_query_id, reverse_edge_name.clone()))
-                .or_insert(HashSet::new())
+                .or_insert(FxHashSet::default())
                 .insert(self.query_id);
             graph
                 .edge_map
@@ -410,12 +416,12 @@ impl NodeQuery {
             graph
                 .edge_filters
                 .entry((self.query_id, edge_name.clone()))
-                .or_insert(HashSet::new())
+                .or_insert(FxHashSet::default())
                 .insert(new_neighbor_id);
             graph
                 .edge_filters
                 .entry((new_neighbor_id, reverse_edge_name.clone()))
-                .or_insert(HashSet::new())
+                .or_insert(FxHashSet::default())
                 .insert(self.query_id);
             graph
                 .edge_map

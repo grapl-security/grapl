@@ -1,7 +1,10 @@
 use crate::{
     graplinc::{
         common::v1beta1::Uuid,
-        grapl::common::v1beta1::types::NodeType,
+        grapl::common::v1beta1::types::{
+            NodeType,
+            Uid,
+        },
     },
     protobufs::graplinc::grapl::api::lens_manager::v1beta1::{
         merge_lens_request::MergeBehavior as MergeBehaviorProto,
@@ -11,6 +14,9 @@ use crate::{
         CloseLensResponse as CloseLensResponseProto,
         CreateLensRequest as CreateLensRequestProto,
         CreateLensResponse as CreateLensResponseProto,
+        ListLensesEntry as ListLensesEntryProto,
+        ListLensesRequest as ListLensesRequestProto,
+        ListLensesResponse as ListLensesResponseProto,
         MergeLensRequest as MergeLensRequestProto,
         MergeLensResponse as MergeLensResponseProto,
         RemoveNodeFromAllScopesRequest as RemoveNodeFromAllScopesRequestProto,
@@ -312,8 +318,10 @@ impl serde_impl::ProtobufSerializable for CloseLensResponse {
 #[derive(Debug, Clone, PartialEq)]
 pub struct AddNodeToScopeRequest {
     pub tenant_id: Uuid,
-    pub lens_uid: u64, // replace
-    pub uid: u64,      //replace u64 with uid
+    pub lens_uid: u64,
+    // replace
+    pub uid: u64,
+    //replace u64 with uid
     pub node_type: NodeType,
 }
 
@@ -541,4 +549,126 @@ impl type_url::TypeUrl for RemoveNodeFromAllScopesResponse {
 
 impl serde_impl::ProtobufSerializable for RemoveNodeFromAllScopesResponse {
     type ProtobufMessage = RemoveNodeFromAllScopesResponseProto;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ListLensesRequest {
+    pub tenant_id: Uuid,
+    pub offset: u64,
+    pub limit: u32,
+}
+
+impl TryFrom<ListLensesRequestProto> for ListLensesRequest {
+    type Error = SerDeError;
+
+    fn try_from(value: ListLensesRequestProto) -> Result<Self, Self::Error> {
+        Ok(Self {
+            tenant_id: value
+                .tenant_id
+                .ok_or(SerDeError::MissingField("tenant_id"))?
+                .into(),
+            offset: value.offset,
+            limit: value.limit,
+        })
+    }
+}
+
+impl From<ListLensesRequest> for ListLensesRequestProto {
+    fn from(value: ListLensesRequest) -> Self {
+        Self {
+            tenant_id: Some(value.tenant_id.into()),
+            offset: value.offset,
+            limit: value.limit,
+        }
+    }
+}
+
+impl type_url::TypeUrl for ListLensesRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.ListLensesRequest";
+}
+
+impl serde_impl::ProtobufSerializable for ListLensesRequest {
+    type ProtobufMessage = ListLensesRequestProto;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ListLensesEntry {
+    pub lens_uid: Uid,
+    // pub score: i64,
+}
+
+impl TryFrom<ListLensesEntryProto> for ListLensesEntry {
+    type Error = SerDeError;
+
+    fn try_from(value: ListLensesEntryProto) -> Result<Self, Self::Error> {
+        Ok(Self {
+            lens_uid: value
+                .lens_uid
+                .ok_or(SerDeError::MissingField("lens_uid"))?
+                .try_into()?,
+            // score: value.score,
+        })
+    }
+}
+
+impl From<ListLensesEntry> for ListLensesEntryProto {
+    fn from(value: ListLensesEntry) -> Self {
+        Self {
+            lens_uid: Some(value.lens_uid.into()),
+            // score: value.score,
+        }
+    }
+}
+
+impl type_url::TypeUrl for ListLensesEntry {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.ListLensesEntryProto";
+}
+
+impl serde_impl::ProtobufSerializable for ListLensesEntry {
+    type ProtobufMessage = ListLensesEntryProto;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ListLensesResponse {
+    pub lenses: Vec<ListLensesEntry>,
+    pub offset: u64,
+}
+
+impl TryFrom<ListLensesResponseProto> for ListLensesResponse {
+    type Error = SerDeError;
+
+    fn try_from(response_proto: ListLensesResponseProto) -> Result<Self, Self::Error> {
+        Ok(Self {
+            lenses: response_proto
+                .lenses
+                .into_iter()
+                .map(ListLensesEntry::try_from)
+                .collect::<Result<Vec<_>, _>>()?,
+            offset: response_proto.offset,
+        })
+    }
+}
+
+impl From<ListLensesResponse> for ListLensesResponseProto {
+    fn from(response: ListLensesResponse) -> Self {
+        Self {
+            lenses: response
+                .lenses
+                .into_iter()
+                .map(ListLensesEntry::into)
+                .collect(),
+            offset: response.offset,
+        }
+    }
+}
+
+impl type_url::TypeUrl for ListLensesResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.ListLensesResponse";
+}
+
+impl serde_impl::ProtobufSerializable for ListLensesResponse {
+    type ProtobufMessage = ListLensesResponseProto;
 }

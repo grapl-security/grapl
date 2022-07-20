@@ -1,7 +1,8 @@
-use std::collections::{
-    hash_map::Entry,
-    HashMap,
-    HashSet,
+use std::collections::hash_map::Entry;
+
+use rustc_hash::{
+    FxHashMap,
+    FxHashSet,
 };
 
 use crate::{
@@ -28,23 +29,18 @@ use crate::{
         EdgeEntry as EdgeEntryProto,
         EdgeMap as EdgeMapProto,
         EdgeQueryEntry as EdgeQueryEntryProto,
-        EdgeQueryEntry,
         EdgeQueryMap as EdgeQueryMapProto,
-        EdgeQueryMap,
         EdgeViewEntry as EdgeViewEntryProto,
         EdgeViewMap as EdgeViewMapProto,
         GraphQuery as GraphQueryProto,
         GraphView as GraphViewProto,
         IntFilter as IntFilterProto,
-        IntProperties as IntPropertiesProto,
-        IntProperty as IntPropertyProto,
         IntegerProperty as IntegerPropertyProto,
         NodePropertiesView as NodePropertiesViewProto,
         NodePropertiesViewEntry as NodePropertiesViewEntryProto,
         NodePropertiesViewMap as NodePropertiesViewMapProto,
         NodePropertyQuery as NodePropertyQueryProto,
         NodePropertyQueryEntry as NodePropertyQueryEntryProto,
-        NodePropertyQueryEntry,
         NodePropertyQueryMap as NodePropertyQueryMapProto,
         OrIntFilters as OrIntFiltersProto,
         OrStringFilters as OrStringFiltersProto,
@@ -406,7 +402,7 @@ impl From<StringFilter> for StringFilterProto {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AndStringFilters {
     pub string_filters: Vec<StringFilter>,
 }
@@ -582,8 +578,8 @@ impl From<UidFilters> for UidFiltersProto {
 pub struct NodePropertyQuery {
     pub query_id: QueryId,
     pub node_type: NodeType,
-    // pub int_filters: HashMap<PropertyName, OrIntFilters>,
-    pub string_filters: HashMap<PropertyName, OrStringFilters>,
+    pub int_filters: FxHashMap<PropertyName, OrIntFilters>,
+    pub string_filters: FxHashMap<PropertyName, OrStringFilters>,
     pub uid_filters: UidFilters,
 }
 
@@ -592,6 +588,7 @@ impl NodePropertyQuery {
         Self {
             node_type,
             query_id: QueryId::new(),
+            int_filters: Default::default(),
             string_filters: Default::default(),
             uid_filters: Default::default(),
         }
@@ -600,7 +597,7 @@ impl NodePropertyQuery {
     pub fn merge(&mut self, other: Self) {
         debug_assert_eq!(self.query_id, other.query_id);
         debug_assert_eq!(self.node_type, other.node_type);
-        // self.string_filters.extend(other.string_filters);
+        self.string_filters.extend(other.string_filters);
     }
 
     pub fn with_string_filters(
@@ -639,6 +636,20 @@ impl TryFrom<NodePropertyQueryProto> for NodePropertyQuery {
             })
             .collect::<Result<_, SerDeError>>()?;
 
+        let int_filters = value
+            .int_filters
+            .into_iter()
+            .map(|(k, v)| {
+                Ok((
+                    PropertyName::try_from(k).map_err(|e| SerDeError::InvalidField {
+                        field_name: "int_filters",
+                        assertion: e.to_owned(),
+                    })?,
+                    v.try_into()?,
+                ))
+            })
+            .collect::<Result<_, SerDeError>>()?;
+
         let uid_filters = value
             .uid_filters
             .ok_or(SerDeError::MissingField("uid_filters"))?
@@ -651,6 +662,7 @@ impl TryFrom<NodePropertyQueryProto> for NodePropertyQuery {
         Ok(Self {
             query_id,
             node_type,
+            int_filters,
             string_filters,
             uid_filters,
         })
@@ -667,11 +679,18 @@ impl From<NodePropertyQuery> for NodePropertyQueryProto {
             .map(|(k, v)| (k.value, v.into()))
             .collect();
 
+        let int_filters = value
+            .int_filters
+            .into_iter()
+            .map(|(k, v)| (k.value, v.into()))
+            .collect();
+
         let uid_filters = value.uid_filters.into();
 
         Self {
             query_id,
             node_type,
+            int_filters,
             string_filters,
             uid_filters: Some(uid_filters),
         }
@@ -681,9 +700,9 @@ impl From<NodePropertyQuery> for NodePropertyQueryProto {
 #[derive(Debug, Clone)]
 pub struct GraphQuery {
     pub root_query_id: QueryId,
-    pub node_property_queries: HashMap<QueryId, NodePropertyQuery>,
-    pub edge_filters: HashMap<(QueryId, EdgeName), HashSet<QueryId>>,
-    pub edge_map: HashMap<EdgeName, EdgeName>,
+    pub node_property_queries: FxHashMap<QueryId, NodePropertyQuery>,
+    pub edge_filters: FxHashMap<(QueryId, EdgeName), FxHashSet<QueryId>>,
+    pub edge_map: FxHashMap<EdgeName, EdgeName>,
 }
 
 impl GraphQuery {
@@ -693,7 +712,8 @@ impl GraphQuery {
             NodePropertyQuery {
                 query_id,
                 node_type,
-                string_filters: HashMap::new(),
+                int_filters: Default::default(),
+                string_filters: Default::default(),
                 uid_filters: Default::default(),
             },
         );
@@ -723,8 +743,9 @@ impl TryFrom<GraphQueryProto> for GraphQuery {
             .node_property_queries
             .ok_or_else(|| SerDeError::MissingField("node_property_queries"))?;
 
-        let mut node_property_queries: HashMap<QueryId, NodePropertyQuery> =
-            HashMap::with_capacity(node_property_queries_proto.entries.len());
+        let mut node_property_queries: FxHashMap<QueryId, NodePropertyQuery> = FxHashMap::default();
+        node_property_queries.reserve(node_property_queries_proto.entries.len());
+
         for node_property_query in node_property_queries_proto.entries {
             let query_id = node_property_query
                 .query_id
@@ -741,8 +762,10 @@ impl TryFrom<GraphQueryProto> for GraphQuery {
             .edge_filters
             .ok_or_else(|| SerDeError::MissingField("edge_filters"))?;
 
-        let mut edge_filters: HashMap<(QueryId, EdgeName), HashSet<QueryId>> =
-            HashMap::with_capacity(edge_filters_proto.entries.len());
+        let mut edge_filters: FxHashMap<(QueryId, EdgeName), FxHashSet<QueryId>> =
+            FxHashMap::default();
+        edge_filters.reserve(edge_filters_proto.entries.len());
+
         for edge_filter in edge_filters_proto.entries {
             let query_id = edge_filter
                 .query_id
@@ -756,15 +779,15 @@ impl TryFrom<GraphQueryProto> for GraphQuery {
                 .neighbor_query_ids
                 .into_iter()
                 .map(|query_id| query_id.try_into())
-                .collect::<Result<HashSet<_>, _>>()?;
+                .collect::<Result<FxHashSet<_>, _>>()?;
             edge_filters.insert((query_id, edge_name), neighbor_query_ids);
         }
 
         let edge_map_proto = value
             .edge_map
             .ok_or_else(|| SerDeError::MissingField("edge_map"))?;
-        let mut edge_map: HashMap<EdgeName, EdgeName> =
-            HashMap::with_capacity(edge_map_proto.entries.len());
+        let mut edge_map: FxHashMap<EdgeName, EdgeName> = FxHashMap::default();
+        edge_map.reserve(edge_map_proto.entries.len());
 
         for edge_entry in edge_map_proto.entries {
             let forward_edge_name = edge_entry
@@ -800,11 +823,11 @@ impl From<GraphQuery> for GraphQueryProto {
                 })
                 .collect(),
         });
-        let edge_filters = Some(EdgeQueryMap {
+        let edge_filters = Some(EdgeQueryMapProto {
             entries: value
                 .edge_filters
                 .into_iter()
-                .map(|((k0, k1), v)| EdgeQueryEntry {
+                .map(|((k0, k1), v)| EdgeQueryEntryProto {
                     query_id: Some(k0.into()),
                     edge_name: Some(k1.into()),
                     neighbor_query_ids: v.into_iter().map(QueryIdProto::from).collect(),
@@ -835,14 +858,14 @@ impl From<GraphQuery> for GraphQueryProto {
 pub struct NodePropertiesView {
     pub uid: Uid,
     pub node_type: NodeType,
-    pub string_properties: HashMap<PropertyName, String>,
+    pub string_properties: FxHashMap<PropertyName, String>,
 }
 
 impl NodePropertiesView {
     pub fn new(
         uid: Uid,
         node_type: NodeType,
-        string_properties: HashMap<PropertyName, String>,
+        string_properties: FxHashMap<PropertyName, String>,
     ) -> Self {
         Self {
             uid,
@@ -869,8 +892,8 @@ impl TryFrom<NodePropertiesViewProto> for NodePropertiesView {
             .string_properties
             .ok_or_else(|| SerDeError::MissingField("string_properties"))?;
 
-        let mut string_properties =
-            HashMap::with_capacity(proto_string_properties.properties.len());
+        let mut string_properties = FxHashMap::default();
+        string_properties.reserve(proto_string_properties.properties.len());
 
         for string_property in proto_string_properties.properties {
             let property_name = string_property
@@ -948,13 +971,14 @@ impl From<NodePropertiesViewEntry> for NodePropertiesViewEntryProto {
 
 #[derive(Debug, Clone)]
 pub struct NodePropertiesViewMap {
-    pub entries: HashMap<Uid, NodePropertiesView>,
+    pub entries: FxHashMap<Uid, NodePropertiesView>,
 }
 
 impl TryFrom<NodePropertiesViewMapProto> for NodePropertiesViewMap {
     type Error = SerDeError;
     fn try_from(value: NodePropertiesViewMapProto) -> Result<Self, Self::Error> {
-        let mut entries = HashMap::with_capacity(value.entries.len());
+        let mut entries = FxHashMap::default();
+        entries.reserve(value.entries.len());
 
         for entry in value.entries.into_iter() {
             let uid = entry
@@ -991,13 +1015,14 @@ impl From<NodePropertiesViewMap> for NodePropertiesViewMapProto {
 pub struct EdgeViewEntry {
     pub uid: Uid,
     pub edge_name: EdgeName,
-    pub neighbors: HashSet<Uid>,
+    pub neighbors: FxHashSet<Uid>,
 }
 
 impl TryFrom<EdgeViewEntryProto> for EdgeViewEntry {
     type Error = SerDeError;
     fn try_from(value: EdgeViewEntryProto) -> Result<Self, Self::Error> {
-        let mut neighbors = HashSet::with_capacity(value.neighbors.len());
+        let mut neighbors = FxHashSet::default();
+        neighbors.reserve(value.neighbors.len());
         for neighbor in value.neighbors.into_iter() {
             neighbors.insert(neighbor.try_into()?);
         }
@@ -1031,13 +1056,14 @@ impl From<EdgeViewEntry> for EdgeViewEntryProto {
 
 #[derive(Debug, Clone)]
 pub struct EdgeViewMap {
-    pub entries: HashMap<(Uid, EdgeName), HashSet<Uid>>,
+    pub entries: FxHashMap<(Uid, EdgeName), FxHashSet<Uid>>,
 }
 
 impl TryFrom<EdgeViewMapProto> for EdgeViewMap {
     type Error = SerDeError;
     fn try_from(value: EdgeViewMapProto) -> Result<Self, Self::Error> {
-        let mut entries = HashMap::with_capacity(value.entries.len());
+        let mut entries = FxHashMap::default();
+        entries.reserve(value.entries.len());
 
         for entry in value.entries.into_iter() {
             let entry: EdgeViewEntry = entry.try_into()?;
@@ -1069,15 +1095,15 @@ impl From<EdgeViewMap> for EdgeViewMapProto {
 
 #[derive(Debug, Clone, Default)]
 pub struct GraphView {
-    pub nodes: HashMap<Uid, NodePropertiesView>,
-    pub edges: HashMap<(Uid, EdgeName), HashSet<Uid>>,
+    pub nodes: FxHashMap<Uid, NodePropertiesView>,
+    pub edges: FxHashMap<(Uid, EdgeName), FxHashSet<Uid>>,
 }
 
 impl GraphView {
     pub fn new() -> Self {
         Self {
-            nodes: HashMap::new(),
-            edges: HashMap::new(),
+            nodes: Default::default(),
+            edges: Default::default(),
         }
     }
 
@@ -1101,14 +1127,14 @@ impl GraphView {
     pub fn add_edge(&mut self, from: Uid, edge_name: EdgeName, to: Uid) {
         self.edges
             .entry((from, edge_name))
-            .or_insert_with(|| HashSet::new())
+            .or_insert_with(FxHashSet::default)
             .insert(to);
     }
 
-    pub fn add_edges(&mut self, src_uid: Uid, edge_name: EdgeName, dst_uids: HashSet<Uid>) {
+    pub fn add_edges(&mut self, src_uid: Uid, edge_name: EdgeName, dst_uids: FxHashSet<Uid>) {
         self.edges
             .entry((src_uid, edge_name))
-            .or_insert_with(|| HashSet::new())
+            .or_insert_with(FxHashSet::default)
             .extend(dst_uids);
     }
 
@@ -1116,7 +1142,7 @@ impl GraphView {
         self.nodes.get(&uid)
     }
 
-    pub fn get_edges(&self, from: Uid) -> impl Iterator<Item = (&EdgeName, &HashSet<Uid>)> {
+    pub fn get_edges(&self, from: Uid) -> impl Iterator<Item = (&EdgeName, &FxHashSet<Uid>)> {
         self.edges
             .iter()
             .filter(move |(key, _)| key.0 == from)
@@ -1133,7 +1159,7 @@ impl GraphView {
         }
     }
 
-    pub fn get_nodes(&self) -> &HashMap<Uid, NodePropertiesView> {
+    pub fn get_nodes(&self) -> &FxHashMap<Uid, NodePropertiesView> {
         &self.nodes
     }
 }

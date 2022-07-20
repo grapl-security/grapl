@@ -37,7 +37,7 @@ async fn main() -> Result<(), OsqueryGeneratorError> {
     // initialize tracing layer
     global::set_text_map_propagator(TraceContextPropagator::new());
     let tracer = opentelemetry_jaeger::new_pipeline()
-        .with_service_name("pipeline-ingress")
+        .with_service_name("osquery-generator")
         .install_batch(opentelemetry::runtime::Tokio)?;
 
     // register a subscriber

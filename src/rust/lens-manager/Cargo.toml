@@ -28,6 +28,7 @@ async-trait = "0.1.56"
 scylla = "0.4.7"
 blake2 = "0.10.4"
 futures = "0.3.21"
+clap = { version = "3.2.13", features = ["std", "env", "derive"] }
 
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }

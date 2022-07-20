@@ -1,4 +1,3 @@
-#![allow(warnings)]
 use std::{
     net::SocketAddr,
     pin::Pin,
@@ -13,10 +12,7 @@ use tokio::{
     net::TcpListener,
     sync::oneshot::Receiver,
 };
-use tokio_stream::wrappers::{
-    ReceiverStream,
-    TcpListenerStream,
-};
+use tokio_stream::wrappers::TcpListenerStream;
 use tonic::{
     transport::Server,
     Response,
@@ -24,9 +20,6 @@ use tonic::{
 
 use crate::{
     graplinc::grapl::api::lens_subscription_service::v1beta1::messages::{
-        LensUpdate,
-        NodeAddedToLensScope,
-        NodeRemovedFromLensScope,
         SubscribeToLensRequest,
         SubscribeToLensResponse,
     },

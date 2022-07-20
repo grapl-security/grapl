@@ -29,6 +29,8 @@ thiserror = "1.0.31"
 async-recursion = "1.0.0"
 async-trait = "0.1.56"
 moka = { version = "0.8.5", features = ["future"] }
+rustc-hash = "1.1.0"
+clap = { version = "3.2.13", features = ["std", "env", "derive"] }
 
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }

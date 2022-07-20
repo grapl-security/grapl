@@ -1,0 +1,30 @@
+{
+  "db": "PostgreSQL",
+  "4e341194ff535f6eb7a6fcd582249e99d1bf31f06bf7443888456687d93fa518": {
+    "describe": {
+      "columns": [
+        {
+          "name": "lens_update",
+          "ordinal": 0,
+          "type_info": "Bytea"
+        },
+        {
+          "name": "update_offset",
+          "ordinal": 1,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT lens_update, update_offset\n         FROM lens_subscriptions.lens_cdc WHERE\n         tenant_id = $1 AND\n         lens_uid = $2\n         ORDER BY update_offset ASC"
+  }
+}

@@ -1,20 +1,22 @@
-#![allow(warnings)]
-
 use uuid::Uuid;
 
-use crate::{graplinc::grapl::common::v1beta1::types::{
-    NodeType,
-    Uid,
-}, protobufs::graplinc::grapl::api::lens_subscription_service::v1beta1::{
-    lens_update,
-    LensUpdate as LensUpdateProto,
-    NodeAddedToLensScope as NodeAddedToLensScopeProto,
-    NodeRemovedFromLensScope as NodeRemovedFromLensScopeProto,
-    SubscribeToLensRequest as SubscribeToLensRequestProto,
-    SubscribeToLensResponse as SubscribeToLensResponseProto,
-    ListLensesRequest as ListLensesRequestProto,
-    ListLensesResponse as ListLensesResponseProto,
-}, serde_impl, SerDeError, type_url};
+use crate::{
+    graplinc::grapl::common::v1beta1::types::{
+        NodeType,
+        Uid,
+    },
+    protobufs::graplinc::grapl::api::lens_subscription_service::v1beta1::{
+        lens_update,
+        LensUpdate as LensUpdateProto,
+        NodeAddedToLensScope as NodeAddedToLensScopeProto,
+        NodeRemovedFromLensScope as NodeRemovedFromLensScopeProto,
+        SubscribeToLensRequest as SubscribeToLensRequestProto,
+        SubscribeToLensResponse as SubscribeToLensResponseProto,
+    },
+    serde_impl,
+    type_url,
+    SerDeError,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NodeAddedToLensScope {
@@ -143,7 +145,7 @@ impl TryFrom<LensUpdateProto> for LensUpdate {
             Some(lens_update::Inner::NodeRemovedFromLensScope(inner)) => {
                 Ok(Self::NodeRemovedFromLensScope(inner.try_into()?))
             }
-            None => Err(SerDeError::MissingField("inner")),
+            None => Err(SerDeError::UnknownVariant("LensUpdate.inner")),
         }
     }
 }
@@ -244,79 +246,3 @@ impl serde_impl::ProtobufSerializable for SubscribeToLensResponse {
 impl type_url::TypeUrl for SubscribeToLensResponse {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.lens_subscription_service.v1beta1.SubscribeToLensResponse";
 }
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ListLensesRequest {
-    pub tenant_id: Uuid,
-}
-
-impl TryFrom<ListLensesRequestProto> for ListLensesRequest {
-    type Error = SerDeError;
-
-    fn try_from(response_proto: ListLensesRequestProto) -> Result<Self, Self::Error> {
-        Ok(Self {
-            tenant_id: response_proto
-                .tenant_id
-                .ok_or(SerDeError::MissingField("tenant_id"))?
-                .into(),
-        })
-    }
-}
-
-impl From<ListLensesRequest> for ListLensesRequestProto {
-    fn from(response: ListLensesRequest) -> Self {
-        Self {
-            tenant_id: Some(response.tenant_id.into()),
-        }
-    }
-}
-
-impl type_url::TypeUrl for ListLensesRequest {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.lens_subscription_service.v1beta1.ListLensesRequest";
-}
-
-impl serde_impl::ProtobufSerializable for ListLensesRequest {
-    type ProtobufMessage = ListLensesRequestProto;
-}
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ListLensesResponse {
-    pub lens_uids: Vec<Uid>,
-}
-
-impl TryFrom<ListLensesResponseProto> for ListLensesResponse {
-    type Error = SerDeError;
-
-    fn try_from(response_proto: ListLensesResponseProto) -> Result<Self, Self::Error> {
-        Ok(Self {
-            lens_uids: response_proto
-                .lens_uids
-                .into_iter()
-                .map(Uid::try_from)
-                .collect::<Result<Vec<_>, _>>()?,
-        })
-    }
-}
-
-impl From<ListLensesResponse> for ListLensesResponseProto {
-    fn from(response: ListLensesResponse) -> Self {
-        Self {
-            lens_uids: response
-                .lens_uids
-                .into_iter()
-                .map(Uid::into)
-                .collect(),
-        }
-    }
-}
-
-impl type_url::TypeUrl for ListLensesResponse {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.lens_subscription_service.v1beta1.ListLensesResponse";
-}
-
-impl serde_impl::ProtobufSerializable for ListLensesResponse {
-    type ProtobufMessage = ListLensesResponseProto;
-}
-

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+use scylla::CachingSession;
 use rust_proto::{
     graplinc::grapl::api::graph_query_service::v1beta1::{
         messages::{
@@ -34,12 +36,20 @@ impl From<GraphQueryError> for Status {
 }
 
 #[derive(Clone)]
-pub struct GraphQueryApiImpl {
+pub struct GraphQueryService {
     property_query_executor: PropertyQueryExecutor,
 }
 
+impl GraphQueryService {
+    pub fn new(scylla_client: Arc<CachingSession>) -> Self {
+        Self {
+            property_query_executor: PropertyQueryExecutor::new(scylla_client),
+        }
+    }
+}
+
 #[async_trait::async_trait]
-impl GraphQueryApi for GraphQueryApiImpl {
+impl GraphQueryApi for GraphQueryService {
     type Error = GraphQueryError;
 
     async fn query_graph_with_uid(
@@ -102,40 +112,3 @@ impl GraphQueryApi for GraphQueryApiImpl {
         })
     }
 }
-
-// fn convert_to_root_query(
-//     node_query_proto: NodeQueryProto,
-//     edge_mapping: &HashMap<EdgeName, EdgeName>,
-// ) -> GraphQuery {
-//     let mut root_node = NodeQuery::root(node_query_proto.node_type.clone());
-//     convert_node_query(&mut root_node, node_query_proto, &edge_mapping);
-//     let graph_query = root_node.build();
-//     drop(root_node);
-//     graph_query
-// }
-//
-// fn convert_node_query(
-//     node_query: &mut NodeQuery,
-//     node_query_proto: NodeQueryProto,
-//     edge_mapping: &HashMap<EdgeName, EdgeName>,
-// ) {
-//     for (prop_name, prop_filters) in node_query_proto.string_filters {
-//         let prop_filters = prop_filters.into();
-//         node_query.overwrite_string_comparisons(prop_name, prop_filters);
-//     }
-//
-//     for (edge_name, edge_filters) in node_query_proto.edge_filters {
-//         let reverse_edge_name = edge_mapping[&edge_name].clone();
-//
-//         for edge_filter in edge_filters.node_queries {
-//             node_query.with_edge_to(
-//                 edge_name.clone(),
-//                 reverse_edge_name.clone(),
-//                 edge_filter.node_type.clone(),
-//                 move |neighbor| {
-//                     convert_node_query(neighbor, edge_filter, edge_mapping);
-//                 },
-//             );
-//         }
-//     }
-// }

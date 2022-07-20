@@ -20,6 +20,8 @@ use crate::{
         CloseLensResponse,
         CreateLensRequest,
         CreateLensResponse,
+        ListLensesRequest,
+        ListLensesResponse,
         MergeLensRequest,
         MergeLensResponse,
         RemoveNodeFromAllScopesRequest,
@@ -38,6 +40,8 @@ use crate::{
         CloseLensResponse as CloseLensResponseProto,
         CreateLensRequest as CreateLensRequestProto,
         CreateLensResponse as CreateLensResponseProto,
+        ListLensesRequest as ListLensesRequestProto,
+        ListLensesResponse as ListLensesResponseProto,
         MergeLensRequest as MergeLensRequestProto,
         MergeLensResponse as MergeLensResponseProto,
         RemoveNodeFromAllScopesRequest as RemoveNodeFromAllScopesRequestProto,
@@ -84,6 +88,11 @@ pub trait LensManagerApi {
         &self,
         request: RemoveNodeFromAllScopesRequest,
     ) -> Result<RemoveNodeFromAllScopesResponse, Self::Error>;
+    /// List all lenses for a tenant
+    async fn list_lenses(
+        &self,
+        request: ListLensesRequest,
+    ) -> Result<ListLensesResponse, Self::Error>;
 }
 
 #[tonic::async_trait]
@@ -183,6 +192,23 @@ where
             Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
         };
         let response = LensManagerApi::remove_node_from_all_scopes(self, request.into())
+            .await
+            .map_err(|e| e.into())?;
+
+        Ok(Response::new(response.into()))
+    }
+
+    /// List all lenses for a tenant. Paging API.
+    async fn list_lenses(
+        &self,
+        raw_request: Request<ListLensesRequestProto>,
+    ) -> Result<Response<ListLensesResponseProto>, tonic::Status> {
+        let proto_request = raw_request.into_inner();
+        let request: ListLensesRequest = match proto_request.try_into() {
+            Ok(request) => request,
+            Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
+        };
+        let response = LensManagerApi::list_lenses(self, request.into())
             .await
             .map_err(|e| e.into())?;
 

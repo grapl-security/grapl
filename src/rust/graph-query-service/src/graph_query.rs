@@ -130,7 +130,7 @@ mod tests {
             .query(
                 format!(
                     r#"
-            INSERT INTO tenant_keyspace_{}.edge (
+            INSERT INTO tenant_keyspace_{}.edges (
                 source_uid,
                 f_edge_name,
                 r_edge_name,
@@ -152,7 +152,7 @@ mod tests {
             .session
             .query(
                 format!(
-                    r#"INSERT INTO tenant_keyspace_{}.edge (
+                    r#"INSERT INTO tenant_keyspace_{}.edges (
                 source_uid,
                 f_edge_name,
                 r_edge_name,
@@ -235,7 +235,7 @@ mod tests {
             .query(
                 format!(
                     "
-                CREATE TABLE IF NOT EXISTS tenant_keyspace_{}.edge (
+                CREATE TABLE IF NOT EXISTS tenant_keyspace_{}.edges (
                        source_uid bigint,
                        f_edge_name text,
                        r_edge_name text,

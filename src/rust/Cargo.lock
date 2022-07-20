@@ -815,15 +815,18 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.12"
+version = "3.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab8b79fe3946ceb4a0b1c080b4018992b8d27e9ff363644c1c9b6387c854614d"
+checksum = "ac2bd7a1eb07da9ac757c923f69373deb7bc2ba5efc951b873bcb5e693992dca"
 dependencies = [
+ "atty",
  "bitflags",
  "clap_derive",
  "clap_lex",
  "indexmap",
  "once_cell",
+ "strsim",
+ "termcolor",
  "textwrap 0.15.0",
 ]
 
@@ -911,7 +914,7 @@ dependencies = [
 name = "consul-connect"
 version = "1.0.0"
 dependencies = [
- "clap 3.2.12",
+ "clap 3.2.13",
  "thiserror",
  "tokio",
  "tracing",
@@ -1387,7 +1390,7 @@ name = "event-source"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "clap 3.2.12",
+ "clap 3.2.13",
  "grapl-config",
  "grapl-utils",
  "rust-proto",
@@ -1611,7 +1614,7 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.12",
+ "clap 3.2.13",
  "futures",
  "grapl-config",
  "kafka",
@@ -1634,7 +1637,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.12",
+ "clap 3.2.13",
  "consul-connect",
  "grapl-config",
  "moka",
@@ -1696,7 +1699,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "bytes",
- "clap 3.2.12",
+ "clap 3.2.13",
  "futures",
  "futures-retry",
  "grapl-config",
@@ -1727,7 +1730,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "blake2",
- "clap 3.2.12",
+ "clap 3.2.13",
  "dashmap",
  "grapl-utils",
  "hash_hasher",
@@ -1749,6 +1752,7 @@ dependencies = [
  "async-recursion",
  "async-trait",
  "chrono",
+ "clap 3.2.13",
  "env_logger 0.9.0",
  "futures",
  "itertools",
@@ -1758,6 +1762,7 @@ dependencies = [
  "prost-types 0.9.0",
  "rand",
  "rust-proto",
+ "rustc-hash",
  "scylla",
  "serde",
  "test-log",
@@ -1807,7 +1812,7 @@ dependencies = [
 name = "grapl-graphql-codegen"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.12",
+ "clap 3.2.13",
  "color-eyre",
  "graphql-parser",
  "serde_json",
@@ -2217,7 +2222,7 @@ name = "kafka"
 version = "0.1.0"
 dependencies = [
  "bytes",
- "clap 3.2.12",
+ "clap 3.2.13",
  "futures",
  "rdkafka",
  "rust-proto",
@@ -2254,7 +2259,7 @@ dependencies = [
  "blake2",
  "bytes",
  "chrono",
- "clap 3.2.12",
+ "clap 3.2.13",
  "failure",
  "futures",
  "grapl-config",
@@ -2286,6 +2291,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "blake2",
+ "clap 3.2.13",
  "futures",
  "grapl-config",
  "grapl-utils",
@@ -2307,7 +2313,7 @@ name = "lens-subscriptions"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.12",
+ "clap 3.2.13",
  "dashmap",
  "futures",
  "grapl-config",
@@ -2586,7 +2592,7 @@ dependencies = [
  "blake2",
  "bytes",
  "chrono",
- "clap 3.2.12",
+ "clap 3.2.13",
  "failure",
  "futures",
  "grapl-config",
@@ -2867,7 +2873,7 @@ version = "0.1.0"
 dependencies = [
  "argon2",
  "async-trait",
- "clap 3.2.12",
+ "clap 3.2.13",
  "grapl-config",
  "grapl-utils",
  "rust-proto",
@@ -3048,7 +3054,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.12",
+ "clap 3.2.13",
  "futures",
  "kafka",
  "opentelemetry 0.16.0",
@@ -3103,7 +3109,7 @@ name = "plugin-bootstrap"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.12",
+ "clap 3.2.13",
  "futures",
  "grapl-config",
  "grapl-utils",
@@ -3119,7 +3125,7 @@ name = "plugin-executor"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "clap 3.2.12",
+ "clap 3.2.13",
  "grapl-config",
  "plugin-work-queue",
  "rust-proto",
@@ -3135,7 +3141,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.12",
+ "clap 3.2.13",
  "futures",
  "futures-retry",
  "grapl-config",
@@ -3163,7 +3169,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "clap 3.2.12",
+ "clap 3.2.13",
  "futures",
  "grapl-config",
  "grapl-utils",
@@ -3822,6 +3828,7 @@ dependencies = [
  "quickcheck",
  "quickcheck_macros",
  "rand",
+ "rustc-hash",
  "test-context",
  "thiserror",
  "tokio",
@@ -3839,6 +3846,12 @@ name = "rustc-demangle"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ef03e0a2b150c7a90d01faf6254c9c48a41e95fb2a8c2ac1c6f0d2b9aefc342"
+
+[[package]]
+name = "rustc-hash"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustc_version"
@@ -3965,7 +3978,7 @@ name = "schema-manager"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.12",
+ "clap 3.2.13",
  "dashmap",
  "grapl-graphql-codegen",
  "rust-proto",
@@ -4392,6 +4405,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "strsim"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
+
+[[package]]
 name = "strum"
 version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4452,7 +4471,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "clap 3.2.12",
+ "clap 3.2.13",
  "endpoint-plugin",
  "futures",
  "kafka",
@@ -5154,7 +5173,7 @@ dependencies = [
  "async-recursion",
  "async-trait",
  "chrono",
- "clap 3.2.12",
+ "clap 3.2.13",
  "dashmap",
  "env_logger 0.9.0",
  "futures",

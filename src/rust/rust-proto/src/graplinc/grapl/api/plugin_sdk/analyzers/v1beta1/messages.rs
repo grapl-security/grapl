@@ -1,7 +1,5 @@
 use std::time::SystemTime;
 
-use prost_types::Timestamp;
-
 use crate::{
     graplinc::grapl::{
         api::graph_query_service::v1beta1::messages::GraphView,
@@ -65,6 +63,15 @@ impl From<StringPropertyUpdate> for StringPropertyUpdateProto {
     }
 }
 
+impl type_url::TypeUrl for StringPropertyUpdate {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.StringPropertyUpdate";
+}
+
+impl serde_impl::ProtobufSerializable for StringPropertyUpdate {
+    type ProtobufMessage = StringPropertyUpdateProto;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UInt64PropertyUpdate {
     pub uid: Uid,
@@ -96,6 +103,15 @@ impl From<UInt64PropertyUpdate> for UInt64PropertyUpdateProto {
     }
 }
 
+impl type_url::TypeUrl for UInt64PropertyUpdate {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.UInt64PropertyUpdate";
+}
+
+impl serde_impl::ProtobufSerializable for UInt64PropertyUpdate {
+    type ProtobufMessage = UInt64PropertyUpdateProto;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Int64PropertyUpdate {
     pub uid: Uid,
@@ -125,6 +141,15 @@ impl From<Int64PropertyUpdate> for Int64PropertyUpdateProto {
             property_name: Some(value.property_name.into()),
         }
     }
+}
+
+impl type_url::TypeUrl for Int64PropertyUpdate {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.Int64PropertyUpdate";
+}
+
+impl serde_impl::ProtobufSerializable for Int64PropertyUpdate {
+    type ProtobufMessage = Int64PropertyUpdateProto;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -169,6 +194,15 @@ impl From<EdgeUpdate> for EdgeUpdateProto {
             dst_uid: Some(value.dst_uid.into()),
         }
     }
+}
+
+impl type_url::TypeUrl for EdgeUpdate {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.EdgeUpdate";
+}
+
+impl serde_impl::ProtobufSerializable for EdgeUpdate {
+    type ProtobufMessage = EdgeUpdateProto;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -217,6 +251,15 @@ impl From<Update> for UpdateProto {
             },
         }
     }
+}
+
+impl type_url::TypeUrl for Update {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.Update";
+}
+
+impl serde_impl::ProtobufSerializable for Update {
+    type ProtobufMessage = UpdateProto;
 }
 
 #[derive(Debug, Clone)]
@@ -278,6 +321,15 @@ impl From<LensRef> for LensRefProto {
     }
 }
 
+impl type_url::TypeUrl for LensRef {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.LensRef";
+}
+
+impl serde_impl::ProtobufSerializable for LensRef {
+    type ProtobufMessage = LensRefProto;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AnalyzerName {
     pub value: String,
@@ -294,6 +346,15 @@ impl From<AnalyzerName> for AnalyzerNameProto {
     fn from(value: AnalyzerName) -> Self {
         AnalyzerNameProto { value: value.value }
     }
+}
+
+impl type_url::TypeUrl for AnalyzerName {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.AnalyzerName";
+}
+
+impl serde_impl::ProtobufSerializable for AnalyzerName {
+    type ProtobufMessage = AnalyzerNameProto;
 }
 
 #[derive(Debug, Clone)]
@@ -364,10 +425,71 @@ impl serde_impl::ProtobufSerializable for ExecutionHit {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecutionMiss {}
 
+impl TryFrom<ExecutionMissProto> for ExecutionMiss {
+    type Error = SerDeError;
+    fn try_from(value: ExecutionMissProto) -> Result<Self, Self::Error> {
+        let ExecutionMissProto {} = value;
+        Ok(Self {})
+    }
+}
+
+impl From<ExecutionMiss> for ExecutionMissProto {
+    fn from(value: ExecutionMiss) -> Self {
+        let ExecutionMiss {} = value;
+        ExecutionMissProto {}
+    }
+}
+
+impl type_url::TypeUrl for ExecutionMiss {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.ExecutionMiss";
+}
+
+impl serde_impl::ProtobufSerializable for ExecutionMiss {
+    type ProtobufMessage = ExecutionMissProto;
+}
+
 #[derive(Debug, Clone)]
 pub enum ExecutionResult {
     ExecutionHit(ExecutionHit),
     ExecutionMiss(ExecutionMiss),
+}
+
+impl TryFrom<ExecutionResultProto> for ExecutionResult {
+    type Error = SerDeError;
+    fn try_from(value: ExecutionResultProto) -> Result<Self, Self::Error> {
+        match value.inner {
+            Some(ExecutionResultInnerProto::Hit(hit)) => {
+                Ok(ExecutionResult::ExecutionHit(hit.try_into()?))
+            }
+            Some(ExecutionResultInnerProto::Miss(_miss)) => {
+                Ok(ExecutionResult::ExecutionMiss(ExecutionMiss {}))
+            }
+            None => Err(SerDeError::UnknownVariant("ExecutionResult")),
+        }
+    }
+}
+
+impl From<ExecutionResult> for ExecutionResultProto {
+    fn from(value: ExecutionResult) -> ExecutionResultProto {
+        match value {
+            ExecutionResult::ExecutionHit(hit) => ExecutionResultProto {
+                inner: Some(ExecutionResultInnerProto::Hit(hit.into())),
+            },
+            ExecutionResult::ExecutionMiss(miss) => ExecutionResultProto {
+                inner: Some(ExecutionResultInnerProto::Miss(miss.into())),
+            },
+        }
+    }
+}
+
+impl type_url::TypeUrl for ExecutionResult {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.ExecutionResult";
+}
+
+impl serde_impl::ProtobufSerializable for ExecutionResult {
+    type ProtobufMessage = ExecutionResultProto;
 }
 
 #[derive(Debug, Clone)]
@@ -379,14 +501,35 @@ pub struct RunAnalyzerRequest {
 impl TryFrom<RunAnalyzerRequestProto> for RunAnalyzerRequest {
     type Error = SerDeError;
     fn try_from(value: RunAnalyzerRequestProto) -> Result<Self, Self::Error> {
-        todo!()
+        Ok(Self {
+            tenant_id: value
+                .tenant_id
+                .ok_or(SerDeError::MissingField("tenant_id"))?
+                .into(),
+            update: value
+                .update
+                .ok_or(SerDeError::MissingField("update"))?
+                .try_into()?,
+        })
     }
 }
 
 impl From<RunAnalyzerRequest> for RunAnalyzerRequestProto {
     fn from(value: RunAnalyzerRequest) -> Self {
-        todo!()
+        Self {
+            tenant_id: Some(value.tenant_id.into()),
+            update: Some(value.update.into()),
+        }
     }
+}
+
+impl type_url::TypeUrl for RunAnalyzerRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.RunAnalyzerRequest";
+}
+
+impl serde_impl::ProtobufSerializable for RunAnalyzerRequest {
+    type ProtobufMessage = RunAnalyzerRequestProto;
 }
 
 #[derive(Debug, Clone)]
@@ -397,12 +540,28 @@ pub struct RunAnalyzerResponse {
 impl TryFrom<RunAnalyzerResponseProto> for RunAnalyzerResponse {
     type Error = SerDeError;
     fn try_from(value: RunAnalyzerResponseProto) -> Result<Self, Self::Error> {
-        todo!()
+        Ok(Self {
+            execution_result: value
+                .execution_result
+                .ok_or(SerDeError::MissingField("execution_result"))?
+                .try_into()?,
+        })
     }
 }
 
 impl From<RunAnalyzerResponse> for RunAnalyzerResponseProto {
     fn from(value: RunAnalyzerResponse) -> Self {
-        todo!()
+        Self {
+            execution_result: Some(value.execution_result.into()),
+        }
     }
+}
+
+impl type_url::TypeUrl for RunAnalyzerResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.RunAnalyzerResponse";
+}
+
+impl serde_impl::ProtobufSerializable for RunAnalyzerResponse {
+    type ProtobufMessage = RunAnalyzerResponseProto;
 }

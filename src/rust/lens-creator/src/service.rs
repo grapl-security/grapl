@@ -1,13 +1,5 @@
-#![allow(warnings)]
-
-use std::collections::HashSet;
-
 use futures::future::try_join_all;
 use rust_proto::graplinc::grapl::api::{
-    graph_mutation::v1beta1::client::{
-        GraphMutationClient,
-        GraphMutationClientError,
-    },
     lens_manager::v1beta1::{
         client::{
             LensManagerServiceClient,
@@ -50,7 +42,7 @@ impl LensCreator {
         execution_hit: ExecutionHit,
     ) -> Result<(), LensCreatorError> {
         // todo: We can cache th elens uids
-        let mut lens_manager_client = self.lens_manager_client.clone();
+        let lens_manager_client = self.lens_manager_client.clone();
 
         let ExecutionHit {
             graph_view,

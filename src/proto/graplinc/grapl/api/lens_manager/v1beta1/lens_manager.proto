@@ -108,6 +108,32 @@ message RemoveNodeFromAllScopesResponse {
   // empty
 }
 
+// Request to list lenses for a tenant
+message ListLensesRequest {
+  // The tenant that this request pertains to
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // A paging identifier
+  uint64 offset = 2;
+  // The maximum number of entries to return in this page
+  uint32 limit = 3;
+}
+
+// A lens and its associated score
+message ListLensesEntry {
+  // The uid of the lens
+  graplinc.grapl.common.v1beta1.Uid lens_uid = 1;
+//  // The score of the lens
+//  int64 score = 2;
+}
+
+// Response to a successful list lenses request
+message ListLensesResponse {
+  // The list of lenses
+  repeated ListLensesEntry lenses = 1;
+  // The offset of the last lens returned. 0 if last page.
+  uint64 offset = 4;
+}
+
 // The LensManagerService provides a lens-based abstraction into the graph. Lenses are core to a number
 // of features and use cases, such as our engagements.
 service LensManagerService {
@@ -123,4 +149,6 @@ service LensManagerService {
   rpc RemoveNodeFromScope(RemoveNodeFromScopeRequest) returns (RemoveNodeFromScopeResponse);
   // Remove a node from all of the lens scopes it is attached to
   rpc RemoveNodeFromAllScopes(RemoveNodeFromAllScopesRequest) returns (RemoveNodeFromAllScopesResponse);
+  // List all lenses for a tenant. This is a paging API.
+  rpc ListLenses(ListLensesRequest) returns (ListLensesResponse);
 }
