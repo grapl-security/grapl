@@ -14,4 +14,4 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/ssm_tools.sh"
 LOCAL_PORT_TO_FORWARD_TO="${1:-4646}"
 REMOTE_PORT=4646
 
-ssm_port_forward "Nomad Server" "${LOCAL_PORT_TO_FORWARD_TO}" "${REMOTE_PORT}"
+ssm_port_forward "Nomad Server" "${REMOTE_PORT}" "${LOCAL_PORT_TO_FORWARD_TO}"
