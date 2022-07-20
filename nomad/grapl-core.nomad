@@ -620,6 +620,7 @@ job "grapl-core" {
       env {
         # Upstreams
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+        PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
 
         # Kafka
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
@@ -628,6 +629,15 @@ job "grapl-core" {
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher"]
         KAFKA_CONSUMER_TOPIC      = "raw-logs"
         KAFKA_PRODUCER_TOPIC      = "generated-graphs"
+        KAFKA_RETRY_TOPIC         = "raw-logs-retry"
+
+        # TODO: should equal number of raw-logs partitions
+        WORKER_POOL_SIZE = 10
+
+        GENERATOR_IDS_CACHE_CAPACITY            = 10000
+        GENERATOR_IDS_CACHE_TTL_MS              = 500
+        GENERATOR_IDS_CACHE_UPDATER_POOL_SIZE   = 10
+        GENERATOR_IDS_CACHE_UPDATER_QUEUE_DEPTH = 1000
 
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
@@ -642,6 +652,10 @@ job "grapl-core" {
             upstreams {
               destination_name = "plugin-work-queue"
               local_bind_port  = 1000
+            }
+            upstreams {
+              destination_name = "plugin-registry"
+              local_bind_port  = 1001
             }
           }
         }
@@ -887,6 +901,49 @@ job "grapl-core" {
             }
           }
         }
+      }
+    }
+  }
+
+  group "kafka-retry" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+    }
+
+    task "generator-dispatcher-retry" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["kafka-retry"]
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
+      env {
+        # Kafka
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["generator-dispatcher-retry"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["generator-dispatcher-retry"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher-retry"]
+        KAFKA_RETRY_TOPIC         = "raw-logs-retry"
+        KAFKA_PRODUCER_TOPIC      = "raw-logs"
+
+        # TODO: should equal number of raw-logs-retry partitions
+        KAFKA_RETRY_WORKER_POOL_SIZE = 10
+
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
+      }
+
+      service {
+        name = "generator-dispatcher-retry"
       }
     }
   }
@@ -1232,6 +1289,13 @@ job "grapl-core" {
         PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db.username
         # Hardcoded, but makes little sense to pipe up through Pulumi
         PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
+
+        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME     = var.kafka_credentials["plugin-work-queue"].sasl_username
+        KAFKA_SASL_PASSWORD     = var.kafka_credentials["plugin-work-queue"].sasl_password
+
+        GENERATOR_KAFKA_PRODUCER_TOPIC = "generated-graphs"
+        # ANALYZER_KAFKA_PRODUCER_TOPIC = "TODO"
 
         # common Rust env vars
         RUST_BACKTRACE = local.rust_backtrace

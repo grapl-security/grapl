@@ -52,6 +52,14 @@ where
                     .process_job(&self.config, job)
                     .await;
 
+                if let Err(e) = process_result.as_ref() {
+                    tracing::error!(
+                        message = "Error processing job",
+                        request_id = ?request_id,
+                        error = ?e,
+                    );
+                }
+
                 // Inform plugin-work-queue whether it worked or if we need
                 // to retry
                 self.plugin_work_processor

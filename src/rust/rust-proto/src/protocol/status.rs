@@ -232,6 +232,11 @@ impl Status {
     pub fn code(&self) -> Code {
         self.code
     }
+
+    // Retrieve the inner message.
+    pub fn message(&self) -> &'_ str {
+        &self.message
+    }
 }
 
 impl std::fmt::Display for Status {

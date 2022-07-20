@@ -3,7 +3,6 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use clap::Parser;
 use futures::StreamExt;
 use grapl_tracing::{
     setup_tracing,
@@ -73,10 +72,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        let consumer_config = ConsumerConfig {
-            topic: CONSUMER_TOPIC.to_string(),
-            ..ConsumerConfig::parse()
-        };
+        let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 
         PipelineIngressTestContext {
             grpc_client,
@@ -104,9 +100,7 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
 
     tracing::info!("creating kafka subscriber thread");
     let kafka_subscriber = tokio::task::spawn(async move {
-        let stream = kafka_consumer
-            .stream()
-            .expect("could not subscribe to the raw-logs topic");
+        let stream = kafka_consumer.stream();
 
         // notify the consumer that we're ready to receive messages
         tx.send(())

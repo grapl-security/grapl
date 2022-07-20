@@ -452,18 +452,11 @@ impl type_url::TypeUrl for GetGeneratorsForEventSourceResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetGeneratorsForEventSourceResponse";
 }
 
-impl TryFrom<proto::GetGeneratorsForEventSourceResponse> for GetGeneratorsForEventSourceResponse {
-    type Error = SerDeError;
-
-    fn try_from(value: proto::GetGeneratorsForEventSourceResponse) -> Result<Self, Self::Error> {
-        if value.plugin_ids.is_empty() {
-            return Err(SerDeError::MissingField(
-                "GetGeneratorsForEventSourceResponse.plugin_ids",
-            ));
-        }
+impl From<proto::GetGeneratorsForEventSourceResponse> for GetGeneratorsForEventSourceResponse {
+    fn from(value: proto::GetGeneratorsForEventSourceResponse) -> Self {
         let plugin_ids = value.plugin_ids.into_iter().map(uuid::Uuid::from).collect();
 
-        Ok(Self { plugin_ids })
+        Self { plugin_ids }
     }
 }
 
