@@ -79,4 +79,4 @@ pub struct RetryProducerConfig {
     pub sasl_password: String,
     #[clap(long, env = "KAFKA_RETRY_TOPIC")]
     pub topic: String,
-    
+}
