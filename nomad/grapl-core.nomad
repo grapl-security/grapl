@@ -920,6 +920,12 @@ job "grapl-core" {
         image = var.container_images["kafka-retry"]
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         # Kafka
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
@@ -932,10 +938,8 @@ job "grapl-core" {
         # TODO: should equal number of raw-logs-retry partitions
         KAFKA_RETRY_WORKER_POOL_SIZE = 10
 
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
       }
 
       service {
