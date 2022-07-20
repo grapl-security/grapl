@@ -37,7 +37,7 @@ pub fn setup_tracing(service_name: &str) -> Result<WorkerGuard, SetupTracingErro
     let filter = EnvFilter::from_default_env();
     {
         // Builder pattern is difficult here
-        let registry = Box::new(tracing_subscriber::registry().with(filter).with(log_layer));
+        let registry = tracing_subscriber::registry().with(filter).with(log_layer);
         if otel_jaeger_enabled() {
             registry
                 .with(tracing_opentelemetry::layer().with_tracer(jaeger_tracer))
