@@ -106,14 +106,11 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::DeployPluginRequest,
     ) -> Result<native::DeployPluginResponse, PluginRegistryServiceClientError> {
-        let response = match self
+        let response = self
             .proto_client
             .deploy_plugin(proto::DeployPluginRequest::from(request))
             .await
-        {
-            Ok(r) => r,
-            Err(e) => return Err(Status::from(e).into()),
-        };
+            .map_err(Status::from)?;
         let response = native::DeployPluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
@@ -123,14 +120,10 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::TearDownPluginRequest,
     ) -> Result<native::TearDownPluginResponse, PluginRegistryServiceClientError> {
-        match self
-            .proto_client
+        self.proto_client
             .tear_down_plugin(proto::TearDownPluginRequest::from(request))
             .await
-        {
-            Ok(r) => r,
-            Err(e) => return Err(Status::from(e).into()),
-        };
+            .map_err(Status::from)?;
         todo!()
     }
 
@@ -138,14 +131,11 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::GetPluginHealthRequest,
     ) -> Result<native::GetPluginHealthResponse, PluginRegistryServiceClientError> {
-        let response = match self
+        let response = self
             .proto_client
             .get_plugin_health(proto::GetPluginHealthRequest::from(request))
             .await
-        {
-            Ok(r) => r,
-            Err(e) => return Err(Status::from(e).into()),
-        };
+            .map_err(Status::from)?;
         let response = native::GetPluginHealthResponse::try_from(response.into_inner())?;
         Ok(response)
     }
@@ -156,16 +146,13 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::GetGeneratorsForEventSourceRequest,
     ) -> Result<native::GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> {
-        let response = match self
+        let response = self
             .proto_client
             .get_generators_for_event_source(proto::GetGeneratorsForEventSourceRequest::from(
                 request,
             ))
             .await
-        {
-            Ok(r) => r,
-            Err(e) => return Err(Status::from(e).into()),
-        };
+            .map_err(Status::from)?;
 
         let response = native::GetGeneratorsForEventSourceResponse::from(response.into_inner());
 
@@ -177,14 +164,10 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::GetAnalyzersForTenantRequest,
     ) -> Result<native::GetAnalyzersForTenantResponse, PluginRegistryServiceClientError> {
-        match self
-            .proto_client
+        self.proto_client
             .get_analyzers_for_tenant(proto::GetAnalyzersForTenantRequest::from(request))
             .await
-        {
-            Ok(r) => r,
-            Err(e) => return Err(Status::from(e).into()),
-        };
+            .map_err(Status::from)?;
         todo!()
     }
 }
