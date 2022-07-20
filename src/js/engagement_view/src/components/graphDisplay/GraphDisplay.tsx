@@ -120,7 +120,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
     }, [highlightNodes, highlightLinks]);
 
     const nodeClick = useCallback(
-        (_node, ctx) => {
+        (_node: any, ctx: any) => {
             const node = _node as any;
             const links = node.links;
             const neighbors = node.neighbors;
@@ -140,7 +140,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
     );
 
     const nodeHover = useCallback(
-        (node, ctx) => {
+        (node: any, ctx: any) => {
             highlightNodes.clear();
             highlightLinks.clear();
 

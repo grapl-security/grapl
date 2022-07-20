@@ -3,8 +3,18 @@ name = "grapl-web-ui"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "grapl-web-ui"
+
+[features]
+integration_tests = []
+
 [dependencies]
-actix-web = { version = "4", default_features = false, features = [
+actix-web = { version = "4.1", default_features = false, features = [
   "macros",
   "compress-brotli"
 ] }
@@ -34,3 +44,6 @@ rusoto_core = { version = "0.47", default_features = false, features = [
 rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
+jsonwebtoken-google = "0.1"
+secrecy = { version = "0.8", features = ["serde"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
