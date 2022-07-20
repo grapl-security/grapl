@@ -170,7 +170,8 @@ job "rust-integration-tests" {
       }
 
       env {
-        AWS_REGION = var.aws_region
+        AWS_REGION         = var.aws_region
+        AWS_DEFAULT_REGION = var.aws_region
 
         RUST_BACKTRACE = 1
         RUST_LOG       = var.rust_log
