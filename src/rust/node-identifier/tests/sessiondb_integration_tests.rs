@@ -100,7 +100,7 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
     //     .block_on(session_db.handle_unid_session(unid, false))
     //     .expect("Failed to create session");
 
-    let session_id = "Failed to create session"
+    let session_id = "Failed to create session";
 
     assert!(!session_id.is_empty());
 }
