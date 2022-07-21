@@ -13,11 +13,11 @@ pub struct OrganizationManagementClientConfig {
     pub organization_management_healthcheck_polling_interval_ms: u64,
 }
 
-impl Into<GenericGrpcClientConfig> for OrganizationManagementClientConfig {
-    fn into(self) -> GenericGrpcClientConfig {
+impl From<OrganizationManagementClientConfig> for GenericGrpcClientConfig {
+    fn from(val: OrganizationManagementClientConfig) -> Self {
         GenericGrpcClientConfig {
-            address: self.organization_management_client_address,
-            healthcheck_polling_interval_ms: self
+            address: val.organization_management_client_address,
+            healthcheck_polling_interval_ms: val
                 .organization_management_healthcheck_polling_interval_ms,
         }
     }

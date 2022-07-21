@@ -13,11 +13,11 @@ pub struct PluginWorkQueueClientConfig {
     pub plugin_work_queue_healthcheck_polling_interval_ms: u64,
 }
 
-impl Into<GenericGrpcClientConfig> for PluginWorkQueueClientConfig {
-    fn into(self) -> GenericGrpcClientConfig {
+impl From<PluginWorkQueueClientConfig> for GenericGrpcClientConfig {
+    fn from(val: PluginWorkQueueClientConfig) -> Self {
         GenericGrpcClientConfig {
-            address: self.plugin_work_queue_client_address,
-            healthcheck_polling_interval_ms: self.plugin_work_queue_healthcheck_polling_interval_ms,
+            address: val.plugin_work_queue_client_address,
+            healthcheck_polling_interval_ms: val.plugin_work_queue_healthcheck_polling_interval_ms,
         }
     }
 }

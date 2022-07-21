@@ -13,11 +13,11 @@ pub struct PipelineIngressClientConfig {
     pub pipeline_ingress_healthcheck_polling_interval_ms: u64,
 }
 
-impl Into<GenericGrpcClientConfig> for PipelineIngressClientConfig {
-    fn into(self) -> GenericGrpcClientConfig {
+impl From<PipelineIngressClientConfig> for GenericGrpcClientConfig {
+    fn from(val: PipelineIngressClientConfig) -> Self {
         GenericGrpcClientConfig {
-            address: self.pipeline_ingress_client_address,
-            healthcheck_polling_interval_ms: self.pipeline_ingress_healthcheck_polling_interval_ms,
+            address: val.pipeline_ingress_client_address,
+            healthcheck_polling_interval_ms: val.pipeline_ingress_healthcheck_polling_interval_ms,
         }
     }
 }

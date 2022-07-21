@@ -13,11 +13,11 @@ pub struct PluginRegistryClientConfig {
     pub plugin_registry_healthcheck_polling_interval_ms: u64,
 }
 
-impl Into<GenericGrpcClientConfig> for PluginRegistryClientConfig {
-    fn into(self) -> GenericGrpcClientConfig {
+impl From<PluginRegistryClientConfig> for GenericGrpcClientConfig {
+    fn from(val: PluginRegistryClientConfig) -> Self {
         GenericGrpcClientConfig {
-            address: self.plugin_registry_client_address,
-            healthcheck_polling_interval_ms: self.plugin_registry_healthcheck_polling_interval_ms,
+            address: val.plugin_registry_client_address,
+            healthcheck_polling_interval_ms: val.plugin_registry_healthcheck_polling_interval_ms,
         }
     }
 }

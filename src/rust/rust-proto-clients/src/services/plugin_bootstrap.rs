@@ -13,11 +13,11 @@ pub struct PluginBootstrapClientConfig {
     pub plugin_bootstrap_healthcheck_polling_interval_ms: u64,
 }
 
-impl Into<GenericGrpcClientConfig> for PluginBootstrapClientConfig {
-    fn into(self) -> GenericGrpcClientConfig {
+impl From<PluginBootstrapClientConfig> for GenericGrpcClientConfig {
+    fn from(val: PluginBootstrapClientConfig) -> Self {
         GenericGrpcClientConfig {
-            address: self.plugin_bootstrap_client_address,
-            healthcheck_polling_interval_ms: self.plugin_bootstrap_healthcheck_polling_interval_ms,
+            address: val.plugin_bootstrap_client_address,
+            healthcheck_polling_interval_ms: val.plugin_bootstrap_healthcheck_polling_interval_ms,
         }
     }
 }

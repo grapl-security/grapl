@@ -13,11 +13,11 @@ pub struct GeneratorClientConfig {
     pub generator_healthcheck_polling_interval_ms: u64,
 }
 
-impl Into<GenericGrpcClientConfig> for GeneratorClientConfig {
-    fn into(self) -> GenericGrpcClientConfig {
+impl From<GeneratorClientConfig> for GenericGrpcClientConfig {
+    fn from(val: GeneratorClientConfig) -> Self {
         GenericGrpcClientConfig {
-            address: self.generator_client_address,
-            healthcheck_polling_interval_ms: self.generator_healthcheck_polling_interval_ms,
+            address: val.generator_client_address,
+            healthcheck_polling_interval_ms: val.generator_healthcheck_polling_interval_ms,
         }
     }
 }

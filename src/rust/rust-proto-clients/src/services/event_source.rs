@@ -13,11 +13,11 @@ pub struct EventSourceClientConfig {
     pub event_source_healthcheck_polling_interval_ms: u64,
 }
 
-impl Into<GenericGrpcClientConfig> for EventSourceClientConfig {
-    fn into(self) -> GenericGrpcClientConfig {
+impl From<EventSourceClientConfig> for GenericGrpcClientConfig {
+    fn from(val: EventSourceClientConfig) -> Self {
         GenericGrpcClientConfig {
-            address: self.event_source_client_address,
-            healthcheck_polling_interval_ms: self.event_source_healthcheck_polling_interval_ms,
+            address: val.event_source_client_address,
+            healthcheck_polling_interval_ms: val.event_source_healthcheck_polling_interval_ms,
         }
     }
 }
