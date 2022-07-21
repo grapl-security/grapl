@@ -7,6 +7,7 @@
 // Today, `generator-dispatcher` uses a fake plugin_id; once that's correctly
 // implemented, we should change this over to scan for "new work for $plugin_id"
 
+mod test_utils;
 /*
 use std::time::Duration;
 
@@ -16,7 +17,6 @@ use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::PublishRawLogRe
 use test_context::test_context;
 use tracing::Instrument;
 use uuid::Uuid;
-mod test_utils;
 use test_utils::context::GeneratorDispatcherTestContext;
 
 #[test_context(GeneratorDispatcherTestContext)]
