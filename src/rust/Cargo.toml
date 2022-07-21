@@ -2,6 +2,7 @@
 members = [
   "./derive-dynamic-node",
   "./consul-connect",
+  "./db-schema-manager",
   "./endpoint-plugin",
   "./lens-creator",
   "./event-source",
