@@ -1,5 +1,3 @@
-use std::net::SocketAddr;
-
 use rust_proto::protocol::service_client::{
     Connectable,
     NamedService,
@@ -8,7 +6,7 @@ use rust_proto::protocol::service_client::{
 pub trait GrpcClientConfig: clap::Parser {
     type Client: NamedService + Connectable;
 
-    fn address(&self) -> SocketAddr;
+    fn address(&self) -> &str;
     fn healthcheck_polling_interval_ms(&self) -> u64;
 }
 
