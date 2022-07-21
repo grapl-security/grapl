@@ -18,6 +18,11 @@ pub async fn get_grpc_client<C: GrpcClientConfig>(
     let address = client_config.address();
     let service_name = C::Client::SERVICE_NAME;
 
+    let address = address.to_string();
+    if ! address.starts_with("http") {
+        panic!("Address should start with http, but found: '{address}'")
+    }
+
     // TODO: Add a `rust-proto` wrapper around tonic Endpoint
     let endpoint = Endpoint::from_shared(address.to_string())?
         .timeout(Duration::from_secs(10))
