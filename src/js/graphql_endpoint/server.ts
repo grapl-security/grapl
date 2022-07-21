@@ -17,7 +17,7 @@ function customFormatErrorFnForDebugging(error: GraphQLError) {
 }
 
 app.use(
-    "/graphQlEndpoint/graphql",
+    "/graphql",
     [],
     graphqlHTTP(async (request, response, graphQLParams) => {
         console.debug({

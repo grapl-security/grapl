@@ -1,12 +1,8 @@
 use grapl_config::env_helpers::FromEnv;
 use rand::Rng;
 use rusoto_dynamodb::DynamoDbClient;
-use url::Url;
 
-use crate::services::{
-    graphql::GraphQlEndpointUrl,
-    model_plugin_deployer::ModelPluginDeployerEndpoint,
-};
+use crate::GraphQlEndpointUrl;
 
 const KEY_SIZE: usize = 32;
 pub(crate) const SESSION_TOKEN: &'static str = "SESSION_TOKEN";
@@ -20,10 +16,6 @@ fn get_env_var(name: &'static str) -> Result<String, ConfigError> {
     })
 }
 
-fn parse_url(url: String) -> Result<Url, ConfigError> {
-    Url::parse(url.as_str()).map_err(|source| ConfigError::UrlParse { url, source })
-}
-
 pub struct Config {
     pub dynamodb_client: DynamoDbClient,
     pub listener: std::net::TcpListener,
@@ -31,7 +23,6 @@ pub struct Config {
     pub user_auth_table_name: String,
     pub user_session_table_name: String,
     pub graphql_endpoint: GraphQlEndpointUrl,
-    pub model_plugin_deployer_endpoint: ModelPluginDeployerEndpoint,
     pub google_client_id: String,
 }
 
@@ -68,13 +59,11 @@ impl Config {
         let dynamodb_client = DynamoDbClient::from_env();
 
         let graphql_endpoint = get_env_var("GRAPL_GRAPHQL_ENDPOINT")
-            .map(parse_url)?
+            .map(|url| {
+                url::Url::parse(url.as_str())
+                    .map_err(|source| ConfigError::UrlParse { url, source })
+            })?
             .map(GraphQlEndpointUrl::from)?;
-
-        // Model Plugin Deployer endpoint backend
-        let model_plugin_deployer_endpoint = get_env_var("GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT")
-            .map(parse_url)?
-            .map(ModelPluginDeployerEndpoint::from)?;
 
         let google_client_id = get_env_var("GRAPL_GOOGLE_CLIENT_ID")?;
 
@@ -85,7 +74,6 @@ impl Config {
             user_auth_table_name,
             user_session_table_name,
             graphql_endpoint,
-            model_plugin_deployer_endpoint,
             google_client_id,
         })
     }
