@@ -9,8 +9,9 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginType,
 };
 use rust_proto_clients::{
-    get_grpc_client,
+    get_grpc_client_with_options,
     services::PluginRegistryClientConfig,
+    GetGrpcClientOptions,
 };
 
 #[test_log::test(tokio::test)]
@@ -20,7 +21,13 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
     );
 
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = get_grpc_client(client_config).await?;
+    let mut client = get_grpc_client_with_options(
+        client_config,
+        GetGrpcClientOptions {
+            perform_healthcheck: true,
+        },
+    )
+    .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let generator1_display_name = "my first generator".to_string();

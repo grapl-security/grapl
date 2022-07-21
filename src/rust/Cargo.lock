@@ -1690,7 +1690,6 @@ dependencies = [
  "grapl-tracing",
  "kafka",
  "moka 0.9.2",
- "plugin-registry",
  "plugin-work-queue",
  "rand 0.8.5",
  "rust-proto",
@@ -3201,12 +3200,10 @@ dependencies = [
  "async-trait",
  "clap 3.2.13",
  "grapl-config",
- "plugin-work-queue",
  "rust-proto",
  "rust-proto-clients",
  "thiserror",
  "tokio",
- "tonic 0.7.2",
  "tracing",
  "uuid",
 ]
@@ -3233,7 +3230,6 @@ dependencies = [
  "test-log",
  "thiserror",
  "tokio",
- "tonic 0.7.2",
  "tracing",
  "tracing-subscriber",
  "uuid",
@@ -3981,7 +3977,7 @@ dependencies = [
 name = "rust-proto-clients"
 version = "0.0.1"
 dependencies = [
- "clap 3.2.12",
+ "clap 3.2.13",
  "rust-proto",
 ]
 

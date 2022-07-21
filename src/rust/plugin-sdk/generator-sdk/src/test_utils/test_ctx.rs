@@ -18,8 +18,9 @@ use rust_proto::{
     },
 };
 use rust_proto_clients::{
-    get_grpc_client,
+    get_grpc_client_with_options,
     services::GeneratorClientConfig,
+    GetGrpcClientOptions,
 };
 use test_context::{
     futures::channel::oneshot::Sender,
@@ -86,17 +87,18 @@ impl GeneratorTestContextInternals {
         .await
         .expect("Generator never reported healthy");
 
-        /*
-        let endpoint = Endpoint::from_shared(endpoint).unwrap();
-        let client = GeneratorServiceClient::connect(endpoint)
-            .await
-            .expect("could not configure client");
-        */
         let client_config = GeneratorClientConfig {
             generator_client_address: endpoint,
             generator_healthcheck_polling_interval_ms: 10,
         };
-        let client = get_grpc_client(client_config).await.unwrap();
+        let client = get_grpc_client_with_options(
+            client_config,
+            GetGrpcClientOptions {
+                perform_healthcheck: true,
+            },
+        )
+        .await
+        .unwrap();
 
         GeneratorTestContextInternals {
             client,

@@ -9,8 +9,9 @@ use plugin_work_queue::{
 };
 use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient;
 use rust_proto_clients::{
-    get_grpc_client,
+    get_grpc_client_with_options,
     services::PipelineIngressClientConfig,
+    GetGrpcClientOptions,
 };
 use test_context::AsyncTestContext;
 
@@ -28,9 +29,14 @@ impl AsyncTestContext for GeneratorDispatcherTestContext {
         let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
         let client_config = PipelineIngressClientConfig::parse();
-        let pipeline_ingress_client = get_grpc_client(client_config)
-            .await
-            .expect("pipeline_ingress_client");
+        let pipeline_ingress_client = get_grpc_client_with_options(
+            client_config,
+            GetGrpcClientOptions {
+                perform_healthcheck: true,
+            },
+        )
+        .await
+        .expect("pipeline_ingress_client");
 
         let plugin_work_queue_psql_client = PsqlQueue::try_from(PluginWorkQueueDbConfig::parse())
             .await

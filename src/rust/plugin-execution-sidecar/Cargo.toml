@@ -20,14 +20,10 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 grapl-config = { path = "../grapl-config" }
-plugin-work-queue = { path = "../plugin-work-queue" }
 rust-proto = { path = "../rust-proto" }
 rust-proto-clients = { path = "../rust-proto-clients" }
 thiserror = "1.0"
 tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
-# TODO: Add a `rust-proto` wrapper around tonic Endpoint
-# Remove tonic dependency once satisfied
-tonic = { version = "0.7", features = ["default", "compression", "tls"] }
 tracing = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
 

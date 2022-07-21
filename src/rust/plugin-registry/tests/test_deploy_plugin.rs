@@ -16,8 +16,9 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginType,
 };
 use rust_proto_clients::{
-    get_grpc_client,
+    get_grpc_client_with_options,
     services::PluginRegistryClientConfig,
+    GetGrpcClientOptions,
 };
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");
@@ -33,7 +34,13 @@ fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
 #[test_log::test(tokio::test)]
 async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = get_grpc_client(client_config).await?;
+    let mut client = get_grpc_client_with_options(
+        client_config,
+        GetGrpcClientOptions {
+            perform_healthcheck: true,
+        },
+    )
+    .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -72,7 +79,13 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
 #[test_log::test(tokio::test)]
 async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = get_grpc_client(client_config).await?;
+    let mut client = get_grpc_client_with_options(
+        client_config,
+        GetGrpcClientOptions {
+            perform_healthcheck: true,
+        },
+    )
+    .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -150,7 +163,13 @@ async fn assert_health(
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = get_grpc_client(client_config).await?;
+    let mut client = get_grpc_client_with_options(
+        client_config,
+        GetGrpcClientOptions {
+            perform_healthcheck: true,
+        },
+    )
+    .await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 

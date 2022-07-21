@@ -18,7 +18,6 @@ futures = "0.3"
 grapl-tracing = { path = "../grapl-tracing" }
 kafka = { path = "../kafka", version = "*" }
 moka = { version = "0.9", features = ["future"] }
-plugin-registry = { path = "../plugin-registry" }
 plugin-work-queue = { path = "../plugin-work-queue" }
 rand = "0.8"
 rust-proto = { path = "../rust-proto" }

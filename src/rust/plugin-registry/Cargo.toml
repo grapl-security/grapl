@@ -35,8 +35,6 @@ sqlx = { version = "0.6", features = [
 tempfile = "3.3"
 thiserror = "1.0"
 tokio = { version = "1.17", features = ["full"] }
-# TODO remove tonic after https://github.com/grapl-security/grapl/pull/1665
-tonic = { version = "0.7", features = ["default", "compression"] }
 tracing = "0.1"
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"

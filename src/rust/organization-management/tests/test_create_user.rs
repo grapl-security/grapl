@@ -10,8 +10,9 @@ use rust_proto::graplinc::grapl::api::organization_management::v1beta1::{
     CreateUserRequest,
 };
 use rust_proto_clients::{
-    get_grpc_client,
+    get_grpc_client_with_options,
     services::OrganizationManagementClientConfig,
+    GetGrpcClientOptions,
 };
 
 #[test_log::test(tokio::test)]
@@ -35,7 +36,13 @@ async fn test_create_user() -> Result<(), Box<dyn std::error::Error>> {
         .await??;
 
     let client_config = OrganizationManagementClientConfig::parse();
-    let mut client = get_grpc_client(client_config).await?;
+    let mut client = get_grpc_client_with_options(
+        client_config,
+        GetGrpcClientOptions {
+            perform_healthcheck: true,
+        },
+    )
+    .await?;
 
     // create organization with admin user
     let organization_display_name = uuid::Uuid::new_v4().to_string();
