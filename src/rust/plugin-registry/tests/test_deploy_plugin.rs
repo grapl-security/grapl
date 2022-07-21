@@ -17,7 +17,7 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
 };
 use rust_proto_clients::{
     get_grpc_client,
-    PluginRegistryClientConfig,
+    services::PluginRegistryClientConfig,
 };
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");

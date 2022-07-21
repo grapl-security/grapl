@@ -7,7 +7,7 @@ use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::event_source::v1beta1 as es_api;
 use rust_proto_clients::{
     get_grpc_client,
-    EventSourceClientConfig,
+    services::EventSourceClientConfig,
 };
 
 #[test_log::test(tokio::test)]

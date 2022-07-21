@@ -1,6 +1,9 @@
 use rust_proto::graplinc::grapl::api::organization_management::v1beta1::client::OrganizationManagementClient;
 
-use crate::grpc_client_config::GrpcClientConfig;
+use crate::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
+};
 
 #[derive(clap::Parser, Debug)]
 pub struct OrganizationManagementClientConfig {
@@ -10,13 +13,16 @@ pub struct OrganizationManagementClientConfig {
     pub organization_management_healthcheck_polling_interval_ms: u64,
 }
 
+impl Into<GenericGrpcClientConfig> for OrganizationManagementClientConfig {
+    fn into(self) -> GenericGrpcClientConfig {
+        GenericGrpcClientConfig {
+            address: self.organization_management_client_address,
+            healthcheck_polling_interval_ms: self
+                .organization_management_healthcheck_polling_interval_ms,
+        }
+    }
+}
+
 impl GrpcClientConfig for OrganizationManagementClientConfig {
     type Client = OrganizationManagementClient;
-
-    fn address(&self) -> &str {
-        self.organization_management_client_address.as_str()
-    }
-    fn healthcheck_polling_interval_ms(&self) -> u64 {
-        self.organization_management_healthcheck_polling_interval_ms
-    }
 }

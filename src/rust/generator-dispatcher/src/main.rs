@@ -5,7 +5,7 @@ use generator_dispatcher::{
 };
 use rust_proto_clients::{
     get_grpc_client,
-    PluginWorkQueueClientConfig,
+    services::PluginWorkQueueClientConfig,
 };
 
 #[tokio::main]

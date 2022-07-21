@@ -1,6 +1,9 @@
 use rust_proto::graplinc::grapl::api::plugin_work_queue::v1beta1::PluginWorkQueueServiceClient;
 
-use crate::grpc_client_config::GrpcClientConfig;
+use crate::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
+};
 
 #[derive(clap::Parser, Debug)]
 pub struct PluginWorkQueueClientConfig {
@@ -10,13 +13,15 @@ pub struct PluginWorkQueueClientConfig {
     pub plugin_work_queue_healthcheck_polling_interval_ms: u64,
 }
 
+impl Into<GenericGrpcClientConfig> for PluginWorkQueueClientConfig {
+    fn into(self) -> GenericGrpcClientConfig {
+        GenericGrpcClientConfig {
+            address: self.plugin_work_queue_client_address,
+            healthcheck_polling_interval_ms: self.plugin_work_queue_healthcheck_polling_interval_ms,
+        }
+    }
+}
+
 impl GrpcClientConfig for PluginWorkQueueClientConfig {
     type Client = PluginWorkQueueServiceClient;
-
-    fn address(&self) -> &str {
-        self.plugin_work_queue_client_address.as_str()
-    }
-    fn healthcheck_polling_interval_ms(&self) -> u64 {
-        self.plugin_work_queue_healthcheck_polling_interval_ms
-    }
 }

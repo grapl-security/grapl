@@ -7,7 +7,7 @@ use rust_proto::graplinc::grapl::api::plugin_bootstrap::v1beta1::{
 };
 use rust_proto_clients::{
     get_grpc_client,
-    PluginBootstrapClientConfig,
+    services::PluginBootstrapClientConfig,
 };
 
 static PLUGIN_BINARY_PATH: &str = "/usr/local/bin/grapl-plugin";

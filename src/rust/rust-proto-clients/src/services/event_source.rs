@@ -1,6 +1,9 @@
 use rust_proto::graplinc::grapl::api::event_source::v1beta1::client::EventSourceServiceClient;
 
-use crate::grpc_client_config::GrpcClientConfig;
+use crate::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
+};
 
 #[derive(clap::Parser, Debug)]
 pub struct EventSourceClientConfig {
@@ -10,13 +13,15 @@ pub struct EventSourceClientConfig {
     pub event_source_healthcheck_polling_interval_ms: u64,
 }
 
+impl Into<GenericGrpcClientConfig> for EventSourceClientConfig {
+    fn into(self) -> GenericGrpcClientConfig {
+        GenericGrpcClientConfig {
+            address: self.event_source_client_address,
+            healthcheck_polling_interval_ms: self.event_source_healthcheck_polling_interval_ms,
+        }
+    }
+}
+
 impl GrpcClientConfig for EventSourceClientConfig {
     type Client = EventSourceServiceClient;
-
-    fn address(&self) -> &str {
-        self.event_source_client_address.as_str()
-    }
-    fn healthcheck_polling_interval_ms(&self) -> u64 {
-        self.event_source_healthcheck_polling_interval_ms
-    }
 }

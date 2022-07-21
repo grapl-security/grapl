@@ -8,7 +8,7 @@ use organization_management::OrganizationManagementServiceConfig;
 use rust_proto::graplinc::grapl::api::organization_management::v1beta1::CreateOrganizationRequest;
 use rust_proto_clients::{
     get_grpc_client,
-    OrganizationManagementClientConfig,
+    services::OrganizationManagementClientConfig,
 };
 
 #[test_log::test(tokio::test)]

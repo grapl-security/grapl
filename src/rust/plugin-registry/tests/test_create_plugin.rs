@@ -11,7 +11,7 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
 };
 use rust_proto_clients::{
     get_grpc_client,
-    PluginRegistryClientConfig,
+    services::PluginRegistryClientConfig,
 };
 
 /// For now, this is just a smoke test. This test can and should evolve as

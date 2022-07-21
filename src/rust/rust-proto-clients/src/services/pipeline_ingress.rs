@@ -1,6 +1,9 @@
 use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient;
 
-use crate::grpc_client_config::GrpcClientConfig;
+use crate::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
+};
 
 #[derive(clap::Parser, Debug)]
 pub struct PipelineIngressClientConfig {
@@ -10,13 +13,15 @@ pub struct PipelineIngressClientConfig {
     pub pipeline_ingress_healthcheck_polling_interval_ms: u64,
 }
 
+impl Into<GenericGrpcClientConfig> for PipelineIngressClientConfig {
+    fn into(self) -> GenericGrpcClientConfig {
+        GenericGrpcClientConfig {
+            address: self.pipeline_ingress_client_address,
+            healthcheck_polling_interval_ms: self.pipeline_ingress_healthcheck_polling_interval_ms,
+        }
+    }
+}
+
 impl GrpcClientConfig for PipelineIngressClientConfig {
     type Client = PipelineIngressClient;
-
-    fn address(&self) -> &str {
-        self.pipeline_ingress_client_address.as_str()
-    }
-    fn healthcheck_polling_interval_ms(&self) -> u64 {
-        self.pipeline_ingress_healthcheck_polling_interval_ms
-    }
 }

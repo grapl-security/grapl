@@ -1,6 +1,9 @@
 use rust_proto::graplinc::grapl::api::plugin_bootstrap::v1beta1::client::PluginBootstrapClient;
 
-use crate::grpc_client_config::GrpcClientConfig;
+use crate::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
+};
 
 #[derive(clap::Parser, Debug)]
 pub struct PluginBootstrapClientConfig {
@@ -10,13 +13,15 @@ pub struct PluginBootstrapClientConfig {
     pub plugin_bootstrap_healthcheck_polling_interval_ms: u64,
 }
 
+impl Into<GenericGrpcClientConfig> for PluginBootstrapClientConfig {
+    fn into(self) -> GenericGrpcClientConfig {
+        GenericGrpcClientConfig {
+            address: self.plugin_bootstrap_client_address,
+            healthcheck_polling_interval_ms: self.plugin_bootstrap_healthcheck_polling_interval_ms,
+        }
+    }
+}
+
 impl GrpcClientConfig for PluginBootstrapClientConfig {
     type Client = PluginBootstrapClient;
-
-    fn address(&self) -> &str {
-        self.plugin_bootstrap_client_address.as_str()
-    }
-    fn healthcheck_polling_interval_ms(&self) -> u64 {
-        self.plugin_bootstrap_healthcheck_polling_interval_ms
-    }
 }

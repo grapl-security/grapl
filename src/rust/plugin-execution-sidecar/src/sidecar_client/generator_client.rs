@@ -4,7 +4,7 @@ use rust_proto::{
 };
 use rust_proto_clients::{
     get_grpc_client,
-    GeneratorClientConfig,
+    services::GeneratorClientConfig,
 };
 
 fn get_plugin_upstream_address(plugin_id: uuid::Uuid) -> String {

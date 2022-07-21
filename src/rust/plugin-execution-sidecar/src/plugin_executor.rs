@@ -4,7 +4,7 @@ use clap::Parser;
 use rust_proto::graplinc::grapl::api::plugin_work_queue::v1beta1::PluginWorkQueueServiceClient;
 use rust_proto_clients::{
     get_grpc_client,
-    PluginWorkQueueClientConfig,
+    services::PluginWorkQueueClientConfig,
 };
 
 use crate::{

@@ -31,7 +31,7 @@ use rust_proto::graplinc::grapl::{
 };
 use rust_proto_clients::{
     get_grpc_client,
-    PipelineIngressClientConfig,
+    services::PipelineIngressClientConfig,
 };
 use test_context::{
     test_context,

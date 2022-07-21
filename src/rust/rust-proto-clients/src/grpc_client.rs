@@ -10,15 +10,22 @@ use rust_proto::protocol::{
     },
 };
 
-use crate::grpc_client_config::GrpcClientConfig;
+use crate::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
+};
 
 pub async fn get_grpc_client<C: GrpcClientConfig>(
     client_config: C,
 ) -> Result<C::Client, ConnectError> {
-    let address = client_config.address().to_string();
+    let GenericGrpcClientConfig {
+        address,
+        healthcheck_polling_interval_ms,
+    } = client_config.into();
+
     let service_name = C::Client::SERVICE_NAME;
 
-    if ! address.starts_with("http") {
+    if !address.starts_with("http") {
         panic!("Address should start with http, but found: '{address}'")
     }
 
@@ -31,7 +38,7 @@ pub async fn get_grpc_client<C: GrpcClientConfig>(
         endpoint.clone(),
         service_name,
         Duration::from_millis(10000),
-        Duration::from_millis(client_config.healthcheck_polling_interval_ms()),
+        Duration::from_millis(healthcheck_polling_interval_ms),
     )
     .await?;
 

@@ -26,7 +26,7 @@ use rust_proto::{
 };
 use rust_proto_clients::{
     get_grpc_client,
-    PluginRegistryClientConfig,
+    services::PluginRegistryClientConfig,
 };
 use thiserror::Error;
 use uuid::Uuid;

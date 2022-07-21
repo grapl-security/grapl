@@ -10,7 +10,7 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
 };
 use rust_proto_clients::{
     get_grpc_client,
-    PluginRegistryClientConfig,
+    services::PluginRegistryClientConfig,
 };
 
 #[test_log::test(tokio::test)]

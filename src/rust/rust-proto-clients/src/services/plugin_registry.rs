@@ -1,6 +1,9 @@
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryServiceClient;
 
-use crate::grpc_client_config::GrpcClientConfig;
+use crate::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
+};
 
 #[derive(clap::Parser, Debug)]
 pub struct PluginRegistryClientConfig {
@@ -10,13 +13,15 @@ pub struct PluginRegistryClientConfig {
     pub plugin_registry_healthcheck_polling_interval_ms: u64,
 }
 
+impl Into<GenericGrpcClientConfig> for PluginRegistryClientConfig {
+    fn into(self) -> GenericGrpcClientConfig {
+        GenericGrpcClientConfig {
+            address: self.plugin_registry_client_address,
+            healthcheck_polling_interval_ms: self.plugin_registry_healthcheck_polling_interval_ms,
+        }
+    }
+}
+
 impl GrpcClientConfig for PluginRegistryClientConfig {
     type Client = PluginRegistryServiceClient;
-
-    fn address(&self) -> &str {
-        self.plugin_registry_client_address.as_str()
-    }
-    fn healthcheck_polling_interval_ms(&self) -> u64 {
-        self.plugin_registry_healthcheck_polling_interval_ms
-    }
 }
