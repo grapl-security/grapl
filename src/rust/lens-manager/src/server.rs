@@ -289,10 +289,10 @@ impl LensManagerApi for LensManager {
                 LIMIT ?
             "#
         ));
-
+        select.set_is_idempotent(true);
         let mut rows = self
             .scylla_client
-            .execute_iter(select, &(offset, limit))
+            .execute_iter(select, &(offset as i64, limit as i32))
             .await?
             .into_typed::<(i64,)>();
 
@@ -306,7 +306,7 @@ impl LensManagerApi for LensManager {
                 }
                 Some(lens_uid) => {
                     lenses.push(ListLensesEntry { lens_uid });
-                    last_uid = std::cmp::max(last_uid, lens_uid);
+                    last_uid = std::cmp::max(last_uid, lens_uid.as_u64());
                 }
             }
         }

@@ -1,5 +1,6 @@
 use grapl_tracing::SetupTracingError;
 use thiserror::Error;
+use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorServiceClientError;
 
 #[non_exhaustive]
 #[derive(Error, Debug)]

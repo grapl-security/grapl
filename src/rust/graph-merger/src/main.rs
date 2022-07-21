@@ -1,6 +1,5 @@
 use clap::Parser;
 use futures::StreamExt;
-use grapl_config::env_helpers::FromEnv;
 use grapl_tracing::setup_tracing;
 use kafka::{
     config::{
@@ -10,7 +9,6 @@ use kafka::{
     StreamProcessor,
     StreamProcessorError,
 };
-use rusoto_dynamodb::DynamoDbClient;
 use rust_proto::graplinc::grapl::{
     api::{
         graph::v1beta1::IdentifiedGraph,
@@ -41,6 +39,7 @@ const SERVICE_NAME: &'static str = "graph-merger";
 async fn main() -> Result<(), GraphMergerError> {
     let _guard = setup_tracing(SERVICE_NAME)?;
 
+    let service_config = GraphMergerConfig::parse();
     let graph_mutation_client =
         GraphMutationClient::connect(service_config.graph_mutation_client_url).await?;
     let graph_merger = GraphMerger::new(graph_mutation_client);

@@ -3,14 +3,12 @@ use std::{
     fmt::Debug,
 };
 
-use dgraph_tonic::Client as DgraphClient;
 use grapl_tracing::SetupTracingError;
 use rust_proto::graplinc::grapl::{
     api::{
         graph::v1beta1::{
             IdentifiedEdge,
             IdentifiedGraph,
-            MergedGraph,
             Property,
         },
         graph_mutation::v1beta1::{
@@ -39,11 +37,6 @@ use rust_proto::graplinc::grapl::{
         PropertyName,
         Uid,
     },
-};
-
-use crate::{
-    reverse_resolver::ReverseEdgeResolver,
-    upserter,
 };
 
 #[non_exhaustive]
