@@ -38,6 +38,7 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
         client_config,
         GetGrpcClientOptions {
             perform_healthcheck: true,
+            ..Default::default()
         },
     )
     .await?;
@@ -83,6 +84,7 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
         client_config,
         GetGrpcClientOptions {
             perform_healthcheck: true,
+            ..Default::default()
         },
     )
     .await?;
@@ -167,6 +169,7 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn s
         client_config,
         GetGrpcClientOptions {
             perform_healthcheck: true,
+            ..Default::default()
         },
     )
     .await?;

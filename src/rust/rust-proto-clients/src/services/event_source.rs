@@ -9,15 +9,12 @@ use crate::grpc_client_config::{
 pub struct EventSourceClientConfig {
     #[clap(long, env)]
     pub event_source_client_address: String,
-    #[clap(long, env, default_value = "500")]
-    pub event_source_healthcheck_polling_interval_ms: u64,
 }
 
 impl From<EventSourceClientConfig> for GenericGrpcClientConfig {
     fn from(val: EventSourceClientConfig) -> Self {
         GenericGrpcClientConfig {
             address: val.event_source_client_address,
-            healthcheck_polling_interval_ms: val.event_source_healthcheck_polling_interval_ms,
         }
     }
 }

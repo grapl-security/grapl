@@ -15,9 +15,18 @@ use crate::grpc_client_config::{
     GrpcClientConfig,
 };
 
-#[derive(Default)]
 pub struct GetGrpcClientOptions {
     pub perform_healthcheck: bool,
+    pub healthcheck_polling_interval: Duration,
+}
+
+impl Default for GetGrpcClientOptions {
+    fn default() -> Self {
+        GetGrpcClientOptions {
+            perform_healthcheck: false,
+            healthcheck_polling_interval: Duration::from_millis(500),
+        }
+    }
 }
 
 pub async fn get_grpc_client<C: GrpcClientConfig>(
@@ -30,10 +39,7 @@ pub async fn get_grpc_client_with_options<C: GrpcClientConfig>(
     client_config: C,
     options: GetGrpcClientOptions,
 ) -> Result<C::Client, ConnectError> {
-    let GenericGrpcClientConfig {
-        address,
-        healthcheck_polling_interval_ms,
-    } = client_config.into();
+    let GenericGrpcClientConfig { address } = client_config.into();
 
     let service_name = C::Client::SERVICE_NAME;
 
@@ -51,7 +57,7 @@ pub async fn get_grpc_client_with_options<C: GrpcClientConfig>(
             endpoint.clone(),
             service_name,
             Duration::from_millis(10000),
-            Duration::from_millis(healthcheck_polling_interval_ms),
+            options.healthcheck_polling_interval,
         )
         .await?;
     }

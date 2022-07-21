@@ -33,6 +33,7 @@ impl AsyncTestContext for GeneratorDispatcherTestContext {
             client_config,
             GetGrpcClientOptions {
                 perform_healthcheck: true,
+                ..Default::default()
             },
         )
         .await

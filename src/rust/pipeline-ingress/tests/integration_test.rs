@@ -55,6 +55,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
             client_config,
             GetGrpcClientOptions {
                 perform_healthcheck: true,
+                ..Default::default()
             },
         )
         .await

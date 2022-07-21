@@ -25,6 +25,7 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
         client_config,
         GetGrpcClientOptions {
             perform_healthcheck: true,
+            ..Default::default()
         },
     )
     .await?;

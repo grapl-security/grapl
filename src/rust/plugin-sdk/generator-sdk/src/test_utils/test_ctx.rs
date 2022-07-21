@@ -89,12 +89,12 @@ impl GeneratorTestContextInternals {
 
         let client_config = GeneratorClientConfig {
             generator_client_address: endpoint,
-            generator_healthcheck_polling_interval_ms: 10,
         };
         let client = get_grpc_client_with_options(
             client_config,
             GetGrpcClientOptions {
                 perform_healthcheck: true,
+                healthcheck_polling_interval: Duration::from_millis(10),
             },
         )
         .await

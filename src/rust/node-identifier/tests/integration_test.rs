@@ -74,6 +74,7 @@ impl AsyncTestContext for NodeIdentifierTestContext {
             client_config,
             GetGrpcClientOptions {
                 perform_healthcheck: true,
+                ..Default::default()
             },
         )
         .await

@@ -40,6 +40,7 @@ async fn test_create_user() -> Result<(), Box<dyn std::error::Error>> {
         client_config,
         GetGrpcClientOptions {
             perform_healthcheck: true,
+            ..Default::default()
         },
     )
     .await?;

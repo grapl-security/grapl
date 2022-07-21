@@ -21,10 +21,6 @@ pub async fn get_generator_client(
     let address = get_plugin_upstream_address(plugin_id);
     let client_config = GeneratorClientConfig {
         generator_client_address: address.parse().expect("generator_client_address"),
-        generator_healthcheck_polling_interval_ms:
-            rust_proto_clients::defaults::HEALTHCHECK_POLLING_INTERVAL_MS
-                .parse()
-                .expect("polling_interval_ms"),
     };
     get_grpc_client(client_config).await
 }

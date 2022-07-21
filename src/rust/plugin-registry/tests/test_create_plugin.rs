@@ -27,6 +27,7 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
         client_config,
         GetGrpcClientOptions {
             perform_healthcheck: true,
+            ..Default::default()
         },
     )
     .await?;
