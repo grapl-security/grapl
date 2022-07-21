@@ -25,8 +25,9 @@ use rust_proto::graplinc::grapl::{
     },
 };
 use rust_proto_clients::{
-    get_grpc_client,
+    get_grpc_client_with_options,
     services::PipelineIngressClientConfig,
+    GetGrpcClientOptions,
 };
 use test_context::{
     test_context,
@@ -50,7 +51,14 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let _guard = setup_tracing("pipeline-ingress-integration-tests").expect("setup_tracing");
 
         let client_config = PipelineIngressClientConfig::parse();
-        let grpc_client = get_grpc_client(client_config).await.expect("client");
+        let grpc_client = get_grpc_client_with_options(
+            client_config,
+            GetGrpcClientOptions {
+                perform_healthcheck: true,
+            },
+        )
+        .await
+        .expect("client");
         let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 
         PipelineIngressTestContext {
