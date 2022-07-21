@@ -30,17 +30,9 @@
 
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
-// TODO(inickles): Consider moving all endpoints behind `/api`.
 module.exports = function(app) {
   app.use(
-    '/auth',
-    createProxyMiddleware({
-      target: 'http://localhost:1234',
-      changeOrigin: true,
-    })
-  );
-  app.use(
-    '/graphQlEndpoint',
+    '/api',
     createProxyMiddleware({
       target: 'http://localhost:1234',
       changeOrigin: true,

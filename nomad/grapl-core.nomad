@@ -991,12 +991,11 @@ job "grapl-core" {
         GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
 
-        GRAPL_WEB_UI_BIND_ADDRESS            = "0.0.0.0:${NOMAD_PORT_web-ui-port}"
-        GRAPL_GRAPHQL_ENDPOINT               = "http://${NOMAD_UPSTREAM_ADDR_graphql-endpoint}"
-        GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
-        GRAPL_GOOGLE_CLIENT_ID               = var.google_client_id
-        RUST_LOG                             = var.rust_log
-        RUST_BACKTRACE                       = local.rust_backtrace
+        GRAPL_WEB_UI_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_web-ui-port}"
+        GRAPL_GRAPHQL_ENDPOINT    = "http://${NOMAD_UPSTREAM_ADDR_graphql-endpoint}"
+        GRAPL_GOOGLE_CLIENT_ID    = var.google_client_id
+        RUST_LOG                  = var.rust_log
+        RUST_BACKTRACE            = local.rust_backtrace
       }
     }
 

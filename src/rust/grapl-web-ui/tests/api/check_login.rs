@@ -4,7 +4,7 @@
 async fn unauthenticated_check_login() -> Result<(), Box<dyn std::error::Error>> {
     let app = crate::test_app::TestApp::spawn()?;
 
-    let res = app.post("auth/checkLogin").send().await?;
+    let res = app.post("api/auth/checkLogin").send().await?;
 
     assert_eq!(res.status(), actix_web::http::StatusCode::UNAUTHORIZED);
 
