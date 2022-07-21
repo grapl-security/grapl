@@ -1,5 +1,4 @@
 use futures::TryFutureExt;
-use tokio::time::error::Elapsed;
 use tonic_health::proto::{
     health_check_response::ServingStatus as ServingStatusProto,
     health_client::HealthClient as HealthClientProto,
@@ -24,23 +23,11 @@ pub enum HealthcheckStatus {
     Unknown,
 }
 
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum ConfigurationError {
-    #[error("failed to connect {0}")]
-    ConnectionError(#[from] tonic::transport::Error),
-
-    #[error("healthcheck failed {0}")]
-    HealtcheckFailed(#[from] HealthcheckError),
-
-    #[error("timeout elapsed {0}")]
-    TimeoutElapsed(#[from] Elapsed),
-}
-
 pub mod client {
     use std::time::Duration;
 
     use super::*;
+    use crate::protocol::service_client::ConnectError;
 
     pub struct HealthcheckClient {
         proto_client: HealthClientProto<tonic::transport::Channel>,
@@ -52,7 +39,7 @@ pub mod client {
         pub async fn connect<T>(
             endpoint: T,
             service_name: &'static str,
-        ) -> Result<Self, ConfigurationError>
+        ) -> Result<Self, ConnectError>
         where
             T: std::convert::TryInto<tonic::transport::Endpoint> + std::fmt::Debug,
             T::Error: std::error::Error + Send + Sync + 'static,
@@ -93,7 +80,7 @@ pub mod client {
             service_name: &'static str,
             timeout: Duration,
             polling_interval: Duration,
-        ) -> Result<Self, ConfigurationError>
+        ) -> Result<Self, ConnectError>
         where
             T: std::convert::TryInto<tonic::transport::Endpoint> + Clone + std::fmt::Debug,
             T::Error: std::error::Error + Send + Sync + 'static,

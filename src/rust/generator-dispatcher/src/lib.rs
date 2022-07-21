@@ -7,7 +7,6 @@ use futures::{
     TryStreamExt,
 };
 use generator_ids_cache::{
-    ConfigurationError as GeneratorIdsCacheConfigurationError,
     GeneratorIdsCache,
     GeneratorIdsCacheError,
 };
@@ -18,17 +17,20 @@ use kafka::{
     ProducerError,
     RetryProducer,
 };
-use plugin_work_queue::client::PluginWorkQueueServiceClient;
-use rust_proto::graplinc::grapl::{
-    api::plugin_work_queue::v1beta1::{
-        ExecutionJob,
-        PluginWorkQueueServiceClientError,
-        PushExecuteGeneratorRequest,
+use rust_proto::{
+    graplinc::grapl::{
+        api::plugin_work_queue::v1beta1::{
+            ExecutionJob,
+            PluginWorkQueueServiceClient,
+            PluginWorkQueueServiceClientError,
+            PushExecuteGeneratorRequest,
+        },
+        pipeline::{
+            v1beta1::RawLog,
+            v1beta2::Envelope,
+        },
     },
-    pipeline::{
-        v1beta1::RawLog,
-        v1beta2::Envelope,
-    },
+    protocol::service_client::ConnectError,
 };
 use thiserror::Error;
 use uuid::Uuid;
@@ -42,7 +44,7 @@ pub enum ConfigurationError {
     KafkaConfigurationError(#[from] KafkaConfigurationError),
 
     #[error("error configuring generator IDs cache")]
-    GeneratorIdsCacheConfigurationError(#[from] GeneratorIdsCacheConfigurationError),
+    GeneratorIdsCacheConfigurationError(#[from] ConnectError),
 }
 
 #[derive(Debug, Error)]

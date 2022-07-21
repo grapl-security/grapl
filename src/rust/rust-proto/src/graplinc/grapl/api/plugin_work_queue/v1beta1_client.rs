@@ -5,7 +5,14 @@ use proto::plugin_work_queue_service_client::PluginWorkQueueServiceClient as Plu
 use crate::{
     graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
-    protocol::service_client::NamedService,
+    protocol::{
+        endpoint::Endpoint,
+        service_client::{
+            ConnectError,
+            Connectable,
+            NamedService,
+        },
+    },
     SerDeError,
 };
 
@@ -22,22 +29,21 @@ pub struct PluginWorkQueueServiceClient {
     proto_client: PluginWorkQueueServiceClientProto<tonic::transport::Channel>,
 }
 
+#[async_trait::async_trait]
+impl Connectable for PluginWorkQueueServiceClient {
+    #[tracing::instrument(err)]
+    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        Ok(Self {
+            proto_client: PluginWorkQueueServiceClientProto::connect(endpoint).await?,
+        })
+    }
+}
+
 impl PluginWorkQueueServiceClient {
     pub fn new(inner: PluginWorkQueueServiceClientProto<tonic::transport::Channel>) -> Self {
         Self {
             proto_client: inner,
         }
-    }
-
-    #[tracing::instrument(err)]
-    pub async fn connect<T>(endpoint: T) -> Result<Self, Box<dyn std::error::Error>>
-    where
-        T: std::convert::TryInto<tonic::transport::Endpoint> + Debug,
-        T::Error: std::error::Error + Send + Sync + 'static,
-    {
-        Ok(PluginWorkQueueServiceClient::new(
-            PluginWorkQueueServiceClientProto::connect(endpoint).await?,
-        ))
     }
 
     /// Adds a new execution job for a generator

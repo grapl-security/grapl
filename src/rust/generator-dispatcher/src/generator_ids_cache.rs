@@ -3,6 +3,7 @@ use std::{
     time::Duration,
 };
 
+use clap::Parser;
 use futures::{
     channel::mpsc::{
         Sender,
@@ -11,25 +12,24 @@ use futures::{
     StreamExt,
 };
 use moka::future::Cache;
-use plugin_registry::client::FromEnv as PRFromEnv;
 use rand::prelude::*;
 use rust_proto::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
-        PluginRegistryServiceClient,
         PluginRegistryServiceClientError,
     },
-    protocol::status::Code,
+    protocol::{
+        service_client::ConnectError,
+        status::Code,
+    },
+};
+use rust_proto_clients::{
+    get_grpc_client,
+    services::PluginRegistryClientConfig,
 };
 use thiserror::Error;
 use uuid::Uuid;
-
-#[derive(Debug, Error)]
-pub enum ConfigurationError {
-    #[error("plugin registry client error {0}")]
-    PluginRegistryClientError(#[from] PluginRegistryServiceClientError),
-}
 
 #[derive(Debug, Error)]
 pub enum GeneratorIdsCacheError {
@@ -85,7 +85,7 @@ impl GeneratorIdsCache {
         ttl: Duration,
         updater_pool_size: usize,
         updater_queue_depth: usize,
-    ) -> Result<Self, ConfigurationError> {
+    ) -> Result<Self, ConnectError> {
         let generator_ids_cache = Cache::builder()
             .max_capacity(capacity)
             .time_to_live(ttl)
@@ -95,8 +95,9 @@ impl GeneratorIdsCache {
 
         let (updater_tx, updater_rx) = futures::channel::mpsc::channel(updater_queue_depth);
 
+        let client_config = PluginRegistryClientConfig::parse();
         let plugin_registry_client = Arc::new(tokio::sync::Mutex::new(
-            PluginRegistryServiceClient::from_env().await?,
+            get_grpc_client(client_config).await?,
         ));
 
         // The updater task is responsible for handling messages on the update
