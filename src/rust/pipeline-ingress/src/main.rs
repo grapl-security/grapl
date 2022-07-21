@@ -8,22 +8,20 @@ use std::{
 };
 
 use clap::Parser;
+use grapl_tracing::{
+    setup_tracing,
+    SetupTracingError,
+};
 use kafka::{
     config::ProducerConfig,
     ConfigurationError as KafkaConfigurationError,
     Producer,
     ProducerError,
 };
-use opentelemetry::{
-    global,
-    sdk::propagation::TraceContextPropagator,
-    trace::TraceError,
-};
 use rust_proto::{
     graplinc::grapl::{
         api::pipeline_ingress::v1beta1::{
             server::{
-                ConfigurationError as ServerConfigurationError,
                 PipelineIngressApi,
                 PipelineIngressServer,
             },
@@ -39,16 +37,13 @@ use rust_proto::{
         },
     },
     protocol::{
+        error::ServeError,
         healthcheck::HealthcheckStatus,
         status::Status,
     },
 };
 use thiserror::Error;
 use tokio::net::TcpListener;
-use tracing_subscriber::{
-    prelude::*,
-    EnvFilter,
-};
 use uuid::Uuid;
 
 #[non_exhaustive]
@@ -116,8 +111,8 @@ enum ConfigurationError {
     #[error("failed to configure kafka client {0}")]
     Kafka(#[from] KafkaConfigurationError),
 
-    #[error("failed to configure gRPC server {0}")]
-    Server(#[from] ServerConfigurationError),
+    #[error("ServeError {0}")]
+    ServeError(#[from] ServeError),
 
     #[error("missing environment variable {0}")]
     EnvironmentVariable(#[from] VarError),
@@ -129,7 +124,7 @@ enum ConfigurationError {
     ParseInt(#[from] ParseIntError),
 
     #[error("failed to configure tracing {0}")]
-    Tracing(#[from] TraceError),
+    SetupTracingError(#[from] SetupTracingError),
 }
 
 #[tracing::instrument(err)]
@@ -171,30 +166,12 @@ async fn handler() -> Result<(), ConfigurationError> {
     Ok(server.serve().await?)
 }
 
+const SERVICE_NAME: &'static str = "pipeline-ingress";
+
 #[tokio::main]
 async fn main() -> Result<(), ConfigurationError> {
-    let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
-    // initialize json logging layer
-    let log_layer = tracing_subscriber::fmt::layer()
-        .json()
-        .with_writer(non_blocking);
-
-    // initialize tracing layer
-    global::set_text_map_propagator(TraceContextPropagator::new());
-    let tracer = opentelemetry_jaeger::new_pipeline()
-        .with_service_name("pipeline-ingress")
-        .install_batch(opentelemetry::runtime::Tokio)?;
-
-    // register a subscriber
-    let filter = EnvFilter::from_default_env();
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(log_layer)
-        .with(tracing_opentelemetry::layer().with_tracer(tracer))
-        .init();
-
-    tracing::info!("logger configured successfully");
     tracing::info!("starting up!");
 
     match handler().await {

@@ -3,11 +3,14 @@ use std::{
     fmt::Debug,
 };
 
+use dgraph_tonic::Client as DgraphClient;
+use grapl_tracing::SetupTracingError;
 use rust_proto::graplinc::grapl::{
     api::{
         graph::v1beta1::{
             IdentifiedEdge,
             IdentifiedGraph,
+            MergedGraph,
             Property,
         },
         graph_mutation::v1beta1::{
@@ -38,6 +41,11 @@ use rust_proto::graplinc::grapl::{
     },
 };
 
+use crate::{
+    reverse_resolver::ReverseEdgeResolver,
+    upserter,
+};
+
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
 pub enum GraphMergerError {
@@ -53,8 +61,8 @@ pub enum GraphMergerError {
     #[error("kafka configuration error {0}")]
     KafkaConfigurationError(#[from] kafka::ConfigurationError),
 
-    #[error("error configuring tracing {0}")]
-    TraceError(#[from] opentelemetry::trace::TraceError),
+    #[error("failed to configure tracing {0}")]
+    SetupTracingError(#[from] SetupTracingError),
 
     #[error("anyhow error {0}")]
     AnyhowError(#[from] anyhow::Error),

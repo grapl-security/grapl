@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pulumi_postgresql as postgresql
 from infra import config
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
@@ -12,7 +10,7 @@ class LocalPostgresInstance(pulumi.ComponentResource):
         self,
         name: str,
         port: int,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:PostgresInstance", name, None, opts)
 

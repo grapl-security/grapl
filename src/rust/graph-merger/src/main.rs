@@ -1,5 +1,7 @@
 use clap::Parser;
 use futures::StreamExt;
+use grapl_config::env_helpers::FromEnv;
+use grapl_tracing::setup_tracing;
 use kafka::{
     config::{
         ConsumerConfig,
@@ -8,10 +10,7 @@ use kafka::{
     StreamProcessor,
     StreamProcessorError,
 };
-use opentelemetry::{
-    global,
-    sdk::propagation::TraceContextPropagator,
-};
+use rusoto_dynamodb::DynamoDbClient;
 use rust_proto::graplinc::grapl::{
     api::{
         graph::v1beta1::IdentifiedGraph,
@@ -24,10 +23,6 @@ use rust_proto::graplinc::grapl::{
     },
 };
 use tracing::instrument::WithSubscriber;
-use tracing_subscriber::{
-    prelude::*,
-    EnvFilter,
-};
 
 use crate::{
     config::GraphMergerConfig,
@@ -40,30 +35,11 @@ use crate::{
 mod config;
 pub mod service;
 
+const SERVICE_NAME: &'static str = "graph-merger";
+
 #[tokio::main]
 async fn main() -> Result<(), GraphMergerError> {
-    let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
-    let service_config = GraphMergerConfig::parse();
-    // initialize json logging layer
-    let log_layer = tracing_subscriber::fmt::layer()
-        .json()
-        .with_writer(non_blocking);
-
-    // initialize tracing layer
-    global::set_text_map_propagator(TraceContextPropagator::new());
-    let tracer = opentelemetry_jaeger::new_pipeline()
-        .with_service_name("graph-merger")
-        .install_batch(opentelemetry::runtime::Tokio)?;
-
-    // register a subscriber
-    let filter = EnvFilter::from_default_env();
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(log_layer)
-        .with(tracing_opentelemetry::layer().with_tracer(tracer))
-        .init();
-
-    tracing::info!("logger configured successfully");
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
     let graph_mutation_client =
         GraphMutationClient::connect(service_config.graph_mutation_client_url).await?;
@@ -129,7 +105,7 @@ async fn handler(
                 }
             }
         },
-    )?;
+    );
 
     stream
         .for_each_concurrent(

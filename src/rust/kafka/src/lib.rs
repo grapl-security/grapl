@@ -2,9 +2,15 @@ pub mod config;
 
 use std::marker::PhantomData;
 
+use bytes::{
+    Bytes,
+    BytesMut,
+};
 use config::{
     ConsumerConfig,
     ProducerConfig,
+    RetryConsumerConfig,
+    RetryProducerConfig,
 };
 use futures::{
     stream::{
@@ -28,6 +34,7 @@ use rdkafka::{
     Message,
 };
 use rust_proto::{
+    graplinc::grapl::pipeline::v1beta2::Envelope,
     SerDe,
     SerDeError,
 };
@@ -150,6 +157,71 @@ impl<T: SerDe> Producer<T> {
     }
 }
 
+#[derive(Clone)]
+pub struct BytesProducer {
+    producer: FutureProducer,
+    topic: String,
+}
+
+impl BytesProducer {
+    pub fn new(config: ProducerConfig) -> Result<Self, ConfigurationError> {
+        Ok(Self {
+            producer: producer(
+                config.bootstrap_servers,
+                config.sasl_username,
+                config.sasl_password,
+            )?,
+            topic: config.topic,
+        })
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    pub async fn send(&self, msg: Bytes) -> Result<(), ProducerError> {
+        let record: FutureRecord<[u8], [u8]> = FutureRecord::to(&self.topic).payload(&msg);
+
+        self.producer
+            .send(record, Timeout::Never)
+            .map(|res| -> Result<(), ProducerError> {
+                res.map_err(|(e, _)| -> ProducerError { e.into() })
+                    .map(|(partition, offset)| {
+                        tracing::trace!(
+                            message = "wrote message",
+                            partition = partition,
+                            offset = offset,
+                        );
+                    })
+            })
+            .await
+    }
+}
+
+#[derive(Clone)]
+pub struct RetryProducer<T>
+where
+    T: SerDe,
+{
+    producer: Producer<Envelope<T>>,
+}
+
+impl<T: SerDe> RetryProducer<T> {
+    pub fn new(config: RetryProducerConfig) -> Result<Self, ConfigurationError> {
+        Ok(Self {
+            producer: Producer::new(ProducerConfig {
+                bootstrap_servers: config.bootstrap_servers,
+                sasl_username: config.sasl_username,
+                sasl_password: config.sasl_password,
+                topic: config.topic,
+            })?,
+        })
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    pub async fn send(&self, mut msg: Envelope<T>) -> Result<(), ProducerError> {
+        msg.metadata.retry_count += 1;
+        self.producer.send(msg).await
+    }
+}
+
 //
 // Consumer
 //
@@ -190,42 +262,72 @@ where
     T: SerDe,
 {
     consumer: StreamConsumer,
-    topic: String,
     _t: PhantomData<T>,
 }
 
 impl<T: SerDe> Consumer<T> {
     pub fn new(config: ConsumerConfig) -> Result<Self, ConfigurationError> {
+        let consumer = consumer(
+            config.bootstrap_servers,
+            config.sasl_username,
+            config.sasl_password,
+            config.consumer_group_name,
+        )?;
+
+        // the .subscribe(..) call must be fully-qualified here because the
+        // Consumer name is shadowed in this crate
+        if let Err(e) = rdkafka::consumer::Consumer::subscribe(&consumer, &[&config.topic]) {
+            return Err(ConfigurationError::SubscriptionFailed(e));
+        }
+
         Ok(Self {
-            consumer: consumer(
-                config.bootstrap_servers,
-                config.sasl_username,
-                config.sasl_password,
-                config.consumer_group_name,
-            )?,
-            topic: config.topic,
+            consumer,
             _t: PhantomData,
         })
     }
 
-    #[tracing::instrument(err, skip(self))]
-    pub fn stream(
-        &self,
-    ) -> Result<impl Stream<Item = Result<T, ConsumerError>> + '_, ConfigurationError> {
+    #[tracing::instrument(skip(self))]
+    pub fn stream(&self) -> impl Stream<Item = Result<T, ConsumerError>> + '_ {
+        self.consumer.stream().then(move |res| async move {
+            res.map_err(ConsumerError::from).and_then(move |msg| {
+                T::deserialize(msg.payload().ok_or(ConsumerError::PayloadAbsent)?)
+                    .map_err(ConsumerError::from)
+            })
+        })
+    }
+}
+
+pub struct BytesConsumer {
+    consumer: StreamConsumer,
+}
+
+impl BytesConsumer {
+    pub fn new(config: RetryConsumerConfig) -> Result<Self, ConfigurationError> {
+        let consumer = consumer(
+            config.bootstrap_servers,
+            config.sasl_username,
+            config.sasl_password,
+            config.consumer_group_name,
+        )?;
+
         // the .subscribe(..) call must be fully-qualified here because the
         // Consumer name is shadowed in this crate
-        match rdkafka::consumer::Consumer::subscribe(&self.consumer, &[&self.topic]) {
-            Ok(()) => Ok(self
-                .consumer
-                .stream()
-                .map(|res| -> Result<T, ConsumerError> {
-                    res.map_err(ConsumerError::from).and_then(|msg| {
-                        T::deserialize(msg.payload().ok_or(ConsumerError::PayloadAbsent)?)
-                            .map_err(ConsumerError::from)
-                    })
-                })),
-            Err(e) => Err(ConfigurationError::SubscriptionFailed(e)),
+        if let Err(e) = rdkafka::consumer::Consumer::subscribe(&consumer, &[&config.topic]) {
+            return Err(ConfigurationError::SubscriptionFailed(e));
         }
+
+        Ok(Self { consumer })
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn stream(&self) -> impl Stream<Item = Result<Bytes, ConsumerError>> + '_ {
+        self.consumer.stream().then(move |res| async move {
+            res.map_err(ConsumerError::from).and_then(|msg| {
+                let mut buf = BytesMut::with_capacity(msg.payload_len());
+                buf.extend_from_slice(msg.payload().ok_or(ConsumerError::PayloadAbsent)?);
+                Ok(buf.freeze())
+            })
+        })
     }
 }
 
@@ -273,19 +375,18 @@ where
         })
     }
 
-    #[tracing::instrument(err, skip(self, event_handler))]
+    #[tracing::instrument(skip(self, event_handler))]
     pub fn stream<'a, F, R, E>(
         &'a self,
         event_handler: F,
-    ) -> Result<impl Stream<Item = Result<(), StreamProcessorError>> + '_, ConfigurationError>
+    ) -> impl Stream<Item = Result<(), StreamProcessorError>> + '_
     where
         F: FnMut(Result<C, StreamProcessorError>) -> R + 'a,
         R: Future<Output = Result<Option<P>, E>> + 'a,
         E: Into<StreamProcessorError> + 'a,
     {
-        Ok(self
-            .consumer
-            .stream()?
+        self.consumer
+            .stream()
             .map_err(StreamProcessorError::from)
             .then(event_handler)
             .then(move |result| async move {
@@ -302,6 +403,41 @@ where
                     },
                     Err(e) => Err(e.into()),
                 }
-            }))
+            })
+    }
+}
+
+pub struct RetryProcessor {
+    consumer: BytesConsumer,
+    producer: BytesProducer,
+}
+
+impl RetryProcessor {
+    pub fn new(
+        consumer_config: RetryConsumerConfig,
+        producer_config: ProducerConfig,
+    ) -> Result<RetryProcessor, ConfigurationError> {
+        Ok(RetryProcessor {
+            consumer: BytesConsumer::new(consumer_config)?,
+            producer: BytesProducer::new(producer_config)?,
+        })
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub fn stream<'a>(&'a self) -> impl Stream<Item = Result<(), StreamProcessorError>> + '_ {
+        self.consumer
+            .stream()
+            .map_err(StreamProcessorError::from)
+            .then(move |result| async move {
+                if let Ok(msg) = result {
+                    self.producer
+                        .clone()
+                        .send(msg)
+                        .map_err(StreamProcessorError::from)
+                        .await
+                } else {
+                    result.map(|_| ())
+                }
+            })
     }
 }

@@ -23,4 +23,3 @@ pub struct GraphQueryServiceConfig {
     #[clap(flatten)]
     pub graph_db_config: GraphDbConfig,
 }
-

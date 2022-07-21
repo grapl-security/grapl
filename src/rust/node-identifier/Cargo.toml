@@ -27,14 +27,10 @@ failure = "0.1"
 futures = "0.3"
 grapl-utils = { path = "../grapl-utils" }
 grapl-config = { path = "../grapl-config" }
+grapl-tracing = { path = "../grapl-tracing" }
 hex = "0.4"
 hmap = "0.1"
 kafka = { path = "../kafka", version = "*" }
-opentelemetry = { version = "0.16", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "0.15", features = [
-  "collector_client",
-  "rt-tokio"
-] }
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
@@ -60,9 +56,6 @@ tokio = { version = "1.17", features = [
   "time",
 ] }
 tracing = "0.1"
-tracing-appender = "0.2"
-tracing-opentelemetry = "0.16"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "1.0", features = ["v4"] }
 blake2 = "0.10.4"
 

@@ -1,12 +1,14 @@
 # syntax=docker/dockerfile:1.4
 
+ARG PYTHON_VERSION
+
 # grapl-python-base
 ################################################################################
-FROM python:3.10-slim-bullseye AS grapl-python-base
+FROM python:${PYTHON_VERSION}-slim-bullseye AS grapl-python-base
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
-        bash=5.1-2+b3 \
+        bash=5.1-2+deb11u1 \
         libstdc++6=10.2.1-6 \
         curl=7.74.0-1.3+deb11u1 \
     && rm -rf /var/lib/apt/lists/* \
@@ -16,6 +18,9 @@ RUN apt-get update \
         --home /home/grapl \
         --shell /bin/bash \
         grapl
+# Uncomment to get the versions for pins
+#RUN dpkg-query -l && exit 5
+
 USER grapl
 WORKDIR /home/grapl
 ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
@@ -41,7 +46,6 @@ CMD [":"]
 FROM grapl-python-base AS integration-tests
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
-ARG PANTS_PYTHON_VERSION="3.8.13"
 # We install python3-dev so that we have a python version supported by pants (No 3.10 support yet)
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \

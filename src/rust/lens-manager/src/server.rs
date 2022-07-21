@@ -7,25 +7,29 @@ use blake2::{
 };
 use futures::stream::StreamExt;
 use rust_proto::{
-    graplinc::grapl::api::lens_manager::v1beta1::{
-        messages::{
-            AddNodeToScopeRequest,
-            AddNodeToScopeResponse,
-            CloseLensRequest,
-            CloseLensResponse,
-            CreateLensRequest,
-            CreateLensResponse,
-            ListLensesRequest,
-            ListLensesResponse,
-            MergeBehavior,
-            MergeLensRequest,
-            MergeLensResponse,
-            RemoveNodeFromAllScopesRequest,
-            RemoveNodeFromAllScopesResponse,
-            RemoveNodeFromScopeRequest,
-            RemoveNodeFromScopeResponse,
+    graplinc::grapl::{
+        api::lens_manager::v1beta1::{
+            messages::{
+                AddNodeToScopeRequest,
+                AddNodeToScopeResponse,
+                CloseLensRequest,
+                CloseLensResponse,
+                CreateLensRequest,
+                CreateLensResponse,
+                ListLensesEntry,
+                ListLensesRequest,
+                ListLensesResponse,
+                MergeBehavior,
+                MergeLensRequest,
+                MergeLensResponse,
+                RemoveNodeFromAllScopesRequest,
+                RemoveNodeFromAllScopesResponse,
+                RemoveNodeFromScopeRequest,
+                RemoveNodeFromScopeResponse,
+            },
+            server::LensManagerApi,
         },
-        server::LensManagerApi,
+        common::v1beta1::types::Uid,
     },
     protocol::status::Status,
 };
@@ -37,8 +41,6 @@ use scylla::{
     },
     CachingSession,
 };
-use rust_proto::graplinc::grapl::api::lens_manager::v1beta1::messages::ListLensesEntry;
-use rust_proto::graplinc::grapl::common::v1beta1::types::Uid;
 
 type Blake2b8 = Blake2b<U8>;
 
@@ -58,7 +60,6 @@ impl From<LensManagerServerError> for Status {
     }
 }
 
-
 #[derive(Clone)]
 pub struct LensManager {
     scylla_client: Arc<CachingSession>,
@@ -66,9 +67,7 @@ pub struct LensManager {
 
 impl LensManager {
     pub fn new(scylla_client: Arc<CachingSession>) -> Self {
-        Self {
-            scylla_client,
-        }
+        Self { scylla_client }
     }
 }
 
@@ -123,7 +122,7 @@ impl LensManagerApi for LensManager {
         select.set_is_idempotent(true);
         let mut rows = self
             .scylla_client
-            .execute_iter(select, &(source_lens_uid as i64, ))
+            .execute_iter(select, &(source_lens_uid as i64,))
             .await?
             .into_typed::<(i64, String)>();
         while let Some(row) = rows.next().await {
@@ -146,7 +145,7 @@ impl LensManagerApi for LensManager {
                 tenant_id: request.tenant_id,
                 lens_uid: source_lens_uid,
             })
-                .await?;
+            .await?;
         }
 
         Ok(MergeLensResponse {})
@@ -169,7 +168,7 @@ impl LensManagerApi for LensManager {
         ));
         delete_from_scope.set_is_idempotent(true);
         self.scylla_client
-            .execute(delete_from_scope, &(lens_uid as i64, ))
+            .execute(delete_from_scope, &(lens_uid as i64,))
             .await?;
 
         let mut delete_lens = Query::from(format!(
@@ -179,7 +178,7 @@ impl LensManagerApi for LensManager {
         ));
         delete_lens.set_is_idempotent(true);
         self.scylla_client
-            .execute(delete_lens, &(lens_uid as i64, ))
+            .execute(delete_lens, &(lens_uid as i64,))
             .await?;
 
         Ok(CloseLensResponse {})
@@ -253,19 +252,19 @@ impl LensManagerApi for LensManager {
                     WHERE node_uid = ?
                 "#
                 )),
-                &(request.uid as i64, ),
+                &(request.uid as i64,),
             )
             .await?
-            .into_typed::<(i64, )>();
+            .into_typed::<(i64,)>();
 
         while let Some(scope) = scopes.next().await {
-            let (lens_uid, ) = scope?;
+            let (lens_uid,) = scope?;
             self.remove_node_from_scope(RemoveNodeFromScopeRequest {
                 tenant_id: request.tenant_id,
                 lens_uid: lens_uid as u64,
                 uid: request.uid,
             })
-                .await?;
+            .await?;
         }
 
         Ok(RemoveNodeFromAllScopesResponse {})
@@ -276,8 +275,11 @@ impl LensManagerApi for LensManager {
         &self,
         request: ListLensesRequest,
     ) -> Result<ListLensesResponse, Self::Error> {
-        let
-            ListLensesRequest { tenant_id, offset, limit } = request;
+        let ListLensesRequest {
+            tenant_id,
+            offset,
+            limit,
+        } = request;
         let tenant_urn = tenant_id.simple();
 
         let mut select = Query::from(format!(
@@ -292,14 +294,16 @@ impl LensManagerApi for LensManager {
             .scylla_client
             .execute_iter(select, &(offset, limit))
             .await?
-            .into_typed::<(i64, )>();
+            .into_typed::<(i64,)>();
 
         let mut lenses = Vec::new();
         let mut last_uid = 0;
         while let Some(row) = rows.next().await {
             let lens_uid = Uid::from_i64(row?.0);
             match lens_uid {
-                None => { return Err(Self::Error::InvalidUid); }
+                None => {
+                    return Err(Self::Error::InvalidUid);
+                }
                 Some(lens_uid) => {
                     lenses.push(ListLensesEntry { lens_uid });
                     last_uid = std::cmp::max(last_uid, lens_uid);

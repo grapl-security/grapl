@@ -2,7 +2,7 @@ import sys
 
 sys.path.insert(0, "..")
 
-from typing import List, Mapping, Optional, Set, cast
+from typing import Mapping, cast
 
 import pulumi_aws as aws
 from infra import config, dynamodb, log_levels
@@ -31,6 +31,7 @@ from infra.local.postgres import LocalPostgresInstance
 from infra.local.scylla import LocalScyllaInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
+from infra.observability_env_vars import observability_env_vars_for_local
 from infra.path import path_from_root
 from infra.postgres import Postgres
 
@@ -51,7 +52,7 @@ This can eventually be removed once we remove HaxDocker in favor of Firecracker
 USE_HAX_DOCKER_RUNTIME: bool = True
 
 
-def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
+def _get_subset(inputs: NomadVars, subset: set[str]) -> NomadVars:
     return {k: inputs[k] for k in subset}
 
 
@@ -68,11 +69,14 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "engagement-creator": builder.build_with_tag("engagement-creator"),
         "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
-        "generator-executor": builder.build_with_tag("generator-executor"),
+        "generator-execution-sidecar": builder.build_with_tag(
+            "generator-execution-sidecar"
+        ),
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graph-mutation-service": builder.build_with_tag("graph-mutation-service"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
+        "kafka-retry": builder.build_with_tag("kafka-retry"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "organization-management": builder.build_with_tag("organization-management"),
         "pipeline-ingress": builder.build_with_tag("pipeline-ingress"),
@@ -106,7 +110,7 @@ def _get_aws_env_vars_for_local() -> str:
     """
 
 
-def subnets_to_single_az(ids: List[str]) -> pulumi.Output[str]:
+def subnets_to_single_az(ids: list[str]) -> pulumi.Output[str]:
     subnet_id = ids[-1]
     subnet = aws.ec2.Subnet.get("subnet", subnet_id)
     # for some reason mypy gets hung up on the typing of this
@@ -124,9 +128,9 @@ def main() -> None:
         {"pulumi:project": pulumi.get_project(), "pulumi:stack": config.STACK_NAME}
     )
 
-    upstream_stacks: Optional[UpstreamStacks] = None
-    nomad_provider: Optional[pulumi.ProviderResource] = None
-    consul_provider: Optional[pulumi.ProviderResource] = None
+    upstream_stacks: UpstreamStacks | None = None
+    nomad_provider: pulumi.ProviderResource | None = None
+    consul_provider: pulumi.ProviderResource | None = None
     if not config.LOCAL_GRAPL:
         upstream_stacks = UpstreamStacks()
         nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server)
@@ -182,10 +186,12 @@ def main() -> None:
 
     kafka_services = (
         "generator-dispatcher",
+        "generator-dispatcher-retry",
         "graph-generator",
         "graph-merger",
         "node-identifier",
         "pipeline-ingress",
+        "plugin-work-queue",
     )
     kafka_service_credentials = {
         service: kafka.service_credentials(service).apply(
@@ -195,6 +201,7 @@ def main() -> None:
     }
     kafka_consumer_services = (
         "generator-dispatcher",
+        "generator-dispatcher-retry",
         "graph-generator",
         "graph-merger",
         "node-identifier",
@@ -202,6 +209,14 @@ def main() -> None:
     kafka_consumer_groups = {
         service: kafka.consumer_group(service) for service in kafka_consumer_services
     }
+
+    observability_env_vars = observability_env_vars_for_local()
+
+    # This Google client ID is used by grapl-web-ui for authenticating users via Sign In With Google.
+    # TODO: This should be moved to Pulumi config somehwo, but I'm not sure the best way to do that atm.
+    google_client_id = (
+        "340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com"
+    )
 
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
@@ -212,6 +227,7 @@ def main() -> None:
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
         kafka_credentials=kafka_service_credentials,
         kafka_consumer_groups=kafka_consumer_groups,
+        observability_env_vars=observability_env_vars,
         organization_management_healthcheck_polling_interval_ms=organization_management_healthcheck_polling_interval_ms,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
         py_log_level=log_levels.PY_LOG_LEVEL,
@@ -223,15 +239,12 @@ def main() -> None:
         test_user_name=config.GRAPL_TEST_USER_NAME,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
-        plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
-        plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
-        plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
-        plugin_registry_bucket_name=plugin_registry_bucket.bucket,
         uid_allocator_service_config={
             "default_allocation_size": 10,
             "preallocation_size": 10_000,
             "maximum_allocation_size": 1_000,
         },
+        google_client_id=google_client_id,
     )
 
     provision_vars: Final[NomadVars] = {
@@ -242,6 +255,7 @@ def main() -> None:
                 "aws_env_vars_for_local",
                 "aws_region",
                 "container_images",
+                "observability_env_vars",
                 "py_log_level",
                 "schema_properties_table_name",
                 "schema_table_name",
@@ -531,6 +545,10 @@ def main() -> None:
     pulumi.export(
         "plugin-work-queue-db", plugin_work_queue_db.to_nomad_service_db_args()
     )
+
+    pulumi.export("user-auth-table", dynamodb_tables.user_auth_table.name)
+    pulumi.export("user-session-table", dynamodb_tables.user_session_table.name)
+
     # Not currently imported in integration tests:
     # - uid-allocator-db
     # - plugin-registry-db

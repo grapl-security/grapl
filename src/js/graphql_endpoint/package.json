@@ -36,7 +36,7 @@
     "graphql": "^15.0.0",
     "graphql-type-json": "^0.3.1",
     "jsonwebtoken": "^8.5.1",
-    "protobufjs": "^6.11.2",
+    "protobufjs": "^6.11.3",
     "regex-escape": "^3.4.10"
   },
   "devDependencies": {

@@ -23,4 +23,3 @@ pub struct LensManagerServiceConfig {
     #[clap(flatten)]
     pub graph_db_config: GraphDbConfig,
 }
-

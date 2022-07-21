@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use scylla::CachingSession;
+
 use rust_proto::{
     graplinc::grapl::api::graph_query_service::v1beta1::{
         messages::{
@@ -14,6 +14,7 @@ use rust_proto::{
     },
     protocol::status::Status,
 };
+use scylla::CachingSession;
 
 use crate::{
     graph_query::query_graph,

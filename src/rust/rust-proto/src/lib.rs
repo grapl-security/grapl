@@ -11,6 +11,7 @@ use prost::{
 use thiserror::Error;
 
 pub mod protocol {
+    pub mod error;
     pub mod healthcheck;
     pub mod service_client;
     pub mod status;

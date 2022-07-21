@@ -4,21 +4,26 @@ use actix_web::{
     HttpResponse,
     Responder,
 };
+use secrecy::ExposeSecret;
 use serde::{
     Deserialize,
     Serialize,
 };
 
 use crate::authn::{
-    AuthDynamoClientError,
     AuthenticatedUser,
-    Password,
+    Secret,
 };
 
 #[derive(Deserialize, Debug)]
-struct LoginParameters {
+struct SignInWithPasswordParameters {
     username: String,
-    password: String,
+    password: Secret<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct SignInWithGoogleParameters {
+    token: Secret<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -35,7 +40,13 @@ pub(super) fn config(cfg: &mut web::ServiceConfig) {
     );
     cfg.service(
         web::resource("/auth/login")
-            .route(web::post().to(post))
+            .route(web::post().to(sign_in_with_password))
+            .guard(guard::Post())
+            .guard(guard::Header("content-type", "application/json")), // .guard(guard::Header("X-Requested-With", "XMLHttpRequest")),
+    );
+    cfg.service(
+        web::resource("/auth/sign_in_with_google")
+            .route(web::post().to(sign_in_with_google))
             .guard(guard::Post())
             .guard(guard::Header("content-type", "application/json")), // .guard(guard::Header("X-Requested-With", "XMLHttpRequest")),
     );
@@ -43,55 +54,54 @@ pub(super) fn config(cfg: &mut web::ServiceConfig) {
 
 #[tracing::instrument]
 async fn check_login(user: AuthenticatedUser) -> impl Responder {
-    tracing::debug!( message = "Checking user session token", identity = %user.get_identity() );
+    tracing::debug!( message = "Checking user session token", username = %user.get_username() );
 
     HttpResponse::Ok().json(CheckLoginResponse { success: true })
 }
 
-#[tracing::instrument(skip(db_client, data, session), fields(
+#[tracing::instrument(skip(auth_client, data, session), fields(
     username = tracing::field::Empty
 ))]
-async fn post(
-    db_client: web::Data<crate::authn::AuthDynamoClient>,
+async fn sign_in_with_password(
+    auth_client: web::Data<crate::authn::WebAuthenticator>,
     session: actix_session::Session,
-    data: web::Json<LoginParameters>,
-) -> impl Responder {
-    let current_span = tracing::Span::current();
-    current_span.record("username", &data.username.as_str());
+    data: web::Json<SignInWithPasswordParameters>,
+    req: actix_web::HttpRequest,
+) -> Result<impl Responder, crate::authn::AuthenticationError> {
+    tracing::debug!(message = "processing password authentication request",);
 
-    tracing::debug!(message = "processing authentication request",);
+    let username = data.username.to_owned();
+    let password = data.password.to_owned();
 
-    let username = data.username.as_str();
-    let password = Password::from(data.password.clone());
+    let session_token = auth_client
+        .sign_in_with_pw(username.clone(), password)
+        .await?;
 
-    db_client.sign_in(username, &password).await.map_or_else(
-        |error| {
-            match error {
-                // incorrect password
-                AuthDynamoClientError::PasswordVerification {
-                    source: argon2::password_hash::Error::Password,
-                    ..
-                }
-                | AuthDynamoClientError::UserRecordNotFound(_) => {
-                    tracing::info!( %error );
-                    HttpResponse::Unauthorized().finish()
-                }
-                _ => {
-                    tracing::error!( %error );
-                    HttpResponse::InternalServerError().finish()
-                }
-            }
-        },
-        |web_session| {
-            session
-                .insert(crate::config::SESSION_TOKEN, web_session.get_token())
-                .map_or_else(
-                    |error| {
-                        tracing::error!( message = "unable to set session data", %error );
-                        HttpResponse::InternalServerError().finish()
-                    },
-                    |_| HttpResponse::Ok().json(CheckLoginResponse { success: true }),
-                )
-        },
-    )
+    session.insert(crate::config::SESSION_TOKEN, session_token.expose_secret())?;
+
+    tracing::info!(message = "password authentication success", %username);
+
+    Ok(HttpResponse::Ok().json(CheckLoginResponse { success: true }))
+}
+
+#[tracing::instrument(skip(auth_client, data, session), fields(
+    username = tracing::field::Empty
+))]
+async fn sign_in_with_google(
+    auth_client: web::Data<crate::authn::WebAuthenticator>,
+    session: actix_session::Session,
+    data: web::Json<SignInWithGoogleParameters>,
+    req: actix_web::HttpRequest,
+) -> Result<impl Responder, crate::authn::AuthenticationError> {
+    tracing::debug!(message = "processing Sign In With Google authentication request",);
+
+    let session_token = auth_client
+        .sign_in_with_google(data.token.to_owned())
+        .await?;
+
+    session.insert(crate::config::SESSION_TOKEN, session_token.expose_secret())?;
+
+    tracing::info!(message = "user completed Sign In With Google");
+
+    Ok(HttpResponse::Ok().json(CheckLoginResponse { success: true }))
 }

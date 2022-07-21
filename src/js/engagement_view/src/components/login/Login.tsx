@@ -3,7 +3,11 @@ import * as Yup from "yup";
 import { Field, Form, Formik } from "formik";
 import { loginService } from "services/login/loginService";
 
+import { GoogleLogin } from "@react-oauth/google";
+
 import { LoginProps } from "types/CustomTypes";
+
+import { signInWithGoogleService } from "services/login/signInWIthGoogleService";
 
 import Icon from "@material-ui/core/Icon";
 import Img from "../../assets/grapl_logo.svg";
@@ -93,6 +97,46 @@ export const LogIn = (_: LoginProps) => {
                         </Form>
                     )}
                 </Formik>
+            </div>
+
+            <div>
+                <div className="App">
+                    <GoogleLogin
+                        login_uri="/auth/signin_with_google"
+                        onSuccess={async (credentialResponse) => {
+                            if (credentialResponse.credential === undefined) {
+                                setState({
+                                    ...state,
+                                    loginFailed: true,
+                                });
+
+                                return;
+                            }
+
+                            const loginSuccess = await signInWithGoogleService(
+                                credentialResponse.credential
+                            );
+
+                            if (loginSuccess === true) {
+                                window.history.replaceState(
+                                    "#/login",
+                                    "",
+                                    "#/"
+                                );
+                                window.location.reload();
+                                console.log("Logged In");
+                            } else {
+                                setState({
+                                    ...state,
+                                    loginFailed: true,
+                                });
+                            }
+                        }}
+                        onError={() => {
+                            console.log("Login Failed");
+                        }}
+                    />
+                </div>
             </div>
         </div>
     );

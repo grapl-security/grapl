@@ -377,6 +377,20 @@ mod plugin_registry {
             check_encode_decode_invariant(value)
         }
 
+        #[test]
+        fn test_serde_get_plugin_health_requests(
+            value in pr_strats::get_plugin_health_requests()
+        ) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_serde_get_plugin_health_responses(
+            value in pr_strats::get_plugin_health_responses()
+        ) {
+            check_encode_decode_invariant(value)
+        }
+
     }
 }
 

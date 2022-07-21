@@ -14,4 +14,4 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/ssm_tools.sh"
 LOCAL_PORT_TO_FORWARD_TO="${1:-8500}"
 REMOTE_PORT=8500
 
-ssm_port_forward "Consul Server" "${LOCAL_PORT_TO_FORWARD_TO}" "${REMOTE_PORT}"
+ssm_port_forward "Consul Server" "${REMOTE_PORT}" "${LOCAL_PORT_TO_FORWARD_TO}"

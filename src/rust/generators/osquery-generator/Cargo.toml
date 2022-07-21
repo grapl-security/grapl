@@ -8,11 +8,7 @@ edition = "2021"
 async-trait = "0.1"
 endpoint-plugin = { path = "../../endpoint-plugin" }
 futures = "0.3"
-opentelemetry = { version = "0.16", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "0.15", features = [
-  "collector_client",
-  "rt-tokio"
-] }
+grapl-tracing = { path = "../../grapl-tracing" }
 rust-proto = { path = "../../rust-proto", version = "*" }
 serde = "1.0"
 serde_json = "1.0"
@@ -26,7 +22,4 @@ tokio = { version = "1.17", features = [
   "time",
 ] }
 tracing = "0.1"
-tracing-appender = "0.2"
-tracing-opentelemetry = "0.16"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "1.0", features = ["v4"] }

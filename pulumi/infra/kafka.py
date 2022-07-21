@@ -140,9 +140,8 @@ class Kafka(pulumi.ComponentResource):
                 "logs",
                 "metrics",
                 "raw-logs",
+                "raw-logs-retry",
                 "generated-graphs",
-                "generated-graphs-retry",
-                "generated-graphs-failed",
                 "identified-graphs",
                 "identified-graphs-retry",
                 "identified-graphs-failed",
@@ -150,11 +149,7 @@ class Kafka(pulumi.ComponentResource):
                 "graph-updates-retry",
                 "graph-updates-failed",
                 "analyzer-executions",
-                "analyzer-executions-retry",
-                "analyzer-executions-failed",
                 "engagements",
-                "engagements-retry",
-                "engagements-failed",
             ]
             provider = Provider(
                 "grapl:kafka:Provider",

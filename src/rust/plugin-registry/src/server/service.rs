@@ -16,6 +16,8 @@ use rust_proto::{
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginHealthRequest,
+        GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
         PluginMetadata,
@@ -29,8 +31,12 @@ use rust_proto::{
 };
 use tokio::net::TcpListener;
 use tonic::async_trait;
+use uuid::Uuid;
 
-use super::create_plugin::upload_stream_multipart_to_s3;
+use super::{
+    create_plugin::upload_stream_multipart_to_s3,
+    get_plugin_health,
+};
 use crate::{
     db::{
         client::{
@@ -71,7 +77,7 @@ pub struct PluginRegistryDbConfig {
     plugin_registry_db_password: String,
 }
 
-#[derive(clap::Parser, Debug)]
+#[derive(clap::Parser, Clone, Debug)]
 pub struct PluginRegistryServiceConfig {
     #[clap(long, env = "PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID")]
     pub bucket_aws_account_id: String,
@@ -95,13 +101,19 @@ pub struct PluginRegistryServiceConfig {
         default_value = "250"
     )]
     pub artifact_size_limit_mb: usize,
-    // --- Pass through a couple env vars also used for this binary
+    #[clap(flatten)]
+    pub passthrough_vars: PluginExecutionPassthroughVars,
+}
+
+#[derive(clap::Parser, Clone, Debug, Default)]
+pub struct PluginExecutionPassthroughVars {
+    #[clap(long, env = "PLUGIN_EXECUTION_OBSERVABILITY_ENV_VARS")]
+    pub observability_env_vars: String,
+    // Pass through a couple env vars also used for the plugin-registry service
+    // Since they're used in both ways - locally for this service, and the
+    // spawned plugins - I decided against prefixing PLUGIN_EXECUTION_.
     #[clap(long, env)]
     pub rust_log: String,
-    #[clap(long, env)]
-    pub otel_exporter_jaeger_agent_host: String,
-    #[clap(long, env)]
-    pub otel_exporter_jaeger_agent_port: String,
 }
 
 pub struct PluginRegistry {
@@ -247,15 +259,19 @@ impl PluginRegistryApi for PluginRegistry {
         &self,
         request: GetGeneratorsForEventSourceRequest,
     ) -> Result<GetGeneratorsForEventSourceResponse, Self::Error> {
-        Ok(GetGeneratorsForEventSourceResponse {
-            plugin_ids: self
-                .db_client
-                .get_generators_for_event_source(&request.event_source_id)
-                .await?
-                .iter()
-                .map(|row| row.plugin_id)
-                .collect(),
-        })
+        let plugin_ids: Vec<Uuid> = self
+            .db_client
+            .get_generators_for_event_source(&request.event_source_id)
+            .await?
+            .iter()
+            .map(|row| row.plugin_id)
+            .collect();
+
+        if plugin_ids.is_empty() {
+            Err(PluginRegistryServiceError::NotFound)
+        } else {
+            Ok(GetGeneratorsForEventSourceResponse { plugin_ids })
+        }
     }
 
     #[allow(dead_code)]
@@ -265,6 +281,20 @@ impl PluginRegistryApi for PluginRegistry {
         _request: GetAnalyzersForTenantRequest,
     ) -> Result<GetAnalyzersForTenantResponse, Self::Error> {
         todo!()
+    }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn get_plugin_health(
+        &self,
+        request: GetPluginHealthRequest,
+    ) -> Result<GetPluginHealthResponse, Self::Error> {
+        let health_status = get_plugin_health::get_plugin_health(
+            &self.nomad_client,
+            &self.db_client,
+            request.plugin_id,
+        )
+        .await?;
+        Ok(GetPluginHealthResponse { health_status })
     }
 }
 
@@ -307,7 +337,7 @@ pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn st
         socket_address = %addr,
     );
 
-    server.serve().await
+    Ok(server.serve().await?)
 }
 
 fn generate_artifact_s3_key(

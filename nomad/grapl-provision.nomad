@@ -19,6 +19,14 @@ weird nomad state parse error.
 EOF
 }
 
+variable "observability_env_vars" {
+  type        = string
+  description = <<EOF
+With local-grapl, we have to inject env vars for Opentelemetry.
+In prod, this is currently disabled.
+EOF
+}
+
 variable "container_images" {
   type        = map(string)
   description = <<EOF
@@ -61,18 +69,6 @@ variable "py_log_level" {
   description = "Controls the logging behavior of Python-based services."
 }
 
-variable "tracing_endpoint" {
-  type = string
-  # if nothing is passed in we default to "${attr.unique.network.ip-address}" in locals.
-  # Using a variable isn't allowed here though :(
-  default = ""
-}
-
-locals {
-  tracing_endpoint        = (var.tracing_endpoint == "") ? "http://${attr.unique.network.ip-address}" : var.tracing_endpoint
-  tracing_zipkin_endpoint = "${local.tracing_endpoint}:9411/api/v2/spans"
-}
-
 job "grapl-provision" {
   datacenters = ["dc1"]
 
@@ -109,6 +105,12 @@ EOF
         env         = true
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         # This is a hack, because IDK how to share locals across files.
         # It's fine if `provision` only hits one alpha.
@@ -120,7 +122,6 @@ EOF
         GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
         GRAPL_LOG_LEVEL                    = var.py_log_level
-        OTEL_EXPORTER_ZIPKIN_ENDPOINT      = local.tracing_zipkin_endpoint
       }
     }
 

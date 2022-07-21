@@ -139,7 +139,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/integration_tests,graph-merger/integration_tests,node-identifier/integration_tests,pipeline-ingress/integration_tests,plugin-registry/integration_tests,sysmon-generator/integration_tests,organization-management/integration_tests"
+ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/integration_tests,graph-merger/integration_tests,node-identifier/integration_tests,pipeline-ingress/integration_tests,plugin-registry/integration_tests,sysmon-generator/integration_tests,organization-management/integration_tests,grapl-web-ui/integration_tests"
 ENV TEST_DIR=/grapl/tests
 
 # This will build the integration test binaries and parse the manifest to find
@@ -184,6 +184,7 @@ COPY --from=build /nomad/nomad /bin
 # Grab the example generator so we can deploy it in test_deploy_plugin
 RUN mkdir -p /test-fixtures
 COPY --from=build /outputs/example-generator /test-fixtures
+COPY --from=build /outputs/sysmon-generator /test-fixtures
 
 COPY --from=build-test-integration /grapl/tests /tests
 # Named context support https://github.com/hadolint/hadolint/issues/830
@@ -253,14 +254,14 @@ ENTRYPOINT ["/node-identifier"]
 ##### sysmon-generator
 FROM rust-dist AS sysmon-generator-deploy
 
-COPY --from=build /outputs/sysmon-generator /
-ENTRYPOINT ["/sysmon-generator"]
+COPY --from=build /outputs/sysmon-generator-kafka-legacy /
+ENTRYPOINT ["/sysmon-generator-kafka-legacy"]
 
-##### generator-executor
-FROM rust-dist AS generator-executor-deploy
+##### generator-execution-sidecar
+FROM rust-dist AS generator-execution-sidecar-deploy
 
-COPY --from=build /outputs/generator-executor /
-ENTRYPOINT ["/generator-executor"]
+COPY --from=build /outputs/generator-execution-sidecar /
+ENTRYPOINT ["/generator-execution-sidecar"]
 
 ##### web-ui
 FROM rust-dist AS grapl-web-ui-deploy
@@ -311,3 +312,8 @@ ENTRYPOINT ["/generator-dispatcher"]
 FROM rust-dist as event-source-deploy
 COPY --from=build /outputs/event-source /
 ENTRYPOINT ["/event-source"]
+
+##### kafka-retry
+FROM rust-dist as kafka-retry-deploy
+COPY --from=build /outputs/kafka-retry /
+ENTRYPOINT ["/kafka-retry"]

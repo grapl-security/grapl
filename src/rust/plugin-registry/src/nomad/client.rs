@@ -35,6 +35,8 @@ pub enum NomadClientError {
     PlanJobError(#[from] Error<jobs_api::PostJobPlanError>),
     #[error("PlanJobAllocationFail")]
     PlanJobAllocationFail,
+    #[error("GetJobError {0:?}")]
+    GetJobError(#[from] Error<jobs_api::GetJobError>),
 }
 
 #[allow(dead_code)]
@@ -111,6 +113,24 @@ impl NomadClient {
                     job: Some(job.clone().into()),
                     ..Default::default()
                 },
+                ..Default::default()
+            },
+        )
+        .await
+        .map_err(NomadClientError::from)
+    }
+
+    #[tracing::instrument(skip(self, job_name, namespace), err)]
+    pub async fn get_job(
+        &self,
+        job_name: String,
+        namespace: Option<String>,
+    ) -> Result<models::Job, NomadClientError> {
+        jobs_api::get_job(
+            &self.internal_config,
+            jobs_api::GetJobParams {
+                namespace: namespace.clone(),
+                job_name: job_name.to_owned(),
                 ..Default::default()
             },
         )

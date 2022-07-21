@@ -8,12 +8,8 @@ license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+grapl-tracing = { path = "../grapl-tracing" }
 log = "0.4"
-opentelemetry = { version = "0.16", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "0.15", features = [
-  "collector_client",
-  "rt-tokio"
-] }
 rusoto_s3 = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
@@ -31,8 +27,6 @@ rusoto_cloudwatch = { version = "0.47", default_features = false, features = [
 ] }
 rusoto_credential = { version = "0.47", default_features = false }
 tracing = "0.1"
-tracing-opentelemetry = "0.16"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tokio = { version = "1.17", features = [
   "macros",
   "rt",
@@ -43,4 +37,3 @@ tokio = { version = "1.17", features = [
 color-eyre = "0.6"
 eyre = "0.6"
 async-trait = "0.1"
-tracing-appender = "0.2"

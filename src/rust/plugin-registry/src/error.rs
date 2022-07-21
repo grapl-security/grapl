@@ -51,8 +51,12 @@ pub enum PluginRegistryServiceError {
     NomadJobAllocationError,
     #[error("StreamInputError {0}")]
     StreamInputError(&'static str),
+    #[error("DeploymentStateError {0}")]
+    DeploymentStateError(String),
     // TODO: These errs are meant to be human-readable and are not directly
     // sent over the wire, so add {0}s to them!
+    #[error("not found")]
+    NotFound,
 }
 
 impl From<PluginRegistryServiceError> for Status {
@@ -84,6 +88,8 @@ impl From<PluginRegistryServiceError> for Status {
                 // Since it's regarding user input, we can de-anonymize this message
                 Status::invalid_argument(format!("Unexpected input to Stream RPC: {e}"))
             }
+            Error::DeploymentStateError(_) => Status::internal("Deployment state error."),
+            Error::NotFound => Status::not_found("not found"),
         }
     }
 }

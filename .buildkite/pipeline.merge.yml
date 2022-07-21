@@ -35,6 +35,8 @@ steps:
       - label: ":firecracker: Build Kernel"
         command:
           - "make dist/firecracker_kernel.tar.gz"
+        retry:
+          automatic: true
         artifact_paths:
           - "dist/*"
         agents:
@@ -44,6 +46,8 @@ steps:
       - label: ":firecracker: Build RootFS"
         command:
           - "make dist/firecracker_rootfs.tar.gz"
+        retry:
+          automatic: true
         artifact_paths:
           - "dist/*"
         agents:

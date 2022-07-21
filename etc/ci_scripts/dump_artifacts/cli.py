@@ -6,7 +6,6 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 # Odd path is due to the `/etc` root pattern in pants.toml, fyi
 from ci_scripts.dump_artifacts import docker_artifacts, nomad_artifacts
@@ -46,7 +45,7 @@ class Args:
         )
         parser.set_defaults(dump_agent_logs=False)
         args = parser.parse_args()
-        self.compose_project: Optional[str] = args.compose_project
+        self.compose_project: str | None = args.compose_project
         self.dump_agent_logs: bool = args.dump_agent_logs
 
 

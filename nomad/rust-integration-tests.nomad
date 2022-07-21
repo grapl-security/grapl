@@ -51,6 +51,21 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
+variable "user_auth_table" {
+  type        = string
+  description = "The name of the DynamoDB user auth table"
+}
+
+variable "user_session_table" {
+  type        = string
+  description = "The name of the DynamoDB user session table"
+}
+
+variable "google_client_id" {
+  type        = string
+  description = "Google client ID used for authenticating web users via Sign In With Google"
+}
+
 variable "dns_server" {
   type        = string
   description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
@@ -164,6 +179,13 @@ job "rust-integration-tests" {
         RUST_BACKTRACE = 1
         RUST_LOG       = var.rust_log
 
+        GRAPL_USER_AUTH_TABLE    = var.user_auth_table
+        GRAPL_USER_SESSION_TABLE = var.user_session_table
+
+        GRAPL_GOOGLE_CLIENT_ID               = var.google_client_id
+        GRAPL_GRAPHQL_ENDPOINT               = "http://TODO:1111"
+        GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
+
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS   = "0.0.0.0:1004" # not used but required due to clap
         ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
         ORGANIZATION_MANAGEMENT_DB_HOSTNAME    = var.organization_management_db.hostname
@@ -181,10 +203,8 @@ job "rust-integration-tests" {
 
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_group
-        # (this is an invalid topic name, so it'd throw an error if consumed)
-        KAFKA_CONSUMER_TOPIC = "<replace me at integration test setup>"
-        KAFKA_SASL_USERNAME  = var.kafka_credentials.sasl_username
-        KAFKA_SASL_PASSWORD  = var.kafka_credentials.sasl_password
+        KAFKA_SASL_USERNAME       = var.kafka_credentials.sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials.sasl_password
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
 

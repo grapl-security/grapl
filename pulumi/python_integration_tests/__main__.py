@@ -3,7 +3,7 @@ import sys
 sys.path.insert(0, "..")
 
 import os
-from typing import Mapping, Optional, cast
+from typing import Mapping, cast
 
 import pulumi_aws as aws
 from infra import config
@@ -48,7 +48,7 @@ def main() -> None:
         {"pulumi:project": pulumi.get_project(), "pulumi:stack": stack_name}
     )
 
-    nomad_provider: Optional[pulumi.ProviderResource] = None
+    nomad_provider: pulumi.ProviderResource | None = None
     if not config.LOCAL_GRAPL:
         nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{stack_name}")
         nomad_provider = get_nomad_provider_address(nomad_server_stack)
@@ -103,7 +103,6 @@ class GraplStack:
             return cast(str, ref.require_output(key))
 
         self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
-        self.analyzer_bucket = require_str("analyzers-bucket")
         self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")

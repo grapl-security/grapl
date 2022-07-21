@@ -1,10 +1,10 @@
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Iterator, Optional
+from typing import Iterator
 
 
 class BenchmarkResult:
-    result: Optional[timedelta]
+    result: timedelta | None
 
     def __init__(self) -> None:
         self.result = None

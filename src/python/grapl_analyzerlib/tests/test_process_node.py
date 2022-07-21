@@ -52,7 +52,7 @@ def get_or_create_process_node_deprecated(
     """
     Deprecated in favor of property_view_strategy.py
     """
-    node_props: Dict[str, Property] = {
+    node_props: dict[str, Property] = {
         "process_id": process_id,
         "arguments": arguments,
         "created_timestamp": created_timestamp,
