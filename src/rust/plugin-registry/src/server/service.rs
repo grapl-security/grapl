@@ -3,6 +3,7 @@ use std::{
     time::Duration,
 };
 
+use async_trait::async_trait;
 use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::S3Client;
@@ -30,7 +31,6 @@ use rust_proto::{
     protocol::healthcheck::HealthcheckStatus,
 };
 use tokio::net::TcpListener;
-use tonic::async_trait;
 use uuid::Uuid;
 
 use super::{

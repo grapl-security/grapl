@@ -1,4 +1,3 @@
-use plugin_work_queue::client::PluginWorkQueueServiceClient;
 use rust_proto::graplinc::grapl::api::{
     graph::v1beta1::GraphDescription,
     plugin_sdk::generators::v1beta1::{
@@ -10,6 +9,7 @@ use rust_proto::graplinc::grapl::api::{
         ExecutionJob,
         GetExecuteGeneratorRequest,
         GetExecuteGeneratorResponse,
+        PluginWorkQueueServiceClient,
     },
 };
 

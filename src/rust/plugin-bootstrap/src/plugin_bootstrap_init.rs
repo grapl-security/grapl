@@ -1,15 +1,13 @@
-use std::{
-    os::unix::fs::PermissionsExt,
-    time::Duration,
-};
+use std::os::unix::fs::PermissionsExt;
 
-use rust_proto::{
-    graplinc::grapl::api::plugin_bootstrap::v1beta1::{
-        client::PluginBootstrapClient,
-        GetBootstrapRequest,
-        GetBootstrapResponse,
-    },
-    protocol::healthcheck::client::HealthcheckClient,
+use clap::Parser;
+use rust_proto::graplinc::grapl::api::plugin_bootstrap::v1beta1::{
+    GetBootstrapRequest,
+    GetBootstrapResponse,
+};
+use rust_proto_clients::{
+    get_grpc_client,
+    services::PluginBootstrapClientConfig,
 };
 
 static PLUGIN_BINARY_PATH: &str = "/usr/local/bin/grapl-plugin";
@@ -20,24 +18,8 @@ static PLUGIN_CONFIG_PATH: &str = "/etc/systemd/system/plugin.service.d/override
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (_env, _guard) = grapl_config::init_grapl_env!();
 
-    let endpoint = std::env::var("PLUGIN_BOOTSTRAP_CLIENT_ADDRESS")?;
-    let plugin_bootstrap_polling_interval_ms: u64 =
-        std::env::var("PLUGIN_BOOTSTRAP_POLLING_INTERVAL_MS")?.parse()?;
-
-    tracing::info!(
-        message = "waiting 5s for plugin-bootstrap to report healthy",
-        endpoint = %endpoint,
-    );
-
-    HealthcheckClient::wait_until_healthy(
-        endpoint.clone(),
-        "graplinc.grapl.api.plugin_bootstrap.v1beta1.PluginBootstrapService",
-        Duration::from_secs(5), // TODO: parametrize
-        Duration::from_millis(plugin_bootstrap_polling_interval_ms),
-    )
-    .await?;
-
-    let mut bootstrap_client = PluginBootstrapClient::connect(endpoint.clone()).await?;
+    let client_config = PluginBootstrapClientConfig::parse();
+    let mut bootstrap_client = get_grpc_client(client_config).await?;
 
     let GetBootstrapResponse {
         plugin_payload,

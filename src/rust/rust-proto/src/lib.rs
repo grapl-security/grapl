@@ -10,13 +10,7 @@ use prost::{
 };
 use thiserror::Error;
 
-pub mod protocol {
-    pub mod error;
-    pub mod healthcheck;
-    pub mod service_client;
-    pub mod status;
-    pub mod tls;
-}
+pub mod protocol;
 
 pub(crate) mod server_internals;
 

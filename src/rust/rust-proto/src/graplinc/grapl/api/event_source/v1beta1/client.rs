@@ -7,22 +7,19 @@ use crate::{
         event_source_service_client::EventSourceServiceClient as EventSourceServiceClientProto,
     },
     protocol::{
-        healthcheck::ConfigurationError,
-        service_client::NamedService,
+        endpoint::Endpoint,
+        service_client::{
+            ConnectError,
+            Connectable,
+            NamedService,
+        },
         status::Status,
-        tls::ClientTlsConfig,
     },
     SerDeError,
 };
 
 #[derive(Debug, thiserror::Error)]
 pub enum EventSourceServiceClientError {
-    #[error("ServiceHealthConfigError {0}")]
-    ServiceHealthConfigError(#[from] ConfigurationError),
-
-    #[error(transparent)]
-    TransportError(#[from] tonic::transport::Error),
-
     #[error("ErrorStatus")]
     ErrorStatus(#[from] Status),
 
@@ -41,26 +38,17 @@ pub struct EventSourceServiceClient {
     proto_client: EventSourceServiceClientProto<tonic::transport::Channel>,
 }
 
-impl EventSourceServiceClient {
-    #[tracing::instrument(skip(tls_config), err)]
-    pub async fn connect<T>(
-        endpoint: T,
-        tls_config: Option<ClientTlsConfig>,
-    ) -> Result<Self, EventSourceServiceClientError>
-    where
-        T: std::convert::TryInto<tonic::transport::Endpoint, Error = tonic::transport::Error>
-            + Debug,
-        T::Error: std::error::Error + Send + Sync + 'static,
-    {
-        let mut endpoint: tonic::transport::Endpoint = endpoint.try_into()?;
-        if let Some(inner_config) = tls_config {
-            endpoint = endpoint.tls_config(inner_config.into())?;
-        }
-        Ok(Self {
+#[async_trait::async_trait]
+impl Connectable for EventSourceServiceClient {
+    #[tracing::instrument(err)]
+    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        Ok(EventSourceServiceClient {
             proto_client: EventSourceServiceClientProto::connect(endpoint).await?,
         })
     }
+}
 
+impl EventSourceServiceClient {
     pub async fn create_event_source(
         &mut self,
         request: native::CreateEventSourceRequest,

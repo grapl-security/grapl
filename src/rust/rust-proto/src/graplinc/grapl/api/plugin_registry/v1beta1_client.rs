@@ -11,7 +11,12 @@ use crate::{
     graplinc::grapl::api::plugin_registry::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
     protocol::{
-        service_client::NamedService,
+        endpoint::Endpoint,
+        service_client::{
+            ConnectError,
+            Connectable,
+            NamedService,
+        },
         status::Status,
     },
     SerDeError,
@@ -19,8 +24,6 @@ use crate::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceClientError {
-    #[error("TransportError {0}")]
-    TransportError(#[from] tonic::transport::Error),
     #[error("ErrorStatus {0}")]
     ErrorStatus(#[from] Status),
     #[error("PluginRegistryDeserializationError {0}")]
@@ -32,18 +35,17 @@ pub struct PluginRegistryServiceClient {
     proto_client: PluginRegistryServiceClientProto<tonic::transport::Channel>,
 }
 
-impl PluginRegistryServiceClient {
+#[async_trait::async_trait]
+impl Connectable for PluginRegistryServiceClient {
     #[tracing::instrument(err)]
-    pub async fn connect<T>(endpoint: T) -> Result<Self, PluginRegistryServiceClientError>
-    where
-        T: std::convert::TryInto<tonic::transport::Endpoint> + Debug,
-        T::Error: std::error::Error + Send + Sync + 'static,
-    {
+    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
         Ok(PluginRegistryServiceClient {
             proto_client: PluginRegistryServiceClientProto::connect(endpoint).await?,
         })
     }
+}
 
+impl PluginRegistryServiceClient {
     /// create a new plugin.
     /// NOTE: Most consumers will want `create_plugin`, not `create_plugin_raw`.
     pub async fn create_plugin_raw<S>(
