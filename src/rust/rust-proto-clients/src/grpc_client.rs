@@ -15,16 +15,14 @@ use crate::grpc_client_config::GrpcClientConfig;
 pub async fn get_grpc_client<C: GrpcClientConfig>(
     client_config: C,
 ) -> Result<C::Client, ConnectError> {
-    let address = client_config.address();
+    let address = client_config.address().to_string();
     let service_name = C::Client::SERVICE_NAME;
 
-    /*
-    let address = address.to_string();
     if ! address.starts_with("http") {
         panic!("Address should start with http, but found: '{address}'")
     }
-    */
 
+    // TODO: Add a `rust-proto` wrapper around tonic Endpoint
     let endpoint = Endpoint::from_shared(address)?
         .timeout(Duration::from_secs(10))
         .concurrency_limit(30);

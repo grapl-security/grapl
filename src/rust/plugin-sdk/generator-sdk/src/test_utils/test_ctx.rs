@@ -11,13 +11,13 @@ use rust_proto::{
     },
     protocol::{
         error::ServeError,
-        healthcheck::HealthcheckStatus,
+        healthcheck::{
+            client::HealthcheckClient,
+            HealthcheckStatus,
+        },
     },
 };
-use rust_proto_clients::{
-    get_grpc_client,
-    GeneratorClientConfig,
-};
+use rust_proto_clients::{GeneratorClientConfig, get_grpc_client};
 use test_context::{
     futures::channel::oneshot::Sender,
     AsyncTestContext,
@@ -59,6 +59,10 @@ impl GeneratorTestContextInternals {
             .local_addr()
             .expect("failed to obtain socket address");
 
+        // construct an http URI clients can use to connect to server bound to
+        // the port.
+        let endpoint = format!("http://{}:{}", socket_address.ip(), socket_address.port());
+
         let (server, shutdown_tx) = GeneratorServer::new(
             generator_api,
             tcp_listener,
@@ -66,16 +70,30 @@ impl GeneratorTestContextInternals {
             Duration::from_millis(50),
         );
 
+        let service_name = server.service_name();
+
         let server_handle = tokio::task::spawn(server.serve());
 
-        let client_config = GeneratorClientConfig {
-            generator_client_address: socket_address,
-            generator_healthcheck_polling_interval_ms: 50,
-        };
+        HealthcheckClient::wait_until_healthy(
+            endpoint.clone(),
+            service_name,
+            Duration::from_millis(250),
+            Duration::from_millis(10),
+        )
+        .await
+        .expect("Generator never reported healthy");
 
-        let client = get_grpc_client(client_config)
+        /*
+        let endpoint = Endpoint::from_shared(endpoint).unwrap();
+        let client = GeneratorServiceClient::connect(endpoint)
             .await
             .expect("could not configure client");
+        */
+        let client_config = GeneratorClientConfig{
+            generator_client_address: endpoint,
+            generator_healthcheck_polling_interval_ms: 10,
+        };
+        let client = get_grpc_client(client_config).await.unwrap();
 
         GeneratorTestContextInternals {
             client,
