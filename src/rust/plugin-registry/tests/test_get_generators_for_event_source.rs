@@ -8,7 +8,10 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginMetadata,
     PluginType,
 };
-use rust_proto_clients::{PluginRegistryClientConfig, get_grpc_client};
+use rust_proto_clients::{
+    get_grpc_client,
+    PluginRegistryClientConfig,
+};
 
 #[test_log::test(tokio::test)]
 async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error::Error>> {

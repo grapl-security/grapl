@@ -20,8 +20,6 @@ use crate::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum GeneratorServiceClientError {
-    #[error(transparent)]
-    TransportError(#[from] tonic::transport::Error),
     #[error("ErrorStatus")]
     ErrorStatus(#[from] Status),
     #[error("PluginRegistryDeserializationError")]

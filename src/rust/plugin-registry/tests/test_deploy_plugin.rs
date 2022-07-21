@@ -5,7 +5,6 @@ use std::time::Duration;
 use bytes::Bytes;
 use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto_clients::{get_grpc_client, PluginRegistryClientConfig};
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     DeployPluginRequest,
     GetPluginHealthRequest,
@@ -15,6 +14,10 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginRegistryServiceClient,
     PluginRegistryServiceClientError,
     PluginType,
+};
+use rust_proto_clients::{
+    get_grpc_client,
+    PluginRegistryClientConfig,
 };
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");

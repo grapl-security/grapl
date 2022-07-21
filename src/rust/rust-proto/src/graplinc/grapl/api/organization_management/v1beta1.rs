@@ -197,7 +197,7 @@ pub mod client {
     use tonic::Request;
     use crate::protocol::endpoint::Endpoint;
 
-    use crate::protocol::service_client::ConnectError;
+    use crate::protocol::service_client::{ConnectError, NamedService};
     use crate::{
         protobufs::graplinc::grapl::api::organization_management::v1beta1::organization_management_service_client::OrganizationManagementServiceClient as OrganizationManagementServiceClientProto,
         protocol::{service_client::Connectable},
@@ -223,6 +223,11 @@ pub mod client {
 
     pub struct OrganizationManagementClient {
         proto_client: OrganizationManagementServiceClientProto<tonic::transport::Channel>,
+    }
+
+    impl NamedService for OrganizationManagementClient {
+        const SERVICE_NAME: &'static str =
+            "graplinc.grapl.api.organization_management.v1beta1.OrganizationManagementService";
     }
 
     #[async_trait::async_trait]

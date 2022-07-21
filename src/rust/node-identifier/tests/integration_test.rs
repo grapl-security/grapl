@@ -3,6 +3,7 @@
 use std::time::Duration;
 
 use bytes::Bytes;
+use clap::Parser;
 use futures::StreamExt;
 use grapl_tracing::{
     setup_tracing,
@@ -13,26 +14,24 @@ use kafka::{
     Consumer,
     ConsumerError,
 };
-use rust_proto::{
-    graplinc::grapl::{
-        api::{
-            graph::v1beta1::{
-                IdentifiedGraph,
-                IdentifiedNode,
-                ImmutableUintProp,
-                Property,
-            },
-            pipeline_ingress::v1beta1::{
-                client::PipelineIngressClient,
-                PublishRawLogRequest,
-            },
+use rust_proto::graplinc::grapl::{
+    api::{
+        graph::v1beta1::{
+            IdentifiedGraph,
+            IdentifiedNode,
+            ImmutableUintProp,
+            Property,
         },
-        pipeline::v1beta2::Envelope,
+        pipeline_ingress::v1beta1::{
+            client::PipelineIngressClient,
+            PublishRawLogRequest,
+        },
     },
-    protocol::{
-        healthcheck::client::HealthcheckClient,
-        service_client::NamedService,
-    },
+    pipeline::v1beta2::Envelope,
+};
+use rust_proto_clients::{
+    get_grpc_client,
+    PipelineIngressClientConfig,
 };
 use test_context::{
     test_context,
@@ -69,27 +68,10 @@ impl AsyncTestContext for NodeIdentifierTestContext {
     async fn setup() -> Self {
         let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
-        let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
-            .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
-
-        tracing::info!(
-            message = "waiting 10s for pipeline-ingress to report healthy",
-            endpoint = %endpoint,
-        );
-
-        HealthcheckClient::wait_until_healthy(
-            endpoint.clone(),
-            PipelineIngressClient::SERVICE_NAME,
-            Duration::from_millis(10000),
-            Duration::from_millis(500),
-        )
-        .await
-        .expect("pipeline-ingress never reported healthy");
-
-        tracing::info!("connecting pipeline-ingress gRPC client");
-        let pipeline_ingress_client = PipelineIngressClient::connect(endpoint.clone())
+        let client_config = PipelineIngressClientConfig::parse();
+        let pipeline_ingress_client = get_grpc_client(client_config)
             .await
-            .expect("could not configure gRPC client");
+            .expect("pipeline_ingress_client");
 
         let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 

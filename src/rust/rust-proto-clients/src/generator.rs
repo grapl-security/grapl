@@ -4,7 +4,10 @@ use rust_proto::graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::G
 
 use crate::grpc_client_config::GrpcClientConfig;
 
+#[derive(clap::Parser, Debug)]
 pub struct GeneratorClientConfig {
+    // Intentionally not marked with Clap macros; you'll rarely/never have to
+    // construct a GeneratorClientConfig from environment variables.
     pub generator_client_address: SocketAddr,
     pub generator_healthcheck_polling_interval_ms: u64,
 }

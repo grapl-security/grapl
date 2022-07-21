@@ -1,9 +1,9 @@
-use plugin_work_queue::client::PluginWorkQueueServiceClient;
 use rust_proto::{
     graplinc::grapl::api::{
         plugin_sdk::generators::v1beta1::client::GeneratorServiceClientError,
         plugin_work_queue::v1beta1::{
             ExecutionJob,
+            PluginWorkQueueServiceClient,
             PluginWorkQueueServiceClientError,
         },
     },

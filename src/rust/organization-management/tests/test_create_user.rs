@@ -5,13 +5,13 @@ use std::time::Duration;
 use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
 use organization_management::OrganizationManagementServiceConfig;
-use rust_proto::{
-    graplinc::grapl::api::organization_management::v1beta1::{
-        client::OrganizationManagementClient,
-        CreateOrganizationRequest,
-        CreateUserRequest,
-    },
-    protocol::healthcheck::client::HealthcheckClient,
+use rust_proto::graplinc::grapl::api::organization_management::v1beta1::{
+    CreateOrganizationRequest,
+    CreateUserRequest,
+};
+use rust_proto_clients::{
+    get_grpc_client,
+    OrganizationManagementClientConfig,
 };
 
 #[test_log::test(tokio::test)]
@@ -34,24 +34,8 @@ async fn test_create_user() -> Result<(), Box<dyn std::error::Error>> {
         .timeout(Duration::from_secs(5))
         .await??;
 
-    let endpoint = std::env::var("ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS")
-        .expect("missing environment variable ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS");
-
-    tracing::info!(
-        message = "waiting 60s for organization-management to report healthy",
-        endpoint = %endpoint,
-    );
-
-    HealthcheckClient::wait_until_healthy(
-        endpoint.clone(),
-        "graplinc.grapl.api.organization_management.v1beta1.OrganizationManagementService",
-        Duration::from_secs(60),
-        Duration::from_millis(500),
-    )
-    .await
-    .expect("organization-management never reported healthy");
-
-    let mut client = OrganizationManagementClient::connect(endpoint.clone()).await?;
+    let client_config = OrganizationManagementClientConfig::parse();
+    let mut client = get_grpc_client(client_config).await?;
 
     // create organization with admin user
     let organization_display_name = uuid::Uuid::new_v4().to_string();

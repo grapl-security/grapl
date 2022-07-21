@@ -1,16 +1,11 @@
-use std::time::Duration;
-
 use rust_proto::{
-    graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::{
-        GeneratorServiceClient,
-        GeneratorServiceClientError,
-    },
-    protocol::{
-        healthcheck::client::HealthcheckClient,
-        service_client::NamedService,
-    },
+    graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::GeneratorServiceClient,
+    protocol::service_client::ConnectError,
 };
-use tonic::transport::Endpoint;
+use rust_proto_clients::{
+    get_grpc_client,
+    GeneratorClientConfig,
+};
 
 fn get_plugin_upstream_address(plugin_id: uuid::Uuid) -> String {
     let upstream_addr_env_var = format!("NOMAD_UPSTREAM_ADDR_plugin-{plugin_id}");
@@ -22,22 +17,14 @@ fn get_plugin_upstream_address(plugin_id: uuid::Uuid) -> String {
 /// Create a client from environment
 pub async fn get_generator_client(
     plugin_id: uuid::Uuid,
-) -> Result<GeneratorServiceClient, GeneratorServiceClientError> {
+) -> Result<GeneratorServiceClient, ConnectError> {
     let address = get_plugin_upstream_address(plugin_id);
-
-    // TODO: Add a `rust-proto` wrapper around tonic Endpoint
-    let endpoint = Endpoint::from_shared(address.to_string())?
-        .timeout(Duration::from_secs(10))
-        .concurrency_limit(30);
-
-    HealthcheckClient::wait_until_healthy(
-        endpoint.clone(),
-        GeneratorServiceClient::SERVICE_NAME,
-        Duration::from_millis(10000),
-        Duration::from_millis(5000),
-    )
-    .await
-    .expect("Generator plugin never reported healthy");
-
-    GeneratorServiceClient::connect(endpoint).await
+    let client_config = GeneratorClientConfig {
+        generator_client_address: address.parse().expect("generator_client_address"),
+        generator_healthcheck_polling_interval_ms:
+            rust_proto_clients::defaults::HEALTHCHECK_POLLING_INTERVAL_MS
+                .parse()
+                .expect("polling_interval_ms"),
+    };
+    get_grpc_client(client_config).await
 }

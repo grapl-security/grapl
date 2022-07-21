@@ -14,23 +14,24 @@ use kafka::{
     Consumer,
     ConsumerError,
 };
-use rust_proto::{
-    graplinc::grapl::{
-        api::pipeline_ingress::v1beta1::{
-            client::PipelineIngressClient,
-            PublishRawLogRequest,
-        },
-        pipeline::{
-            v1beta1::RawLog,
-            v1beta2::Envelope,
-        },
+use rust_proto::graplinc::grapl::{
+    api::pipeline_ingress::v1beta1::{
+        client::PipelineIngressClient,
+        PublishRawLogRequest,
     },
+    pipeline::{
+        v1beta1::RawLog,
+        v1beta2::Envelope,
+    },
+};
+use rust_proto_clients::{
+    get_grpc_client,
+    PipelineIngressClientConfig,
 };
 use test_context::{
     test_context,
     AsyncTestContext,
 };
-use rust_proto_clients::{PipelineIngressClientConfig, get_grpc_client};
 use tokio::sync::oneshot;
 use tracing::Instrument;
 use uuid::Uuid;

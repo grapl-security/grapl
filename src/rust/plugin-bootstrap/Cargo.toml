@@ -24,6 +24,7 @@ clap = { version = "3.0", default_features = false, features = [
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
+rust-proto-clients = { path = "../rust-proto-clients" }
 thiserror = "1.0"
 tokio = { version = "1.14.0", features = ["full"] }
 tracing = "0.1"

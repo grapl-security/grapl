@@ -9,7 +9,10 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginMetadata,
     PluginType,
 };
-use rust_proto_clients::{PluginRegistryClientConfig, get_grpc_client};
+use rust_proto_clients::{
+    get_grpc_client,
+    PluginRegistryClientConfig,
+};
 
 /// For now, this is just a smoke test. This test can and should evolve as
 /// the service matures.

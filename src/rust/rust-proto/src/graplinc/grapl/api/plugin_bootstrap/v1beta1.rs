@@ -167,7 +167,7 @@ pub mod client {
 
     use crate::{
         protobufs::graplinc::grapl::api::plugin_bootstrap::v1beta1::plugin_bootstrap_service_client::PluginBootstrapServiceClient as PluginBootstrapServiceClientProto,
-        protocol::{service_client::{Connectable, ConnectError}},
+        protocol::{service_client::{Connectable, ConnectError, NamedService}},
         SerDeError,
     };
 
@@ -189,6 +189,11 @@ pub mod client {
 
     pub struct PluginBootstrapClient {
         proto_client: PluginBootstrapServiceClientProto<tonic::transport::Channel>,
+    }
+
+    impl NamedService for PluginBootstrapClient {
+        const SERVICE_NAME: &'static str =
+            "graplinc.grapl.api.plugin_bootstrap.v1beta1.PluginBootstrapService";
     }
 
     #[async_trait::async_trait]
