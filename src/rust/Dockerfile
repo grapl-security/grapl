@@ -153,18 +153,6 @@ RUN mkdir --parents "${TEST_DIR}"
 RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
     --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked \
-<<EOF
-    # First, run cargo test without --message-format=json; this will expose
-    # errors to the developer over stdout/err in human-readable format.
-    # (These two `cargo tests` could be merged, with a jq 
-    # search over .reason == "compiler-message" )
-    cargo test \
-        --features "${RUST_INTEGRATION_TEST_FEATURES}" \
-        --no-run \
-        --test "*"
-
-    # Run cargo test again - everything's already compiled - but this time, 
-    # the message is used as input to the jq script
     cargo test \
         --features "${RUST_INTEGRATION_TEST_FEATURES}" \
         --no-run \
@@ -174,7 +162,6 @@ RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
         xargs \
           --replace="{}" \
           cp "{}" "${TEST_DIR}/"
-EOF
 
 
 # integration tests distribution
