@@ -30,8 +30,9 @@ use rust_proto::graplinc::grapl::{
     pipeline::v1beta2::Envelope,
 };
 use rust_proto_clients::{
-    get_grpc_client,
+    get_grpc_client_with_options,
     services::PipelineIngressClientConfig,
+    GetGrpcClientOptions,
 };
 use test_context::{
     test_context,
@@ -68,7 +69,15 @@ impl AsyncTestContext for GraphMergerTestContext {
         let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
         let client_config = PipelineIngressClientConfig::parse();
-        let pipeline_ingress_client = get_grpc_client(client_config).await.expect("client");
+        let pipeline_ingress_client = get_grpc_client_with_options(
+            client_config,
+            GetGrpcClientOptions {
+                perform_healthcheck: true,
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("pipeline_ingress_client");
 
         let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 
