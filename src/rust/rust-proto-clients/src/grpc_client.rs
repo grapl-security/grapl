@@ -15,6 +15,7 @@ use crate::grpc_client_config::{
     GrpcClientConfig,
 };
 
+#[derive(Clone)]
 pub struct GetGrpcClientOptions {
     pub perform_healthcheck: bool,
     pub healthcheck_polling_interval: Duration,
