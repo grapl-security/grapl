@@ -32,8 +32,7 @@ pub enum AuthenticationError {
 impl actix_web::error::ResponseError for AuthenticationError {
     fn error_response(&self) -> actix_web::HttpResponse {
         match *self {
-            AuthenticationError::DbClient(_)
-            | AuthenticationError::Actix(_)
+            AuthenticationError::Actix(_)
             | AuthenticationError::GoogleTokenVerification(GoogleTokenError::KeyProvider(_))
             | AuthenticationError::DeserializePasswordFromDatabase { .. }
             | AuthenticationError::PasswordHasher(_) => {
@@ -45,8 +44,7 @@ impl actix_web::error::ResponseError for AuthenticationError {
 
     fn status_code(&self) -> actix_web::http::StatusCode {
         match *self {
-            AuthenticationError::DbClient(_)
-            | AuthenticationError::Actix(_)
+            AuthenticationError::Actix(_)
             | AuthenticationError::GoogleTokenVerification(GoogleTokenError::KeyProvider(_))
             | AuthenticationError::DeserializePasswordFromDatabase { .. }
             | AuthenticationError::PasswordHasher(_) => {
