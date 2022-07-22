@@ -7,15 +7,25 @@ use plugin_work_queue::{
     psql_queue::PsqlQueue,
     PluginWorkQueueDbConfig,
 };
-use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient;
+use rust_proto::graplinc::grapl::api::{
+    event_source::v1beta1::client::EventSourceServiceClient,
+    pipeline_ingress::v1beta1::client::PipelineIngressClient,
+    plugin_registry::v1beta1::PluginRegistryServiceClient,
+};
 use rust_proto_clients::{
     get_grpc_client_with_options,
-    services::PipelineIngressClientConfig,
+    services::{
+        EventSourceClientConfig,
+        PipelineIngressClientConfig,
+        PluginRegistryClientConfig,
+    },
     GetGrpcClientOptions,
 };
 use test_context::AsyncTestContext;
 
 pub struct GeneratorDispatcherTestContext {
+    pub event_source_client: EventSourceServiceClient,
+    pub plugin_registry_client: PluginRegistryServiceClient,
     pub pipeline_ingress_client: PipelineIngressClient,
     pub plugin_work_queue_psql_client: PsqlQueue,
     pub _guard: WorkerGuard,
@@ -27,14 +37,28 @@ const SERVICE_NAME: &'static str = "generator-dispatcher-integration-tests";
 impl AsyncTestContext for GeneratorDispatcherTestContext {
     async fn setup() -> Self {
         let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
+        let get_grpc_options = GetGrpcClientOptions {
+            perform_healthcheck: true,
+            ..Default::default()
+        };
 
-        let client_config = PipelineIngressClientConfig::parse();
+        let event_source_client = get_grpc_client_with_options(
+            EventSourceClientConfig::parse(),
+            get_grpc_options.clone(),
+        )
+        .await
+        .expect("event_source_client");
+
+        let plugin_registry_client = get_grpc_client_with_options(
+            PluginRegistryClientConfig::parse(),
+            get_grpc_options.clone(),
+        )
+        .await
+        .expect("event_source_client");
+
         let pipeline_ingress_client = get_grpc_client_with_options(
-            client_config,
-            GetGrpcClientOptions {
-                perform_healthcheck: true,
-                ..Default::default()
-            },
+            PipelineIngressClientConfig::parse(),
+            get_grpc_options.clone(),
         )
         .await
         .expect("pipeline_ingress_client");
@@ -44,6 +68,8 @@ impl AsyncTestContext for GeneratorDispatcherTestContext {
             .expect("plugin_work_queue");
 
         GeneratorDispatcherTestContext {
+            event_source_client,
+            plugin_registry_client,
             pipeline_ingress_client,
             plugin_work_queue_psql_client,
             _guard,
