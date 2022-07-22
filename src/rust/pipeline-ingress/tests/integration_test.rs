@@ -51,7 +51,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let _guard = setup_tracing("pipeline-ingress-integration-tests").expect("setup_tracing");
 
         let client_config = PipelineIngressClientConfig::parse();
-        let grpc_client = get_grpc_client_with_options(
+        let pipeline_ingress_client = get_grpc_client_with_options(
             client_config,
             GetGrpcClientOptions {
                 perform_healthcheck: true,
@@ -59,11 +59,11 @@ impl AsyncTestContext for PipelineIngressTestContext {
             },
         )
         .await
-        .expect("client");
+        .expect("pipeline_ingress_client");
         let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 
         PipelineIngressTestContext {
-            grpc_client,
+            grpc_client: pipeline_ingress_client,
             consumer_config,
             _guard,
         }
