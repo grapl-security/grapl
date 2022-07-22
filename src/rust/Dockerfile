@@ -156,8 +156,6 @@ RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
 <<EOF
     # First, run cargo test without --message-format=json; this will expose
     # errors to the developer over stdout/err in human-readable format.
-    # (These two `cargo tests` could be merged, with a jq 
-    # search over .reason == "compiler-message" )
     cargo test \
         --features "${RUST_INTEGRATION_TEST_FEATURES}" \
         --no-run \
