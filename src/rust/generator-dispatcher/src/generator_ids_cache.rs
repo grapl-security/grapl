@@ -98,7 +98,6 @@ impl GeneratorIdsCache {
 
         let client_config = PluginRegistryClientConfig::parse();
         let plugin_registry_client = build_grpc_client(client_config).await?;
-
         // The updater task is responsible for handling messages on the update
         // queue and querying the plugin-registry for updates corresponding to
         // each message.

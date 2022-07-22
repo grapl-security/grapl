@@ -1407,6 +1407,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "e2e-tests"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "clap 3.2.13",
+ "futures",
+ "grapl-tracing",
+ "grapl-utils",
+ "kafka",
+ "plugin-work-queue",
+ "rust-proto",
+ "test-context",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "either"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

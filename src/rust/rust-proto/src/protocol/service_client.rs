@@ -17,12 +17,12 @@ pub trait Connectable {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum ConnectError {
-    #[error("failed to connect {0}")]
+    #[error("Failed to connect {0}")]
     ConnectionError(#[from] tonic::transport::Error),
 
-    #[error("healthcheck failed {0}")]
-    HealtcheckFailed(#[from] HealthcheckError),
+    #[error("Healthcheck failed for {0}: {1}")]
+    HealthcheckFailed(String, HealthcheckError),
 
-    #[error("timeout elapsed {0}")]
+    #[error("Timeout elapsed {0}")]
     TimeoutElapsed(#[from] Elapsed),
 }

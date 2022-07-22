@@ -101,9 +101,7 @@ async fn test_sysmon_event_produces_identified_graph(
             let envelope_event_source_id = envelope.event_source_id();
             let identified_graph = envelope.inner_message();
 
-            tracing::debug!(message = "consumed kafka message");
-
-            if envelope_tenant_id == tenant_id && envelope_event_source_id == event_source_id {
+            if envelope.tenant_id() == tenant_id && envelope.event_source_id() == event_source_id {
                 let parent_process = find_node(
                     &identified_graph,
                     "process_id",

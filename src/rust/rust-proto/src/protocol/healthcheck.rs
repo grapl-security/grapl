@@ -134,7 +134,11 @@ pub mod client {
                 }
             };
 
-            tokio::time::timeout(timeout, client_fut.map_err(|e| e.into())).await?
+            tokio::time::timeout(
+                timeout,
+                client_fut.map_err(|e| ConnectError::HealthcheckFailed(service_name.to_owned(), e)),
+            )
+            .await?
         }
     }
 }
