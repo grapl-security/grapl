@@ -61,11 +61,6 @@ variable "user_session_table" {
   description = "The name of the DynamoDB user session table"
 }
 
-variable "google_client_id" {
-  type        = string
-  description = "Google client ID used for authenticating web users via Sign In With Google"
-}
-
 variable "dns_server" {
   type        = string
   description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
@@ -146,6 +141,11 @@ job "rust-integration-tests" {
             }
 
             upstreams {
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 1003
+            }
+
+            upstreams {
               destination_name = "organization-management"
               local_bind_port  = 1004
             }
@@ -153,6 +153,11 @@ job "rust-integration-tests" {
             upstreams {
               destination_name = "event-source"
               local_bind_port  = 1005
+            }
+
+            upstreams {
+              destination_name = "web-ui"
+              local_bind_port  = 1007
             }
           }
         }
@@ -179,12 +184,12 @@ job "rust-integration-tests" {
         RUST_BACKTRACE = 1
         RUST_LOG       = var.rust_log
 
-        GRAPL_USER_AUTH_TABLE    = var.user_auth_table
-        GRAPL_USER_SESSION_TABLE = var.user_session_table
+        MG_ALPHAS = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-grpc-public}"
 
-        GRAPL_GOOGLE_CLIENT_ID               = var.google_client_id
-        GRAPL_GRAPHQL_ENDPOINT               = "http://TODO:1111"
-        GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
+        # web-ui
+        GRAPL_USER_AUTH_TABLE         = var.user_auth_table
+        GRAPL_USER_SESSION_TABLE      = var.user_session_table
+        GRAPL_WEB_UI_ENDPOINT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_web-ui}"
 
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS   = "0.0.0.0:1004" # not used but required due to clap
         ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
@@ -218,7 +223,7 @@ job "rust-integration-tests" {
         # We need a lot of memory because we load the 150MB
         # /test-fixtures/example-generator
         # into memory
-        memory = 512
+        memory = 1024
       }
     }
   }

@@ -19,7 +19,7 @@ class GraphQLException(Exception):
 
 class GraphqlEndpointClient:
     def __init__(self, actix_session: str) -> None:
-        self.endpoint = endpoint_url("/graphQlEndpoint")
+        self.endpoint = endpoint_url("/api/graphQlEndpoint")
         self.actix_session = actix_session
 
     def query(

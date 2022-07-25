@@ -24,7 +24,7 @@ class GraplWebClient:
         username, password = get_test_user_creds()
 
         resp = requests.post(
-            f"{self.endpoint}/auth/login",
+            f"{self.endpoint}/api/auth/sign_in_with_password",
             json={
                 "username": username,
                 "password": password,
@@ -40,45 +40,11 @@ class GraplWebClient:
             )
         return cookie
 
-    def real_user_fake_password(self) -> requests.Response:
-        username, _ = get_test_user_creds()
-        resp = requests.post(
-            f"{self.endpoint}/auth/login",
-            json={
-                "username": username,
-                "password": "fakepassword",
-            },
-            headers=_JSON_CONTENT_TYPE_HEADERS,
-        )
-        return resp
-
-    def nonexistent_user(self) -> requests.Response:
-        resp = requests.post(
-            f"{self.endpoint}/auth/login",
-            json={
-                "username": "fakeuser",
-                "password": "fakepassword",
-            },
-            headers=_JSON_CONTENT_TYPE_HEADERS,
-        )
-        return resp
-
-    def empty_creds(self) -> requests.Response:
-        resp = requests.post(
-            f"{self.endpoint}/auth/login",
-            json={
-                "username": "",
-                "password": "",
-            },
-            headers=_JSON_CONTENT_TYPE_HEADERS,
-        )
-        return resp
-
     def no_content_type(self) -> requests.Response:
         username, password = get_test_user_creds()
 
         resp = requests.post(
-            f"{self.endpoint}/auth/login",
+            f"{self.endpoint}/api/auth/sign_in_with_password",
             json={
                 "username": username,
                 "password": password,

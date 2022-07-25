@@ -102,7 +102,7 @@ export const LogIn = (_: LoginProps) => {
             <div>
                 <div className="App">
                     <GoogleLogin
-                        login_uri="/auth/signin_with_google"
+                        login_uri="/api/auth/signin_with_google"
                         onSuccess={async (credentialResponse) => {
                             if (credentialResponse.credential === undefined) {
                                 setState({
