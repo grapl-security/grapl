@@ -10,7 +10,6 @@ use node_identifier::{
         UnidSession,
     },
 };
-use quickcheck_macros::quickcheck;
 use rusoto_core::RusotoError;
 use rusoto_dynamodb::{
     AttributeDefinition,
@@ -24,6 +23,7 @@ use rusoto_dynamodb::{
     ProvisionedThroughput,
 };
 use tokio::runtime::Runtime;
+use uuid::Uuid;
 
 async fn try_create_table(
     dynamo: &impl DynamoDb,
@@ -79,8 +79,8 @@ fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) 
 // Given an empty timeline
 // When a canonical creation event comes in
 // Then the newly created session should be in the timeline
-#[quickcheck]
-fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
+#[test]
+fn canon_create_on_empty_timeline() {
     let runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_on_empty_timeline";
     let dynamo = DynamoDbClient::from_env();
@@ -90,7 +90,7 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
     let session_db = SessionDb::new(dynamo, table_name);
 
     let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
+        pseudo_key: format!("{}{}", Uuid::new_v4(), rand::random::<u64>(),),
         timestamp: 1544301484600,
         is_creation: true,
     };
@@ -107,8 +107,8 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
 // When a canonical creation event comes in with a creation time of 'Y'
 //      where 'Y' < 'X'
 // Then the session should be updated to have 'Y' as its canonical create time
-#[quickcheck]
-fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
+#[test]
+fn canon_create_update_existing_non_canon_create() {
     let runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_update_existing_non_canon_create";
     let dynamo = DynamoDbClient::from_env();
@@ -117,6 +117,8 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
 
     let session_db = SessionDb::new(dynamo, table_name);
 
+    let asset_id = Uuid::new_v4();
+    let pid: u64 = rand::random();
     // Given a timeline with a single session, where that session has a non canon
     //      creation time 'X'
     let session = Session {
@@ -153,8 +155,8 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
 // When a noncanonical creation event comes in with a creation time of 'Y'
 //      where 'Y' < 'X'
 // Then the session should be updated to have 'Y' as its noncanonical create time
-#[quickcheck]
-fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
+#[test]
+fn noncanon_create_update_existing_non_canon_create() {
     let runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_update_existing_non_canon_create";
     let dynamo = DynamoDbClient::from_env();
@@ -162,6 +164,9 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
     create_or_empty_table(&dynamo, table_name);
 
     let session_db = SessionDb::new(dynamo, table_name);
+
+    let asset_id = Uuid::new_v4();
+    let pid: u64 = rand::random();
 
     // Given a timeline with a single session, where that session has a non canon
     //      creation time 'X'
@@ -198,8 +203,8 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
 // Given an empty timeline
 // When a noncanon create event comes in and 'should_default' is true
 // Then Create the new noncanon session
-#[quickcheck]
-fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
+#[test]
+fn noncanon_create_on_empty_timeline_with_default() {
     let runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_with_default";
     let dynamo = DynamoDbClient::from_env();
@@ -207,6 +212,9 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
     create_or_empty_table(&dynamo, table_name);
 
     let session_db = SessionDb::new(dynamo, table_name);
+
+    let asset_id = Uuid::new_v4();
+    let pid: u64 = rand::random();
 
     let unid = UnidSession {
         pseudo_key: format!("{}{}", asset_id, pid),
@@ -244,8 +252,8 @@ fn noncanon_create_on_empty_timeline_without_default() {
     assert!(session_id.is_err());
 }
 
-#[quickcheck]
-fn update_end_time(asset_id: String, pid: u64) {
+#[test]
+fn update_end_time() {
     let runtime = Runtime::new().unwrap();
     let table_name = "process_history_update_end_time";
     let dynamo = DynamoDbClient::from_env();
@@ -253,6 +261,9 @@ fn update_end_time(asset_id: String, pid: u64) {
     create_or_empty_table(&dynamo, table_name);
 
     let session_db = SessionDb::new(dynamo, table_name);
+
+    let asset_id = Uuid::new_v4();
+    let pid: u64 = rand::random();
 
     // Given a timeline with a single session, where that session has a non canon
     //      end time 'X'
