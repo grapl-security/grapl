@@ -207,42 +207,12 @@ mod graph {
         }
 
         #[test]
-        fn test_merged_edge_encode_decode(merged_edge in st::merged_edges()) {
-            check_encode_decode_invariant(merged_edge)
-        }
-
-        #[test]
-        fn test_merged_edge_list_encode_decode(
-            merged_edge_list in st::merged_edge_lists()
-        ) {
-            check_encode_decode_invariant(merged_edge_list)
-        }
-
-        #[test]
-        fn test_merged_node_encode_decode(merged_node in st::merged_nodes()) {
-            check_encode_decode_invariant(merged_node)
-        }
-
-        #[test]
-        fn test_merged_graph_encode_decode(
-            merged_graph in st::merged_graphs()
-        ) {
-            check_encode_decode_invariant(merged_graph)
-        }
-
-        #[test]
         fn test_lens_encode_decode(
             lens in st::lenses()
         ) {
             check_encode_decode_invariant(lens)
         }
 
-        #[test]
-        fn test_execution_hit_encode_decode(
-            execution_hit in st::execution_hits()
-        ) {
-            check_encode_decode_invariant(execution_hit)
-        }
     }
 }
 
@@ -377,6 +347,20 @@ mod plugin_registry {
             check_encode_decode_invariant(value)
         }
 
+        #[test]
+        fn test_serde_get_plugin_health_requests(
+            value in pr_strats::get_plugin_health_requests()
+        ) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_serde_get_plugin_health_responses(
+            value in pr_strats::get_plugin_health_responses()
+        ) {
+            check_encode_decode_invariant(value)
+        }
+
     }
 }
 
@@ -480,29 +464,29 @@ mod plugin_work_queue {
 mod uid_allocator {
 
     use strategies::uid_allocator as uida_strats;
+    use super::*;
 
     proptest! {
 
-    #[test]
-    fn test_allocation(value in uida_strats::allocations()) {
+        #[test]
+        fn test_allocation(value in uida_strats::allocations()) {
+                check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_allocate_ids_request(value in uida_strats::allocate_ids_request()) {
             check_encode_decode_invariant(value)
-    }
+        }
 
-    #[test]
-    fn test_allocate_ids_request(value in uida_strats::allocate_ids_request()) {
-        check_encode_decode_invariant(value)
-    }
-
-    #[test]
-    fn test_allocate_ids_response(value in uida_strats::allocate_ids_response()) {
-        check_encode_decode_invariant(value)
-    }
+        #[test]
+        fn test_allocate_ids_response(value in uida_strats::allocate_ids_response()) {
+            check_encode_decode_invariant(value)
+        }
     }
 }
 
 mod lens_manager {
     use strategies::lens_manager as lm_strats;
-
     use super::*;
 
     proptest! {

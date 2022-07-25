@@ -36,3 +36,4 @@ clap = { version = "3.2.13", features = ["std", "env", "derive"] }
 tonic-build = { version = "0.6.0", features = ["prost"] }
 
 [features]
+integration_tests = []

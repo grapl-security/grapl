@@ -1,9 +1,13 @@
 use std::sync::Arc;
-use scylla::CachingSession;
-use rust_proto::graplinc::grapl::api::lens_manager::v1beta1::server::LensManagerServiceServer;
-use crate::config::LensManagerServiceConfig;
-use crate::server::LensManager;
+
 use clap::Parser;
+use rust_proto::graplinc::grapl::api::lens_manager::v1beta1::server::LensManagerServiceServer;
+use scylla::CachingSession;
+
+use crate::{
+    config::LensManagerServiceConfig,
+    server::LensManager,
+};
 
 mod config;
 mod server;
@@ -20,9 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         scylla::Session::connect(scylla_config).await?,
         10_000,
     ));
-    let lens_manager_service = LensManager::new(
-        scylla_client,
-    );
+    let lens_manager_service = LensManager::new(scylla_client);
 
     let (_tx, rx) = tokio::sync::oneshot::channel();
     LensManagerServiceServer::builder(
@@ -30,10 +32,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.lens_manager_service_bind_address,
         rx,
     )
-        .build()
-        .serve()
-        .await?;
+    .build()
+    .serve()
+    .await?;
 
     Ok(())
 }
-

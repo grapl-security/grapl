@@ -11,6 +11,7 @@ use prost::{
 use thiserror::Error;
 
 pub mod protocol {
+    pub mod error;
     pub mod healthcheck;
     pub mod service_client;
     pub mod status;
@@ -42,6 +43,15 @@ pub(crate) mod protobufs {
             }
 
             pub(crate) mod api {
+                pub(crate) mod db_schema_manager {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.db_schema_manager.v1beta1.rs"
+                        ));
+                    }
+                }
+
                 pub(crate) mod event_source {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -223,6 +233,10 @@ pub mod graplinc {
             }
         }
         pub mod api {
+            pub mod db_schema_manager {
+                pub mod v1beta1;
+            }
+
             pub mod event_source {
                 pub mod v1beta1;
             }

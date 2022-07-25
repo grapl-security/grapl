@@ -10,7 +10,10 @@ use proto::plugin_registry_service_client::PluginRegistryServiceClient as Plugin
 use crate::{
     graplinc::grapl::api::plugin_registry::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
-    protocol::service_client::NamedService,
+    protocol::{
+        service_client::NamedService,
+        status::Status,
+    },
     SerDeError,
 };
 
@@ -19,7 +22,7 @@ pub enum PluginRegistryServiceClientError {
     #[error("TransportError {0}")]
     TransportError(#[from] tonic::transport::Error),
     #[error("ErrorStatus {0}")]
-    ErrorStatus(#[from] tonic::Status),
+    ErrorStatus(#[from] Status),
     #[error("PluginRegistryDeserializationError {0}")]
     PluginRegistryDeserializationError(#[from] SerDeError),
 }
@@ -50,10 +53,14 @@ impl PluginRegistryServiceClient {
     where
         S: Stream<Item = native::CreatePluginRequest> + Send + 'static,
     {
-        let response = self
+        let response = match self
             .proto_client
             .create_plugin(request.map(proto::CreatePluginRequest::from))
-            .await?;
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => return Err(Status::from(e).into()),
+        };
         let response = native::CreatePluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
@@ -82,10 +89,14 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::GetPluginRequest,
     ) -> Result<native::GetPluginResponse, PluginRegistryServiceClientError> {
-        let response = self
+        let response = match self
             .proto_client
             .get_plugin(proto::GetPluginRequest::from(request))
-            .await?;
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => return Err(Status::from(e).into()),
+        };
         let response = native::GetPluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
@@ -98,7 +109,8 @@ impl PluginRegistryServiceClient {
         let response = self
             .proto_client
             .deploy_plugin(proto::DeployPluginRequest::from(request))
-            .await?;
+            .await
+            .map_err(Status::from)?;
         let response = native::DeployPluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
@@ -110,8 +122,22 @@ impl PluginRegistryServiceClient {
     ) -> Result<native::TearDownPluginResponse, PluginRegistryServiceClientError> {
         self.proto_client
             .tear_down_plugin(proto::TearDownPluginRequest::from(request))
-            .await?;
+            .await
+            .map_err(Status::from)?;
         todo!()
+    }
+
+    pub async fn get_plugin_health(
+        &mut self,
+        request: native::GetPluginHealthRequest,
+    ) -> Result<native::GetPluginHealthResponse, PluginRegistryServiceClientError> {
+        let response = self
+            .proto_client
+            .get_plugin_health(proto::GetPluginHealthRequest::from(request))
+            .await
+            .map_err(Status::from)?;
+        let response = native::GetPluginHealthResponse::try_from(response.into_inner())?;
+        Ok(response)
     }
 
     /// Given information about an event source, return all generators that handle that event source
@@ -125,10 +151,10 @@ impl PluginRegistryServiceClient {
             .get_generators_for_event_source(proto::GetGeneratorsForEventSourceRequest::from(
                 request,
             ))
-            .await?;
+            .await
+            .map_err(Status::from)?;
 
-        let response =
-            native::GetGeneratorsForEventSourceResponse::try_from(response.into_inner())?;
+        let response = native::GetGeneratorsForEventSourceResponse::from(response.into_inner());
 
         Ok(response)
     }
@@ -140,7 +166,8 @@ impl PluginRegistryServiceClient {
     ) -> Result<native::GetAnalyzersForTenantResponse, PluginRegistryServiceClientError> {
         self.proto_client
             .get_analyzers_for_tenant(proto::GetAnalyzersForTenantRequest::from(request))
-            .await?;
+            .await
+            .map_err(Status::from)?;
         todo!()
     }
 }

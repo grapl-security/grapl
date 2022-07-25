@@ -22,7 +22,7 @@ services:
         (
           cd grapl
           pulumi stack init local-grapl --non-interactive
-          pulumi up --yes --skip-preview --stack=local-grapl $$TRACING_ARGS
+          pulumi up --yes --stack=local-grapl $$TRACING_ARGS
         )
 
         # Theoretically, we could skip uploading these job definitions for
@@ -35,7 +35,7 @@ services:
           # Ideally this stack name would be scoped by organization, but
           # login --local doesn't support organizations
           pulumi stack init local-grapl-python-integration-tests --non-interactive
-          pulumi up --yes --skip-preview --stack=local-grapl-python-integration-tests $$TRACING_ARGS
+          pulumi up --yes  --stack=local-grapl-python-integration-tests $$TRACING_ARGS
         )
 
         (
@@ -43,7 +43,7 @@ services:
           # Ideally this stack name would be scoped by organization, but
           # login --local doesn't support organizations
           pulumi stack init local-grapl-rust-integration-tests --non-interactive
-          pulumi up --yes --skip-preview --stack=local-grapl-rust-integration-tests $$TRACING_ARGS
+          pulumi up --yes  --stack=local-grapl-rust-integration-tests $$TRACING_ARGS
         )
 
     volumes:
@@ -51,6 +51,9 @@ services:
         source: ./dist
         target: /home/grapl/dist
         read_only: true
+    build:
+      args:
+        PYTHON_VERSION: "${PYTHON_VERSION}"
     environment:
       IMAGE_TAG:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase

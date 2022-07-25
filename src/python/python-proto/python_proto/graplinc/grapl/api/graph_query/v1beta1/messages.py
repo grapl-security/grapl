@@ -4,20 +4,7 @@ import enum
 import os
 from collections import defaultdict, deque
 from dataclasses import InitVar, dataclass, field
-from typing import (
-    DefaultDict,
-    Deque,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    final,
-)
+from typing import DefaultDict, Deque, Iterable, Iterator, Mapping, Sequence, final
 
 from graplinc.grapl.api.graph_query_service.v1beta1.graph_query_service_pb2 import (
     AndStringFilters as AndStringFiltersProto,

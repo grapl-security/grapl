@@ -11,7 +11,6 @@ use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::{
     graplinc::grapl::api::organization_management::v1beta1::{
         server::{
-            ConfigurationError as ServerConfigurationError,
             OrganizationManagementApi,
             OrganizationManagementServer,
         },
@@ -21,6 +20,7 @@ use rust_proto::{
         CreateUserResponse,
     },
     protocol::{
+        error::ServeError,
         healthcheck::HealthcheckStatus,
         status::Status,
     },
@@ -41,7 +41,7 @@ pub enum OrganizationManagementServiceError {
     #[error("HashError {0}")]
     HashError(String),
     #[error("ServerError {0}")]
-    ServerError(#[from] ServerConfigurationError),
+    ServeError(#[from] ServeError),
 }
 
 impl From<argon2::Error> for OrganizationManagementServiceError {

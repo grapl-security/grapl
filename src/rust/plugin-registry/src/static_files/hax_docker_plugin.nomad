@@ -39,20 +39,23 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
-variable "otel_exporter_jaeger_agent_host" {
+variable "observability_env_vars" {
   type        = string
-  description = "Jaeger configuration"
-}
-
-variable "otel_exporter_jaeger_agent_port" {
-  type        = number
-  description = "Jaeger configuration"
+  description = <<EOF
+With local-grapl, we have to inject env vars for Opentelemetry.
+In prod, this is currently disabled.
+EOF
 }
 
 job "grapl-plugin" {
   datacenters = ["dc1"]
   namespace   = "plugin-${var.plugin_id}"
   type        = "service"
+
+  reschedule {
+    # Make this a one-shot job
+    attempts = 0
+  }
 
   # We'll want to make sure we have the opposite constraint on other services
   # This is set in the Nomad agent's `client` stanza:
@@ -112,8 +115,14 @@ job "grapl-plugin" {
         image = var.plugin_execution_image
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
-        PLUGIN_ID = "${var.plugin_id}"
+        PLUGIN_EXECUTOR_PLUGIN_ID = var.plugin_id
 
         // FYI: the upstream plugin's address is discovered at runtime, not
         // env{}, because the upstream's name is based on ${PLUGIN_ID}.
@@ -122,13 +131,15 @@ job "grapl-plugin" {
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
-
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = var.otel_exporter_jaeger_agent_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = var.otel_exporter_jaeger_agent_port
       }
     }
 
     // TODO: task "tenant-plugin-graph-query-sidecar"
+
+    restart {
+      attempts = 1
+      delay    = "5s"
+    }
   }
 
   group "plugin" {
@@ -139,10 +150,6 @@ job "grapl-plugin" {
       //   servers = local.dns_servers
       // }
       port "plugin" {}
-    }
-
-    restart {
-      attempts = 1
     }
 
     count = var.plugin_count
@@ -204,6 +211,12 @@ EOF
         }
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         TENANT_ID  = "${var.tenant_id}"
         PLUGIN_ID  = "${var.plugin_id}"
@@ -211,13 +224,15 @@ EOF
         # Consumed by GeneratorServiceConfig
         PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
 
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = var.otel_exporter_jaeger_agent_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = var.otel_exporter_jaeger_agent_port
-
         # Should we make these eventually customizable?
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
       }
+    }
+
+    restart {
+      attempts = 1
+      delay    = "5s"
     }
   }
 }

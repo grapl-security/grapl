@@ -39,5 +39,5 @@ pub async fn exec_service(
         socket_address = %config.bind_address,
     );
 
-    server.serve().await
+    Ok(server.serve().await?)
 }

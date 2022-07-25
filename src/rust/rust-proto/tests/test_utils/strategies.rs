@@ -3,6 +3,20 @@ use std::time::SystemTime;
 use bytes::Bytes;
 use proptest::prelude::*;
 use uuid::Uuid;
+use rust_proto::graplinc::grapl::common::v1beta1::types::Uid;
+use rust_proto::graplinc::grapl::common::v1beta1::types::NodeType;
+
+//
+// Uid
+//
+prop_compose! {
+    pub fn uids()(
+        int in 1..u64::MAX
+    ) -> Uid {
+        Uid::from_u64(int).unwrap()
+    }
+}
+
 
 //
 // Bytes
@@ -112,21 +126,18 @@ pub mod graph {
         DecrementOnlyUintProp,
         Edge,
         EdgeList,
-        ExecutionHit,
         GraphDescription,
         IdStrategy,
         IdentifiedGraph,
         IdentifiedNode,
+        IdentifiedEdge,
+        IdentifiedEdgeList,
         ImmutableIntProp,
         ImmutableStrProp,
         ImmutableUintProp,
         IncrementOnlyIntProp,
         IncrementOnlyUintProp,
         Lens,
-        MergedEdge,
-        MergedEdgeList,
-        MergedGraph,
-        MergedNode,
         NodeDescription,
         NodeProperty,
         Property,
@@ -243,13 +254,13 @@ pub mod graph {
         pub fn lenses()(
             lens_type in any::<String>(),
             lens_name in any::<String>(),
-            uid in any::<u64>(),
+            uid in uids(),
             score in any::<u64>(),
         ) -> Lens {
             Lens {
                 lens_type,
                 lens_name,
-                uid: Some(uid),
+                uid: Some(uid.as_u64()),
                 score: Some(score)
             }
         }
@@ -288,28 +299,37 @@ pub mod graph {
     }
 
     //
-    // ExecutionHit
+    // IdentifiedEdge
     //
-
     prop_compose! {
-        pub fn execution_hits()(
-            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
-            analyzer_name in any::<String>(),
-            risk_score in any::<u64>(),
-            lenses in collection::vec(lenses(), 10),
-            risky_node_keys in collection::vec(any::<String>(), 10)
-        ) -> ExecutionHit {
-            ExecutionHit{
-                nodes,
-                edges,
-                analyzer_name,
-                risk_score,
-                lenses,
-                risky_node_keys
+        pub fn identified_edges()(
+            to_uid in uids(),
+            from_uid in uids(),
+            edge_name in any::<String>(),
+        ) -> IdentifiedEdge {
+            IdentifiedEdge {
+                to_uid,
+                from_uid,
+                edge_name,
             }
         }
     }
+
+    //
+    // IdentifiedEdgeList
+    //
+
+    prop_compose! {
+        pub fn identified_edge_lists()(
+            edges in collection::vec(identified_edges(), 10),
+        ) -> IdentifiedEdgeList {
+            IdentifiedEdgeList {
+                edges
+            }
+        }
+    }
+
+
 
     //
     // Session
@@ -445,11 +465,13 @@ pub mod graph {
             properties in collection::hash_map(any::<String>(), node_properties(), 10),
             node_key in any::<String>(),
             node_type in any::<String>(),
+            uid in uids(),
         ) -> IdentifiedNode {
             IdentifiedNode {
                 properties,
                 node_key,
-                node_type
+                node_type,
+                uid,
             }
         }
     }
@@ -460,8 +482,8 @@ pub mod graph {
 
     prop_compose! {
         pub fn identified_graphs()(
-            nodes in collection::hash_map(any::<String>(), identified_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), edge_lists(), 10),
+            nodes in collection::hash_map(uids(), identified_nodes(), 10),
+            edges in collection::hash_map(uids(), identified_edge_lists(), 10),
         ) -> IdentifiedGraph {
             IdentifiedGraph {
                 nodes,
@@ -470,75 +492,6 @@ pub mod graph {
         }
     }
 
-    //
-    // MergedEdge
-    //
-
-    prop_compose! {
-        pub fn merged_edges()(
-            from_uid in any::<String>(),
-            from_node_key in any::<String>(),
-            to_uid in any::<String>(),
-            to_node_key in any::<String>(),
-            edge_name in any::<String>(),
-        ) -> MergedEdge {
-            MergedEdge {
-                from_uid,
-                from_node_key,
-                to_uid,
-                to_node_key,
-                edge_name
-            }
-        }
-    }
-
-    //
-    // MergedEdgeList
-    //
-
-    prop_compose! {
-        pub fn merged_edge_lists()(
-            edges in collection::vec(merged_edges(), 10),
-        ) -> MergedEdgeList {
-            MergedEdgeList { edges }
-        }
-    }
-
-    //
-    // MergedNode
-    //
-
-    prop_compose! {
-        pub fn merged_nodes()(
-            properties in collection::hash_map(any::<String>(), node_properties(), 10),
-            uid in any::<u64>(),
-            node_key in any::<String>(),
-            node_type in any::<String>(),
-        ) -> MergedNode {
-            MergedNode {
-                properties,
-                uid,
-                node_key,
-                node_type
-            }
-        }
-    }
-
-    //
-    // MergedGraph
-    //
-
-    prop_compose! {
-        pub fn merged_graphs()(
-            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
-        ) -> MergedGraph {
-            MergedGraph {
-                nodes,
-                edges,
-            }
-        }
-    }
 }
 
 pub mod pipeline_ingress {
@@ -694,8 +647,11 @@ pub mod plugin_registry {
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginHealthRequest,
+        GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
+        PluginHealthStatus,
         PluginMetadata,
         PluginType,
         TearDownPluginRequest,
@@ -844,6 +800,37 @@ pub mod plugin_registry {
     pub fn tear_down_plugin_responses() -> impl Strategy<Value = TearDownPluginResponse> {
         Just(TearDownPluginResponse {})
     }
+
+    prop_compose! {
+        pub fn get_plugin_health_requests()(
+            plugin_id in uuids()
+        ) -> GetPluginHealthRequest {
+            GetPluginHealthRequest{
+                plugin_id
+            }
+        }
+    }
+
+    pub fn plugin_health_statuses() -> BoxedStrategy<PluginHealthStatus> {
+        prop_oneof![
+            // For cases without data, `Just` is all you need
+            Just(PluginHealthStatus::NotDeployed),
+            Just(PluginHealthStatus::Pending),
+            Just(PluginHealthStatus::Running),
+            Just(PluginHealthStatus::Dead),
+        ]
+        .boxed()
+    }
+
+    prop_compose! {
+        pub fn get_plugin_health_responses()(
+            health_status in plugin_health_statuses()
+        ) -> GetPluginHealthResponse{
+            GetPluginHealthResponse{
+                health_status
+            }
+        }
+    }
 }
 
 pub mod plugin_sdk_generators {
@@ -900,12 +887,12 @@ pub mod plugin_work_queue {
     prop_compose! {
         pub fn acknowledge_generator_requests()(
             request_id in any::<i64>(),
-            success in any::<bool>(),
+            graph_description in proptest::option::of(graph::graph_descriptions()),
             plugin_id in uuids(),
         ) -> native::AcknowledgeGeneratorRequest {
             native::AcknowledgeGeneratorRequest {
                 request_id,
-                success,
+                graph_description,
                 plugin_id,
             }
         }
@@ -1057,7 +1044,7 @@ pub mod uid_allocator {
 }
 
 pub mod lens_manager {
-    use rust_proto_new::graplinc::grapl::api::lens_manager::v1beta1::messages as native;
+    use rust_proto::graplinc::grapl::api::lens_manager::v1beta1::messages as native;
 
     use super::*;
 
@@ -1135,11 +1122,13 @@ pub mod lens_manager {
             tenant_id in uuids(),
             lens_uid in any::<u64>(),
             uid in any::<u64>(),
+            node_type in any::<String>(),
         ) -> native::AddNodeToScopeRequest {
             native::AddNodeToScopeRequest {
                 tenant_id,
                 lens_uid,
                 uid,
+                node_type: NodeType { value: node_type }
             }
         }
     }

@@ -75,6 +75,14 @@ variable "RUST_BUILD" {
 variable "RUST_VERSION" {
 }
 
+# This will be incorporated into the base image identifier for our
+# Python images. In general, it should correspond to the version in
+# `.python-version`, which we'll extract in our Makefile
+# and pass in here. If something weird happens in the future where we
+# need to override that for some reason, we can.
+variable "PYTHON_VERSION" {
+}
+
 # This is the directory that certain artifacts will be deposited into
 variable "DIST_DIR" {
 }
@@ -156,10 +164,11 @@ group "rust-services" {
   targets = [
     "event-source",
     "generator-dispatcher",
-    "generator-executor",
+    "generator-execution-sidecar",
     "graph-merger",
     "graph-mutation-service",
     "grapl-web-ui",
+    "kafka-retry",
     "node-identifier",
     "organization-management",
     "pipeline-ingress",
@@ -322,6 +331,14 @@ target "event-source" {
   ]
 }
 
+target "kafka-retry" {
+  inherits = ["_rust-base"]
+  target   = "kafka-retry-deploy"
+  tags = [
+    upstream_aware_tag("kafka-retry")
+  ]
+}
+
 target "node-identifier" {
   inherits = ["_rust-base"]
   target   = "node-identifier-deploy"
@@ -380,11 +397,11 @@ target "plugin-work-queue" {
   ]
 }
 
-target "generator-executor" {
+target "generator-execution-sidecar" {
   inherits = ["_rust-base"]
-  target   = "generator-executor-deploy"
+  target   = "generator-execution-sidecar-deploy"
   tags = [
-    upstream_aware_tag("generator-executor")
+    upstream_aware_tag("generator-execution-sidecar")
   ]
 }
 
@@ -425,6 +442,9 @@ target "_python-base" {
     etc-ctx  = "etc"
   }
   dockerfile = "src/python/Dockerfile"
+  args = {
+    PYTHON_VERSION = "${PYTHON_VERSION}"
+  }
 }
 
 target "engagement-creator" {

@@ -3,26 +3,20 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use clap::Parser;
 use futures::StreamExt;
+use grapl_tracing::{
+    setup_tracing,
+    WorkerGuard,
+};
 use kafka::{
     config::ConsumerConfig,
     Consumer,
     ConsumerError,
 };
-use opentelemetry::{
-    global,
-    sdk::propagation::TraceContextPropagator,
-};
+use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::Updates;
 use rust_proto::{
     graplinc::grapl::{
         api::{
-            graph::v1beta1::{
-                ImmutableUintProp,
-                MergedGraph,
-                MergedNode,
-                Property,
-            },
             pipeline_ingress::v1beta1::{
                 client::PipelineIngressClient,
                 PublishRawLogRequest,
@@ -41,24 +35,8 @@ use test_context::{
 };
 use tokio::sync::oneshot;
 use tracing::Instrument;
-use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::{
-    prelude::*,
-    EnvFilter,
-};
 use uuid::Uuid;
 
-fn find_node<'a>(
-    graph: &'a MergedGraph,
-    o_p_name: &str,
-    o_p_value: Property,
-) -> Option<&'a MergedNode> {
-    graph.nodes.values().find(|n| {
-        n.properties.iter().any(|(p_name, p_value)| {
-            p_name.as_str() == o_p_name && p_value.property.clone() == o_p_value
-        })
-    })
-}
 
 struct GraphMergerTestContext {
     pipeline_ingress_client: PipelineIngressClient,
@@ -66,34 +44,13 @@ struct GraphMergerTestContext {
     _guard: WorkerGuard,
 }
 
-static CONSUMER_TOPIC: &'static str = "merged-graphs";
+const CONSUMER_TOPIC: &'static str = "graph-updates";
+const SERVICE_NAME: &'static str = "graph-merger-integration-tests";
 
 #[async_trait::async_trait]
 impl AsyncTestContext for GraphMergerTestContext {
     async fn setup() -> Self {
-        let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
-
-        // initialize json logging layer
-        let log_layer = tracing_subscriber::fmt::layer()
-            .json()
-            .with_writer(non_blocking);
-
-        // initialize tracing layer
-        global::set_text_map_propagator(TraceContextPropagator::new());
-        let tracer = opentelemetry_jaeger::new_pipeline()
-            .with_service_name("graph-merger-integration-tests")
-            .install_batch(opentelemetry::runtime::Tokio)
-            .expect("could not configure tracer");
-
-        // register a subscriber
-        let filter = EnvFilter::from_default_env();
-        tracing_subscriber::registry()
-            .with(filter)
-            .with(log_layer)
-            .with(tracing_opentelemetry::layer().with_tracer(tracer))
-            .init();
-
-        tracing::info!("logger configured successfully");
+        let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
         let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
             .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
@@ -117,10 +74,7 @@ impl AsyncTestContext for GraphMergerTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        let consumer_config = ConsumerConfig {
-            topic: CONSUMER_TOPIC.to_string(),
-            ..ConsumerConfig::parse()
-        };
+        let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 
         GraphMergerTestContext {
             pipeline_ingress_client,
@@ -146,53 +100,23 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut GraphMergerTestContex
 
     tracing::info!("creating kafka subscriber thread");
     let kafka_subscriber = tokio::task::spawn(async move {
-        let stream = kafka_consumer
-            .stream()
-            .expect("could not subscribe to the merged-graphs topic");
+        let stream = kafka_consumer.stream();
 
         // notify the consumer that we're ready to receive messages
         tx.send(())
             .expect("failed to notify sender that consumer is consuming");
 
         let contains_expected = stream.any(
-            |res: Result<Envelope<MergedGraph>, ConsumerError>| async move {
+            |res: Result<Envelope<Updates>, ConsumerError>| async move {
                 let envelope = res.expect("error consuming message from kafka");
                 let metadata = envelope.metadata;
-                let merged_graph = envelope.inner_message;
+                let _merged_graph = envelope.inner_message;
 
                 tracing::debug!(message = "consumed kafka message");
 
                 if metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id {
-                    let parent_process = find_node(
-                        &merged_graph,
-                        "process_id",
-                        ImmutableUintProp { prop: 6132 }.into(),
-                    )
-                    .expect("parent process missing");
-
-                    let child_process = find_node(
-                        &merged_graph,
-                        "process_id",
-                        ImmutableUintProp { prop: 5752 }.into(),
-                    )
-                    .expect("child process missing");
-
-                    // NOTE: here, unlike node-identifier, we expect the edge
-                    // connecting the parent and child proceses to be *absent*
-                    // in the message emitted to the merged-graphs topic. The
-                    // reason for this is that downstream services (analyzers)
-                    // don't operate on edges, just nodes. So the view of the
-                    // graph diverges at the graph-merger--we now tell one story
-                    // in our Kafka messages and a totally different story in
-                    // Dgraph. This is confusing and we should fix it:
-                    //
-                    // https://app.zenhub.com/workspaces/grapl-6036cbd36bacff000ef314f2/issues/grapl-security/issue-tracker/950
-                    !merged_graph
-                        .edges
-                        .get(parent_process.get_node_key())
-                        .iter()
-                        .flat_map(|edge_list| edge_list.edges.iter())
-                        .any(|edge| edge.to_node_key == child_process.get_node_key())
+                    // check the updates
+                    true // todo
                 } else {
                     false
                 }

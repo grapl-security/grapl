@@ -1,5 +1,4 @@
 import json
-from typing import Dict
 
 import pulumi_aws as aws
 from argon2 import PasswordHasher
@@ -8,7 +7,7 @@ from infra import config
 import pulumi
 
 
-def local_user_item(username: str, cleartext: str) -> Dict[str, Dict[str, str]]:
+def local_user_item(username: str, cleartext: str) -> dict[str, dict[str, str]]:
     """
     Creates an "owner" account with the given username and password (cleartext)
     """

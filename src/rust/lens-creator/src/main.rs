@@ -1,8 +1,5 @@
 use clap::Parser;
-use futures::{
-    pin_mut,
-    StreamExt,
-};
+use futures::StreamExt;
 use kafka::{
     config::ConsumerConfig,
     Consumer,
@@ -83,8 +80,7 @@ async fn handler(
 
     tracing::info!(message = "kafka consumer configured successfully",);
 
-    let stream = consumer.stream()?;
-    pin_mut!(stream);
+    let stream = consumer.stream();
 
     stream
         .for_each_concurrent(10, |event| async {

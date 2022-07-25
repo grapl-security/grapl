@@ -445,31 +445,3 @@ impl NodeQuery {
         })
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::messages::StringCmp;
-
-    use super::*;
-
-    #[tokio::test]
-    async fn test_graph_query() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
-        let query = NodeQuery::root("foo".try_into()?)
-            .with_edge_to(
-                "forward".try_into()?,
-                "reverse".try_into()?,
-                "Process".try_into()?,
-                |neighbor| {
-                    neighbor.with_string_comparisons(
-                        "process_name".try_into().unwrap(),
-                        [StringCmp::eq("chrome.exe", false)],
-                    );
-                },
-            )
-            .build();
-
-        // query.query_graph(1, uuid::Uuid::new_v4(), "session_id", vec![], "graph_id").await?;
-
-        Ok(())
-    }
-}

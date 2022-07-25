@@ -3,16 +3,15 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use clap::Parser;
 use futures::StreamExt;
+use grapl_tracing::{
+    setup_tracing,
+    WorkerGuard,
+};
 use kafka::{
     config::ConsumerConfig,
     Consumer,
     ConsumerError,
-};
-use opentelemetry::{
-    global,
-    sdk::propagation::TraceContextPropagator,
 };
 use rust_proto::{
     graplinc::grapl::{
@@ -41,11 +40,6 @@ use test_context::{
 };
 use tokio::sync::oneshot;
 use tracing::Instrument;
-use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::{
-    prelude::*,
-    EnvFilter,
-};
 use uuid::Uuid;
 
 static CONSUMER_TOPIC: &'static str = "identified-graphs";
@@ -68,32 +62,12 @@ struct NodeIdentifierTestContext {
     _guard: WorkerGuard,
 }
 
+const SERVICE_NAME: &'static str = "node-identifier-integration-tests";
+
 #[async_trait::async_trait]
 impl AsyncTestContext for NodeIdentifierTestContext {
     async fn setup() -> Self {
-        let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
-
-        // initialize json logging layer
-        let log_layer = tracing_subscriber::fmt::layer()
-            .json()
-            .with_writer(non_blocking);
-
-        // initialize tracing layer
-        global::set_text_map_propagator(TraceContextPropagator::new());
-        let tracer = opentelemetry_jaeger::new_pipeline()
-            .with_service_name("node-identifier-integration-tests")
-            .install_batch(opentelemetry::runtime::Tokio)
-            .expect("could not configure tracer");
-
-        // register a subscriber
-        let filter = EnvFilter::from_default_env();
-        tracing_subscriber::registry()
-            .with(filter)
-            .with(log_layer)
-            .with(tracing_opentelemetry::layer().with_tracer(tracer))
-            .init();
-
-        tracing::info!("logger configured successfully");
+        let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
         let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
             .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
@@ -117,10 +91,7 @@ impl AsyncTestContext for NodeIdentifierTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        let consumer_config = ConsumerConfig {
-            topic: CONSUMER_TOPIC.to_string(),
-            ..ConsumerConfig::parse()
-        };
+        let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 
         NodeIdentifierTestContext {
             pipeline_ingress_client,
@@ -146,9 +117,7 @@ async fn test_sysmon_event_produces_identified_graph(ctx: &mut NodeIdentifierTes
 
     tracing::info!("creating kafka subscriber thread");
     let kafka_subscriber = tokio::task::spawn(async move {
-        let stream = kafka_consumer
-            .stream()
-            .expect("could not subscribe to the identified-graphs topic");
+        let stream = kafka_consumer.stream();
 
         // notify the consumer that we're ready to receive messages
         tx.send(())
@@ -179,10 +148,10 @@ async fn test_sysmon_event_produces_identified_graph(ctx: &mut NodeIdentifierTes
 
                     let parent_to_child_edge = identified_graph
                         .edges
-                        .get(parent_process.get_node_key())
+                        .get(&parent_process.uid)
                         .iter()
                         .flat_map(|edge_list| edge_list.edges.iter())
-                        .find(|edge| edge.to_node_key == child_process.get_node_key())
+                        .find(|edge| edge.to_uid == child_process.uid)
                         .expect("missing edge from parent to child");
 
                     parent_to_child_edge.edge_name == "children"

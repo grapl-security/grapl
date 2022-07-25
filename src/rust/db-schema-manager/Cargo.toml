@@ -4,5 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+scylla = "0.4.7"
+thiserror = "1.0.31"
+tokio = { version = "1.20.0", features = ["full"] }
+rust-proto = { path = "../rust-proto" }
+async-trait = "0.1.56"

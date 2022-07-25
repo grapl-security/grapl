@@ -2,7 +2,7 @@ import sys
 
 sys.path.insert(0, "..")
 
-from typing import Mapping, Optional, cast
+from typing import Mapping, cast
 
 import pulumi_aws as aws
 from infra import config, log_levels
@@ -47,7 +47,7 @@ def main() -> None:
         {"pulumi:project": pulumi.get_project(), "pulumi:stack": stack_name}
     )
 
-    nomad_provider: Optional[pulumi.ProviderResource] = None
+    nomad_provider: pulumi.ProviderResource | None = None
     if not config.LOCAL_GRAPL:
         nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{stack_name}")
         nomad_provider = get_nomad_provider_address(nomad_server_stack)
@@ -65,6 +65,13 @@ def main() -> None:
         Credential.to_nomad_service_creds
     )
 
+    # This Google client ID is used by grapl-web-ui for authenticating users via Sign In With Google.
+    # This is an ID for a test app that is currently managed by inickles. Future maintainers can feel
+    # free to change this to value, it is intended only to be used for testing.
+    google_client_id = (
+        "340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com"
+    )
+
     rust_integration_tests_job_vars: NomadVars = {
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
@@ -76,6 +83,9 @@ def main() -> None:
         "rust_log": log_levels.RUST_LOG_LEVELS,
         "organization_management_db": grapl_stack.organization_management_db,
         "plugin_work_queue_db": grapl_stack.plugin_work_queue_db,
+        "user_auth_table": grapl_stack.user_auth_table,
+        "user_session_table": grapl_stack.user_session_table,
+        "google_client_id": google_client_id,
     }
 
     rust_integration_tests = NomadJob(
@@ -98,7 +108,6 @@ class GraplStack:
 
         # FIXME: audit these, they're not all required for rust integration tests
         self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
-        self.analyzer_bucket = require_str("analyzers-bucket")
         self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")
@@ -114,6 +123,9 @@ class GraplStack:
         )
 
         self.test_user_password_secret_id = require_str("test-user-password-secret-id")
+
+        self.user_auth_table = require_str("user-auth-table")
+        self.user_session_table = require_str("user-session-table")
 
 
 if __name__ == "__main__":

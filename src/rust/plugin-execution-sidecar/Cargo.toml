@@ -1,0 +1,34 @@
+[package]
+name = "plugin-execution-sidecar"
+version = "0.0.1"
+edition = "2021"
+
+[[bin]]
+name = "analyzer-execution-sidecar"
+path = "analyzer-execution-sidecar.rs"
+
+[[bin]]
+name = "generator-execution-sidecar"
+path = "generator-execution-sidecar.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+async-trait = "0.1"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
+grapl-config = { path = "../grapl-config" }
+plugin-work-queue = { path = "../plugin-work-queue" }
+rust-proto = { path = "../rust-proto" }
+thiserror = "1.0"
+tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
+# TODO: Add a `rust-proto` wrapper around tonic Endpoint
+# Remove tonic dependency once satisfied
+tonic = { version = "0.7", features = ["default", "compression", "tls"] }
+tracing = "0.1"
+uuid = { version = "1.0", features = ["v4"] }
+
+[features]
+integration_tests = []

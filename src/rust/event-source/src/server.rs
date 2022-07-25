@@ -38,7 +38,7 @@ pub async fn exec_service(config: EventSourceConfig) -> Result<(), Box<dyn std::
         socket_address = %config.service_config.event_source_bind_address,
     );
 
-    server.serve().await
+    Ok(server.serve().await?)
 }
 
 pub struct EventSourceApiImpl {

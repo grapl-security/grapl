@@ -6,7 +6,7 @@ import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/common/v1beta1/types.proto";
 
 message DeployGraphSchemasRequest {
-    graplinc.common.v1beta1.Uuid tenant_id = 1;
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
 }
 
 message DeployGraphSchemasResponse {}

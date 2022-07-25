@@ -5,16 +5,16 @@ use std::{
 
 use rust_proto::{
     graplinc::grapl::api::plugin_bootstrap::v1beta1::{
-        server::{
-            ConfigurationError as ServerConfigurationError,
-            PluginBootstrapApi,
-        },
+        server::PluginBootstrapApi,
         ClientCertificate,
         GetBootstrapRequest,
         GetBootstrapResponse,
         PluginPayload,
     },
-    protocol::status::Status,
+    protocol::{
+        error::ServeError,
+        status::Status,
+    },
 };
 use thiserror::Error;
 
@@ -22,15 +22,15 @@ use thiserror::Error;
 pub enum PluginBootstrapError {
     #[error("IoError {0}")]
     IoError(#[from] std::io::Error),
-    #[error("ServerError {0}")]
-    ServerError(#[from] ServerConfigurationError),
+    #[error("ServeError {0}")]
+    ServeError(#[from] ServeError),
 }
 
 impl From<PluginBootstrapError> for Status {
     fn from(e: PluginBootstrapError) -> Self {
         match e {
             PluginBootstrapError::IoError(e) => Status::internal(e.to_string()),
-            PluginBootstrapError::ServerError(e) => Status::internal(e.to_string()),
+            PluginBootstrapError::ServeError(e) => Status::internal(e.to_string()),
         }
     }
 }

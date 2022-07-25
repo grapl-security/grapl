@@ -1,9 +1,8 @@
-import asyncio
 import logging
 from concurrent import futures
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, List, NoReturn
+from typing import Any, Awaitable
 
 import graplinc
 import grpc
@@ -16,7 +15,6 @@ from python_proto.graplinc.grapl.api.graph_query.v1beta1.messages import (
     GraphQuery,
     GraphQueryClient,
     GraphView,
-    NodeQuery,
     NodeView,
     PropertyName,
 )
@@ -28,7 +26,7 @@ from python_proto.graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.messages impor
     RunAnalyzerResponse,
 )
 
-_cleanup_coroutines: List[Awaitable[Any]] = []
+_cleanup_coroutines: list[Awaitable[Any]] = []
 
 
 @dataclass(slots=True)

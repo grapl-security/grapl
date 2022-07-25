@@ -122,8 +122,8 @@ message ListLensesRequest {
 message ListLensesEntry {
   // The uid of the lens
   graplinc.grapl.common.v1beta1.Uid lens_uid = 1;
-//  // The score of the lens
-//  int64 score = 2;
+  //  // The score of the lens
+  //  int64 score = 2;
 }
 
 // Response to a successful list lenses request
