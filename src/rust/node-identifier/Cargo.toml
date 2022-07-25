@@ -57,7 +57,6 @@ uuid = { version = "1.0", features = ["v4"] }
 
 [dev-dependencies]
 async-trait = "0.1"
-quickcheck = "1.0"
-quickcheck_macros = "1.0"
+rand = "0.8"
 rust-proto-clients = { path = "../rust-proto-clients" }
 test-context = "0.1"
