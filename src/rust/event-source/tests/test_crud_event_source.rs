@@ -8,7 +8,7 @@ use rust_proto::{
     client_factory::{
         build_grpc_client_with_options,
         services::EventSourceClientConfig,
-        GetGrpcClientOptions,
+        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::event_source::v1beta1 as es_api,
 };
@@ -18,7 +18,7 @@ async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = EventSourceClientConfig::parse();
     let mut client = build_grpc_client_with_options(
         client_config,
-        GetGrpcClientOptions {
+        BuildGrpcClientOptions {
             perform_healthcheck: true,
             ..Default::default()
         },

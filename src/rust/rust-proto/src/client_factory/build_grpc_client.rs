@@ -17,14 +17,14 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct GetGrpcClientOptions {
+pub struct BuildGrpcClientOptions {
     pub perform_healthcheck: bool,
     pub healthcheck_polling_interval: Duration,
 }
 
-impl Default for GetGrpcClientOptions {
+impl Default for BuildGrpcClientOptions {
     fn default() -> Self {
-        GetGrpcClientOptions {
+        BuildGrpcClientOptions {
             perform_healthcheck: false,
             healthcheck_polling_interval: Duration::from_millis(500),
         }
@@ -39,7 +39,7 @@ pub async fn build_grpc_client<C: GrpcClientConfig>(
 
 pub async fn build_grpc_client_with_options<C: GrpcClientConfig>(
     client_config: C,
-    options: GetGrpcClientOptions,
+    options: BuildGrpcClientOptions,
 ) -> Result<C::Client, ConnectError> {
     let GenericGrpcClientConfig { address } = client_config.into();
 

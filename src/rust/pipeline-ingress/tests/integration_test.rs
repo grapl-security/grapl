@@ -18,7 +18,7 @@ use rust_proto::{
     client_factory::{
         build_grpc_client_with_options,
         services::PipelineIngressClientConfig,
-        GetGrpcClientOptions,
+        BuildGrpcClientOptions,
     },
     graplinc::grapl::{
         api::pipeline_ingress::v1beta1::{
@@ -55,7 +55,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let client_config = PipelineIngressClientConfig::parse();
         let pipeline_ingress_client = build_grpc_client_with_options(
             client_config,
-            GetGrpcClientOptions {
+            BuildGrpcClientOptions {
                 perform_healthcheck: true,
                 ..Default::default()
             },

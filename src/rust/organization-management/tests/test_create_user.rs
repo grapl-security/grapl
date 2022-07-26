@@ -9,7 +9,7 @@ use rust_proto::{
     client_factory::{
         build_grpc_client_with_options,
         services::OrganizationManagementClientConfig,
-        GetGrpcClientOptions,
+        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::organization_management::v1beta1::{
         CreateOrganizationRequest,
@@ -40,7 +40,7 @@ async fn test_create_user() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = OrganizationManagementClientConfig::parse();
     let mut client = build_grpc_client_with_options(
         client_config,
-        GetGrpcClientOptions {
+        BuildGrpcClientOptions {
             perform_healthcheck: true,
             ..Default::default()
         },

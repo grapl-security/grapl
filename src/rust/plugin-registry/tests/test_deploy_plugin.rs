@@ -9,7 +9,7 @@ use rust_proto::{
     client_factory::{
         build_grpc_client_with_options,
         services::PluginRegistryClientConfig,
-        GetGrpcClientOptions,
+        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::plugin_registry::v1beta1::{
         DeployPluginRequest,
@@ -38,7 +38,7 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
     let client_config = PluginRegistryClientConfig::parse();
     let mut client = build_grpc_client_with_options(
         client_config,
-        GetGrpcClientOptions {
+        BuildGrpcClientOptions {
             perform_healthcheck: true,
             ..Default::default()
         },
@@ -84,7 +84,7 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
     let client_config = PluginRegistryClientConfig::parse();
     let mut client = build_grpc_client_with_options(
         client_config,
-        GetGrpcClientOptions {
+        BuildGrpcClientOptions {
             perform_healthcheck: true,
             ..Default::default()
         },
@@ -169,7 +169,7 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn s
     let client_config = PluginRegistryClientConfig::parse();
     let mut client = build_grpc_client_with_options(
         client_config,
-        GetGrpcClientOptions {
+        BuildGrpcClientOptions {
             perform_healthcheck: true,
             ..Default::default()
         },

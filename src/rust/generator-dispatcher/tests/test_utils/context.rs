@@ -15,7 +15,7 @@ use rust_proto::{
             PipelineIngressClientConfig,
             PluginRegistryClientConfig,
         },
-        GetGrpcClientOptions,
+        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::{
         event_source::v1beta1::client::EventSourceServiceClient,
@@ -39,7 +39,7 @@ const SERVICE_NAME: &'static str = "generator-dispatcher-integration-tests";
 impl AsyncTestContext for GeneratorDispatcherTestContext {
     async fn setup() -> Self {
         let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
-        let get_grpc_options = GetGrpcClientOptions {
+        let get_grpc_options = BuildGrpcClientOptions {
             perform_healthcheck: true,
             ..Default::default()
         };

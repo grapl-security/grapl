@@ -5,7 +5,7 @@ mod grpc_client_config;
 pub use build_grpc_client::{
     build_grpc_client,
     build_grpc_client_with_options,
-    GetGrpcClientOptions,
+    BuildGrpcClientOptions,
 };
 
 pub mod services;
