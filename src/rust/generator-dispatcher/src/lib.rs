@@ -198,6 +198,7 @@ async fn retry_message(
     raw_logs_retry_producer.send(envelope).await
 }
 
+#[tracing::instrument(skip(plugin_work_queue_client, generator_ids, envelope))]
 async fn enqueue_plugin_work(
     plugin_work_queue_client: PluginWorkQueueServiceClient,
     generator_ids: Vec<Uuid>,
@@ -215,6 +216,11 @@ async fn enqueue_plugin_work(
                 let execution_job = ExecutionJob {
                     data: payload.clone(),
                 };
+
+                tracing::debug!(
+                    message = "enqueueing generator execution job",
+                    generator_id =% generator_id,
+                );
 
                 // TODO: retries, backpressure signalling, etc.
                 plugin_work_queue_client
