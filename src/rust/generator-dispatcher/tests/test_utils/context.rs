@@ -7,19 +7,21 @@ use plugin_work_queue::{
     psql_queue::PsqlQueue,
     PluginWorkQueueDbConfig,
 };
-use rust_proto::graplinc::grapl::api::{
-    event_source::v1beta1::client::EventSourceServiceClient,
-    pipeline_ingress::v1beta1::client::PipelineIngressClient,
-    plugin_registry::v1beta1::PluginRegistryServiceClient,
-};
-use rust_proto_clients::{
-    get_grpc_client_with_options,
-    services::{
-        EventSourceClientConfig,
-        PipelineIngressClientConfig,
-        PluginRegistryClientConfig,
+use rust_proto::{
+    client_factory::{
+        build_grpc_client_with_options,
+        services::{
+            EventSourceClientConfig,
+            PipelineIngressClientConfig,
+            PluginRegistryClientConfig,
+        },
+        GetGrpcClientOptions,
     },
-    GetGrpcClientOptions,
+    graplinc::grapl::api::{
+        event_source::v1beta1::client::EventSourceServiceClient,
+        pipeline_ingress::v1beta1::client::PipelineIngressClient,
+        plugin_registry::v1beta1::PluginRegistryServiceClient,
+    },
 };
 use test_context::AsyncTestContext;
 
@@ -42,21 +44,21 @@ impl AsyncTestContext for GeneratorDispatcherTestContext {
             ..Default::default()
         };
 
-        let event_source_client = get_grpc_client_with_options(
+        let event_source_client = build_grpc_client_with_options(
             EventSourceClientConfig::parse(),
             get_grpc_options.clone(),
         )
         .await
         .expect("event_source_client");
 
-        let plugin_registry_client = get_grpc_client_with_options(
+        let plugin_registry_client = build_grpc_client_with_options(
             PluginRegistryClientConfig::parse(),
             get_grpc_options.clone(),
         )
         .await
         .expect("event_source_client");
 
-        let pipeline_ingress_client = get_grpc_client_with_options(
+        let pipeline_ingress_client = build_grpc_client_with_options(
             PipelineIngressClientConfig::parse(),
             get_grpc_options.clone(),
         )

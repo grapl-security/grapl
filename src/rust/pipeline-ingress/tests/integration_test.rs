@@ -14,20 +14,22 @@ use kafka::{
     Consumer,
     ConsumerError,
 };
-use rust_proto::graplinc::grapl::{
-    api::pipeline_ingress::v1beta1::{
-        client::PipelineIngressClient,
-        PublishRawLogRequest,
+use rust_proto::{
+    client_factory::{
+        build_grpc_client_with_options,
+        services::PipelineIngressClientConfig,
+        GetGrpcClientOptions,
     },
-    pipeline::{
-        v1beta1::RawLog,
-        v1beta2::Envelope,
+    graplinc::grapl::{
+        api::pipeline_ingress::v1beta1::{
+            client::PipelineIngressClient,
+            PublishRawLogRequest,
+        },
+        pipeline::{
+            v1beta1::RawLog,
+            v1beta2::Envelope,
+        },
     },
-};
-use rust_proto_clients::{
-    get_grpc_client_with_options,
-    services::PipelineIngressClientConfig,
-    GetGrpcClientOptions,
 };
 use test_context::{
     test_context,
@@ -51,7 +53,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let _guard = setup_tracing("pipeline-ingress-integration-tests").expect("setup_tracing");
 
         let client_config = PipelineIngressClientConfig::parse();
-        let pipeline_ingress_client = get_grpc_client_with_options(
+        let pipeline_ingress_client = build_grpc_client_with_options(
             client_config,
             GetGrpcClientOptions {
                 perform_healthcheck: true,

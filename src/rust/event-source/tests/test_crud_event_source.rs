@@ -4,17 +4,19 @@ use std::time::SystemTime;
 
 use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto::graplinc::grapl::api::event_source::v1beta1 as es_api;
-use rust_proto_clients::{
-    get_grpc_client_with_options,
-    services::EventSourceClientConfig,
-    GetGrpcClientOptions,
+use rust_proto::{
+    client_factory::{
+        build_grpc_client_with_options,
+        services::EventSourceClientConfig,
+        GetGrpcClientOptions,
+    },
+    graplinc::grapl::api::event_source::v1beta1 as es_api,
 };
 
 #[test_log::test(tokio::test)]
 async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = EventSourceClientConfig::parse();
-    let mut client = get_grpc_client_with_options(
+    let mut client = build_grpc_client_with_options(
         client_config,
         GetGrpcClientOptions {
             perform_healthcheck: true,

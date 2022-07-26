@@ -1,8 +1,9 @@
-use rust_proto::graplinc::grapl::api::plugin_work_queue::v1beta1::PluginWorkQueueServiceClient;
-
-use crate::grpc_client_config::{
-    GenericGrpcClientConfig,
-    GrpcClientConfig,
+use crate::{
+    client_factory::grpc_client_config::{
+        GenericGrpcClientConfig,
+        GrpcClientConfig,
+    },
+    graplinc::grapl::api::plugin_work_queue::v1beta1::PluginWorkQueueServiceClient,
 };
 
 #[derive(clap::Parser, Debug)]

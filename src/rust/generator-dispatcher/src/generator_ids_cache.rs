@@ -14,6 +14,10 @@ use futures::{
 use moka::future::Cache;
 use rand::prelude::*;
 use rust_proto::{
+    client_factory::{
+        build_grpc_client,
+        services::PluginRegistryClientConfig,
+    },
     graplinc::grapl::api::plugin_registry::v1beta1::{
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
@@ -23,10 +27,6 @@ use rust_proto::{
         service_client::ConnectError,
         status::Code,
     },
-};
-use rust_proto_clients::{
-    get_grpc_client,
-    services::PluginRegistryClientConfig,
 };
 use thiserror::Error;
 use uuid::Uuid;
@@ -97,7 +97,7 @@ impl GeneratorIdsCache {
 
         let client_config = PluginRegistryClientConfig::parse();
         let plugin_registry_client = Arc::new(tokio::sync::Mutex::new(
-            get_grpc_client(client_config).await?,
+            build_grpc_client(client_config).await?,
         ));
 
         // The updater task is responsible for handling messages on the update

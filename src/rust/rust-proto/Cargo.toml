@@ -9,6 +9,11 @@ license = "MIT"
 [dependencies]
 async-trait = "0.1"
 bytes = "1.1"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+], optional = true}
 futures = "0.3"
 grapl-utils = { path = "../grapl-utils" }
 prost = "0.10"
@@ -32,14 +37,5 @@ test-context = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [features]
-default = ["uid-allocator-full"]
-uid-allocator = []
-uid-allocator-messages = ["uid-allocator"]
-uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
-uid-allocator-client = ["uid-allocator-messages", "uid-allocator"]
-uid-allocator-full = [
-  "uid-allocator-messages",
-  "uid-allocator-client",
-  "uid-allocator-server",
-  "uid-allocator"
-]
+default = ["client-factory"]
+client-factory = [ "clap" ]

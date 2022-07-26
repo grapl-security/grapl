@@ -1,18 +1,19 @@
 use std::time::Duration;
 
-use rust_proto::protocol::{
-    endpoint::Endpoint,
-    healthcheck::client::HealthcheckClient,
-    service_client::{
-        ConnectError,
-        Connectable,
-        NamedService,
+use crate::{
+    client_factory::grpc_client_config::{
+        GenericGrpcClientConfig,
+        GrpcClientConfig,
     },
-};
-
-use crate::grpc_client_config::{
-    GenericGrpcClientConfig,
-    GrpcClientConfig,
+    protocol::{
+        endpoint::Endpoint,
+        healthcheck::client::HealthcheckClient,
+        service_client::{
+            ConnectError,
+            Connectable,
+            NamedService,
+        },
+    },
 };
 
 #[derive(Clone)]
@@ -30,13 +31,13 @@ impl Default for GetGrpcClientOptions {
     }
 }
 
-pub async fn get_grpc_client<C: GrpcClientConfig>(
+pub async fn build_grpc_client<C: GrpcClientConfig>(
     client_config: C,
 ) -> Result<C::Client, ConnectError> {
-    get_grpc_client_with_options(client_config, Default::default()).await
+    build_grpc_client_with_options(client_config, Default::default()).await
 }
 
-pub async fn get_grpc_client_with_options<C: GrpcClientConfig>(
+pub async fn build_grpc_client_with_options<C: GrpcClientConfig>(
     client_config: C,
     options: GetGrpcClientOptions,
 ) -> Result<C::Client, ConnectError> {

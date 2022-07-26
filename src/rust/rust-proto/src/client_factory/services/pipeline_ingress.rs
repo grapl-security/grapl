@@ -1,8 +1,9 @@
-use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient;
-
-use crate::grpc_client_config::{
-    GenericGrpcClientConfig,
-    GrpcClientConfig,
+use crate::{
+    client_factory::grpc_client_config::{
+        GenericGrpcClientConfig,
+        GrpcClientConfig,
+    },
+    graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient,
 };
 
 #[derive(clap::Parser, Debug)]
