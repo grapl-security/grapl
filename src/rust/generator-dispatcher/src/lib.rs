@@ -198,7 +198,7 @@ async fn retry_message(
     raw_logs_retry_producer.send(envelope).await
 }
 
-#[tracing::instrument(skip(plugin_work_queue_client, generator_ids, envelope))]
+#[tracing::instrument(skip(plugin_work_queue_client, generator_ids, envelope), err)]
 async fn enqueue_plugin_work(
     plugin_work_queue_client: PluginWorkQueueServiceClient,
     generator_ids: Vec<Uuid>,

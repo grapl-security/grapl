@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(handler().await?)
 }
 
-#[tracing::instrument]
+#[tracing::instrument(err)]
 async fn handler() -> Result<(), ConfigurationError> {
     let config = KafkaRetryConfig::parse();
     let retry_processor = RetryProcessor::new(

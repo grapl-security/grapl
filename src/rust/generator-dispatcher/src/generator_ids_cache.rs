@@ -80,7 +80,7 @@ impl GeneratorIdsCache {
     ///   handling cache updates.
     ///
     /// * updater_queue_depth - the maximum number of waiting cache updates.
-    #[tracing::instrument]
+    #[tracing::instrument(err)]
     pub async fn new(
         capacity: u64,
         ttl: Duration,
@@ -230,7 +230,7 @@ impl GeneratorIdsCache {
     ///   - GeneratorIdsCacheError::Fatal - something happened which has
     ///     "poisoned" the GeneratorIdsCache instance such that all future
     ///     calls to this method will fail.
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self), err)]
     pub async fn generator_ids_for_event_source(
         &mut self,
         event_source_id: Uuid,
