@@ -1,4 +1,9 @@
 use rust_proto::{
+    client_factory::{
+        build_grpc_client_with_options,
+        services::GeneratorClientConfig,
+        BuildGrpcClientOptions,
+    },
     graplinc::{
         common::v1beta1::Duration,
         grapl::api::plugin_sdk::generators::v1beta1::{
@@ -16,11 +21,6 @@ use rust_proto::{
             HealthcheckStatus,
         },
     },
-};
-use rust_proto_clients::{
-    get_grpc_client_with_options,
-    services::GeneratorClientConfig,
-    GetGrpcClientOptions,
 };
 use test_context::{
     futures::channel::oneshot::Sender,
@@ -90,9 +90,9 @@ impl GeneratorTestContextInternals {
         let client_config = GeneratorClientConfig {
             generator_client_address: endpoint,
         };
-        let client = get_grpc_client_with_options(
+        let client = build_grpc_client_with_options(
             client_config,
-            GetGrpcClientOptions {
+            BuildGrpcClientOptions {
                 perform_healthcheck: true,
                 healthcheck_polling_interval: Duration::from_millis(10),
             },

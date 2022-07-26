@@ -1,13 +1,15 @@
 use std::os::unix::fs::PermissionsExt;
 
 use clap::Parser;
-use rust_proto::graplinc::grapl::api::plugin_bootstrap::v1beta1::{
-    GetBootstrapRequest,
-    GetBootstrapResponse,
-};
-use rust_proto_clients::{
-    get_grpc_client,
-    services::PluginBootstrapClientConfig,
+use rust_proto::{
+    client_factory::{
+        build_grpc_client,
+        services::PluginBootstrapClientConfig,
+    },
+    graplinc::grapl::api::plugin_bootstrap::v1beta1::{
+        GetBootstrapRequest,
+        GetBootstrapResponse,
+    },
 };
 
 static PLUGIN_BINARY_PATH: &str = "/usr/local/bin/grapl-plugin";
@@ -19,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (_env, _guard) = grapl_config::init_grapl_env!();
 
     let client_config = PluginBootstrapClientConfig::parse();
-    let mut bootstrap_client = get_grpc_client(client_config).await?;
+    let mut bootstrap_client = build_grpc_client(client_config).await?;
 
     let GetBootstrapResponse {
         plugin_payload,

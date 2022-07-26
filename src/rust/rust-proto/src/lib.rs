@@ -10,6 +10,8 @@ use prost::{
 };
 use thiserror::Error;
 
+#[cfg(feature = "client-factory")]
+pub mod client_factory;
 pub mod protocol;
 
 pub(crate) mod server_internals;

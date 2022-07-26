@@ -1,4 +1,4 @@
-use rust_proto::protocol::service_client::{
+use crate::protocol::service_client::{
     Connectable,
     NamedService,
 };

@@ -3,15 +3,17 @@
 use bytes::Bytes;
 use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
-    GetGeneratorsForEventSourceRequest,
-    PluginMetadata,
-    PluginType,
-};
-use rust_proto_clients::{
-    get_grpc_client_with_options,
-    services::PluginRegistryClientConfig,
-    GetGrpcClientOptions,
+use rust_proto::{
+    client_factory::{
+        build_grpc_client_with_options,
+        services::PluginRegistryClientConfig,
+        BuildGrpcClientOptions,
+    },
+    graplinc::grapl::api::plugin_registry::v1beta1::{
+        GetGeneratorsForEventSourceRequest,
+        PluginMetadata,
+        PluginType,
+    },
 };
 
 #[test_log::test(tokio::test)]
@@ -21,9 +23,9 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
     );
 
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = get_grpc_client_with_options(
+    let mut client = build_grpc_client_with_options(
         client_config,
-        GetGrpcClientOptions {
+        BuildGrpcClientOptions {
             perform_healthcheck: true,
             ..Default::default()
         },
