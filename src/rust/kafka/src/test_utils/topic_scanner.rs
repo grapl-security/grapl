@@ -108,7 +108,8 @@ where
                 timeout = ?self.timeout,
             );
             let matched_predicate = tokio::time::timeout(self.timeout, matched_predicate).await?;
-            Ok(matched_predicate.expect("Can't occur - if this were None we'd have the above timeout"))
+            Ok(matched_predicate
+                .expect("Can't occur - if this were None we'd have the above timeout"))
         });
 
         // wait for the kafka consumer to start consuming

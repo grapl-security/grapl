@@ -8,7 +8,7 @@ use grapl_tracing::{
 };
 use kafka::{
     config::ConsumerConfig,
-    test_utils::topic_contains::KafkaTopicScanner,
+    test_utils::topic_scanner::KafkaTopicScanner,
 };
 use rust_proto::graplinc::grapl::{
     api::{
