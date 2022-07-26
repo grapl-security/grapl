@@ -1,6 +1,7 @@
 mod authn;
 mod config;
 mod graphql;
+mod lens_subscription;
 mod routes;
 
 use actix_session::CookieSession;
@@ -10,8 +11,11 @@ use actix_web::{
     App,
     HttpServer,
 };
-pub use config::ConfigBuilder;
+pub use config::Config;
 pub use graphql::GraphQlEndpointUrl;
+pub use lens_subscription::LensSubscriptionUrl;
+pub use rust_proto::graplinc::grapl::api::lens_subscription_service::v1beta1::client::LensSubscriptionClient;
+
 
 pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
     let listener = config.listener;
@@ -27,6 +31,9 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
             jsonwebtoken_google::Parser::new(&config.google_client_id),
         ));
         let graphql_endpoint = Data::new(config.graphql_endpoint.clone());
+
+        let lens_client_url = Data::new(config.lens_subscription_url.clone());
+
         App::new()
             .wrap(actix_web::middleware::Logger::default())
             .wrap(actix_web_opentelemetry::RequestTracing::new())
@@ -49,6 +56,7 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
             )))
             .app_data(web_client)
             .app_data(graphql_endpoint)
+            .app_data(Data::clone(&lens_client_url))
             .app_data(web_authenticator)
             .configure(routes::config)
     })

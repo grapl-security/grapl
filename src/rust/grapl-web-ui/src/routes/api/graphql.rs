@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use actix_web::{
     post,
     web,
@@ -23,7 +21,7 @@ pub(crate) async fn handler(
     _user: crate::authn::AuthenticatedUser,
 ) -> Result<HttpResponse> {
     // Strip "api/graphQlEndpoint" from the request URL before forwarding.
-    let backend_endpoint = backend_endpoint.get_ref().deref().clone();
+    let backend_endpoint = backend_endpoint.get_ref().get_ref().clone();
     let backend_path = path.into_inner();
     let mut backend_url = backend_endpoint;
     backend_url.set_path(backend_path.as_str());
