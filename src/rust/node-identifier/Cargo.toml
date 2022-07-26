@@ -30,7 +30,7 @@ grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
 hex = "0.4"
 hmap = "0.1"
-kafka = { path = "../kafka", version = "*" }
+kafka = { path = "../kafka" }
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
@@ -57,6 +57,7 @@ uuid = { version = "1.0", features = ["v4"] }
 
 [dev-dependencies]
 async-trait = "0.1"
+kafka = { path = "../kafka", features = ["test-utils"] }
 rand = "0.8"
 rust-proto-clients = { path = "../rust-proto-clients" }
 test-context = "0.1"
