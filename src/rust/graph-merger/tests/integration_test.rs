@@ -1,18 +1,14 @@
 #![cfg(feature = "integration_tests")]
 
-use std::time::Duration;
-
 use bytes::Bytes;
 use clap::Parser;
-use futures::StreamExt;
 use grapl_tracing::{
     setup_tracing,
     WorkerGuard,
 };
 use kafka::{
     config::ConsumerConfig,
-    Consumer,
-    ConsumerError,
+    test_utils::topic_scanner::KafkaTopicScanner,
 };
 use rust_proto::{
     client_factory::{
@@ -40,7 +36,6 @@ use test_context::{
     test_context,
     AsyncTestContext,
 };
-use tokio::sync::oneshot;
 use tracing::Instrument;
 use uuid::Uuid;
 
@@ -93,83 +88,52 @@ impl AsyncTestContext for GraphMergerTestContext {
 
 #[test_context(GraphMergerTestContext)]
 #[tokio::test]
-async fn test_sysmon_event_produces_merged_graph(ctx: &mut GraphMergerTestContext) {
+async fn test_sysmon_event_produces_merged_graph(
+    ctx: &mut GraphMergerTestContext,
+) -> Result<(), Box<dyn std::error::Error>> {
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
 
-    tracing::info!("configuring kafka consumer");
-    let kafka_consumer =
-        Consumer::new(ctx.consumer_config.clone()).expect("could not configure kafka consumer");
+    let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
+        .contains(move |envelope: &Envelope<MergedGraph>| -> bool {
+            let metadata = &envelope.metadata;
+            let merged_graph = &envelope.inner_message;
+            if metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id {
+                let parent_process = find_node(
+                    merged_graph,
+                    "process_id",
+                    ImmutableUintProp { prop: 6132 }.into(),
+                )
+                .expect("parent process missing");
 
-    // we'll use this channel to communicate that the consumer is ready to
-    // consume messages
-    let (tx, rx) = oneshot::channel::<()>();
+                let child_process = find_node(
+                    merged_graph,
+                    "process_id",
+                    ImmutableUintProp { prop: 5752 }.into(),
+                )
+                .expect("child process missing");
 
-    tracing::info!("creating kafka subscriber thread");
-    let kafka_subscriber = tokio::task::spawn(async move {
-        let stream = kafka_consumer.stream();
-
-        // notify the consumer that we're ready to receive messages
-        tx.send(())
-            .expect("failed to notify sender that consumer is consuming");
-
-        let contains_expected = stream.any(
-            |res: Result<Envelope<MergedGraph>, ConsumerError>| async move {
-                let envelope = res.expect("error consuming message from kafka");
-                let metadata = envelope.metadata;
-                let merged_graph = envelope.inner_message;
-
-                tracing::debug!(message = "consumed kafka message");
-
-                if metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id {
-                    let parent_process = find_node(
-                        &merged_graph,
-                        "process_id",
-                        ImmutableUintProp { prop: 6132 }.into(),
-                    )
-                    .expect("parent process missing");
-
-                    let child_process = find_node(
-                        &merged_graph,
-                        "process_id",
-                        ImmutableUintProp { prop: 5752 }.into(),
-                    )
-                    .expect("child process missing");
-
-                    // NOTE: here, unlike node-identifier, we expect the edge
-                    // connecting the parent and child proceses to be *absent*
-                    // in the message emitted to the merged-graphs topic. The
-                    // reason for this is that downstream services (analyzers)
-                    // don't operate on edges, just nodes. So the view of the
-                    // graph diverges at the graph-merger--we now tell one story
-                    // in our Kafka messages and a totally different story in
-                    // Dgraph. This is confusing and we should fix it:
-                    //
-                    // https://app.zenhub.com/workspaces/grapl-6036cbd36bacff000ef314f2/issues/grapl-security/issue-tracker/950
-                    !merged_graph
-                        .edges
-                        .get(parent_process.get_node_key())
-                        .iter()
-                        .flat_map(|edge_list| edge_list.edges.iter())
-                        .any(|edge| edge.to_node_key == child_process.get_node_key())
-                } else {
-                    false
-                }
-            },
-        );
-
-        tracing::info!("consuming kafka messages for 30s");
-        assert!(
-            tokio::time::timeout(Duration::from_secs(30), contains_expected)
-                .await
-                .expect("failed to consume expected message within 30s")
-        );
-    });
-
-    // wait for the kafka consumer to start consuming
-    tracing::info!("waiting for kafka consumer to report ready");
-    rx.await
-        .expect("failed to receive notification that consumer is consuming");
+                // NOTE: here, unlike node-identifier, we expect the edge
+                // connecting the parent and child proceses to be *absent*
+                // in the message emitted to the merged-graphs topic. The
+                // reason for this is that downstream services (analyzers)
+                // don't operate on edges, just nodes. So the view of the
+                // graph diverges at the graph-merger--we now tell one story
+                // in our Kafka messages and a totally different story in
+                // Dgraph. This is confusing and we should fix it:
+                //
+                // https://app.zenhub.com/workspaces/grapl-6036cbd36bacff000ef314f2/issues/grapl-security/issue-tracker/950
+                !merged_graph
+                    .edges
+                    .get(parent_process.get_node_key())
+                    .iter()
+                    .flat_map(|edge_list| edge_list.edges.iter())
+                    .any(|edge| edge.to_node_key == child_process.get_node_key())
+            } else {
+                false
+            }
+        })
+        .await?;
 
     let log_event: Bytes = r#"
 <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
@@ -226,9 +190,11 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut GraphMergerTestContex
         .await
         .expect("received error response");
 
-    tracing::info!("waiting for kafka_subscriber to complete");
-    kafka_subscriber
-        .instrument(tracing::debug_span!("kafka_subscriber"))
-        .await
-        .expect("could not join kafka subscriber");
+    tracing::info!("waiting for kafka_scanner to complete");
+    kafka_scanner
+        .get_listen_result()
+        .instrument(tracing::debug_span!("kafka_scanner"))
+        .await??;
+
+    Ok(())
 }

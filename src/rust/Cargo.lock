@@ -2310,7 +2310,9 @@ dependencies = [
  "rdkafka",
  "rust-proto",
  "thiserror",
+ "tokio",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
