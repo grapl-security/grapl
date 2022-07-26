@@ -87,6 +87,14 @@ impl PipelineIngressApi for IngressApi {
         // actual edge service, that service should be responsible for
         // generating the trace_id.
         let trace_id = Uuid::new_v4();
+
+        tracing::debug!(
+            message = "publishing raw log",
+            tenant_id =% tenant_id,
+            event_source_id =% event_source_id,
+            trace_id =% trace_id,
+        );
+
         self.producer
             .send(Envelope::new(
                 Metadata::new(

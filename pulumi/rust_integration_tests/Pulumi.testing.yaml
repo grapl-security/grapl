@@ -1,25 +1,25 @@
 config:
   aws:region: us-east-1
   rust-integration-tests:artifacts:
-    engagement-creator: 20220725215147-ab4731c
-    event-source: 20220725215147-ab4731c
-    generator-dispatcher: 20220725215147-ab4731c
-    generator-execution-sidecar: 20220725215147-ab4731c
+    engagement-creator: 20220726011759-93bac62
+    event-source: 20220726011759-93bac62
+    generator-dispatcher: 20220726011759-93bac62
+    generator-execution-sidecar: 20220726011759-93bac62
     generator-executor: 20220713174145-ba8f7e1
-    graph-merger: 20220725215147-ab4731c
-    graphql-endpoint: 20220725215147-ab4731c
-    grapl-web-ui: 20220725215147-ab4731c
-    kafka-retry: 20220725215147-ab4731c
+    graph-merger: 20220726011759-93bac62
+    graphql-endpoint: 20220726011759-93bac62
+    grapl-web-ui: 20220726011759-93bac62
+    kafka-retry: 20220726011759-93bac62
     model-plugin-deployer: 20220701185023-1e957d5
-    node-identifier: 20220725215147-ab4731c
-    organization-management: 20220725215147-ab4731c
-    pipeline-ingress: 20220725215147-ab4731c
-    plugin-bootstrap: 20220725215147-ab4731c
-    plugin-registry: 20220725215147-ab4731c
-    plugin-work-queue: 20220725215147-ab4731c
-    provisioner: 20220725215147-ab4731c
-    rust-integration-tests: 20220725215147-ab4731c
-    sysmon-generator: 20220725215147-ab4731c
-    uid-allocator: 20220725215147-ab4731c
+    node-identifier: 20220726011759-93bac62
+    organization-management: 20220726011759-93bac62
+    pipeline-ingress: 20220726011759-93bac62
+    plugin-bootstrap: 20220726011759-93bac62
+    plugin-registry: 20220726011759-93bac62
+    plugin-work-queue: 20220726011759-93bac62
+    provisioner: 20220726011759-93bac62
+    rust-integration-tests: 20220726011759-93bac62
+    sysmon-generator: 20220726011759-93bac62
+    uid-allocator: 20220726011759-93bac62
   rust-integration-tests:cloudsmith-repository-name: grapl/testing
   rust-integration-tests:confluent-environment-name: testing
