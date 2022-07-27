@@ -10,7 +10,7 @@ use actix_web::{
     App,
     HttpServer,
 };
-pub use config::Config;
+pub use config::ConfigBuilder;
 pub use graphql::GraphQlEndpointUrl;
 
 pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
