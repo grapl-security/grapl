@@ -1,3 +1,6 @@
+use std::time::Duration;
+
+use tracing::Instrument;
 use uuid::Uuid;
 
 use crate::psql_queue::{
@@ -59,10 +62,6 @@ impl PsqlQueueTestExtensions for PsqlQueue {
         Ok(generator_messages)
     }
 }
-
-use std::time::Duration;
-
-use tracing::Instrument;
 
 pub async fn scan_for_plugin_message_in_pwq(
     psql_queue: PsqlQueue,
