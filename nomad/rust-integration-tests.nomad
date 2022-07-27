@@ -157,7 +157,7 @@ job "rust-integration-tests" {
 
             upstreams {
               destination_name = "web-ui"
-              local_bind_port  = 1007
+              local_bind_port  = 1006
             }
           }
         }
