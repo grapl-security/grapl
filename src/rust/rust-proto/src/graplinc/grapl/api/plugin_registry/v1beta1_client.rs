@@ -15,7 +15,6 @@ use crate::{
         service_client::{
             ConnectError,
             Connectable,
-            NamedService,
         },
         status::Status,
     },
@@ -37,6 +36,9 @@ pub struct PluginRegistryServiceClient {
 
 #[async_trait::async_trait]
 impl Connectable for PluginRegistryServiceClient {
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.plugin_registry.v1beta1.PluginRegistryService";
+
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
         Ok(PluginRegistryServiceClient {
@@ -172,9 +174,4 @@ impl PluginRegistryServiceClient {
             .map_err(Status::from)?;
         todo!()
     }
-}
-
-impl NamedService for PluginRegistryServiceClient {
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_registry.v1beta1.PluginRegistryService";
 }
