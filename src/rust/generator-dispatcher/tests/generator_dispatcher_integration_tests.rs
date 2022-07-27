@@ -3,9 +3,7 @@
 mod test_utils;
 
 use bytes::Bytes;
-use plugin_work_queue::{
-    test_utils::scan_for_plugin_message_in_pwq,
-};
+use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
 use rust_proto::graplinc::grapl::api::{
     event_source::v1beta1::CreateEventSourceRequest,
     pipeline_ingress::v1beta1::PublishRawLogRequest,
