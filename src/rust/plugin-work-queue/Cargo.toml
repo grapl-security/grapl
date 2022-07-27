@@ -43,8 +43,5 @@ tracing-subscriber = "0.3"
 
 [features]
 default = []
-<<<<<<< HEAD
 test-utils = []
-=======
->>>>>>> b3b57588b (Why is this integ test being picked up as an integration test?)
 integration_tests = []
