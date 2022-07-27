@@ -997,6 +997,12 @@ job "grapl-core" {
         RUST_LOG                  = var.rust_log
         RUST_BACKTRACE            = local.rust_backtrace
       }
+
+      resources {
+        # Can OOM with default limit of 300 MB and a number of connections at the same
+        # time, which seems low, but is reliably produced with the its integration tests.
+        memory = 1024
+      }
     }
 
     service {
@@ -1014,6 +1020,13 @@ job "grapl-core" {
             }
           }
         }
+      }
+      check {
+        type     = "http"
+        name     = "grapl-web-health"
+        path     = "/api/health"
+        interval = "10s"
+        timeout  = "2s"
       }
     }
   }

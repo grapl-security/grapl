@@ -7,7 +7,7 @@ use check_login::check_login;
 use sign_in_with_google::sign_in_with_google;
 use sign_in_with_password::sign_in_with_password;
 
-pub(super) fn config(cfg: &mut actix_web::web::ServiceConfig) {
+pub(super) fn config(cfg: &mut web::ServiceConfig) {
     cfg.route("/checkLogin", web::post().to(check_login))
         .route("/sign_in_with_google", web::post().to(sign_in_with_google))
         .route(

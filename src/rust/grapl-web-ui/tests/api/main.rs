@@ -1,4 +1,5 @@
 #![cfg(feature = "integration_tests")]
 
-mod check_login;
+mod auth;
+mod config;
 mod test_app;
