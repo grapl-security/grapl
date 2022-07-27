@@ -131,7 +131,10 @@ impl PsqlQueue {
     }
 
     #[instrument(skip(self), err)]
-    pub async fn get_generator_message(&self) -> Result<Option<Message>, PsqlQueueError> {
+    pub async fn get_generator_message(
+        &self,
+        plugin_id: Uuid,
+    ) -> Result<Option<Message>, PsqlQueueError> {
         // This function does a few things
         // 1. It attempts to get a message from the queue
         //      -> Where that message isn't over a day old
@@ -159,28 +162,35 @@ impl PsqlQueue {
                 last_updated = CURRENT_TIMESTAMP,
                 visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'
             FROM (
-                 SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after
-                 FROM plugin_work_queue.generator_plugin_executions
-                 WHERE current_status = 'enqueued'
-                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
-                   AND visible_after <= CURRENT_TIMESTAMP
-                 ORDER BY creation_time ASC
-                 FOR UPDATE SKIP LOCKED
-                 LIMIT 1
-             ) AS next_execution
-             WHERE plugin_work_queue.generator_plugin_executions.execution_key = next_execution.execution_key
-             RETURNING
-                 next_execution.execution_key AS "execution_key!: ExecutionId",
-                 next_execution.plugin_id,
-                 next_execution.pipeline_message
-        "#).fetch_optional(&self.pool)
+                SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after
+                FROM plugin_work_queue.generator_plugin_executions
+                WHERE
+                    plugin_id = $1
+                    AND current_status = 'enqueued'
+                    AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
+                    AND visible_after <= CURRENT_TIMESTAMP
+                ORDER BY creation_time ASC
+                FOR UPDATE SKIP LOCKED
+                LIMIT 1
+            ) AS next_execution
+            WHERE plugin_work_queue.generator_plugin_executions.execution_key = next_execution.execution_key
+            RETURNING
+                next_execution.execution_key AS "execution_key!: ExecutionId",
+                next_execution.plugin_id,
+                next_execution.pipeline_message
+        "#,
+        plugin_id
+    ).fetch_optional(&self.pool)
             .await?;
 
         Ok(request.map(|request| Message { request }))
     }
 
     #[instrument(skip(self), err)]
-    pub async fn get_analyzer_message(&self) -> Result<Option<Message>, PsqlQueueError> {
+    pub async fn get_analyzer_message(
+        &self,
+        plugin_id: Uuid,
+    ) -> Result<Option<Message>, PsqlQueueError> {
         // `get_message` does a few things
         // 1. It attempts to get a message from the queue
         //      -> Where that message isn't over a day old
@@ -208,21 +218,23 @@ impl PsqlQueue {
                 last_updated = CURRENT_TIMESTAMP,
                 visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'
             FROM (
-                 SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after
-                 FROM plugin_work_queue.analyzer_plugin_executions
-                 WHERE current_status = 'enqueued'
-                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
-                   AND visible_after <= CURRENT_TIMESTAMP
-                 ORDER BY creation_time ASC
-                 FOR UPDATE SKIP LOCKED
-                 LIMIT 1
-             ) AS next_execution
-             WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key
-             RETURNING
-                 next_execution.execution_key AS "execution_key!: ExecutionId",
-                 next_execution.plugin_id,
-                 next_execution.pipeline_message
-        "#).fetch_optional(&self.pool)
+                SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after
+                FROM plugin_work_queue.analyzer_plugin_executions
+                WHERE 
+                    plugin_id = $1
+                    AND current_status = 'enqueued'
+                    AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
+                    AND visible_after <= CURRENT_TIMESTAMP
+                ORDER BY creation_time ASC
+                FOR UPDATE SKIP LOCKED
+                LIMIT 1
+            ) AS next_execution
+            WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key
+            RETURNING
+                next_execution.execution_key AS "execution_key!: ExecutionId",
+                next_execution.plugin_id,
+                next_execution.pipeline_message
+        "#, plugin_id).fetch_optional(&self.pool)
             .await?;
 
         Ok(request.map(|request| Message { request }))
