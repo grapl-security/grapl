@@ -3,16 +3,12 @@ use tokio::time::error::Elapsed;
 use super::healthcheck::HealthcheckError;
 use crate::protocol::endpoint::Endpoint;
 
-/// Equivalent to the NamedService trait in tonic for server constructs.
-/// Pass this NAME to e.g. a healthcheck client.
-pub trait NamedService {
-    const SERVICE_NAME: &'static str;
-}
-// TODO: Merge NamedService into Connectable
-
 /// Every service should implement Connectable.
 #[async_trait::async_trait]
 pub trait Connectable {
+    /// Pass this NAME to e.g. a healthcheck client.
+    const SERVICE_NAME: &'static str;
+
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError>
     where
         Self: Sized;

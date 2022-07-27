@@ -11,7 +11,6 @@ use crate::{
         service_client::{
             ConnectError,
             Connectable,
-            NamedService,
         },
     },
 };

@@ -10,7 +10,6 @@ use crate::{
         service_client::{
             ConnectError,
             Connectable,
-            NamedService,
         },
     },
     SerDeError,
@@ -31,6 +30,9 @@ pub struct PluginWorkQueueServiceClient {
 
 #[async_trait::async_trait]
 impl Connectable for PluginWorkQueueServiceClient {
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.plugin_work_queue.v1beta1.PluginWorkQueueService";
+
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
         Ok(Self {
@@ -123,9 +125,4 @@ impl PluginWorkQueueServiceClient {
             .await?;
         Ok(response.into_inner().try_into()?)
     }
-}
-
-impl NamedService for PluginWorkQueueServiceClient {
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_work_queue.v1beta1.PluginWorkQueueService";
 }
