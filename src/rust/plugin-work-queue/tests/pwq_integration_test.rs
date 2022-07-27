@@ -80,7 +80,7 @@ async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error:
         retrieve_job_for_plugin_id_1.execution_job,
         Some(job_1.execution_job)
     );
-    
+
     // Fetch for plugin_id 2 again, we should get Job 3
     let retrieve_job_for_plugin_id_2 = pwq_client
         .get_execute_generator(GetExecuteGeneratorRequest {
@@ -100,10 +100,7 @@ async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error:
         })
         .await?;
 
-    assert_eq!(
-        retrieve_job_for_plugin_id_2.execution_job,
-        None
-    );
+    assert_eq!(retrieve_job_for_plugin_id_2.execution_job, None);
 
     Ok(())
 }
