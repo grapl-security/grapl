@@ -1464,7 +1464,6 @@ dependencies = [
  "grapl-config",
  "grapl-utils",
  "rust-proto",
- "rust-proto-clients",
  "sqlx",
  "test-log",
  "thiserror",
@@ -1693,7 +1692,6 @@ dependencies = [
  "plugin-work-queue",
  "rand 0.8.5",
  "rust-proto",
- "rust-proto-clients",
  "test-context",
  "thiserror",
  "tokio",
@@ -1712,7 +1710,6 @@ dependencies = [
  "grapl-config",
  "moka 0.8.6",
  "rust-proto",
- "rust-proto-clients",
  "serde",
  "test-context",
  "thiserror",
@@ -1797,7 +1794,6 @@ dependencies = [
  "rusoto_credential",
  "rusoto_dynamodb",
  "rust-proto",
- "rust-proto-clients",
  "serde_json",
  "test-context",
  "thiserror",
@@ -2314,7 +2310,9 @@ dependencies = [
  "rdkafka",
  "rust-proto",
  "thiserror",
+ "tokio",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -2645,7 +2643,6 @@ dependencies = [
  "rusoto_credential",
  "rusoto_dynamodb",
  "rust-proto",
- "rust-proto-clients",
  "serde",
  "serde_dynamodb",
  "sha2 0.9.9",
@@ -2912,7 +2909,6 @@ dependencies = [
  "grapl-config",
  "grapl-utils",
  "rust-proto",
- "rust-proto-clients",
  "sqlx",
  "test-log",
  "thiserror",
@@ -3109,7 +3105,6 @@ dependencies = [
  "grapl-tracing",
  "kafka",
  "rust-proto",
- "rust-proto-clients",
  "test-context",
  "thiserror",
  "tokio",
@@ -3185,7 +3180,6 @@ dependencies = [
  "grapl-config",
  "grapl-utils",
  "rust-proto",
- "rust-proto-clients",
  "thiserror",
  "tokio",
  "tracing",
@@ -3200,7 +3194,6 @@ dependencies = [
  "clap 3.2.13",
  "grapl-config",
  "rust-proto",
- "rust-proto-clients",
  "thiserror",
  "tokio",
  "tracing",
@@ -3222,7 +3215,6 @@ dependencies = [
  "rusoto_core",
  "rusoto_s3",
  "rust-proto",
- "rust-proto-clients",
  "serde_json",
  "sqlx",
  "tempfile",
@@ -3953,6 +3945,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
+ "clap 3.2.13",
  "futures",
  "grapl-utils",
  "proptest",
@@ -3970,14 +3963,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
-]
-
-[[package]]
-name = "rust-proto-clients"
-version = "0.0.1"
-dependencies = [
- "clap 3.2.13",
- "rust-proto",
 ]
 
 [[package]]

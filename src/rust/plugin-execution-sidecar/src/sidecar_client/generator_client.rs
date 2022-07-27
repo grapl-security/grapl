@@ -1,10 +1,10 @@
 use rust_proto::{
+    client_factory::{
+        build_grpc_client,
+        services::GeneratorClientConfig,
+    },
     graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::GeneratorServiceClient,
     protocol::service_client::ConnectError,
-};
-use rust_proto_clients::{
-    get_grpc_client,
-    services::GeneratorClientConfig,
 };
 
 fn get_plugin_upstream_address(plugin_id: uuid::Uuid) -> String {
@@ -22,5 +22,5 @@ pub async fn get_generator_client(
     let client_config = GeneratorClientConfig {
         generator_client_address: address.parse().expect("generator_client_address"),
     };
-    get_grpc_client(client_config).await
+    build_grpc_client(client_config).await
 }

@@ -1,8 +1,9 @@
-use rust_proto::graplinc::grapl::api::organization_management::v1beta1::client::OrganizationManagementClient;
-
-use crate::grpc_client_config::{
-    GenericGrpcClientConfig,
-    GrpcClientConfig,
+use crate::{
+    client_factory::grpc_client_config::{
+        GenericGrpcClientConfig,
+        GrpcClientConfig,
+    },
+    graplinc::grapl::api::organization_management::v1beta1::client::OrganizationManagementClient,
 };
 
 #[derive(clap::Parser, Debug)]

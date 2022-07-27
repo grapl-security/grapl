@@ -11,7 +11,6 @@ use crate::{
         service_client::{
             ConnectError,
             Connectable,
-            NamedService,
         },
         status::Status,
     },
@@ -40,6 +39,8 @@ pub struct EventSourceServiceClient {
 
 #[async_trait::async_trait]
 impl Connectable for EventSourceServiceClient {
+    const SERVICE_NAME: &'static str = "graplinc.grapl.api.event_source.v1beta1.EventSourceService";
+
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
         Ok(EventSourceServiceClient {
@@ -81,8 +82,4 @@ impl EventSourceServiceClient {
             .await?;
         Ok(response.into_inner().try_into()?)
     }
-}
-
-impl NamedService for EventSourceServiceClient {
-    const SERVICE_NAME: &'static str = "graplinc.grapl.api.event_source.v1beta1.EventSourceService";
 }
