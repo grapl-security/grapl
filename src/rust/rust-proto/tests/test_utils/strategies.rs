@@ -36,12 +36,9 @@ pub mod pipeline {
     use std::fmt::Debug;
 
     use rust_proto::{
-        graplinc::grapl::pipeline::{
-            v1beta1::{
-                Metadata,
-                RawLog,
-            },
-            v1beta2::Envelope,
+        graplinc::grapl::pipeline::v1beta1::{
+            Envelope,
+            RawLog,
         },
         SerDe,
     };
@@ -56,33 +53,7 @@ pub mod pipeline {
         pub fn raw_logs()(
             log_event in bytes(256)
         ) -> RawLog {
-            RawLog {
-                log_event
-            }
-        }
-    }
-
-    //
-    // Metadata
-    //
-
-    prop_compose! {
-        pub fn metadatas()(
-            tenant_id in uuids(),
-            trace_id in uuids(),
-            retry_count in any::<u32>(),
-            created_time in any::<SystemTime>(),
-            last_updated_time in any::<SystemTime>(),
-            event_source_id in uuids()
-        ) -> Metadata {
-            Metadata {
-                tenant_id,
-                trace_id,
-                retry_count,
-                created_time,
-                last_updated_time,
-                event_source_id,
-            }
+            RawLog::new(log_event)
         }
     }
 
@@ -96,12 +67,11 @@ pub mod pipeline {
     where
         T: SerDe + Debug,
     {
-        (metadatas(), inner_strategy).prop_map(|(metadata, inner_message)| -> Envelope<T> {
-            Envelope {
-                metadata,
-                inner_message,
-            }
-        })
+        (uuids(), uuids(), uuids(), inner_strategy).prop_map(
+            |(tenant_id, trace_id, event_source_id, inner_message)| -> Envelope<T> {
+                Envelope::new(tenant_id, trace_id, event_source_id, inner_message)
+            },
+        )
     }
 }
 

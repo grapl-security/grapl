@@ -23,7 +23,7 @@ use rust_proto::graplinc::grapl::{
             PublishRawLogRequest,
         },
     },
-    pipeline::v1beta2::Envelope,
+    pipeline::v1beta1::Envelope,
 };
 use rust_proto_clients::{
     get_grpc_client_with_options,
@@ -94,9 +94,8 @@ async fn test_sysmon_event_produces_merged_graph(
 
     let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
         .contains(move |envelope: &Envelope<MergedGraph>| -> bool {
-            let metadata = &envelope.metadata;
-            let merged_graph = &envelope.inner_message;
-            if metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id {
+            let merged_graph = envelope.inner_message();
+            if envelope.tenant_id() == tenant_id && envelope.event_source_id() == event_source_id {
                 let parent_process = find_node(
                     merged_graph,
                     "process_id",

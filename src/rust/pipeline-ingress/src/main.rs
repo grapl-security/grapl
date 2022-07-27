@@ -1,10 +1,7 @@
 use std::{
     env::VarError,
     num::ParseIntError,
-    time::{
-        Duration,
-        SystemTime,
-    },
+    time::Duration,
 };
 
 use clap::Parser;
@@ -28,12 +25,9 @@ use rust_proto::{
             PublishRawLogRequest,
             PublishRawLogResponse,
         },
-        pipeline::{
-            v1beta1::{
-                Metadata,
-                RawLog,
-            },
-            v1beta2::Envelope,
+        pipeline::v1beta1::{
+            Envelope,
+            RawLog,
         },
     },
     protocol::{
@@ -78,8 +72,6 @@ impl PipelineIngressApi for IngressApi {
         &self,
         request: PublishRawLogRequest,
     ) -> Result<PublishRawLogResponse, Self::Error> {
-        let created_time = SystemTime::now();
-        let last_updated_time = created_time;
         let tenant_id = request.tenant_id;
         let event_source_id = request.event_source_id;
         // TODO: trace_id should be generated at the edge. This service is
@@ -97,14 +89,9 @@ impl PipelineIngressApi for IngressApi {
 
         self.producer
             .send(Envelope::new(
-                Metadata::new(
-                    tenant_id,
-                    trace_id,
-                    0,
-                    created_time,
-                    last_updated_time,
-                    event_source_id,
-                ),
+                tenant_id,
+                trace_id,
+                event_source_id,
                 RawLog::new(request.log_event),
             ))
             .await?;

@@ -15,9 +15,9 @@ use rust_proto::graplinc::grapl::{
         client::PipelineIngressClient,
         PublishRawLogRequest,
     },
-    pipeline::{
-        v1beta1::RawLog,
-        v1beta2::Envelope,
+    pipeline::v1beta1::{
+        Envelope,
+        RawLog,
     },
 };
 use rust_proto_clients::{
@@ -76,15 +76,14 @@ async fn test_publish_raw_log_sends_message_to_kafka(
 
     let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
         .contains(move |envelope: &Envelope<RawLog>| -> bool {
-            let metadata = &envelope.metadata;
-            let raw_log = &envelope.inner_message;
+            let raw_log = envelope.inner_message();
             let expected_log_event: Bytes = "test".into();
 
             tracing::debug!(message = "consumed kafka message");
 
-            metadata.tenant_id == tenant_id
-                && metadata.event_source_id == event_source_id
-                && raw_log.log_event == expected_log_event
+            envelope.tenant_id() == tenant_id
+                && envelope.event_source_id() == event_source_id
+                && raw_log.log_event() == &expected_log_event
         })
         .await?;
 

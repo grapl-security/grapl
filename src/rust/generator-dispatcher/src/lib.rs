@@ -25,9 +25,9 @@ use rust_proto::{
             PluginWorkQueueServiceClientError,
             PushExecuteGeneratorRequest,
         },
-        pipeline::{
-            v1beta1::RawLog,
-            v1beta2::Envelope,
+        pipeline::v1beta1::{
+            Envelope,
+            RawLog,
         },
     },
     protocol::service_client::ConnectError,
@@ -117,7 +117,7 @@ impl GeneratorDispatcher {
                             Ok(envelope) => {
                                 match generator_ids_cache
                                     .clone()
-                                    .generator_ids_for_event_source(envelope.metadata.event_source_id)
+                                    .generator_ids_for_event_source(envelope.event_source_id())
                                     .await
                                 {
                                     Ok(Some(generator_ids)) => {
@@ -205,7 +205,7 @@ async fn enqueue_plugin_work(
     envelope: Envelope<RawLog>,
 ) -> Result<(), GeneratorDispatcherError> {
     let pool_size = generator_ids.len();
-    let payload = envelope.inner_message.log_event.clone();
+    let payload = envelope.inner_message().log_event().clone();
     futures::stream::iter(generator_ids)
         .map(|generator_id| Ok(generator_id))
         .try_for_each_concurrent(pool_size, move |generator_id| {

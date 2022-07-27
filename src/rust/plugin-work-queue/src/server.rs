@@ -16,7 +16,7 @@ use rust_proto::{
                 },
             },
         },
-        pipeline::v1beta2::Envelope,
+        pipeline::v1beta1::Envelope,
     },
     protocol::{
         healthcheck::HealthcheckStatus,

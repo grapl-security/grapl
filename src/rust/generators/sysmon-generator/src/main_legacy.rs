@@ -16,12 +16,9 @@ use kafka::{
 };
 use rust_proto::graplinc::grapl::{
     api::graph::v1beta1::GraphDescription,
-    pipeline::{
-        v1beta1::{
-            Metadata,
-            RawLog,
-        },
-        v1beta2::Envelope,
+    pipeline::v1beta1::{
+        Envelope,
+        RawLog,
     },
 };
 use sysmon_parser::SysmonEvent;
@@ -87,14 +84,11 @@ async fn event_handler(
 ) -> Result<Option<Envelope<GraphDescription>>, SysmonGeneratorError> {
     let envelope = event?;
     let sysmon_event = SysmonEvent::from_str(std::str::from_utf8(
-        envelope.inner_message.log_event.as_ref(),
+        envelope.inner_message().log_event().as_ref(),
     )?)?;
 
     match models::generate_graph_from_event(&sysmon_event)? {
-        Some(graph_description) => Ok(Some(Envelope::new(
-            Metadata::create_from(envelope.metadata),
-            graph_description,
-        ))),
+        Some(graph_description) => Ok(Some(Envelope::create_from(envelope, graph_description))),
         None => Ok(None),
     }
 }

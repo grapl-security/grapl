@@ -38,7 +38,7 @@ from python_proto.metrics import (
     Label,
     MetricWrapper,
 )
-from python_proto.pipeline import Envelope, Metadata, RawLog
+from python_proto.pipeline import Envelope, RawLog
 
 #
 # constants
@@ -110,23 +110,6 @@ def timestamps(
 #
 
 
-def metadatas(
-    trace_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
-    tenant_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
-    event_source_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
-    created_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
-    last_updated_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
-) -> st.SearchStrategy[Metadata]:
-    return st.builds(
-        Metadata,
-        trace_id=trace_ids,
-        tenant_id=tenant_ids,
-        event_source_id=event_source_ids,
-        created_time=created_times,
-        last_updated_time=last_updated_times,
-    )
-
-
 def raw_logs(
     log_events: st.SearchStrategy[bytes] = st.binary(
         min_size=MIN_LOG_EVENT_SIZE, max_size=MAX_LOG_EVENT_SIZE
@@ -136,7 +119,14 @@ def raw_logs(
 
 
 def envelopes(
-    metadatas: st.SearchStrategy[Metadata] = metadatas(),
+    trace_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
+    tenant_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
+    event_source_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
+    retry_counts: st.SearchStrategy[int] = st.integers(
+        min_value=0, max_value=INT32_MAX
+    ),
+    created_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
+    last_updated_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
     inner_messages: st.SearchStrategy[SerDe] = uuids()
     | timestamps()
     | durations()
@@ -144,7 +134,12 @@ def envelopes(
 ) -> st.SearchStrategy[Envelope]:
     return st.builds(
         Envelope,
-        metadata=metadatas,
+        trace_id=trace_ids,
+        tenant_id=tenant_ids,
+        event_source_id=event_source_ids,
+        retry_count=retry_counts,
+        created_time=created_times,
+        last_updated_time=last_updated_times,
         inner_message=inner_messages,
     )
 
