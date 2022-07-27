@@ -186,16 +186,11 @@ impl PsqlQueue {
         Ok(request.map(|request| Message { request }))
     }
 
-<<<<<<< HEAD
     #[instrument(skip(self), err)]
-    pub async fn get_analyzer_message(&self) -> Result<Option<Message>, PsqlQueueError> {
-=======
-    #[instrument(err)]
     pub async fn get_analyzer_message(
         &self,
         plugin_id: Uuid,
     ) -> Result<Option<Message>, PsqlQueueError> {
->>>>>>> 429bc23c0 (Fix PWQ so it queries by plugin-id)
         // `get_message` does a few things
         // 1. It attempts to get a message from the queue
         //      -> Where that message isn't over a day old
