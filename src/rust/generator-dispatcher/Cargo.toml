@@ -29,7 +29,7 @@ uuid = { version = "1.0", features = ["v4"] }
 async-trait = "0.1"
 bytes = "1.0"
 plugin-work-queue = { path = "../plugin-work-queue", features = [
-  "integration_tests"
+  "test-utils"
 ] }
 test-context = "0.1"
 
