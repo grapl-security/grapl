@@ -114,12 +114,12 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         Ok(v1beta1::PushExecuteAnalyzerResponse {})
     }
 
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn get_execute_generator(
         &self,
-        _request: v1beta1::GetExecuteGeneratorRequest,
+        request: v1beta1::GetExecuteGeneratorRequest,
     ) -> Result<v1beta1::GetExecuteGeneratorResponse, PluginWorkQueueError> {
-        let message = self.queue.get_generator_message().await?;
+        let message = self.queue.get_generator_message(request.plugin_id).await?;
         let message = match message {
             Some(message) => message,
             None => {
@@ -138,12 +138,12 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         })
     }
 
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn get_execute_analyzer(
         &self,
-        _request: v1beta1::GetExecuteAnalyzerRequest,
+        request: v1beta1::GetExecuteAnalyzerRequest,
     ) -> Result<v1beta1::GetExecuteAnalyzerResponse, PluginWorkQueueError> {
-        let message = self.queue.get_analyzer_message().await?;
+        let message = self.queue.get_analyzer_message(request.plugin_id).await?;
         let message = match message {
             Some(message) => message,
             None => {

@@ -15,7 +15,7 @@ use rust_proto::{
 };
 
 #[tokio::test]
-async fn test_basic_crud_generator_pwq() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error::Error>> {
     let mut pwq_client = build_grpc_client_with_options(
         PluginWorkQueueClientConfig::parse(),
         BuildGrpcClientOptions {
@@ -30,19 +30,26 @@ async fn test_basic_crud_generator_pwq() -> Result<(), Box<dyn std::error::Error
 
     let job_1 = PushExecuteGeneratorRequest {
         execution_job: ExecutionJob {
-            data: "job 1".into(),
+            data: "for plugin_id_1".into(),
         },
         plugin_id: plugin_id_1,
     };
 
     let job_2 = PushExecuteGeneratorRequest {
         execution_job: ExecutionJob {
-            data: "job 2".into(),
+            data: "for plugin_id_2".into(),
         },
         plugin_id: plugin_id_2,
     };
 
-    for request in [&job_1, &job_2] {
+    let job_3 = PushExecuteGeneratorRequest {
+        execution_job: ExecutionJob {
+            data: "also for plugin_id_2".into(),
+        },
+        plugin_id: plugin_id_2,
+    };
+
+    for request in [&job_1, &job_2, &job_3] {
         pwq_client.push_execute_generator(request.clone()).await?;
     }
 
@@ -62,6 +69,7 @@ async fn test_basic_crud_generator_pwq() -> Result<(), Box<dyn std::error::Error
         Some(job_2.execution_job)
     );
 
+    // Fetch for plugin_id 1
     let retrieve_job_for_plugin_id_1 = pwq_client
         .get_execute_generator(GetExecuteGeneratorRequest {
             plugin_id: plugin_id_1,
@@ -71,6 +79,30 @@ async fn test_basic_crud_generator_pwq() -> Result<(), Box<dyn std::error::Error
     assert_eq!(
         retrieve_job_for_plugin_id_1.execution_job,
         Some(job_1.execution_job)
+    );
+    
+    // Fetch for plugin_id 2 again, we should get Job 3
+    let retrieve_job_for_plugin_id_2 = pwq_client
+        .get_execute_generator(GetExecuteGeneratorRequest {
+            plugin_id: plugin_id_2,
+        })
+        .await?;
+
+    assert_eq!(
+        retrieve_job_for_plugin_id_2.execution_job,
+        Some(job_3.execution_job)
+    );
+
+    // Fetch one more time, we should be out of work
+    let retrieve_job_for_plugin_id_2 = pwq_client
+        .get_execute_generator(GetExecuteGeneratorRequest {
+            plugin_id: plugin_id_2,
+        })
+        .await?;
+
+    assert_eq!(
+        retrieve_job_for_plugin_id_2.execution_job,
+        None
     );
 
     Ok(())
