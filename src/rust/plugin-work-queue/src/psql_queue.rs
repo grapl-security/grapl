@@ -82,7 +82,7 @@ impl PsqlQueue {
         Ok(Self::new(pool))
     }
 
-    #[instrument(skip(pipeline_message), err)]
+    #[instrument(skip(self, pipeline_message), err)]
     pub async fn put_generator_message(
         &self,
         plugin_id: Uuid,
@@ -106,7 +106,7 @@ impl PsqlQueue {
         Ok(())
     }
 
-    #[instrument(skip(pipeline_message), err)]
+    #[instrument(skip(self, pipeline_message), err)]
     pub async fn put_analyzer_message(
         &self,
         plugin_id: Uuid,
@@ -130,7 +130,7 @@ impl PsqlQueue {
         Ok(())
     }
 
-    #[instrument(err)]
+    #[instrument(skip(self), err)]
     pub async fn get_generator_message(&self) -> Result<Option<Message>, PsqlQueueError> {
         // This function does a few things
         // 1. It attempts to get a message from the queue
@@ -179,7 +179,7 @@ impl PsqlQueue {
         Ok(request.map(|request| Message { request }))
     }
 
-    #[instrument(err)]
+    #[instrument(skip(self), err)]
     pub async fn get_analyzer_message(&self) -> Result<Option<Message>, PsqlQueueError> {
         // `get_message` does a few things
         // 1. It attempts to get a message from the queue
@@ -228,7 +228,7 @@ impl PsqlQueue {
         Ok(request.map(|request| Message { request }))
     }
 
-    #[instrument(err)]
+    #[instrument(skip(self), err)]
     pub async fn ack_generator(
         &self,
         execution_key: ExecutionId,
@@ -253,7 +253,7 @@ impl PsqlQueue {
         Ok(())
     }
 
-    #[instrument(err)]
+    #[instrument(skip(self), err)]
     pub async fn ack_analyzer(
         &self,
         execution_key: ExecutionId,

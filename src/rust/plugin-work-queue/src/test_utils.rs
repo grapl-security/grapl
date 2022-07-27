@@ -59,3 +59,39 @@ impl PsqlQueueTestExtensions for PsqlQueue {
         Ok(generator_messages)
     }
 }
+
+use std::time::Duration;
+
+use tracing::Instrument;
+
+pub async fn scan_for_plugin_message_in_pwq(
+    psql_queue: PsqlQueue,
+    plugin_id: uuid::Uuid,
+) -> Option<NextExecutionRequest> {
+    tracing::info!("creating plugin-work-queue scan thread");
+    let scan_thread = tokio::task::spawn(async move {
+        let scan_for_generator_job = async move {
+            while let Ok(generator_messages) =
+                psql_queue.get_all_generator_messages(plugin_id).await
+            {
+                if let Some(message) = generator_messages.first() {
+                    return Some(message.clone());
+                } else {
+                    tokio::time::sleep(Duration::from_millis(500)).await;
+                }
+            }
+            None
+        };
+
+        tokio::time::timeout(Duration::from_secs(30), scan_for_generator_job)
+            .await
+            .expect("failed to consume expected message within 30s")
+    });
+
+    tracing::info!("waiting for scan_thread to complete");
+    let matching_job = scan_thread
+        .instrument(tracing::debug_span!("scan_thread"))
+        .await
+        .expect("could not join scan_thread");
+    matching_job
+}
