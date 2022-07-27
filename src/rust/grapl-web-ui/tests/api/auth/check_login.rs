@@ -4,9 +4,11 @@ async fn auth_unauthenticated_check_login() -> eyre::Result<()> {
 
     let response = app.post("api/auth/checkLogin").send().await?;
 
-    println!("{:?}", response);
-
-    assert_eq!(response.status(), actix_web::http::StatusCode::UNAUTHORIZED);
+    eyre::ensure!(
+        response.status() == actix_web::http::StatusCode::UNAUTHORIZED,
+        "unexpected response: {:?}",
+        response
+    );
 
     Ok(())
 }
@@ -19,9 +21,11 @@ async fn auth_authenticated_check_login() -> eyre::Result<()> {
 
     let response = app.post("api/auth/checkLogin").send().await?;
 
-    println!("{:?}", response);
-
-    assert_eq!(response.status(), actix_web::http::StatusCode::OK);
+    eyre::ensure!(
+        response.status() == actix_web::http::StatusCode::OK,
+        "unexpected response: {:?}",
+        response
+    );
 
     Ok(())
 }

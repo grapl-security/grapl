@@ -11,9 +11,11 @@ async fn auth_password_incorrect_password() -> eyre::Result<()> {
         .send()
         .await?;
 
-    println!("{:?}", response);
-
-    assert_eq!(response.status(), actix_web::http::StatusCode::UNAUTHORIZED);
+    eyre::ensure!(
+        response.status() == actix_web::http::StatusCode::UNAUTHORIZED,
+        "unexpected response: {:?}",
+        response
+    );
 
     Ok(())
 }
@@ -31,9 +33,11 @@ async fn auth_password_nonexistent_user() -> eyre::Result<()> {
         .send()
         .await?;
 
-    println!("{:?}", response);
-
-    assert_eq!(response.status(), actix_web::http::StatusCode::UNAUTHORIZED);
+    eyre::ensure!(
+        response.status() == actix_web::http::StatusCode::UNAUTHORIZED,
+        "unexpected response: {:?}",
+        response
+    );
 
     Ok(())
 }
@@ -51,9 +55,11 @@ async fn auth_password_empty_creds() -> eyre::Result<()> {
         .send()
         .await?;
 
-    println!("{:?}", response);
-
-    assert_eq!(response.status(), actix_web::http::StatusCode::UNAUTHORIZED);
+    eyre::ensure!(
+        response.status() == actix_web::http::StatusCode::UNAUTHORIZED,
+        "unexpected response: {:?}",
+        response
+    );
 
     Ok(())
 }
@@ -71,9 +77,11 @@ async fn auth_password_success() -> eyre::Result<()> {
         .send()
         .await?;
 
-    println!("{:?}", response);
-
-    assert_eq!(response.status(), actix_web::http::StatusCode::OK);
+    eyre::ensure!(
+        response.status() == actix_web::http::StatusCode::OK,
+        "unexpected response: {:?}",
+        response
+    );
 
     Ok(())
 }
