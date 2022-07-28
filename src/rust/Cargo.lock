@@ -826,7 +826,7 @@ name = "client-executor"
 version = "0.1.0"
 dependencies = [
  "futures",
- "pin-project 1.0.11",
+ "pin-project",
  "recloser",
  "thiserror",
  "tokio",
@@ -1020,26 +1020,16 @@ dependencies = [
 
 [[package]]
 name = "crossbeam"
-version = "0.7.3"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69323bff1fb41c635347b8ead484a5ca6c3f11914d784170b158d8449ab07f8e"
+checksum = "2801af0d36612ae591caa9568261fddce32ce6e08a7275ea334a06a4ad021a2c"
 dependencies = [
- "cfg-if 0.1.10",
- "crossbeam-channel 0.4.4",
- "crossbeam-deque 0.7.4",
- "crossbeam-epoch 0.8.2",
- "crossbeam-queue 0.2.3",
- "crossbeam-utils 0.7.2",
-]
-
-[[package]]
-name = "crossbeam-channel"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b153fe7cbef478c567df0f972e02e6d736db11affe43dfc9c56a9374d1adfb87"
-dependencies = [
- "crossbeam-utils 0.7.2",
- "maybe-uninit",
+ "cfg-if 1.0.0",
+ "crossbeam-channel",
+ "crossbeam-deque",
+ "crossbeam-epoch 0.9.9",
+ "crossbeam-queue",
+ "crossbeam-utils 0.8.10",
 ]
 
 [[package]]
@@ -1050,17 +1040,6 @@ checksum = "4c02a4d71819009c192cf4872265391563fd6a84c81ff2c0f2a7026ca4c1d85c"
 dependencies = [
  "cfg-if 1.0.0",
  "crossbeam-utils 0.8.10",
-]
-
-[[package]]
-name = "crossbeam-deque"
-version = "0.7.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c20ff29ded3204c5106278a81a38f4b482636ed4fa1e6cfbeef193291beb29ed"
-dependencies = [
- "crossbeam-epoch 0.8.2",
- "crossbeam-utils 0.7.2",
- "maybe-uninit",
 ]
 
 [[package]]
@@ -1101,17 +1080,6 @@ dependencies = [
  "memoffset 0.6.5",
  "once_cell",
  "scopeguard",
-]
-
-[[package]]
-name = "crossbeam-queue"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "774ba60a54c213d409d5353bda12d49cd68d14e45036a285234c8d6f91f92570"
-dependencies = [
- "cfg-if 0.1.10",
- "crossbeam-utils 0.7.2",
- "maybe-uninit",
 ]
 
 [[package]]
@@ -2633,7 +2601,7 @@ checksum = "975fa04238144061e7f8df9746b2e9cd93ef85881da5548d842a7c6a4b614415"
 dependencies = [
  "async-io",
  "async-lock",
- "crossbeam-channel 0.5.5",
+ "crossbeam-channel",
  "crossbeam-epoch 0.8.2",
  "crossbeam-utils 0.8.10",
  "futures-util",
@@ -2658,7 +2626,7 @@ checksum = "bd6eb67e4dc6898bb8cffa0b16ba679de61227945673d9d9a0e7bffd25679db6"
 dependencies = [
  "async-io",
  "async-lock",
- "crossbeam-channel 0.5.5",
+ "crossbeam-channel",
  "crossbeam-epoch 0.9.9",
  "crossbeam-utils 0.8.10",
  "futures-util",
@@ -2897,14 +2865,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6105e89802af13fdf48c49d7646d3b533a70e536d818aae7e78ba0433d01acb8"
 dependencies = [
  "async-trait",
- "crossbeam-channel 0.5.5",
+ "crossbeam-channel",
  "futures-channel",
  "futures-executor",
  "futures-util",
  "js-sys",
  "lazy_static",
  "percent-encoding",
- "pin-project 1.0.11",
+ "pin-project",
  "rand 0.8.5",
  "thiserror",
  "tokio",
@@ -3123,31 +3091,11 @@ dependencies = [
 
 [[package]]
 name = "pin-project"
-version = "0.4.30"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ef0f924a5ee7ea9cbcea77529dba45f8a9ba9f622419fe3386ca581a3ae9d5a"
-dependencies = [
- "pin-project-internal 0.4.30",
-]
-
-[[package]]
-name = "pin-project"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78203e83c48cffbe01e4a2d35d566ca4de445d79a85372fc64e378bfc812a260"
 dependencies = [
- "pin-project-internal 1.0.11",
-]
-
-[[package]]
-name = "pin-project-internal"
-version = "0.4.30"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "851c8d0ce9bebe43790dedfc86614c23494ac9f423dd618d3a61fc693eafe61e"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
+ "pin-project-internal",
 ]
 
 [[package]]
@@ -3704,7 +3652,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd99e5772ead8baa5215278c9b15bf92087709e9c1b2d1f97cdb5a183c933a7d"
 dependencies = [
  "autocfg 1.1.0",
- "crossbeam-deque 0.8.1",
+ "crossbeam-deque",
  "either",
  "rayon-core",
 ]
@@ -3715,8 +3663,8 @@ version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "258bcdb5ac6dad48491bb2992db6b7cf74878b0384908af124823d118c99683f"
 dependencies = [
- "crossbeam-channel 0.5.5",
- "crossbeam-deque 0.8.1",
+ "crossbeam-channel",
+ "crossbeam-deque",
  "crossbeam-utils 0.8.10",
  "num_cpus",
 ]
@@ -3756,12 +3704,12 @@ dependencies = [
 
 [[package]]
 name = "recloser"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bd8baea3cfae3004c32bcc307e75b446c703206952db34b90375def15cd3a06"
+checksum = "5a33de4aab243767d610c4619ea8156202a59b27fb7c94a140f486c96d41d6ef"
 dependencies = [
  "crossbeam",
- "pin-project 0.4.30",
+ "pin-project",
 ]
 
 [[package]]
@@ -4488,7 +4436,7 @@ dependencies = [
  "bytes",
  "chrono",
  "crc",
- "crossbeam-queue 0.3.5",
+ "crossbeam-queue",
  "dirs",
  "either",
  "event-listener",
@@ -4873,7 +4821,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f57eb36ecbe0fc510036adff84824dd3c24bb781e21bfa67b69d556aa85214f"
 dependencies = [
- "pin-project 1.0.11",
+ "pin-project",
  "rand 0.8.5",
  "tokio",
 ]
@@ -4966,7 +4914,7 @@ dependencies = [
  "hyper",
  "hyper-timeout",
  "percent-encoding",
- "pin-project 1.0.11",
+ "pin-project",
  "prost 0.9.0",
  "prost-derive 0.9.0",
  "tokio",
@@ -5000,7 +4948,7 @@ dependencies = [
  "hyper",
  "hyper-timeout",
  "percent-encoding",
- "pin-project 1.0.11",
+ "pin-project",
  "prost 0.10.4",
  "prost-derive 0.10.1",
  "rustls-pemfile",
@@ -5064,7 +5012,7 @@ dependencies = [
  "futures-core",
  "futures-util",
  "indexmap",
- "pin-project 1.0.11",
+ "pin-project",
  "pin-project-lite",
  "rand 0.8.5",
  "slab",
@@ -5125,7 +5073,7 @@ version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09d48f71a791638519505cefafe162606f706c25592e4bde4d97600c0195312e"
 dependencies = [
- "crossbeam-channel 0.5.5",
+ "crossbeam-channel",
  "time 0.3.11",
  "tracing-subscriber",
 ]
@@ -5167,7 +5115,7 @@ version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97d095ae15e245a057c8e8451bab9b3ee1e1f68e9ba2b4fbc18d0ac5237835f2"
 dependencies = [
- "pin-project 1.0.11",
+ "pin-project",
  "tracing",
 ]
 
