@@ -102,8 +102,6 @@ impl GeneratorIdsCache {
         // queue and querying the plugin-registry for updates corresponding to
         // each message.
         tokio::task::spawn(async move {
-            let generator_ids_cache = generator_ids_cache.clone();
-
             updater_rx.for_each_concurrent(
                 updater_pool_size,
                 |event_source_id: Uuid| {
