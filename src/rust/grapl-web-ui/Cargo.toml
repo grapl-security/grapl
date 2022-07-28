@@ -47,6 +47,11 @@ rusoto_dynamodb = { version = "0.47", default_features = false, features = [
 jsonwebtoken-google = "0.1"
 secrecy = { version = "0.8", features = ["serde"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+clap = { version = "3", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 
 [dev-dependencies]
 uuid = { version = "1.0", features = ["v4"] }

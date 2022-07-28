@@ -1894,6 +1894,7 @@ dependencies = [
  "argon2",
  "awc",
  "chrono",
+ "clap 3.2.13",
  "eyre",
  "futures-util",
  "grapl-config",
