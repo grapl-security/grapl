@@ -1,6 +1,4 @@
-use std::{
-    time::Duration,
-};
+use std::time::Duration;
 
 use clap::Parser;
 use futures::{
