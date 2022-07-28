@@ -123,7 +123,6 @@ impl GeneratorIdsCache {
                                     code: Code::NotFound,
                                     ..
                                 })) => {
-                                    drop(client_guard); // release the client lock
                                     tracing::warn!(
                                         message = "found no generators for event source",
                                         event_source_id =% event_source_id,
