@@ -129,7 +129,7 @@ impl From<GrpcCode> for Code {
 #[derive(thiserror::Error)]
 pub struct Status {
     /// The gRPC status code, found in the `grpc-status` header.
-    code: Code,
+    pub code: Code,
     /// A relevant error message, found in the `grpc-message` header.
     message: String,
 }
