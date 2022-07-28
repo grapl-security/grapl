@@ -25,4 +25,17 @@ pub enum ConnectError {
 
     #[error("timeout elapsed {0}")]
     TimeoutElapsed(#[from] Elapsed),
+
+    #[error("Circuit Breaker is open")]
+    CircuitBreakerOpen,
+}
+
+impl From<client_executor::Error<ConnectError>> for ConnectError {
+    fn from(e: client_executor::Error<ConnectError>) -> Self {
+        match e {
+            client_executor::Error::Inner(e) => e,
+            client_executor::Error::Rejected => ConnectError::CircuitBreakerOpen,
+            client_executor::Error::Elapsed(e) => ConnectError::TimeoutElapsed(e),
+        }
+    }
 }

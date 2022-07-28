@@ -4,6 +4,7 @@ use std::{
         IntoIterator,
         Iterator,
     },
+    num::NonZeroUsize,
     pin::Pin,
     task::{
         Context,
@@ -43,7 +44,7 @@ pub enum Error<E: std::error::Error> {
     Rejected,
     /// A timeout for an underlying call has occurred
     #[error("Elapsed")]
-    Elapsed,
+    Elapsed(Elapsed),
 }
 
 #[pin_project(project = ExecuteStateProj)]
@@ -118,7 +119,7 @@ where
         match this.future.poll(cx) {
             Poll::Ready(Ok(Ok(p))) => Poll::Ready(Ok(p)),
             Poll::Ready(Ok(Err(e))) => Poll::Ready(Err(Error::Inner(e))),
-            Poll::Ready(Err(Elapsed { .. })) => Poll::Ready(Err(Error::Elapsed)),
+            Poll::Ready(Err(e @ Elapsed { .. })) => Poll::Ready(Err(Error::Elapsed(e))),
             Poll::Pending => Poll::Pending,
         }
     }
@@ -166,11 +167,11 @@ where
     ) -> Result<Poll<ActionResult<A>>, Error<<A as Action>::Error>> {
         match self.as_mut().project().strategy.next() {
             None => {
-                tracing::debug!("No more retries");
+                tracing::debug!(message="No more retries", error=?err);
                 Err(err)
             }
             Some(duration) => {
-                tracing::debug!("Retrying in {}ms", duration.as_millis());
+                tracing::debug!(message="Retrying", sleep_for=%duration.as_millis(), error=?err);
                 let deadline = Instant::now() + duration;
                 let future = sleep_until(deadline);
                 self.as_mut()
@@ -246,17 +247,15 @@ impl ExecutorConfig {
 
     /// How many calls will the circuit remain closed for before the failure
     /// rate is recalculated and the circuit may open
-    pub fn closed_len(mut self, closed_len: usize) -> Self {
-        assert_ne!(closed_len, 0, "closed_len must be non-zero");
-        self.builder = self.builder.closed_len(closed_len);
+    pub fn closed_len(mut self, closed_len: NonZeroUsize) -> Self {
+        self.builder = self.builder.closed_len(closed_len.get());
         self
     }
 
     /// How many calls will the circuit remain HalfOpen for before the failure
     /// rate is recalculated and the circuit may either open or close
-    pub fn half_open_len(mut self, half_open_len: usize) -> Self {
-        assert_ne!(half_open_len, 0, "half_open_len must be non-zero");
-        self.builder = self.builder.half_open_len(half_open_len);
+    pub fn half_open_len(mut self, half_open_len: NonZeroUsize) -> Self {
+        self.builder = self.builder.half_open_len(half_open_len.get());
         self
     }
 
@@ -383,7 +382,7 @@ mod tests {
     async fn test_circuit_open() -> Result<(), Box<dyn std::error::Error>> {
         let circuit_breaker = ExecutorConfig::new(Duration::from_secs(3))
             .threshold(0.5)
-            .closed_len(2)
+            .closed_len(NonZeroUsize::new(2).unwrap())
             .open_wait(Duration::from_secs(1));
         let executor = Executor::new(circuit_breaker);
 

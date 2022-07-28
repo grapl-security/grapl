@@ -3983,6 +3983,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "clap 3.2.13",
+ "client-executor",
  "futures",
  "grapl-utils",
  "proptest",

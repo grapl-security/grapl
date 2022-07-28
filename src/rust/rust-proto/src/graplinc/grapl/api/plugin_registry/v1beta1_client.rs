@@ -1,6 +1,14 @@
-use std::fmt::Debug;
+use std::{
+    fmt::Debug,
+    time::Duration,
+};
 
 use bytes::Bytes;
+use client_executor::{
+    strategy::jitter,
+    Executor,
+    ExecutorConfig,
+};
 use futures::{
     Stream,
     StreamExt,
@@ -27,11 +35,26 @@ pub enum PluginRegistryServiceClientError {
     ErrorStatus(#[from] Status),
     #[error("PluginRegistryDeserializationError {0}")]
     PluginRegistryDeserializationError(#[from] SerDeError),
+    #[error("CircuitOpen")]
+    CircuitOpen,
+    #[error("Timeout")]
+    Elapsed,
+}
+
+impl From<client_executor::Error<tonic::Status>> for PluginRegistryServiceClientError {
+    fn from(e: client_executor::Error<tonic::Status>) -> Self {
+        match e {
+            client_executor::Error::Inner(e) => Self::ErrorStatus(e.into()),
+            client_executor::Error::Rejected => Self::CircuitOpen,
+            client_executor::Error::Elapsed(_) => Self::Elapsed,
+        }
+    }
 }
 
 #[derive(Clone)]
 pub struct PluginRegistryServiceClient {
     proto_client: PluginRegistryServiceClientProto<tonic::transport::Channel>,
+    executor: Executor,
 }
 
 #[async_trait::async_trait]
@@ -41,8 +64,26 @@ impl Connectable for PluginRegistryServiceClient {
 
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(10)));
+        let proto_client = executor
+            .spawn(
+                client_executor::strategy::FibonacciBackoff::from_millis(10)
+                    .map(jitter)
+                    .take(20),
+                || {
+                    let endpoint = endpoint.clone();
+                    async move {
+                        PluginRegistryServiceClientProto::connect(endpoint)
+                            .await
+                            .map_err(ConnectError::from)
+                    }
+                },
+            )
+            .await?;
+
         Ok(PluginRegistryServiceClient {
-            proto_client: PluginRegistryServiceClientProto::connect(endpoint).await?,
+            proto_client,
+            executor,
         })
     }
 }
@@ -93,14 +134,24 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::GetPluginRequest,
     ) -> Result<native::GetPluginResponse, PluginRegistryServiceClientError> {
-        let response = match self
-            .proto_client
-            .get_plugin(proto::GetPluginRequest::from(request))
-            .await
-        {
-            Ok(r) => r,
-            Err(e) => return Err(Status::from(e).into()),
-        };
+        let response = self
+            .executor
+            .spawn(
+                client_executor::strategy::FibonacciBackoff::from_millis(10)
+                    .map(jitter)
+                    .take(20),
+                || {
+                    let mut proto_client = self.proto_client.clone();
+                    let request = request.clone();
+                    async move {
+                        proto_client
+                            .get_plugin(proto::GetPluginRequest::from(request))
+                            .await
+                    }
+                },
+            )
+            .await?;
+
         let response = native::GetPluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
@@ -111,10 +162,22 @@ impl PluginRegistryServiceClient {
         request: native::DeployPluginRequest,
     ) -> Result<native::DeployPluginResponse, PluginRegistryServiceClientError> {
         let response = self
-            .proto_client
-            .deploy_plugin(proto::DeployPluginRequest::from(request))
-            .await
-            .map_err(Status::from)?;
+            .executor
+            .spawn(
+                client_executor::strategy::FibonacciBackoff::from_millis(10)
+                    .map(jitter)
+                    .take(20),
+                || {
+                    let mut proto_client = self.proto_client.clone();
+                    let request = request.clone();
+                    async move {
+                        proto_client
+                            .deploy_plugin(proto::DeployPluginRequest::from(request))
+                            .await
+                    }
+                },
+            )
+            .await?;
         let response = native::DeployPluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
@@ -136,10 +199,22 @@ impl PluginRegistryServiceClient {
         request: native::GetPluginHealthRequest,
     ) -> Result<native::GetPluginHealthResponse, PluginRegistryServiceClientError> {
         let response = self
-            .proto_client
-            .get_plugin_health(proto::GetPluginHealthRequest::from(request))
-            .await
-            .map_err(Status::from)?;
+            .executor
+            .spawn(
+                client_executor::strategy::FibonacciBackoff::from_millis(10)
+                    .map(jitter)
+                    .take(20),
+                || {
+                    let mut proto_client = self.proto_client.clone();
+                    let request = request.clone();
+                    async move {
+                        proto_client
+                            .get_plugin_health(proto::GetPluginHealthRequest::from(request))
+                            .await
+                    }
+                },
+            )
+            .await?;
         let response = native::GetPluginHealthResponse::try_from(response.into_inner())?;
         Ok(response)
     }
@@ -151,13 +226,24 @@ impl PluginRegistryServiceClient {
         request: native::GetGeneratorsForEventSourceRequest,
     ) -> Result<native::GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> {
         let response = self
-            .proto_client
-            .get_generators_for_event_source(proto::GetGeneratorsForEventSourceRequest::from(
-                request,
-            ))
-            .await
-            .map_err(Status::from)?;
-
+            .executor
+            .spawn(
+                client_executor::strategy::FibonacciBackoff::from_millis(10)
+                    .map(jitter)
+                    .take(20),
+                || {
+                    let mut proto_client = self.proto_client.clone();
+                    let request = request.clone();
+                    async move {
+                        proto_client
+                            .get_generators_for_event_source(
+                                proto::GetGeneratorsForEventSourceRequest::from(request),
+                            )
+                            .await
+                    }
+                },
+            )
+            .await?;
         let response = native::GetGeneratorsForEventSourceResponse::from(response.into_inner());
 
         Ok(response)
