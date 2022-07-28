@@ -1,7 +1,6 @@
 [workspace]
 members = [
   "./derive-dynamic-node",
-  "./client-executor",
   "./consul-connect",
   "./endpoint-plugin",
   "./event-source",
