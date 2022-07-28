@@ -126,9 +126,11 @@ async fn test_publish_raw_log_sends_message_to_kafka(
             let envelope_event_source_id = envelope.event_source_id();
             let raw_log = envelope.inner_message();
 
-            envelope.tenant_id() == tenant_id
-                && envelope.event_source_id() == event_source_id
-                && raw_log.log_event() == &expected_log_event
+            tracing::debug!(message = "consumed kafka message");
+
+            envelope_tenant_id == tenant_id
+                && envelope_event_source_id == event_source_id
+                && raw_log.log_event() == expected_log_event
         })
         .await?;
 

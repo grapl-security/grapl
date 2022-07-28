@@ -1,6 +1,7 @@
 #![cfg(feature = "integration_tests")]
 mod test_utils;
 
+use bytes::Bytes;
 use kafka::{
     config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
@@ -23,26 +24,19 @@ use test_context::test_context;
 use test_utils::context::E2eTestContext;
 use uuid::Uuid;
 
-use crate::test_utils::predicates::events6_node_identity_predicate;
+use crate::test_utils::predicates::{
+    events_36lines_merged_graph_predicate,
+    events_36lines_node_identity_predicate,
+};
 
 mod test_fixtures {
-    use bytes::Bytes;
-    use grapl_utils::iter_ext::GraplIterExt;
+    use super::*;
 
-    /// Kafka messages in our pipeline have a max size of 1MB;
-    /// so we just send N lines at a time.
-    pub fn get_events6_xml_chunked() -> Result<Vec<Bytes>, std::io::Error> {
-        let chunk_size = 500;
-
-        let filename = "/test-fixtures/events6.xml"; // This path is created in rust/Dockerfile
-        let file = String::from_utf8(std::fs::read(filename)?).unwrap();
-        let lines = file.split("\n");
-        let line_chunks = lines.into_iter().chunks_owned(chunk_size);
-        let byte_chunks = line_chunks
-            .into_iter()
-            .map(|lines| Bytes::from(lines.join("\n")))
-            .collect();
-        Ok(byte_chunks)
+    /// Send 1 line (well, event) at a time
+    pub fn get_36_eventlog_xml_separate_lines() -> Result<Vec<String>, std::io::Error> {
+        let filename = "/test-fixtures/36_eventlog.xml"; // This path is created in rust/Dockerfile
+        let content = std::fs::read_to_string(filename)?;
+        Ok(content.lines().map(&str::to_owned).collect())
     }
 
     pub fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
@@ -65,48 +59,43 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     tracing::info!(">> Setup complete. Now let's test milestones in the pipeline.");
 
     let raw_logs_scanner = KafkaTopicScanner::new(ConsumerConfig::with_topic("raw-logs"))?
-        .contains_for_tenant(tenant_id, |_log: &RawLog| true)
+        .contains_for_tenant(tenant_id, |_log: RawLog| true)
         .await?;
 
-    // Right now:
-    // - sysmon-generator-legacy produces messages with correct tenant ID
-    // - new plugin setup emits stuff with tenant id Uuid::nil (until we kill legacy)
-    let special_generated_graphs_tenant_id = Uuid::nil();
     let generated_graphs_scanner =
         KafkaTopicScanner::new(ConsumerConfig::with_topic("generated-graphs"))?
-            .contains_for_tenant(
-                special_generated_graphs_tenant_id,
-                |graph: &GraphDescription| graph.nodes.len() > 1,
-            )
+            .contains_for_tenant(tenant_id, |graph: GraphDescription| graph.nodes.len() > 1)
             .await?;
 
     let node_identifier_scanner =
         KafkaTopicScanner::new(ConsumerConfig::with_topic("identified-graphs"))?
-            .contains_for_tenant(
-                special_generated_graphs_tenant_id,
-                events6_node_identity_predicate,
-            )
+            .contains_for_tenant(tenant_id, events_36lines_node_identity_predicate)
             .await?;
+
+    let graph_merger_scanner = KafkaTopicScanner::new(ConsumerConfig::with_topic("merged-graphs"))?
+        .contains_for_tenant(tenant_id, events_36lines_merged_graph_predicate)
+        .await?;
 
     tracing::info!(">> Inserting logs into pipeline-ingress!");
 
-    let log_chunks = test_fixtures::get_events6_xml_chunked()?;
-    for log_chunk in log_chunks {
-        tracing::info!(message = "Uploading a chunk", len = log_chunk.len());
+    let log_lines = test_fixtures::get_36_eventlog_xml_separate_lines()?;
+    for log_line in log_lines {
         ctx.pipeline_ingress_client
             .publish_raw_log(PublishRawLogRequest {
                 event_source_id,
                 tenant_id,
-                log_event: log_chunk,
+                log_event: Bytes::from(log_line),
             })
             .await?;
     }
 
-    tracing::info!(">> Testing that input shows up in raw-logs");
+    tracing::info!(">> Test: that input shows up in raw-logs");
 
     let _first_raw_log = raw_logs_scanner.get_listen_result().await??;
 
-    tracing::info!(">> Testing that `generator-dispatcher` consumes the raw-log and enqueues it in Plugin Work Queue");
+    tracing::info!(
+        ">> Test: `generator-dispatcher` consumes the raw-log and enqueues it in Plugin Work Queue"
+    );
     {
         let msg =
             scan_for_plugin_message_in_pwq(ctx.plugin_work_queue_psql_client.clone(), plugin_id)
@@ -119,15 +108,17 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     // After the Generator is done, the generator-execution-sidecar will tell
     // Plugin Work Queue to write to the "generated-graphs" topic.
     tracing::info!(">> Testing that the generator eventually writes to `generated-graphs`");
-    let first_graph = generated_graphs_scanner.get_listen_result().await??;
-    tracing::debug!(
-        message = "first_graph",
-        expected_tenant_id = ?tenant_id,
-        graph = ?first_graph,
-    );
+    let _first_graph = generated_graphs_scanner.get_listen_result().await??;
+    // PSA: ^ This likely is picking up output from `sysmon-generator-legacy`,
+    // there's no way to currently discriminate between the two paths.
 
-    tracing::info!(">> Testing that node-identifier can identify nodes of the generated graph");
+    tracing::info!(">> Test: node-identifier can identify nodes of the unidentified graph, then write to 'identified-graphs'");
     let _identified = node_identifier_scanner.get_listen_result().await??;
+
+    tracing::info!(">> Test: graph-merger wrote these identified nodes to our graph database, then write to 'merged-graphs'");
+    let _merged = graph_merger_scanner.get_listen_result().await??;
+
+    // TODO: Perhaps add a test here that looks in dgraph/scylla for those identified nodes
 
     Ok(())
 }
@@ -142,7 +133,7 @@ async fn common_setup(
     test_name: &str,
     tenant_id: Uuid,
 ) -> Result<SetupResult, Box<dyn std::error::Error>> {
-    tracing::info!(">> Settting up");
+    tracing::info!(">> Settting up Event Source, Plugin");
 
     // Register an Event Source
     let event_source = ctx

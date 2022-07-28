@@ -11,6 +11,7 @@ async-trait = "0.1"
 bytes = "1.1"
 clap = { version = "3.0", default_features = false, features = ["std", "env"] }
 futures = "0.3"
+grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 kafka = { path = "../kafka", features = ["test-utils"] }

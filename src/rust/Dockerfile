@@ -197,7 +197,7 @@ COPY --from=build /outputs/example-generator /test-fixtures
 COPY --from=build /outputs/sysmon-generator /test-fixtures
 # Named context support https://github.com/hadolint/hadolint/issues/830
 # hadolint ignore=DL3022
-COPY --from=etc-ctx sample_data/events6.xml /test-fixtures
+COPY --from=etc-ctx sample_data/36_eventlog.xml /test-fixtures
 
 COPY --from=build-test-integration /grapl/tests /tests
 # Named context support https://github.com/hadolint/hadolint/issues/830

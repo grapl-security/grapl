@@ -1414,6 +1414,7 @@ dependencies = [
  "bytes",
  "clap 3.2.13",
  "futures",
+ "grapl-config",
  "grapl-tracing",
  "grapl-utils",
  "kafka",

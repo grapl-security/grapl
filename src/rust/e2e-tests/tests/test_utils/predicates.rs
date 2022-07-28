@@ -1,45 +1,61 @@
 use rust_proto::graplinc::grapl::api::graph::v1beta1::{
     IdentifiedGraph,
-    IdentifiedNode,
     ImmutableUintProp,
-    Property,
+    MergedGraph,
 };
 
-fn find_node<'a>(
-    graph: &'a IdentifiedGraph,
-    o_p_name: &str,
-    o_p_value: Property,
-) -> Option<&'a IdentifiedNode> {
-    graph.nodes.values().find(|n| {
-        n.properties.iter().any(|(p_name, p_value)| {
-            p_name.as_str() == o_p_name && p_value.property.clone() == o_p_value
-        })
-    })
+use crate::test_utils::find_node::FindNode;
+
+/// Look for some nodes we'd expect to see from 36_eventlog.xml being node-identified
+pub fn events_36lines_node_identity_predicate(identified_graph: IdentifiedGraph) -> bool {
+    let parent_process =
+        identified_graph.find_node("process_id", ImmutableUintProp { prop: 6132 }.into());
+
+    let child_process =
+        identified_graph.find_node("process_id", ImmutableUintProp { prop: 5752 }.into());
+
+    tracing::debug!(identified_graph =?identified_graph);
+
+    match (parent_process, child_process) {
+        (Some(parent_process), Some(child_process)) => {
+            let parent_to_child_edge = identified_graph
+                .edges
+                .get(parent_process.get_node_key())
+                .iter()
+                .flat_map(|edge_list| edge_list.edges.iter())
+                .find(|edge| edge.to_node_key == child_process.get_node_key())
+                .expect("missing edge from parent to child");
+
+            parent_to_child_edge.edge_name == "children"
+        }
+        _ => false,
+    }
 }
 
-/// Look for some nodes we'd expect to see from events6 being node-identified
-pub fn events6_node_identity_predicate(identified_graph: &IdentifiedGraph) -> bool {
-    let parent_process = find_node(
-        identified_graph,
-        "process_id",
-        ImmutableUintProp { prop: 6132 }.into(),
-    )
-    .expect("parent process missing");
+pub fn events_36lines_merged_graph_predicate(merged_graph: MergedGraph) -> bool {
+    let parent_process =
+        merged_graph.find_node("process_id", ImmutableUintProp { prop: 6132 }.into());
 
-    let child_process = find_node(
-        identified_graph,
-        "process_id",
-        ImmutableUintProp { prop: 5752 }.into(),
-    )
-    .expect("child process missing");
+    let child_process =
+        merged_graph.find_node("process_id", ImmutableUintProp { prop: 5752 }.into());
 
-    let parent_to_child_edge = identified_graph
-        .edges
-        .get(parent_process.get_node_key())
-        .iter()
-        .flat_map(|edge_list| edge_list.edges.iter())
-        .find(|edge| edge.to_node_key == child_process.get_node_key())
-        .expect("missing edge from parent to child");
-
-    parent_to_child_edge.edge_name == "children"
+    // NOTE: here, unlike node-identifier, we expect the edge
+    // connecting the parent and child proceses to be *absent*
+    // in the message emitted to the merged-graphs topic. The
+    // reason for this is that downstream services (analyzers)
+    // don't operate on edges, just nodes. So the view of the
+    // graph diverges at the graph-merger--we now tell one story
+    // in our Kafka messages and a totally different story in
+    // Dgraph. This is confusing and we should fix it:
+    //
+    // https://app.zenhub.com/workspaces/grapl-6036cbd36bacff000ef314f2/issues/grapl-security/issue-tracker/950
+    match (parent_process, child_process) {
+        (Some(parent_process), Some(child_process)) => !merged_graph
+            .edges
+            .get(parent_process.get_node_key())
+            .iter()
+            .flat_map(|edge_list| edge_list.edges.iter())
+            .any(|edge| edge.to_node_key == child_process.get_node_key()),
+        _ => false,
+    }
 }
