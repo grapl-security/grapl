@@ -41,6 +41,7 @@ use rust_proto::{
     SerDe,
     SerDeError,
 };
+use secrecy::ExposeSecret;
 use thiserror::Error;
 
 //
@@ -63,7 +64,7 @@ pub enum ConfigurationError {
 fn configure(
     bootstrap_servers: String,
     sasl_username: String,
-    sasl_password: String,
+    sasl_password: secrecy::SecretString,
 ) -> ClientConfig {
     if bootstrap_servers.starts_with("SASL_SSL") {
         // running in aws w/ ccloud
@@ -74,7 +75,7 @@ fn configure(
             .set("security.protocol", "SASL_SSL")
             .set("sasl.mechanisms", "PLAIN")
             .set("sasl.username", sasl_username)
-            .set("sasl.password", sasl_password)
+            .set("sasl.password", sasl_password.expose_secret())
             .set("broker.address.ttl", "30000")
             .set("api.version.request", "true")
             .set("api.version.fallback.ms", "0")
@@ -96,7 +97,7 @@ fn configure(
 fn producer(
     bootstrap_servers: String,
     sasl_username: String,
-    sasl_password: String,
+    sasl_password: secrecy::SecretString,
 ) -> Result<FutureProducer, ConfigurationError> {
     configure(bootstrap_servers, sasl_username, sasl_password)
         .set("acks", "all")
@@ -232,7 +233,7 @@ impl<T: SerDe> RetryProducer<T> {
 fn consumer(
     bootstrap_servers: String,
     sasl_username: String,
-    sasl_password: String,
+    sasl_password: secrecy::SecretString,
     consumer_group_name: String,
 ) -> Result<StreamConsumer, ConfigurationError> {
     configure(bootstrap_servers, sasl_username, sasl_password)
