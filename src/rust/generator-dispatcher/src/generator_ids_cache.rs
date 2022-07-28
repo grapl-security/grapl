@@ -15,8 +15,9 @@ use moka::future::Cache;
 use rand::prelude::*;
 use rust_proto::{
     client_factory::{
-        build_grpc_client,
+        build_grpc_client_with_options,
         services::PluginRegistryClientConfig,
+        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::plugin_registry::v1beta1::{
         GetGeneratorsForEventSourceRequest,
@@ -25,7 +26,10 @@ use rust_proto::{
     },
     protocol::{
         service_client::ConnectError,
-        status::Code,
+        status::{
+            Code,
+            Status,
+        },
     },
 };
 use thiserror::Error;
@@ -98,7 +102,14 @@ impl GeneratorIdsCache {
 
         let client_config = PluginRegistryClientConfig::parse();
         let plugin_registry_client = Arc::new(tokio::sync::Mutex::new(
-            build_grpc_client(client_config).await?,
+            build_grpc_client_with_options(
+                client_config,
+                BuildGrpcClientOptions {
+                    perform_healthcheck: true,
+                    ..Default::default()
+                },
+            )
+            .await?,
         ));
 
         // The updater task is responsible for handling messages on the update
@@ -129,6 +140,17 @@ impl GeneratorIdsCache {
                                     drop(client_guard); // release the client lock
                                     response.plugin_ids
                                 },
+                                Err(PluginRegistryServiceClientError::ErrorStatus(Status{
+                                    code: Code::NotFound,
+                                    ..
+                                })) => {
+                                    drop(client_guard); // release the client lock
+                                    tracing::warn!(
+                                        message = "found no generators for event source",
+                                        event_source_id =% event_source_id,
+                                    );
+                                    vec![]
+                                },
                                 Err(e) => {
                                     // received an error response from the
                                     // plugin-registry service, so we'll retry
@@ -136,19 +158,10 @@ impl GeneratorIdsCache {
                                     // exponential backoff with jitter, capped
                                     // at 5s.
                                     drop(client_guard); // release the client lock
+
                                     let mut result: Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> = Err(e);
                                     let mut n = 0;
                                     while let Err(ref e) = result {
-                                        if let PluginRegistryServiceClientError::ErrorStatus(status) = e {
-                                            if let Code::NotFound = status.code() {
-                                                tracing::warn!(
-                                                    message = "found no generators for event source",
-                                                    event_source_id =% event_source_id,
-                                                );
-                                                break // don't retry NotFound
-                                            }
-                                        }
-
                                         n += 1;
                                         let millis = 2_u64.pow(n) + rand::thread_rng()
                                             .gen_range(0..2_u64.pow(n - 1));
@@ -186,10 +199,12 @@ impl GeneratorIdsCache {
                                 },
                             };
 
-                        generator_ids_cache.insert(
-                            event_source_id,
-                            generator_ids,
-                        ).await;
+                        if ! generator_ids.is_empty() {
+                            generator_ids_cache.insert(
+                                event_source_id,
+                                generator_ids,
+                            ).await;
+                        }
                     }
                 })
                 .await;
