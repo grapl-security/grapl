@@ -58,7 +58,6 @@ BUILD @christophermaier
 /src/rust/Cargo.lock @christophermaier
 /src/rust/Cargo.toml @christophermaier
 /src/rust/consul-connect/ @colin-grapl @wimax-grapl
-/src/rust/client-executor/ @colin-grapl
 /src/rust/derive-dynamic-node/ @colin-grapl
 /src/rust/endpoint-plugin/ @inickles-grapl
 /src/rust/event-source/ @wimax-grapl
