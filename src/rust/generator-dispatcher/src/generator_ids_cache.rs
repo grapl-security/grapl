@@ -135,7 +135,7 @@ impl GeneratorIdsCache {
                                     // indefinitely using a truncated binary
                                     // exponential backoff with jitter, capped
                                     // at 5s.
-                                    
+
                                     let mut result: Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> = Err(e);
                                     let mut n = 0;
                                     while let Err(ref e) = result {
