@@ -92,7 +92,7 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
 
     let generators_for_event_source_response = client
         .get_generators_for_event_source(GetGeneratorsForEventSourceRequest { event_source_id })
-        .await??;
+        .await?;
 
     assert_eq!(generators_for_event_source_response.plugin_ids.len(), 2);
     assert!(generators_for_event_source_response
