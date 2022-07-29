@@ -4,13 +4,13 @@ use std::{
         IntoIterator,
         Iterator,
     },
+    num::NonZeroUsize,
     pin::Pin,
     task::{
         Context,
         Poll,
     },
 };
-use std::num::NonZeroUsize;
 
 use action::Action;
 use pin_project::pin_project;
