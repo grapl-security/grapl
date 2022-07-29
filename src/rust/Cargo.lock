@@ -2336,6 +2336,7 @@ dependencies = [
  "futures",
  "rdkafka",
  "rust-proto",
+ "secrecy",
  "thiserror",
  "tokio",
  "tracing",
