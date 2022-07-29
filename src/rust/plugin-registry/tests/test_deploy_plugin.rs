@@ -39,7 +39,7 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
     let mut client = build_grpc_client_with_options(
         client_config,
         BuildGrpcClientOptions {
-            perform_healthcheck: true,
+            perform_healthcheck: false,
             ..Default::default()
         },
     )
@@ -85,7 +85,7 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
     let mut client = build_grpc_client_with_options(
         client_config,
         BuildGrpcClientOptions {
-            perform_healthcheck: true,
+            perform_healthcheck: false,
             ..Default::default()
         },
     )
@@ -170,7 +170,7 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn s
     let mut client = build_grpc_client_with_options(
         client_config,
         BuildGrpcClientOptions {
-            perform_healthcheck: true,
+            perform_healthcheck: false,
             ..Default::default()
         },
     )
