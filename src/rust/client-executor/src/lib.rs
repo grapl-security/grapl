@@ -11,6 +11,7 @@ use std::{
         Poll,
     },
 };
+use std::num::NonZeroUsize;
 
 use action::Action;
 use pin_project::pin_project;
@@ -289,7 +290,6 @@ impl ExecutorConfig {
 #[derive(Clone)]
 pub struct Executor {
     recloser: AsyncRecloser,
-    #[allow(dead_code)]
     timeout: Duration,
 }
 
