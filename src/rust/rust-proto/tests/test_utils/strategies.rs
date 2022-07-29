@@ -894,10 +894,11 @@ pub mod plugin_work_queue {
     prop_compose! {
         pub fn execution_jobs()(
             data in bytes(1024),
+            tenant_id in uuids(),
+            trace_id in uuids(),
+            event_source_id in uuids(),
         ) -> native::ExecutionJob {
-            native::ExecutionJob {
-                data,
-            }
+            native::ExecutionJob::new(data, tenant_id, trace_id, event_source_id)
         }
     }
 
@@ -906,12 +907,18 @@ pub mod plugin_work_queue {
             request_id in any::<i64>(),
             graph_description in proptest::option::of(graph::graph_descriptions()),
             plugin_id in uuids(),
+            tenant_id in uuids(),
+            trace_id in uuids(),
+            event_source_id in uuids(),
         ) -> native::AcknowledgeGeneratorRequest {
-            native::AcknowledgeGeneratorRequest {
+            native::AcknowledgeGeneratorRequest::new(
                 request_id,
                 graph_description,
                 plugin_id,
-            }
+                tenant_id,
+                trace_id,
+                event_source_id,
+            )
         }
     }
 
@@ -992,10 +999,10 @@ pub mod plugin_work_queue {
             execution_job in execution_jobs(),
             plugin_id in uuids(),
         ) -> native::PushExecuteAnalyzerRequest {
-            native::PushExecuteAnalyzerRequest {
+            native::PushExecuteAnalyzerRequest::new(
                 execution_job,
                 plugin_id,
-            }
+            )
         }
     }
 
@@ -1009,10 +1016,10 @@ pub mod plugin_work_queue {
             execution_job in execution_jobs(),
             plugin_id in uuids(),
         ) -> native::PushExecuteGeneratorRequest {
-            native::PushExecuteGeneratorRequest {
+            native::PushExecuteGeneratorRequest::new(
                 execution_job,
                 plugin_id,
-            }
+            )
         }
     }
 

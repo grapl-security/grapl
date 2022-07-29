@@ -206,6 +206,9 @@ async fn enqueue_plugin_work(
 ) -> Result<(), GeneratorDispatcherError> {
     let pool_size = generator_ids.len();
     let payload = envelope.inner_message().log_event().clone();
+    let tenant_id = envelope.tenant_id();
+    let trace_id = envelope.trace_id();
+    let event_source_id = envelope.event_source_id();
     futures::stream::iter(generator_ids)
         .map(|generator_id| Ok(generator_id))
         .try_for_each_concurrent(pool_size, move |generator_id| {
@@ -213,9 +216,8 @@ async fn enqueue_plugin_work(
             let mut plugin_work_queue_client = plugin_work_queue_client.clone();
 
             async move {
-                let execution_job = ExecutionJob {
-                    data: payload.clone(),
-                };
+                let execution_job =
+                    ExecutionJob::new(payload.clone(), tenant_id, trace_id, event_source_id);
 
                 tracing::debug!(
                     message = "enqueueing generator execution job",
@@ -224,10 +226,10 @@ async fn enqueue_plugin_work(
 
                 // TODO: retries, backpressure signalling, etc.
                 plugin_work_queue_client
-                    .push_execute_generator(PushExecuteGeneratorRequest {
+                    .push_execute_generator(PushExecuteGeneratorRequest::new(
                         execution_job,
-                        plugin_id: generator_id,
-                    })
+                        generator_id,
+                    ))
                     .await
                     .map(|_| ())
                     .map_err(|e| GeneratorDispatcherError::from(e))

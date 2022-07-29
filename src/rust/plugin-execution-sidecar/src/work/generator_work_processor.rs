@@ -12,6 +12,7 @@ use rust_proto::graplinc::grapl::api::{
         PluginWorkQueueServiceClient,
     },
 };
+use uuid::Uuid;
 
 use super::{
     plugin_work_processor::{
@@ -69,14 +70,20 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
         pwq_client: &mut PluginWorkQueueServiceClient,
         process_result: Result<Self::ProducedMessage, PluginWorkProcessorError>,
         request_id: RequestId,
+        tenant_id: Uuid,
+        trace_id: Uuid,
+        event_source_id: Uuid,
     ) -> Result<(), PluginWorkProcessorError> {
         let plugin_id = config.plugin_id;
         let graph_description = process_result.ok();
-        let ack_request = AcknowledgeGeneratorRequest {
-            plugin_id,
+        let ack_request = AcknowledgeGeneratorRequest::new(
             request_id,
             graph_description,
-        };
+            plugin_id,
+            tenant_id,
+            trace_id,
+            event_source_id,
+        );
         pwq_client.acknowledge_generator(ack_request).await?;
         Ok(())
     }
@@ -88,7 +95,9 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
     ) -> Result<Self::ProducedMessage, PluginWorkProcessorError> {
         let run_generator_response = self
             .generator_service_client
-            .run_generator(RunGeneratorRequest { data: job.data })
+            .run_generator(RunGeneratorRequest {
+                data: job.data().clone(),
+            })
             .await?;
 
         Ok(run_generator_response.generated_graph.graph_description)

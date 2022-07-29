@@ -9,6 +9,12 @@ import "graplinc/grapl/api/graph/v1beta1/types.proto";
 message ExecutionJob {
   // The data that the plugin will be executed against
   bytes data = 1;
+  // The tenant these data belong to
+  graplinc.common.v1beta1.Uuid tenant_id = 2;
+  // The logical operation these data are tied to
+  graplinc.common.v1beta1.Uuid trace_id = 3;
+  // The event source from which these data originated
+  graplinc.common.v1beta1.Uuid event_source_id = 4;
 }
 
 // A request to create a new ExecutionJob for a Generator
@@ -85,6 +91,12 @@ message AcknowledgeGeneratorRequest {
   optional graplinc.grapl.api.graph.v1beta1.GraphDescription graph_description = 2;
   // The plugin id of the plugin that completed the request
   graplinc.common.v1beta1.Uuid plugin_id = 3;
+  // The tenant the plugin belongs to
+  graplinc.common.v1beta1.Uuid tenant_id = 4;
+  // The logical operation this request is tied to
+  graplinc.common.v1beta1.Uuid trace_id = 5;
+  // The event source from which the graph description originated
+  graplinc.common.v1beta1.Uuid event_source_id = 6;
 }
 
 // A response to an AcknowledgeGeneratorResponse
