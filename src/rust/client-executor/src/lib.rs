@@ -11,7 +11,6 @@ use std::{
         Poll,
     },
 };
-use std::num::NonZeroUsize;
 
 use action::Action;
 use pin_project::pin_project;
