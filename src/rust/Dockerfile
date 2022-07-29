@@ -139,7 +139,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/integration_tests,graph-merger/integration_tests,node-identifier/integration_tests,pipeline-ingress/integration_tests,plugin-registry/integration_tests,sysmon-generator/integration_tests,organization-management/integration_tests,grapl-web-ui/integration_tests"
+ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/integration_tests,graph-merger/integration_tests,node-identifier/integration_tests,pipeline-ingress/integration_tests,plugin-registry/integration_tests,plugin-work-queue/integration_tests,sysmon-generator/integration_tests,organization-management/integration_tests,grapl-web-ui/integration_tests"
 ENV TEST_DIR=/grapl/tests
 
 # This will build the integration test binaries and parse the manifest to find

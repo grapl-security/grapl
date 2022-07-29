@@ -5,7 +5,7 @@ use kafka::config::ProducerConfig;
 mod kafka_produce;
 pub mod psql_queue;
 pub mod server;
-#[cfg(feature = "integration_tests")]
+#[cfg(feature = "test-utils")]
 pub mod test_utils;
 
 // Intentionally not clap::Parser, since ProducerConfigs are

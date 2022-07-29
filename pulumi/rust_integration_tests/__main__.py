@@ -65,13 +65,6 @@ def main() -> None:
         Credential.to_nomad_service_creds
     )
 
-    # This Google client ID is used by grapl-web-ui for authenticating users via Sign In With Google.
-    # This is an ID for a test app that is currently managed by inickles. Future maintainers can feel
-    # free to change this to value, it is intended only to be used for testing.
-    google_client_id = (
-        "340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com"
-    )
-
     rust_integration_tests_job_vars: NomadVars = {
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
@@ -85,7 +78,6 @@ def main() -> None:
         "plugin_work_queue_db": grapl_stack.plugin_work_queue_db,
         "user_auth_table": grapl_stack.user_auth_table,
         "user_session_table": grapl_stack.user_session_table,
-        "google_client_id": google_client_id,
     }
 
     rust_integration_tests = NomadJob(
