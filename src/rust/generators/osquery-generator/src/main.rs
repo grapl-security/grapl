@@ -1,9 +1,9 @@
 use grapl_tracing::setup_tracing;
 use rust_proto::graplinc::grapl::{
     api::graph::v1beta1::GraphDescription,
-    pipeline::{
-        v1beta1::RawLog,
-        v1beta2::Envelope,
+    pipeline::v1beta1::{
+        Envelope,
+        RawLog,
     },
 };
 use thiserror::Error;

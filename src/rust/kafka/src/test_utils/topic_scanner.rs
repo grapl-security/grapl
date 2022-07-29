@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use futures::StreamExt;
 use rust_proto::{
-    graplinc::grapl::pipeline::v1beta2::Envelope,
+    graplinc::grapl::pipeline::v1beta1::Envelope,
     SerDe,
 };
 use tokio::{
@@ -63,7 +63,7 @@ where
         KafkaTopicContainsError,
     > {
         let tenant_eq_predicate = move |envelope: &Envelope<T>| {
-            envelope.metadata.tenant_id == tenant_id && predicate(&envelope.inner_message)
+            envelope.tenant_id() == tenant_id && predicate(envelope.inner_message())
         };
         self.contains(tenant_eq_predicate).await
     }

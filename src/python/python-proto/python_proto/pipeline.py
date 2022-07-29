@@ -6,61 +6,20 @@ import uuid
 from typing import Generic, cast
 
 from google.protobuf.any_pb2 import Any as _Any
-from graplinc.grapl.pipeline.v1beta1.types_pb2 import Metadata as _Metadata
+from graplinc.grapl.pipeline.v1beta1.types_pb2 import Envelope as _Envelope
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import RawLog as _RawLog
-from graplinc.grapl.pipeline.v1beta2.types_pb2 import NewEnvelope as _Envelope
 from python_proto import I, SerDe, SerDeWithInner
 from python_proto.common import Timestamp, Uuid
 
 
 @dataclasses.dataclass(frozen=True)
-class Metadata(SerDe[_Metadata]):
+class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
     trace_id: uuid.UUID
     tenant_id: uuid.UUID
     event_source_id: uuid.UUID
+    retry_count: int
     created_time: datetime.datetime
     last_updated_time: datetime.datetime
-    proto_cls: type[_Metadata] = _Metadata
-
-    @staticmethod
-    def deserialize(bytes_: bytes) -> Metadata:
-        proto_metadata = _Metadata()
-        proto_metadata.ParseFromString(bytes_)
-        return Metadata.from_proto(proto_metadata=proto_metadata)
-
-    @staticmethod
-    def from_proto(proto_metadata: _Metadata) -> Metadata:
-        return Metadata(
-            trace_id=Uuid.from_proto(proto_metadata.trace_id).into_uuid(),
-            tenant_id=Uuid.from_proto(proto_metadata.tenant_id).into_uuid(),
-            event_source_id=Uuid.from_proto(proto_metadata.event_source_id).into_uuid(),
-            created_time=Timestamp.from_proto(
-                proto_metadata.created_time
-            ).into_datetime(),
-            last_updated_time=Timestamp.from_proto(
-                proto_metadata.last_updated_time
-            ).into_datetime(),
-        )
-
-    def into_proto(self) -> _Metadata:
-        proto_metadata = _Metadata()
-        proto_metadata.trace_id.CopyFrom(Uuid.from_uuid(self.trace_id).into_proto())
-        proto_metadata.tenant_id.CopyFrom(Uuid.from_uuid(self.tenant_id).into_proto())
-        proto_metadata.event_source_id.CopyFrom(
-            Uuid.from_uuid(self.event_source_id).into_proto()
-        )
-        proto_metadata.created_time.CopyFrom(
-            Timestamp.from_datetime(self.created_time).into_proto()
-        )
-        proto_metadata.last_updated_time.CopyFrom(
-            Timestamp.from_datetime(self.last_updated_time).into_proto()
-        )
-        return proto_metadata
-
-
-@dataclasses.dataclass(frozen=True)
-class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
-    metadata: Metadata
     inner_message: I
     proto_cls: type[_Envelope] = _Envelope
 
@@ -76,13 +35,33 @@ class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
         proto_envelope.inner_message.Unpack(inner_message_proto)
         inner_message = cast(I, inner_cls.from_proto(inner_message_proto))  # fuck it
         return Envelope(
-            metadata=Metadata.from_proto(proto_envelope.metadata),
+            trace_id=Uuid.from_proto(proto_envelope.trace_id).into_uuid(),
+            tenant_id=Uuid.from_proto(proto_envelope.tenant_id).into_uuid(),
+            event_source_id=Uuid.from_proto(proto_envelope.event_source_id).into_uuid(),
+            retry_count=proto_envelope.retry_count,
+            created_time=Timestamp.from_proto(
+                proto_envelope.created_time
+            ).into_datetime(),
+            last_updated_time=Timestamp.from_proto(
+                proto_envelope.last_updated_time
+            ).into_datetime(),
             inner_message=inner_message,
         )
 
     def into_proto(self) -> _Envelope:
         proto_envelope = _Envelope()
-        proto_envelope.metadata.CopyFrom(self.metadata.into_proto())
+        proto_envelope.trace_id.CopyFrom(Uuid.from_uuid(self.trace_id).into_proto())
+        proto_envelope.tenant_id.CopyFrom(Uuid.from_uuid(self.tenant_id).into_proto())
+        proto_envelope.event_source_id.CopyFrom(
+            Uuid.from_uuid(self.event_source_id).into_proto()
+        )
+        proto_envelope.retry_count = self.retry_count
+        proto_envelope.created_time.CopyFrom(
+            Timestamp.from_datetime(self.created_time).into_proto()
+        )
+        proto_envelope.last_updated_time.CopyFrom(
+            Timestamp.from_datetime(self.last_updated_time).into_proto()
+        )
         inner_message = _Any()
         inner_message.Pack(
             self.inner_message.into_proto(),

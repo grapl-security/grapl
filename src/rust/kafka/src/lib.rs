@@ -37,7 +37,7 @@ use rdkafka::{
     Message,
 };
 use rust_proto::{
-    graplinc::grapl::pipeline::v1beta2::Envelope,
+    graplinc::grapl::pipeline::v1beta1::Envelope,
     SerDe,
     SerDeError,
 };
@@ -221,7 +221,7 @@ impl<T: SerDe> RetryProducer<T> {
 
     #[tracing::instrument(err, skip(self))]
     pub async fn send(&self, mut msg: Envelope<T>) -> Result<(), ProducerError> {
-        msg.metadata.retry_count += 1;
+        msg.increment_retry_count();
         self.producer.send(msg).await
     }
 }

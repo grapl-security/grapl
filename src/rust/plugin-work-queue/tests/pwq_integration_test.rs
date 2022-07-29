@@ -26,28 +26,40 @@ async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error:
     .await?;
 
     // Send 2 jobs to Plugin Work Queue
+    let tenant_id = uuid::Uuid::new_v4();
+    let trace_id = uuid::Uuid::new_v4();
+    let event_source_id = uuid::Uuid::new_v4();
     let (plugin_id_1, plugin_id_2) = (uuid::Uuid::new_v4(), uuid::Uuid::new_v4());
 
-    let job_1 = PushExecuteGeneratorRequest {
-        execution_job: ExecutionJob {
-            data: "for plugin_id_1".into(),
-        },
-        plugin_id: plugin_id_1,
-    };
+    let job_1 = PushExecuteGeneratorRequest::new(
+        ExecutionJob::new(
+            "for plugin_id_1".into(),
+            tenant_id,
+            trace_id,
+            event_source_id,
+        ),
+        plugin_id_1,
+    );
 
-    let job_2 = PushExecuteGeneratorRequest {
-        execution_job: ExecutionJob {
-            data: "for plugin_id_2".into(),
-        },
-        plugin_id: plugin_id_2,
-    };
+    let job_2 = PushExecuteGeneratorRequest::new(
+        ExecutionJob::new(
+            "for plugin_id_2".into(),
+            tenant_id,
+            trace_id,
+            event_source_id,
+        ),
+        plugin_id_2,
+    );
 
-    let job_3 = PushExecuteGeneratorRequest {
-        execution_job: ExecutionJob {
-            data: "also for plugin_id_2".into(),
-        },
-        plugin_id: plugin_id_2,
-    };
+    let job_3 = PushExecuteGeneratorRequest::new(
+        ExecutionJob::new(
+            "also for plugin_id_2".into(),
+            tenant_id,
+            trace_id,
+            event_source_id,
+        ),
+        plugin_id_2,
+    );
 
     for request in [&job_1, &job_2, &job_3] {
         pwq_client.push_execute_generator(request.clone()).await?;
@@ -66,7 +78,7 @@ async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error:
 
     assert_eq!(
         retrieve_job_for_plugin_id_2.execution_job,
-        Some(job_2.execution_job)
+        Some(job_2.execution_job().clone())
     );
 
     // Fetch for plugin_id 1
@@ -78,7 +90,7 @@ async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error:
 
     assert_eq!(
         retrieve_job_for_plugin_id_1.execution_job,
-        Some(job_1.execution_job)
+        Some(job_1.execution_job().clone())
     );
 
     // Fetch for plugin_id 2 again, we should get Job 3
@@ -90,7 +102,7 @@ async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error:
 
     assert_eq!(
         retrieve_job_for_plugin_id_2.execution_job,
-        Some(job_3.execution_job)
+        Some(job_3.execution_job().clone())
     );
 
     // Fetch one more time, we should be out of work
