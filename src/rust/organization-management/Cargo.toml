@@ -38,7 +38,6 @@ clap = { version = "3.0", default_features = false, features = [
 ] }
 
 [dev-dependencies]
-rust-proto-clients = { path = "../rust-proto-clients" }
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
 
 [features]

@@ -42,4 +42,5 @@ futures = "0.3"
 tracing-subscriber = "0.3"
 
 [features]
+test-utils = []
 integration_tests = []

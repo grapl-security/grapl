@@ -1,8 +1,9 @@
-use rust_proto::graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::GeneratorServiceClient;
-
-use crate::grpc_client_config::{
-    GenericGrpcClientConfig,
-    GrpcClientConfig,
+use crate::{
+    client_factory::grpc_client_config::{
+        GenericGrpcClientConfig,
+        GrpcClientConfig,
+    },
+    graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::GeneratorServiceClient,
 };
 
 #[derive(clap::Parser, Debug)]

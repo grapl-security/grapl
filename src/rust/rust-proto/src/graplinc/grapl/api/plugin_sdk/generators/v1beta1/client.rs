@@ -11,7 +11,6 @@ use crate::{
         service_client::{
             ConnectError,
             Connectable,
-            NamedService,
         },
         status::Status,
     },
@@ -32,6 +31,9 @@ pub struct GeneratorServiceClient {
 }
 #[async_trait::async_trait]
 impl Connectable for GeneratorServiceClient {
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorService";
+
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
         Ok(GeneratorServiceClient {
@@ -53,9 +55,4 @@ impl GeneratorServiceClient {
         let response = native::RunGeneratorResponse::try_from(response.into_inner())?;
         Ok(response)
     }
-}
-
-impl NamedService for GeneratorServiceClient {
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorService";
 }

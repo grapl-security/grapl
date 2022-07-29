@@ -1,8 +1,9 @@
-use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryServiceClient;
-
-use crate::grpc_client_config::{
-    GenericGrpcClientConfig,
-    GrpcClientConfig,
+use crate::{
+    client_factory::grpc_client_config::{
+        GenericGrpcClientConfig,
+        GrpcClientConfig,
+    },
+    graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryServiceClient,
 };
 
 #[derive(clap::Parser, Debug)]

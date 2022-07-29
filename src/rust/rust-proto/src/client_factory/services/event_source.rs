@@ -1,8 +1,9 @@
-use rust_proto::graplinc::grapl::api::event_source::v1beta1::client::EventSourceServiceClient;
-
-use crate::grpc_client_config::{
-    GenericGrpcClientConfig,
-    GrpcClientConfig,
+use crate::{
+    client_factory::grpc_client_config::{
+        GenericGrpcClientConfig,
+        GrpcClientConfig,
+    },
+    graplinc::grapl::api::event_source::v1beta1::client::EventSourceServiceClient,
 };
 
 #[derive(clap::Parser, Debug)]

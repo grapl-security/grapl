@@ -7,7 +7,6 @@ use crate::protocol::{
     service_client::{
         ConnectError,
         Connectable,
-        NamedService,
     },
 };
 /// This module contains the gRPC client for the pipeline ingress API. We
@@ -38,6 +37,9 @@ pub struct PipelineIngressClient {
 
 #[async_trait::async_trait]
 impl Connectable for PipelineIngressClient {
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService";
+
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
         Ok(PipelineIngressClient {
@@ -61,9 +63,4 @@ impl PipelineIngressClient {
             )
             .await
     }
-}
-
-impl NamedService for PipelineIngressClient {
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService";
 }

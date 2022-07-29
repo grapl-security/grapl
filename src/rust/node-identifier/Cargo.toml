@@ -59,5 +59,4 @@ uuid = { version = "1.0", features = ["v4"] }
 async-trait = "0.1"
 kafka = { path = "../kafka", features = ["test-utils"] }
 rand = "0.8"
-rust-proto-clients = { path = "../rust-proto-clients" }
 test-context = "0.1"

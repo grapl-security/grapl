@@ -1,10 +1,12 @@
 use std::time::Duration;
 
 use clap::Parser;
-use rust_proto::graplinc::grapl::api::plugin_work_queue::v1beta1::PluginWorkQueueServiceClient;
-use rust_proto_clients::{
-    get_grpc_client,
-    services::PluginWorkQueueClientConfig,
+use rust_proto::{
+    client_factory::{
+        build_grpc_client,
+        services::PluginWorkQueueClientConfig,
+    },
+    graplinc::grapl::api::plugin_work_queue::v1beta1::PluginWorkQueueServiceClient,
 };
 
 use crate::{
@@ -30,7 +32,7 @@ where
         plugin_work_processor: P,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let client_config = PluginWorkQueueClientConfig::parse();
-        let plugin_work_queue_client = get_grpc_client(client_config).await?;
+        let plugin_work_queue_client = build_grpc_client(client_config).await?;
 
         Ok(Self {
             plugin_work_processor,
