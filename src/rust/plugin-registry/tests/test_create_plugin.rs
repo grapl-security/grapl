@@ -28,7 +28,7 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = build_grpc_client_with_options(
         client_config,
         BuildGrpcClientOptions {
-            perform_healthcheck: true,
+            perform_healthcheck: false,
             ..Default::default()
         },
     )

@@ -26,7 +26,7 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
     let mut client = build_grpc_client_with_options(
         client_config,
         BuildGrpcClientOptions {
-            perform_healthcheck: true,
+            perform_healthcheck: false,
             ..Default::default()
         },
     )
@@ -67,7 +67,6 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
             generator1_metadata,
             futures::stream::once(async move { create_generator1_chunk }),
         )
-        .timeout(std::time::Duration::from_secs(5))
         .await??;
     let generator1_plugin_id = create_generator1_response.plugin_id;
 
@@ -93,7 +92,6 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
 
     let generators_for_event_source_response = client
         .get_generators_for_event_source(GetGeneratorsForEventSourceRequest { event_source_id })
-        .timeout(std::time::Duration::from_secs(5))
         .await??;
 
     assert_eq!(generators_for_event_source_response.plugin_ids.len(), 2);
