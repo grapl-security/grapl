@@ -10,6 +10,7 @@ use std::{
         Poll,
     },
 };
+use std::num::NonZeroUsize;
 
 use action::Action;
 use pin_project::pin_project;
@@ -246,17 +247,15 @@ impl ExecutorConfig {
 
     /// How many calls will the circuit remain closed for before the failure
     /// rate is recalculated and the circuit may open
-    pub fn closed_len(mut self, closed_len: usize) -> Self {
-        assert_ne!(closed_len, 0, "closed_len must be non-zero");
-        self.builder = self.builder.closed_len(closed_len);
+    pub fn closed_len(mut self, closed_len: NonZeroUsize) -> Self {
+        self.builder = self.builder.closed_len(closed_len.get());
         self
     }
 
     /// How many calls will the circuit remain HalfOpen for before the failure
     /// rate is recalculated and the circuit may either open or close
-    pub fn half_open_len(mut self, half_open_len: usize) -> Self {
-        assert_ne!(half_open_len, 0, "half_open_len must be non-zero");
-        self.builder = self.builder.half_open_len(half_open_len);
+    pub fn half_open_len(mut self, half_open_len: NonZeroUsize) -> Self {
+        self.builder = self.builder.half_open_len(half_open_len.get());
         self
     }
 
@@ -290,7 +289,6 @@ impl ExecutorConfig {
 #[derive(Clone)]
 pub struct Executor {
     recloser: AsyncRecloser,
-    #[allow(dead_code)]
     timeout: Duration,
 }
 
@@ -383,7 +381,7 @@ mod tests {
     async fn test_circuit_open() -> Result<(), Box<dyn std::error::Error>> {
         let circuit_breaker = ExecutorConfig::new(Duration::from_secs(3))
             .threshold(0.5)
-            .closed_len(2)
+            .closed_len(NonZeroUsize::new(2).unwrap())
             .open_wait(Duration::from_secs(1));
         let executor = Executor::new(circuit_breaker);
 

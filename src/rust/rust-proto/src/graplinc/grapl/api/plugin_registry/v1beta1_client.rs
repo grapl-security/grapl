@@ -64,7 +64,7 @@ impl Connectable for PluginRegistryServiceClient {
 
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(10)));
+        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = executor
             .spawn(
                 client_executor::strategy::FibonacciBackoff::from_millis(10)
