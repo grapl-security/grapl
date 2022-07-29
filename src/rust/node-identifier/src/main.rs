@@ -76,6 +76,8 @@ async fn handler() -> Result<(), NodeIdentifierError> {
             async move {
                 let envelope = event?;
 
+                tracing::info!(message = "Incoming data", tenant_id =? envelope.metadata.tenant_id);
+
                 match identifier.handle_event(envelope.inner_message).await {
                     Ok(identified_graph) => Ok(Some(Envelope::new(
                         Metadata::create_from(envelope.metadata),

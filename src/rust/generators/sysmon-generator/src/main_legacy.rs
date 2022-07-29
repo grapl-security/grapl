@@ -90,6 +90,8 @@ async fn event_handler(
         envelope.inner_message.log_event.as_ref(),
     )?)?;
 
+    tracing::info!(message = "Incoming raw_log", tenant_id =? envelope.metadata.tenant_id);
+
     match models::generate_graph_from_event(&sysmon_event)? {
         Some(graph_description) => Ok(Some(Envelope::new(
             Metadata::create_from(envelope.metadata),

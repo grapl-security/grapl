@@ -93,6 +93,7 @@ async fn test_sysmon_event_produces_merged_graph(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
+    tracing::debug!(message = "Test metadata", tenant_id = ?tenant_id, event_source_id = ?event_source_id);
 
     let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
         .contains(move |envelope: &Envelope<MergedGraph>| -> bool {

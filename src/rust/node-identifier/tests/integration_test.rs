@@ -94,13 +94,14 @@ async fn test_sysmon_event_produces_identified_graph(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
+    tracing::debug!(message = "Test metadata", tenant_id = ?tenant_id, event_source_id = ?event_source_id);
 
     let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
         .contains(move |envelope: &Envelope<IdentifiedGraph>| -> bool {
             let metadata = &envelope.metadata;
             let identified_graph = &envelope.inner_message;
 
-            tracing::debug!(message = "consumed kafka message");
+            tracing::debug!(message = "consumed kafka message", tenant_id = ?metadata.tenant_id, event_source_id = ?metadata.event_source_id);
 
             if metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id {
                 let parent_process = find_node(

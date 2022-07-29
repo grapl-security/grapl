@@ -94,6 +94,7 @@ async fn handler(
             let graph_merger = graph_merger.clone();
             async move {
                 let envelope = event?;
+                tracing::info!(message = "Incoming data", tenant_id =? envelope.metadata.tenant_id);
                 match graph_merger
                     .lock()
                     .await

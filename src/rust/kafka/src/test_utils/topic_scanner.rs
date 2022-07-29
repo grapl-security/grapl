@@ -50,7 +50,7 @@ where
 {
     pub fn new(consumer_config: ConsumerConfig) -> Result<Self, ConfigurationError> {
         let consumer = Consumer::new(consumer_config)?;
-        let timeout = Duration::from_secs(30); // hardcoded for now, whatever
+        let timeout = Duration::from_secs(150); // hardcoded for now, whatever
         Ok(Self { consumer, timeout })
     }
 
