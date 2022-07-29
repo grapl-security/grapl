@@ -1,7 +1,4 @@
-use std::{
-    sync::Arc,
-    time::Duration,
-};
+use std::time::Duration;
 
 use clap::Parser;
 use futures::{
@@ -100,43 +97,32 @@ impl GeneratorIdsCache {
         let (updater_tx, updater_rx) = futures::channel::mpsc::channel(updater_queue_depth);
 
         let client_config = PluginRegistryClientConfig::parse();
-        let plugin_registry_client = Arc::new(tokio::sync::Mutex::new(
-            build_grpc_client(client_config).await?,
-        ));
+        let plugin_registry_client = build_grpc_client(client_config).await?;
 
         // The updater task is responsible for handling messages on the update
         // queue and querying the plugin-registry for updates corresponding to
         // each message.
         tokio::task::spawn(async move {
-            let plugin_registry_client = Arc::clone(&plugin_registry_client);
-            let generator_ids_cache = generator_ids_cache.clone();
-
             updater_rx.for_each_concurrent(
                 updater_pool_size,
-                move |event_source_id: Uuid| {
-                    let plugin_registry_client = Arc::clone(&plugin_registry_client);
+                |event_source_id: Uuid| {
                     let generator_ids_cache = generator_ids_cache.clone();
+                    let mut plugin_registry_client = plugin_registry_client.clone();
 
                     async move {
-                        let plugin_registry_client = Arc::clone(&plugin_registry_client);
-                        let mut client_guard = plugin_registry_client
-                            .lock()
-                            .await;
 
-                        let generator_ids = match client_guard
+                        let generator_ids = match plugin_registry_client
                             .get_generators_for_event_source(GetGeneratorsForEventSourceRequest {
                                 event_source_id
                             })
                             .await {
                                 Ok(response) => {
-                                    drop(client_guard); // release the client lock
                                     response.plugin_ids
                                 },
                                 Err(PluginRegistryServiceClientError::ErrorStatus(Status{
                                     code: Code::NotFound,
                                     ..
                                 })) => {
-                                    drop(client_guard); // release the client lock
                                     tracing::warn!(
                                         message = "found no generators for event source",
                                         event_source_id =% event_source_id,
@@ -149,7 +135,6 @@ impl GeneratorIdsCache {
                                     // indefinitely using a truncated binary
                                     // exponential backoff with jitter, capped
                                     // at 5s.
-                                    drop(client_guard); // release the client lock
 
                                     let mut result: Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> = Err(e);
                                     let mut n = 0;
@@ -171,18 +156,11 @@ impl GeneratorIdsCache {
 
                                         tokio::time::sleep(backoff).await;
 
-                                        // acquire client lock
-                                        let mut retry_client_guard = plugin_registry_client
-                                            .lock()
-                                            .await;
-
-                                        result = retry_client_guard
+                                        result = plugin_registry_client
                                             .get_generators_for_event_source(GetGeneratorsForEventSourceRequest {
                                                 event_source_id
                                             })
                                             .await;
-
-                                        drop(retry_client_guard); // release the client lock
                                     };
 
                                     result
