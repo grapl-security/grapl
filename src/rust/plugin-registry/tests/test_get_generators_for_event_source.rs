@@ -67,6 +67,7 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
             generator1_metadata,
             futures::stream::once(async move { create_generator1_chunk }),
         )
+        .timeout(std::time::Duration::from_secs(5))
         .await??;
     let generator1_plugin_id = create_generator1_response.plugin_id;
 
