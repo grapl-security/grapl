@@ -74,7 +74,7 @@ async fn handler() -> Result<(), NodeIdentifierError> {
                 let envelope = event?;
 
                 match identifier
-                    .handle_event(envelope.inner_message().clone())
+                    .handle_event(envelope.tenant_id(), envelope.inner_message().clone())
                     .await
                 {
                     Ok(identified_graph) => {
