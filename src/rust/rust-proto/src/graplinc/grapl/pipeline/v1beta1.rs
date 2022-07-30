@@ -53,22 +53,6 @@ where
         }
     }
 
-    pub fn create_from<U>(other: Envelope<U>, inner_message: T) -> Self
-    where
-        U: SerDe,
-    {
-        let now = SystemTime::now();
-        Envelope {
-            tenant_id: other.tenant_id,
-            trace_id: other.trace_id,
-            retry_count: 0,
-            created_time: now,
-            last_updated_time: now,
-            event_source_id: other.event_source_id,
-            inner_message,
-        }
-    }
-
     pub fn increment_retry_count(&mut self) {
         self.retry_count += 1;
         self.last_updated_time = SystemTime::now();
@@ -98,8 +82,8 @@ where
         self.event_source_id
     }
 
-    pub fn inner_message(&self) -> &T {
-        &self.inner_message
+    pub fn inner_message(self) -> T {
+        self.inner_message
     }
 }
 
@@ -196,8 +180,8 @@ impl RawLog {
         RawLog { log_event }
     }
 
-    pub fn log_event(&self) -> &Bytes {
-        &self.log_event
+    pub fn log_event(self) -> Bytes {
+        self.log_event
     }
 }
 

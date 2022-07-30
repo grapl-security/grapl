@@ -78,7 +78,7 @@ async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error:
 
     assert_eq!(
         retrieve_job_for_plugin_id_2.execution_job,
-        Some(job_2.execution_job().clone())
+        Some(job_2.execution_job())
     );
 
     // Fetch for plugin_id 1
@@ -90,7 +90,7 @@ async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error:
 
     assert_eq!(
         retrieve_job_for_plugin_id_1.execution_job,
-        Some(job_1.execution_job().clone())
+        Some(job_1.execution_job())
     );
 
     // Fetch for plugin_id 2 again, we should get Job 3
@@ -102,7 +102,7 @@ async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error:
 
     assert_eq!(
         retrieve_job_for_plugin_id_2.execution_job,
-        Some(job_3.execution_job().clone())
+        Some(job_3.execution_job())
     );
 
     // Fetch one more time, we should be out of work

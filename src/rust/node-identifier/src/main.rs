@@ -72,14 +72,18 @@ async fn handler() -> Result<(), NodeIdentifierError> {
             let identifier = node_identifier.clone();
             async move {
                 let envelope = event?;
+                let tenant_id = envelope.tenant_id();
+                let trace_id = envelope.trace_id();
+                let event_source_id = envelope.event_source_id();
+                let graph_description = envelope.inner_message();
 
-                match identifier
-                    .handle_event(envelope.inner_message().clone())
-                    .await
-                {
-                    Ok(identified_graph) => {
-                        Ok(Some(Envelope::create_from(envelope, identified_graph)))
-                    }
+                match identifier.handle_event(graph_description).await {
+                    Ok(identified_graph) => Ok(Some(Envelope::new(
+                        tenant_id,
+                        trace_id,
+                        event_source_id,
+                        identified_graph,
+                    ))),
                     Err(e) => match e {
                         Ok((_, e)) => {
                             match e {
