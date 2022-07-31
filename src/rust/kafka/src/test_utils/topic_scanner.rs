@@ -1,4 +1,7 @@
-use std::time::Duration;
+use std::{
+    sync::Mutex,
+    time::Duration,
+};
 
 use futures::StreamExt;
 use rust_proto::{
@@ -87,12 +90,15 @@ where
         let kafka_subscriber = tokio::task::spawn(async move {
             let stream = Box::pin(self.consumer.stream());
 
-            // notify the consumer that we're ready to receive messages
-            tx.send(())
-                .expect("failed to notify sender that consumer is consuming");
-
+            let tx_mutex = Mutex::new(Some(tx));
             let mut filtered_stream = Box::pin(stream.filter_map(
                 move |res: Result<Envelope<T>, ConsumerError>| {
+                    if let Some(tx) = tx_mutex.lock().expect("failed to acquire tx lock").take() {
+                        // notify the consumer that we're ready to receive messages
+                        tx.send(())
+                            .expect("failed to notify sender that consumer is consuming");
+                    }
+
                     let predicate = predicate.clone();
                     async move {
                         let envelope = res.expect("error consuming message from kafka");
