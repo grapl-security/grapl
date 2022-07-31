@@ -57,20 +57,22 @@ where
     pub async fn contains_for_tenant(
         self,
         tenant_id: uuid::Uuid,
-        mut predicate: impl FnMut(&T) -> bool + Send + Sync + 'static,
+        mut predicate: impl FnMut(T) -> bool + Send + Sync + 'static,
     ) -> Result<
         ScanReadyToGetResult<Result<Envelope<T>, KafkaTopicContainsError>>,
         KafkaTopicContainsError,
     > {
-        let tenant_eq_predicate = move |envelope: &Envelope<T>| {
-            envelope.tenant_id() == tenant_id && predicate(envelope.inner_message())
+        let tenant_eq_predicate = move |envelope: Envelope<T>| {
+            let envelope_tenant_id = envelope.tenant_id();
+            let inner_message = envelope.inner_message();
+            envelope_tenant_id == tenant_id && predicate(inner_message)
         };
         self.contains(tenant_eq_predicate).await
     }
 
     pub async fn contains(
         self,
-        predicate: impl FnMut(&Envelope<T>) -> bool + Send + Sync + 'static,
+        predicate: impl FnMut(Envelope<T>) -> bool + Send + Sync + 'static,
     ) -> Result<
         ScanReadyToGetResult<Result<Envelope<T>, KafkaTopicContainsError>>,
         KafkaTopicContainsError,
@@ -94,8 +96,8 @@ where
                     let predicate = predicate.clone();
                     async move {
                         let envelope = res.expect("error consuming message from kafka");
-                        match predicate.clone().lock().expect("locking")(&envelope) {
-                            true => Some(envelope.clone()),
+                        match predicate.clone().lock().expect("locking")(envelope.clone()) {
+                            true => Some(envelope),
                             false => None,
                         }
                     }

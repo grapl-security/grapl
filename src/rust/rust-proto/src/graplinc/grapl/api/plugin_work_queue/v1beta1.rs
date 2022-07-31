@@ -45,8 +45,8 @@ impl ExecutionJob {
         }
     }
 
-    pub fn data(&self) -> &Bytes {
-        &self.data
+    pub fn data(self) -> Bytes {
+        self.data
     }
 
     pub fn tenant_id(&self) -> Uuid {
@@ -148,8 +148,8 @@ impl AcknowledgeGeneratorRequest {
         self.request_id
     }
 
-    pub fn graph_description(&self) -> &Option<GraphDescription> {
-        &self.graph_description
+    pub fn graph_description(self) -> Option<GraphDescription> {
+        self.graph_description
     }
 
     pub fn plugin_id(&self) -> Uuid {
@@ -489,8 +489,8 @@ impl PushExecuteAnalyzerRequest {
         }
     }
 
-    pub fn execution_job(&self) -> &ExecutionJob {
-        &self.execution_job
+    pub fn execution_job(self) -> ExecutionJob {
+        self.execution_job
     }
 
     pub fn plugin_id(&self) -> Uuid {
@@ -577,8 +577,8 @@ impl PushExecuteGeneratorRequest {
         }
     }
 
-    pub fn execution_job(&self) -> &ExecutionJob {
-        &self.execution_job
+    pub fn execution_job(self) -> ExecutionJob {
+        self.execution_job
     }
 
     pub fn plugin_id(&self) -> Uuid {

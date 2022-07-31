@@ -97,7 +97,7 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let tenant_id = execution_job.tenant_id();
         let trace_id = execution_job.trace_id();
         let event_source_id = execution_job.event_source_id();
-        let data = execution_job.data().clone();
+        let data = execution_job.data();
 
         self.queue
             .put_generator_message(plugin_id, tenant_id, trace_id, event_source_id, data)
@@ -116,7 +116,7 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let tenant_id = execution_job.tenant_id();
         let trace_id = execution_job.trace_id();
         let event_source_id = execution_job.event_source_id();
-        let data = execution_job.data().clone();
+        let data = execution_job.data();
 
         self.queue
             .put_analyzer_message(plugin_id, tenant_id, trace_id, event_source_id, data)
@@ -184,23 +184,28 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         &self,
         request: v1beta1::AcknowledgeGeneratorRequest,
     ) -> Result<v1beta1::AcknowledgeGeneratorResponse, PluginWorkQueueError> {
+        let tenant_id = request.tenant_id();
+        let trace_id = request.trace_id();
+        let event_source_id = request.event_source_id();
+        let request_id = request.request_id();
+
         let status = match request.graph_description() {
             Some(graph_description) => {
                 self.generator_producer
                     .send(Envelope::new(
-                        request.tenant_id(),
-                        request.trace_id(),
-                        request.event_source_id(),
-                        graph_description.clone(),
+                        tenant_id,
+                        trace_id,
+                        event_source_id,
+                        graph_description,
                     ))
                     .await?;
                 psql_queue::Status::Processed
             }
             None => psql_queue::Status::Failed,
         };
-        self.queue
-            .ack_generator(request.request_id().into(), status)
-            .await?;
+
+        self.queue.ack_generator(request_id.into(), status).await?;
+
         Ok(v1beta1::AcknowledgeGeneratorResponse {})
     }
 

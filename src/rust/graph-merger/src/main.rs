@@ -91,13 +91,21 @@ async fn handler(
             let graph_merger = graph_merger.clone();
             async move {
                 let envelope = event?;
+                let tenant_id = envelope.tenant_id();
+                let trace_id = envelope.trace_id();
+                let event_source_id = envelope.event_source_id();
                 match graph_merger
                     .lock()
                     .await
-                    .handle_event(envelope.inner_message().clone())
+                    .handle_event(envelope.inner_message())
                     .await
                 {
-                    Ok(merged_graph) => Ok(Some(Envelope::create_from(envelope, merged_graph))),
+                    Ok(merged_graph) => Ok(Some(Envelope::new(
+                        tenant_id,
+                        trace_id,
+                        event_source_id,
+                        merged_graph,
+                    ))),
                     Err(e) => match e {
                         Ok((_, e)) => {
                             match e {

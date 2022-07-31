@@ -205,10 +205,10 @@ async fn enqueue_plugin_work(
     envelope: Envelope<RawLog>,
 ) -> Result<(), GeneratorDispatcherError> {
     let pool_size = generator_ids.len();
-    let payload = envelope.inner_message().log_event().clone();
     let tenant_id = envelope.tenant_id();
     let trace_id = envelope.trace_id();
     let event_source_id = envelope.event_source_id();
+    let payload = envelope.inner_message().log_event();
     futures::stream::iter(generator_ids)
         .map(|generator_id| Ok(generator_id))
         .try_for_each_concurrent(pool_size, move |generator_id| {
