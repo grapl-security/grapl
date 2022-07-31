@@ -77,7 +77,7 @@ async fn handler() -> Result<(), NodeIdentifierError> {
                 let event_source_id = envelope.event_source_id();
                 let graph_description = envelope.inner_message();
 
-                match identifier.handle_event(graph_description).await {
+                match identifier.handle_event(tenant_id, graph_description).await {
                     Ok(identified_graph) => Ok(Some(Envelope::new(
                         tenant_id,
                         trace_id,

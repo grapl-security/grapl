@@ -63,6 +63,7 @@ where
     #[tracing::instrument(skip(self, node, strategy), err)]
     async fn primary_session_key(
         &self,
+        tenant_id: uuid::Uuid,
         node: &mut NodeDescription,
         strategy: &Session,
     ) -> Result<String, Error> {
@@ -95,6 +96,7 @@ where
     #[tracing::instrument(skip(self, node, strategy), err)]
     fn get_static_node_key(
         &self,
+        tenant_id: uuid::Uuid,
         node: &NodeDescription,
         strategy: &Static,
     ) -> Result<String, Error> {
@@ -122,13 +124,14 @@ where
     #[tracing::instrument(skip(self, strategy), err)]
     pub(crate) async fn attribute_dynamic_session(
         &self,
+        tenant_id: uuid::Uuid,
         node: NodeDescription,
         strategy: &Session,
     ) -> Result<NodeDescription, Error> {
         let mut attributed_node = node.clone();
 
         let primary_key = self
-            .primary_session_key(&mut attributed_node, strategy)
+            .primary_session_key(tenant_id, &mut attributed_node, strategy)
             .await?;
 
         let created_time = strategy.create_time;
@@ -165,10 +168,11 @@ where
     #[tracing::instrument(skip(self, node, strategy), err)]
     pub(crate) async fn attribute_static_mapping(
         &self,
+        tenant_id: uuid::Uuid,
         mut node: NodeDescription,
         strategy: &Static,
     ) -> Result<NodeDescription, Error> {
-        let static_node_key = self.get_static_node_key(&node, strategy)?;
+        let static_node_key = self.get_static_node_key(tenant_id, &node, strategy)?;
         node.set_key(static_node_key);
 
         Ok(node)
@@ -177,6 +181,7 @@ where
     #[tracing::instrument(skip(self, node), err)]
     pub(crate) async fn attribute_dynamic_node(
         &self,
+        tenant_id: uuid::Uuid,
         node: &NodeDescription,
     ) -> Result<NodeDescription, Error> {
         let mut attributed_node = node.clone();
@@ -186,13 +191,13 @@ where
             Strategy::Session(ref strategy) => {
                 tracing::info!("Attributing dynamic node via session");
                 attributed_node = self
-                    .attribute_dynamic_session(attributed_node, strategy)
+                    .attribute_dynamic_session(tenant_id, attributed_node, strategy)
                     .await?;
             }
             Strategy::Static(ref strategy) => {
                 tracing::info!("Attributing dynamic node via static mapping");
                 attributed_node = self
-                    .attribute_static_mapping(attributed_node, strategy)
+                    .attribute_static_mapping(tenant_id, attributed_node, strategy)
                     .await?;
             }
         }
@@ -203,6 +208,7 @@ where
     #[tracing::instrument(skip(self, unid_graph, _unid_id_map))]
     pub(crate) async fn attribute_dynamic_nodes(
         &self,
+        tenant_id: uuid::Uuid,
         unid_graph: GraphDescription,
         _unid_id_map: &mut HashMap<String, String>,
     ) -> Result<GraphDescription, GraphDescription> {
@@ -214,7 +220,7 @@ where
         for node in unid_graph.nodes.values() {
             let span = tracing::trace_span!("dynamic attribution loop", node_key=?node.node_key);
             let _enter = span.enter();
-            let new_node = match self.attribute_dynamic_node(node).await {
+            let new_node = match self.attribute_dynamic_node(tenant_id, node).await {
                 Ok(node) => node,
                 Err(e) => {
                     tracing::warn!(message="Failed to attribute dynamic node", error=?e);
