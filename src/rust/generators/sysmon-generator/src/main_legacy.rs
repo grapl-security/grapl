@@ -83,12 +83,20 @@ async fn event_handler(
     event: Result<Envelope<RawLog>, StreamProcessorError>,
 ) -> Result<Option<Envelope<GraphDescription>>, SysmonGeneratorError> {
     let envelope = event?;
-    let sysmon_event = SysmonEvent::from_str(std::str::from_utf8(
-        envelope.inner_message().log_event().as_ref(),
-    )?)?;
+    let tenant_id = envelope.tenant_id();
+    let trace_id = envelope.trace_id();
+    let event_source_id = envelope.event_source_id();
+    let raw_log = envelope.inner_message().log_event();
+
+    let sysmon_event = SysmonEvent::from_str(std::str::from_utf8(raw_log.as_ref())?)?;
 
     match models::generate_graph_from_event(&sysmon_event)? {
-        Some(graph_description) => Ok(Some(Envelope::create_from(envelope, graph_description))),
+        Some(graph_description) => Ok(Some(Envelope::new(
+            tenant_id,
+            trace_id,
+            event_source_id,
+            graph_description,
+        ))),
         None => Ok(None),
     }
 }

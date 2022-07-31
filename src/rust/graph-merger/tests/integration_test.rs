@@ -95,18 +95,20 @@ async fn test_sysmon_event_produces_merged_graph(
     let tenant_id = Uuid::new_v4();
 
     let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
-        .contains(move |envelope: &Envelope<MergedGraph>| -> bool {
+        .contains(move |envelope: Envelope<MergedGraph>| -> bool {
+            let envelope_tenant_id = envelope.tenant_id();
+            let envelope_event_source_id = envelope.event_source_id();
             let merged_graph = envelope.inner_message();
-            if envelope.tenant_id() == tenant_id && envelope.event_source_id() == event_source_id {
+            if envelope_tenant_id == tenant_id && envelope_event_source_id == event_source_id {
                 let parent_process = find_node(
-                    merged_graph,
+                    &merged_graph,
                     "process_id",
                     ImmutableUintProp { prop: 6132 }.into(),
                 )
                 .expect("parent process missing");
 
                 let child_process = find_node(
-                    merged_graph,
+                    &merged_graph,
                     "process_id",
                     ImmutableUintProp { prop: 5752 }.into(),
                 )

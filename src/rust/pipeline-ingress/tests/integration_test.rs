@@ -77,15 +77,17 @@ async fn test_publish_raw_log_sends_message_to_kafka(
     let log_event: Bytes = "test".into();
 
     let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
-        .contains(move |envelope: &Envelope<RawLog>| -> bool {
+        .contains(move |envelope: Envelope<RawLog>| -> bool {
+            let envelope_tenant_id = envelope.tenant_id();
+            let envelope_event_source_id = envelope.event_source_id();
             let raw_log = envelope.inner_message();
             let expected_log_event: Bytes = "test".into();
 
             tracing::debug!(message = "consumed kafka message");
 
-            envelope.tenant_id() == tenant_id
-                && envelope.event_source_id() == event_source_id
-                && raw_log.log_event() == &expected_log_event
+            envelope_tenant_id == tenant_id
+                && envelope_event_source_id == event_source_id
+                && raw_log.log_event() == expected_log_event
         })
         .await?;
 
