@@ -16,7 +16,7 @@ use rust_proto::{
                 },
             },
         },
-        pipeline::v1beta2::Envelope,
+        pipeline::v1beta1::Envelope,
     },
     protocol::{
         healthcheck::HealthcheckStatus,
@@ -27,7 +27,6 @@ use rust_proto::{
 use tokio::net::TcpListener;
 
 use crate::{
-    kafka_produce,
     psql_queue::{
         self,
         PsqlQueue,
@@ -93,10 +92,16 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         &self,
         request: v1beta1::PushExecuteGeneratorRequest,
     ) -> Result<v1beta1::PushExecuteGeneratorResponse, PluginWorkQueueError> {
-        let plugin_id = request.plugin_id;
-        let data = request.execution_job.data;
+        let plugin_id = request.plugin_id();
+        let execution_job = request.execution_job();
+        let tenant_id = execution_job.tenant_id();
+        let trace_id = execution_job.trace_id();
+        let event_source_id = execution_job.event_source_id();
+        let data = execution_job.data();
 
-        self.queue.put_generator_message(plugin_id, data).await?;
+        self.queue
+            .put_generator_message(plugin_id, tenant_id, trace_id, event_source_id, data)
+            .await?;
 
         Ok(v1beta1::PushExecuteGeneratorResponse {})
     }
@@ -106,10 +111,16 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         &self,
         request: v1beta1::PushExecuteAnalyzerRequest,
     ) -> Result<v1beta1::PushExecuteAnalyzerResponse, PluginWorkQueueError> {
-        let plugin_id = request.plugin_id;
-        let data = request.execution_job.data;
+        let plugin_id = request.plugin_id();
+        let execution_job = request.execution_job();
+        let tenant_id = execution_job.tenant_id();
+        let trace_id = execution_job.trace_id();
+        let event_source_id = execution_job.event_source_id();
+        let data = execution_job.data();
 
-        self.queue.put_analyzer_message(plugin_id, data).await?;
+        self.queue
+            .put_analyzer_message(plugin_id, tenant_id, trace_id, event_source_id, data)
+            .await?;
 
         Ok(v1beta1::PushExecuteAnalyzerResponse {})
     }
@@ -129,9 +140,12 @@ impl PluginWorkQueueApi for PluginWorkQueue {
                 })
             }
         };
-        let execution_job = v1beta1::ExecutionJob {
-            data: message.request.pipeline_message.into(),
-        };
+        let execution_job = v1beta1::ExecutionJob::new(
+            message.request.pipeline_message.into(),
+            message.request.tenant_id,
+            message.request.trace_id,
+            message.request.event_source_id,
+        );
         Ok(v1beta1::GetExecuteGeneratorResponse {
             execution_job: Some(execution_job),
             request_id: message.request.execution_key.into(),
@@ -153,9 +167,12 @@ impl PluginWorkQueueApi for PluginWorkQueue {
                 })
             }
         };
-        let execution_job = v1beta1::ExecutionJob {
-            data: message.request.pipeline_message.into(),
-        };
+        let execution_job = v1beta1::ExecutionJob::new(
+            message.request.pipeline_message.into(),
+            message.request.tenant_id,
+            message.request.trace_id,
+            message.request.event_source_id,
+        );
         Ok(v1beta1::GetExecuteAnalyzerResponse {
             execution_job: Some(execution_job),
             request_id: message.request.execution_key.into(),
@@ -167,10 +184,18 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         &self,
         request: v1beta1::AcknowledgeGeneratorRequest,
     ) -> Result<v1beta1::AcknowledgeGeneratorResponse, PluginWorkQueueError> {
-        let status = match request.graph_description {
+        let tenant_id = request.tenant_id();
+        let trace_id = request.trace_id();
+        let event_source_id = request.event_source_id();
+        let request_id = request.request_id();
+
+        let status = match request.graph_description() {
             Some(graph_description) => {
                 self.generator_producer
-                    .send(kafka_produce::generator_produce_graph_description(
+                    .send(Envelope::new(
+                        tenant_id,
+                        trace_id,
+                        event_source_id,
                         graph_description,
                     ))
                     .await?;
@@ -178,9 +203,9 @@ impl PluginWorkQueueApi for PluginWorkQueue {
             }
             None => psql_queue::Status::Failed,
         };
-        self.queue
-            .ack_generator(request.request_id.into(), status)
-            .await?;
+
+        self.queue.ack_generator(request_id.into(), status).await?;
+
         Ok(v1beta1::AcknowledgeGeneratorResponse {})
     }
 

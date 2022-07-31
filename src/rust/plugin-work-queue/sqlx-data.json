@@ -1,18 +1,5 @@
 {
   "db": "PostgreSQL",
-  "15cb09f289ce778e324981fd4ab60a70b3f09093323b82b91bd1d9b0bb7573b0": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Bytea"
-        ]
-      }
-    },
-    "query": "\n            INSERT INTO plugin_work_queue.analyzer_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                current_status,\n                try_count\n            )\n            VALUES( $1::UUID, $2, 'enqueued', -1 )\n        "
-  },
   "34822afa8bef4e4faf115130b855398f9e7396d74bd4a0ed476c6dd5c9128f9b": {
     "describe": {
       "columns": [],
@@ -37,7 +24,7 @@
     },
     "query": "\n                UPDATE plugin_work_queue.generator_plugin_executions\n                SET current_status = $2,\n                    last_updated = CASE\n                        WHEN current_status != 'processed'\n                            THEN CURRENT_TIMESTAMP\n                            ELSE last_updated\n                        END\n                WHERE execution_key = $1\n            "
   },
-  "3c95c207ed5ac7a0256bc060a7124afe227d863ef93dd7ae372e0c47797ce773": {
+  "4c8f08166bb802f5d99794700fa8af0bfaa33d7c5425f55f09f882b1b2e13862": {
     "describe": {
       "columns": [
         {
@@ -54,9 +41,27 @@
           "name": "pipeline_message",
           "ordinal": 2,
           "type_info": "Bytea"
+        },
+        {
+          "name": "tenant_id",
+          "ordinal": 3,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "trace_id",
+          "ordinal": 4,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "event_source_id",
+          "ordinal": 5,
+          "type_info": "Uuid"
         }
       ],
       "nullable": [
+        false,
+        false,
+        false,
         false,
         false,
         false
@@ -67,22 +72,91 @@
         ]
       }
     },
-    "query": "\n            SELECT\n                 execution_key AS \"execution_key!: ExecutionId\",\n                 plugin_id,\n                 pipeline_message\n            FROM plugin_work_queue.generator_plugin_executions\n            WHERE plugin_id = $1\n            "
+    "query": "\n            SELECT\n                 execution_key AS \"execution_key!: ExecutionId\",\n                 plugin_id,\n                 pipeline_message,\n                 tenant_id,\n                 trace_id,\n                 event_source_id\n            FROM plugin_work_queue.generator_plugin_executions\n            WHERE plugin_id = $1\n            "
   },
-  "888c5540b208b55ecc033e544783180c660ed31c8bdc89e95ef75b58324cc024": {
+  "7a3eff0f2833d5c44e592b83e62da1ef1f5e2f3aaa7f155e8223a00115e3fd40": {
+    "describe": {
+      "columns": [
+        {
+          "name": "execution_key!: ExecutionId",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "plugin_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "pipeline_message",
+          "ordinal": 2,
+          "type_info": "Bytea"
+        },
+        {
+          "name": "tenant_id",
+          "ordinal": 3,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "trace_id",
+          "ordinal": 4,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "event_source_id",
+          "ordinal": 5,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            UPDATE plugin_work_queue.analyzer_plugin_executions\n            SET\n                try_count  = plugin_work_queue.analyzer_plugin_executions.try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                 SELECT\n                     execution_key,\n                     plugin_id,\n                     pipeline_message,\n                     tenant_id,\n                     trace_id,\n                     event_source_id,\n                     current_status,\n                     creation_time,\n                     visible_after\n                 FROM plugin_work_queue.analyzer_plugin_executions\n                 WHERE plugin_id = $1\n                   AND current_status = 'enqueued'\n                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                   AND visible_after <= CURRENT_TIMESTAMP\n                 ORDER BY creation_time ASC\n                 FOR UPDATE SKIP LOCKED\n                 LIMIT 1\n             ) AS next_execution\n             WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key\n             RETURNING\n                 next_execution.execution_key AS \"execution_key!: ExecutionId\",\n                 next_execution.plugin_id,\n                 next_execution.pipeline_message,\n                 next_execution.tenant_id,\n                 next_execution.trace_id,\n                 next_execution.event_source_id\n        "
+  },
+  "c11895f595c9ba8344179cc5fd5b883b92e2bde70763e3330a62bbade15863a3": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
           "Uuid",
-          "Bytea"
+          "Bytea",
+          "Uuid",
+          "Uuid",
+          "Uuid"
         ]
       }
     },
-    "query": "\n            INSERT INTO plugin_work_queue.generator_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                current_status,\n                try_count\n            )\n            VALUES( $1::UUID, $2, 'enqueued', -1 )\n        "
+    "query": "\n            INSERT INTO plugin_work_queue.generator_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                tenant_id,\n                trace_id,\n                event_source_id,\n                current_status,\n                try_count\n            )\n            VALUES( $1::UUID, $2, $3::UUID, $4::UUID, $5::UUID, 'enqueued', -1 )\n        "
   },
-  "a2508aa8ed53d397b15a9ff0af03839dbc93d2cec750f282b7087bd9d6aa5587": {
+  "d1ffbb16599a1f323e55ce9fc9152438a255aebddae00e14732917b2d18559c4": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Bytea",
+          "Uuid",
+          "Uuid",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO plugin_work_queue.analyzer_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                tenant_id,\n                trace_id,\n                event_source_id,\n                current_status,\n                try_count\n            )\n            VALUES( $1::UUID, $2, $3::UUID, $4::UUID, $5::UUID, 'enqueued', -1 )\n        "
+  },
+  "ddd9fb538d1d30d1d330eff378a7755afda7bf5422b1829adc765f7b637a4033": {
     "describe": {
       "columns": [
         {
@@ -99,41 +173,27 @@
           "name": "pipeline_message",
           "ordinal": 2,
           "type_info": "Bytea"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n            UPDATE plugin_work_queue.analyzer_plugin_executions\n            SET\n                try_count  = plugin_work_queue.analyzer_plugin_executions.try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after\n                FROM plugin_work_queue.analyzer_plugin_executions\n                WHERE \n                    plugin_id = $1\n                    AND current_status = 'enqueued'\n                    AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                    AND visible_after <= CURRENT_TIMESTAMP\n                ORDER BY creation_time ASC\n                FOR UPDATE SKIP LOCKED\n                LIMIT 1\n            ) AS next_execution\n            WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key\n            RETURNING\n                next_execution.execution_key AS \"execution_key!: ExecutionId\",\n                next_execution.plugin_id,\n                next_execution.pipeline_message\n        "
-  },
-  "c98ecef7b3122128acbd2d8f5f73a0dceeec5d4231bfd2c689edd08f93e1f808": {
-    "describe": {
-      "columns": [
-        {
-          "name": "execution_key!: ExecutionId",
-          "ordinal": 0,
-          "type_info": "Int8"
         },
         {
-          "name": "plugin_id",
-          "ordinal": 1,
+          "name": "tenant_id",
+          "ordinal": 3,
           "type_info": "Uuid"
         },
         {
-          "name": "pipeline_message",
-          "ordinal": 2,
-          "type_info": "Bytea"
+          "name": "trace_id",
+          "ordinal": 4,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "event_source_id",
+          "ordinal": 5,
+          "type_info": "Uuid"
         }
       ],
       "nullable": [
+        false,
+        false,
+        false,
         false,
         false,
         false
@@ -144,7 +204,7 @@
         ]
       }
     },
-    "query": "\n            UPDATE plugin_work_queue.generator_plugin_executions\n            SET\n                try_count  = try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after\n                FROM plugin_work_queue.generator_plugin_executions\n                WHERE\n                    plugin_id = $1\n                    AND current_status = 'enqueued'\n                    AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                    AND visible_after <= CURRENT_TIMESTAMP\n                ORDER BY creation_time ASC\n                FOR UPDATE SKIP LOCKED\n                LIMIT 1\n            ) AS next_execution\n            WHERE plugin_work_queue.generator_plugin_executions.execution_key = next_execution.execution_key\n            RETURNING\n                next_execution.execution_key AS \"execution_key!: ExecutionId\",\n                next_execution.plugin_id,\n                next_execution.pipeline_message\n        "
+    "query": "\n            UPDATE plugin_work_queue.generator_plugin_executions\n            SET\n                try_count  = try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                 SELECT\n                     execution_key,\n                     plugin_id,\n                     pipeline_message,\n                     tenant_id,\n                     trace_id,\n                     event_source_id,\n                     current_status,\n                     creation_time,\n                     visible_after\n                 FROM plugin_work_queue.generator_plugin_executions\n                 WHERE plugin_id = $1\n                   AND current_status = 'enqueued'\n                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                   AND visible_after <= CURRENT_TIMESTAMP\n                 ORDER BY creation_time ASC\n                 FOR UPDATE SKIP LOCKED\n                 LIMIT 1\n             ) AS next_execution\n             WHERE plugin_work_queue.generator_plugin_executions.execution_key = next_execution.execution_key\n             RETURNING\n                 next_execution.execution_key AS \"execution_key!: ExecutionId\",\n                 next_execution.plugin_id,\n                 next_execution.pipeline_message,\n                 next_execution.tenant_id,\n                 next_execution.trace_id,\n                 next_execution.event_source_id\n        "
   },
   "f71b00154ecb7c5ac2d507c4dcae96e35bcc7a3a246af12cf02d077211ee155d": {
     "describe": {

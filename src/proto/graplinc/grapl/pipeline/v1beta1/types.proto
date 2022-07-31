@@ -2,10 +2,12 @@ syntax = "proto3";
 
 package graplinc.grapl.pipeline.v1beta1;
 
+import "google/protobuf/any.proto";
 import "graplinc/common/v1beta1/types.proto";
 
-// Metadata about a specific message, or its context
-message Metadata {
+// A wrapper message for pipeline data. Includes useful metadata to help
+// services determine what they should do with the inner_message.
+message Envelope {
   // A tenant (e.g. a customer) in Grapl
   graplinc.common.v1beta1.Uuid tenant_id = 1;
 
@@ -15,14 +17,17 @@ message Metadata {
   // Number of times this message has been retried
   uint32 retry_count = 3;
 
-  // When the message was first written
+  // When the envelope was first created
   graplinc.common.v1beta1.Timestamp created_time = 4;
 
-  // When these metadata were last updated
+  // When the envelope was last updated (e.g. retry count incremented)
   graplinc.common.v1beta1.Timestamp last_updated_time = 5;
 
-  // Event source from which this message originated
+  // Event source from which the inner_message originated
   graplinc.common.v1beta1.Uuid event_source_id = 6;
+
+  // The serialized bytes of the inner message, along with its type
+  google.protobuf.Any inner_message = 7;
 }
 
 // This is the inner_message for an Envelope published to the raw-logs topic.

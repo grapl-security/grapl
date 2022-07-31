@@ -7,6 +7,7 @@ use proto::{
     get_execute_analyzer_response,
     get_execute_generator_response,
 };
+use uuid::Uuid;
 
 pub use crate::graplinc::grapl::api::plugin_work_queue::{
     v1beta1_client::{
@@ -28,7 +29,37 @@ use crate::{
 
 #[derive(Clone, PartialEq)]
 pub struct ExecutionJob {
-    pub data: Bytes,
+    data: Bytes,
+    tenant_id: Uuid,
+    trace_id: Uuid,
+    event_source_id: Uuid,
+}
+
+impl ExecutionJob {
+    pub fn new(data: Bytes, tenant_id: Uuid, trace_id: Uuid, event_source_id: Uuid) -> Self {
+        Self {
+            data,
+            tenant_id,
+            trace_id,
+            event_source_id,
+        }
+    }
+
+    pub fn data(self) -> Bytes {
+        self.data
+    }
+
+    pub fn tenant_id(&self) -> Uuid {
+        self.tenant_id
+    }
+
+    pub fn trace_id(&self) -> Uuid {
+        self.trace_id
+    }
+
+    pub fn event_source_id(&self) -> Uuid {
+        self.event_source_id
+    }
 }
 
 impl std::fmt::Debug for ExecutionJob {
@@ -43,19 +74,35 @@ impl TryFrom<proto::ExecutionJob> for ExecutionJob {
     type Error = SerDeError;
 
     fn try_from(value: proto::ExecutionJob) -> Result<Self, Self::Error> {
+        let tenant_id = value
+            .tenant_id
+            .ok_or(SerDeError::MissingField("tenant_id"))?;
+
+        let trace_id = value.trace_id.ok_or(SerDeError::MissingField("trace_id"))?;
+
+        let event_source_id = value
+            .event_source_id
+            .ok_or(SerDeError::MissingField("event_source_id"))?;
+
         let data = value.data;
-        if data.is_empty() {
-            return Err(Self::Error::MissingField("ExecutionJob.data"));
-        }
-        Ok(Self { data })
+
+        Ok(Self {
+            data,
+            tenant_id: tenant_id.into(),
+            trace_id: trace_id.into(),
+            event_source_id: event_source_id.into(),
+        })
     }
 }
 
 impl From<ExecutionJob> for proto::ExecutionJob {
     fn from(value: ExecutionJob) -> Self {
-        assert!(!value.data.is_empty());
-
-        Self { data: value.data }
+        Self {
+            data: value.data,
+            tenant_id: Some(value.tenant_id.into()),
+            trace_id: Some(value.trace_id.into()),
+            event_source_id: Some(value.event_source_id.into()),
+        }
     }
 }
 
@@ -70,9 +117,56 @@ impl type_url::TypeUrl for ExecutionJob {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AcknowledgeGeneratorRequest {
-    pub request_id: i64,
-    pub graph_description: Option<GraphDescription>,
-    pub plugin_id: uuid::Uuid,
+    request_id: i64,
+    graph_description: Option<GraphDescription>,
+    plugin_id: Uuid,
+    tenant_id: Uuid,
+    trace_id: Uuid,
+    event_source_id: Uuid,
+}
+
+impl AcknowledgeGeneratorRequest {
+    pub fn new(
+        request_id: i64,
+        graph_description: Option<GraphDescription>,
+        plugin_id: Uuid,
+        tenant_id: Uuid,
+        trace_id: Uuid,
+        event_source_id: Uuid,
+    ) -> Self {
+        Self {
+            request_id,
+            graph_description,
+            plugin_id,
+            tenant_id,
+            trace_id,
+            event_source_id,
+        }
+    }
+
+    pub fn request_id(&self) -> i64 {
+        self.request_id
+    }
+
+    pub fn graph_description(self) -> Option<GraphDescription> {
+        self.graph_description
+    }
+
+    pub fn plugin_id(&self) -> Uuid {
+        self.plugin_id
+    }
+
+    pub fn tenant_id(&self) -> Uuid {
+        self.tenant_id
+    }
+
+    pub fn trace_id(&self) -> Uuid {
+        self.trace_id
+    }
+
+    pub fn event_source_id(&self) -> Uuid {
+        self.event_source_id
+    }
 }
 
 impl TryFrom<proto::AcknowledgeGeneratorRequest> for AcknowledgeGeneratorRequest {
@@ -85,10 +179,26 @@ impl TryFrom<proto::AcknowledgeGeneratorRequest> for AcknowledgeGeneratorRequest
             .plugin_id
             .ok_or(Self::Error::MissingField("plugin_id"))?
             .into();
+        let tenant_id = value
+            .tenant_id
+            .ok_or(Self::Error::MissingField("tenant_id"))?
+            .into();
+        let trace_id = value
+            .trace_id
+            .ok_or(Self::Error::MissingField("trace_id"))?
+            .into();
+        let event_source_id = value
+            .event_source_id
+            .ok_or(Self::Error::MissingField("event_source_id"))?
+            .into();
+
         Ok(Self {
             request_id,
             graph_description,
             plugin_id,
+            tenant_id,
+            trace_id,
+            event_source_id,
         })
     }
 }
@@ -99,6 +209,9 @@ impl From<AcknowledgeGeneratorRequest> for proto::AcknowledgeGeneratorRequest {
             request_id: value.request_id,
             graph_description: value.graph_description.map(Into::into),
             plugin_id: Some(value.plugin_id.into()),
+            tenant_id: Some(value.tenant_id.into()),
+            trace_id: Some(value.trace_id.into()),
+            event_source_id: Some(value.event_source_id.into()),
         }
     }
 }
@@ -142,7 +255,7 @@ impl type_url::TypeUrl for AcknowledgeGeneratorResponse {
 pub struct AcknowledgeAnalyzerRequest {
     pub request_id: i64,
     pub success: bool,
-    pub plugin_id: uuid::Uuid,
+    pub plugin_id: Uuid,
 }
 
 impl TryFrom<proto::AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequest {
@@ -210,7 +323,7 @@ impl type_url::TypeUrl for AcknowledgeAnalyzerResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetExecuteAnalyzerRequest {
-    pub plugin_id: uuid::Uuid,
+    pub plugin_id: Uuid,
 }
 
 impl TryFrom<proto::GetExecuteAnalyzerRequest> for GetExecuteAnalyzerRequest {
@@ -287,7 +400,7 @@ impl type_url::TypeUrl for GetExecuteAnalyzerResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetExecuteGeneratorRequest {
-    pub plugin_id: uuid::Uuid,
+    pub plugin_id: Uuid,
 }
 
 impl TryFrom<proto::GetExecuteGeneratorRequest> for GetExecuteGeneratorRequest {
@@ -364,8 +477,25 @@ impl type_url::TypeUrl for GetExecuteGeneratorResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PushExecuteAnalyzerRequest {
-    pub execution_job: ExecutionJob,
-    pub plugin_id: uuid::Uuid,
+    execution_job: ExecutionJob,
+    plugin_id: Uuid,
+}
+
+impl PushExecuteAnalyzerRequest {
+    pub fn new(execution_job: ExecutionJob, plugin_id: Uuid) -> Self {
+        Self {
+            execution_job,
+            plugin_id,
+        }
+    }
+
+    pub fn execution_job(self) -> ExecutionJob {
+        self.execution_job
+    }
+
+    pub fn plugin_id(&self) -> Uuid {
+        self.plugin_id
+    }
 }
 
 impl TryFrom<proto::PushExecuteAnalyzerRequest> for PushExecuteAnalyzerRequest {
@@ -376,6 +506,7 @@ impl TryFrom<proto::PushExecuteAnalyzerRequest> for PushExecuteAnalyzerRequest {
             .execution_job
             .ok_or(Self::Error::MissingField("execution_job"))?
             .try_into()?;
+
         let plugin_id = value
             .plugin_id
             .ok_or(Self::Error::MissingField("plugin_id"))?
@@ -434,8 +565,25 @@ impl type_url::TypeUrl for PushExecuteAnalyzerResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PushExecuteGeneratorRequest {
-    pub execution_job: ExecutionJob,
-    pub plugin_id: uuid::Uuid,
+    execution_job: ExecutionJob,
+    plugin_id: Uuid,
+}
+
+impl PushExecuteGeneratorRequest {
+    pub fn new(execution_job: ExecutionJob, plugin_id: Uuid) -> Self {
+        Self {
+            execution_job,
+            plugin_id,
+        }
+    }
+
+    pub fn execution_job(self) -> ExecutionJob {
+        self.execution_job
+    }
+
+    pub fn plugin_id(&self) -> Uuid {
+        self.plugin_id
+    }
 }
 
 impl TryFrom<proto::PushExecuteGeneratorRequest> for PushExecuteGeneratorRequest {

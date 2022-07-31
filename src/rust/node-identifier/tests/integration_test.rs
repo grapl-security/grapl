@@ -29,7 +29,7 @@ use rust_proto::{
                 PublishRawLogRequest,
             },
         },
-        pipeline::v1beta2::Envelope,
+        pipeline::v1beta1::Envelope,
     },
 };
 use test_context::{
@@ -96,22 +96,23 @@ async fn test_sysmon_event_produces_identified_graph(
     let tenant_id = Uuid::new_v4();
 
     let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
-        .contains(move |envelope: &Envelope<IdentifiedGraph>| -> bool {
-            let metadata = &envelope.metadata;
-            let identified_graph = &envelope.inner_message;
+        .contains(move |envelope: Envelope<IdentifiedGraph>| -> bool {
+            let envelope_tenant_id = envelope.tenant_id();
+            let envelope_event_source_id = envelope.event_source_id();
+            let identified_graph = envelope.inner_message();
 
             tracing::debug!(message = "consumed kafka message");
 
-            if metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id {
+            if envelope_tenant_id == tenant_id && envelope_event_source_id == event_source_id {
                 let parent_process = find_node(
-                    identified_graph,
+                    &identified_graph,
                     "process_id",
                     ImmutableUintProp { prop: 6132 }.into(),
                 )
                 .expect("parent process missing");
 
                 let child_process = find_node(
-                    identified_graph,
+                    &identified_graph,
                     "process_id",
                     ImmutableUintProp { prop: 5752 }.into(),
                 )

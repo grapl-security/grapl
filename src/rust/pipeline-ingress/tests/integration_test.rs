@@ -21,9 +21,9 @@ use rust_proto::{
             client::PipelineIngressClient,
             PublishRawLogRequest,
         },
-        pipeline::{
-            v1beta1::RawLog,
-            v1beta2::Envelope,
+        pipeline::v1beta1::{
+            Envelope,
+            RawLog,
         },
     },
 };
@@ -77,16 +77,17 @@ async fn test_publish_raw_log_sends_message_to_kafka(
     let log_event: Bytes = "test".into();
 
     let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
-        .contains(move |envelope: &Envelope<RawLog>| -> bool {
-            let metadata = &envelope.metadata;
-            let raw_log = &envelope.inner_message;
+        .contains(move |envelope: Envelope<RawLog>| -> bool {
+            let envelope_tenant_id = envelope.tenant_id();
+            let envelope_event_source_id = envelope.event_source_id();
+            let raw_log = envelope.inner_message();
             let expected_log_event: Bytes = "test".into();
 
             tracing::debug!(message = "consumed kafka message");
 
-            metadata.tenant_id == tenant_id
-                && metadata.event_source_id == event_source_id
-                && raw_log.log_event == expected_log_event
+            envelope_tenant_id == tenant_id
+                && envelope_event_source_id == event_source_id
+                && raw_log.log_event() == expected_log_event
         })
         .await?;
 

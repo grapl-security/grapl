@@ -253,11 +253,6 @@ mod pipeline {
 
     proptest! {
         #[test]
-        fn test_metadata_encode_decode(metadata in st::metadatas()) {
-            check_encode_decode_invariant(metadata)
-        }
-
-        #[test]
         fn test_raw_log_encode_decode(raw_log in st::raw_logs()) {
             check_encode_decode_invariant(raw_log)
         }

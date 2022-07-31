@@ -51,6 +51,9 @@ where
         {
             let request_id = work.request_id();
             if let Some(job) = work.maybe_job() {
+                let tenant_id = job.tenant_id();
+                let trace_id = job.trace_id();
+                let event_source_id = job.event_source_id();
                 // Process the job
                 let process_result = self
                     .plugin_work_processor
@@ -62,6 +65,9 @@ where
                         message = "Error processing job",
                         request_id = ?request_id,
                         error = ?e,
+                        tenant_id = %tenant_id,
+                        trace_id = %trace_id,
+                        event_source_id = %event_source_id,
                     );
                 }
 
@@ -73,6 +79,9 @@ where
                         &mut self.plugin_work_queue_client,
                         process_result,
                         request_id,
+                        tenant_id,
+                        trace_id,
+                        event_source_id,
                     )
                     .await?;
             } else {

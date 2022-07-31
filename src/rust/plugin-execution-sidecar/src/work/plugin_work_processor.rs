@@ -9,6 +9,7 @@ use rust_proto::{
     },
     SerDe,
 };
+use uuid::Uuid;
 
 use crate::config::PluginExecutorConfig;
 
@@ -54,5 +55,8 @@ pub trait PluginWorkProcessor {
         pwq_client: &mut PluginWorkQueueServiceClient,
         process_result: Result<Self::ProducedMessage, PluginWorkProcessorError>,
         request_id: RequestId,
+        tenant_id: Uuid,
+        trace_id: Uuid,
+        event_source_id: Uuid,
     ) -> Result<(), PluginWorkProcessorError>;
 }

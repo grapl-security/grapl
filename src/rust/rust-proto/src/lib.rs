@@ -121,13 +121,6 @@ pub(crate) mod protobufs {
                         "/graplinc.grapl.pipeline.v1beta1.rs"
                     ));
                 }
-
-                pub(crate) mod v1beta2 {
-                    include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.pipeline.v1beta2.rs"
-                    ));
-                }
             }
         }
     }
@@ -204,7 +197,6 @@ pub mod graplinc {
 
         pub mod pipeline {
             pub mod v1beta1;
-            pub mod v1beta2;
         }
     }
 }

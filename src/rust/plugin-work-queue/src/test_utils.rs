@@ -51,7 +51,10 @@ impl PsqlQueueTestExtensions for PsqlQueue {
             SELECT
                  execution_key AS "execution_key!: ExecutionId",
                  plugin_id,
-                 pipeline_message
+                 pipeline_message,
+                 tenant_id,
+                 trace_id,
+                 event_source_id
             FROM plugin_work_queue.generator_plugin_executions
             WHERE plugin_id = $1
             "#,

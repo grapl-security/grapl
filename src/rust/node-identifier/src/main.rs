@@ -16,10 +16,7 @@ use rust_proto::graplinc::grapl::{
         GraphDescription,
         IdentifiedGraph,
     },
-    pipeline::{
-        v1beta1::Metadata,
-        v1beta2::Envelope,
-    },
+    pipeline::v1beta1::Envelope,
 };
 use tracing::instrument::WithSubscriber;
 
@@ -75,10 +72,16 @@ async fn handler() -> Result<(), NodeIdentifierError> {
             let identifier = node_identifier.clone();
             async move {
                 let envelope = event?;
+                let tenant_id = envelope.tenant_id();
+                let trace_id = envelope.trace_id();
+                let event_source_id = envelope.event_source_id();
+                let graph_description = envelope.inner_message();
 
-                match identifier.handle_event(envelope.inner_message).await {
+                match identifier.handle_event(tenant_id, graph_description).await {
                     Ok(identified_graph) => Ok(Some(Envelope::new(
-                        Metadata::create_from(envelope.metadata),
+                        tenant_id,
+                        trace_id,
+                        event_source_id,
                         identified_graph,
                     ))),
                     Err(e) => match e {

@@ -19,10 +19,7 @@ use rust_proto::graplinc::grapl::{
         IdentifiedGraph,
         MergedGraph,
     },
-    pipeline::{
-        v1beta1::Metadata,
-        v1beta2::Envelope,
-    },
+    pipeline::v1beta1::Envelope,
 };
 use tokio::sync::Mutex;
 use tracing::instrument::WithSubscriber;
@@ -94,14 +91,19 @@ async fn handler(
             let graph_merger = graph_merger.clone();
             async move {
                 let envelope = event?;
+                let tenant_id = envelope.tenant_id();
+                let trace_id = envelope.trace_id();
+                let event_source_id = envelope.event_source_id();
                 match graph_merger
                     .lock()
                     .await
-                    .handle_event(envelope.inner_message)
+                    .handle_event(envelope.inner_message())
                     .await
                 {
                     Ok(merged_graph) => Ok(Some(Envelope::new(
-                        Metadata::create_from(envelope.metadata),
+                        tenant_id,
+                        trace_id,
+                        event_source_id,
                         merged_graph,
                     ))),
                     Err(e) => match e {
