@@ -43,6 +43,7 @@ use rust_proto::{
 };
 use secrecy::ExposeSecret;
 use thiserror::Error;
+use tracing::Instrument;
 
 //
 // Kafka configurations
@@ -106,7 +107,7 @@ fn producer(
 }
 
 #[non_exhaustive]
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum ProducerError {
     #[error("failed to serialize message {0}")]
     SerializationError(#[from] SerDeError),
@@ -141,7 +142,7 @@ impl<T: SerDe> Producer<T> {
     }
 
     #[tracing::instrument(err, skip(self))]
-    pub async fn send(&self, msg: T) -> Result<(), ProducerError> {
+    pub async fn send(&self, msg: Envelope<T>) -> Result<(), ProducerError> {
         let serialized = msg.serialize()?;
         let record: FutureRecord<[u8], [u8]> = FutureRecord::to(&self.topic).payload(&serialized);
 
@@ -204,7 +205,7 @@ pub struct RetryProducer<T>
 where
     T: SerDe,
 {
-    producer: Producer<Envelope<T>>,
+    producer: Producer<T>,
 }
 
 impl<T: SerDe> RetryProducer<T> {
@@ -246,7 +247,7 @@ fn consumer(
 }
 
 #[non_exhaustive]
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum ConsumerError {
     #[error("failed to deserialize message {0}")]
     DeserializationError(#[from] SerDeError),
@@ -291,11 +292,30 @@ impl<T: SerDe> Consumer<T> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub fn stream(&self) -> impl Stream<Item = Result<T, ConsumerError>> + '_ {
+    pub fn stream(
+        &self,
+    ) -> impl Stream<Item = Result<(tracing::Span, Envelope<T>), ConsumerError>> + '_ {
         self.consumer.stream().then(move |res| async move {
             res.map_err(ConsumerError::from).and_then(move |msg| {
-                T::deserialize(msg.payload().ok_or(ConsumerError::PayloadAbsent)?)
-                    .map_err(ConsumerError::from)
+                let deserialized =
+                    Envelope::deserialize(msg.payload().ok_or(ConsumerError::PayloadAbsent)?)
+                        .map_err(ConsumerError::from);
+
+                deserialized.map(|envelope| {
+                    let span = tracing::span!(
+                        target: "stream_processor",
+                        tracing::Level::INFO,
+                        "envelope_span",
+                        tenant_id =% envelope.tenant_id(),
+                        trace_id =% envelope.trace_id(),
+                        event_source_id =% envelope.event_source_id(),
+                        retry_count =% envelope.retry_count(),
+                        created_time =? envelope.created_time(),
+                        last_updated_time =? envelope.last_updated_time(),
+                    );
+
+                    (span, envelope)
+                })
             })
         })
     }
@@ -340,7 +360,7 @@ impl BytesConsumer {
 //
 
 #[non_exhaustive]
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum StreamProcessorError {
     #[error("encountered consumer error {0}")]
     ConsumerError(#[from] ConsumerError),
@@ -382,17 +402,26 @@ where
     #[tracing::instrument(skip(self, event_handler))]
     pub fn stream<'a, F, R, E>(
         &'a self,
-        event_handler: F,
+        mut event_handler: F,
     ) -> impl Stream<Item = Result<(), StreamProcessorError>> + '_
     where
-        F: FnMut(Result<C, StreamProcessorError>) -> R + 'a,
-        R: Future<Output = Result<Option<P>, E>> + 'a,
+        F: FnMut(Result<Envelope<C>, StreamProcessorError>) -> R + 'a,
+        R: Future<Output = Result<Option<Envelope<P>>, E>> + 'a,
         E: Into<StreamProcessorError> + 'a,
     {
         self.consumer
             .stream()
             .map_err(StreamProcessorError::from)
-            .then(event_handler)
+            .then(move |result| {
+                // this guard makes sure any tracing messages logged within the
+                // event_handler's scope will automatically include the
+                // envelope's metadata
+                match result {
+                    Ok((span, envelope)) => event_handler(Ok(envelope)).instrument(span),
+                    Err(e) => event_handler(Err(e))
+                        .instrument(tracing::span!(tracing::Level::ERROR, "err")),
+                }
+            })
             .then(move |result| async move {
                 match result {
                     Ok(msg) => match msg {

@@ -81,74 +81,72 @@ async fn handler(
 
     // TODO: also construct a stream processor for retries
 
-    let stream_processor: StreamProcessor<Envelope<IdentifiedGraph>, Envelope<MergedGraph>> =
+    let stream_processor: StreamProcessor<IdentifiedGraph, MergedGraph> =
         StreamProcessor::new(consumer_config, producer_config)?;
 
     tracing::info!(message = "kafka stream processor configured successfully",);
 
-    let stream = stream_processor.stream::<_, _, StreamProcessorError>(
-        move |event: Result<Envelope<IdentifiedGraph>, StreamProcessorError>| {
-            let graph_merger = graph_merger.clone();
-            async move {
-                let envelope = event?;
-                let tenant_id = envelope.tenant_id();
-                let trace_id = envelope.trace_id();
-                let event_source_id = envelope.event_source_id();
-                match graph_merger
-                    .lock()
-                    .await
-                    .handle_event(envelope.inner_message())
-                    .await
-                {
-                    Ok(merged_graph) => Ok(Some(Envelope::new(
-                        tenant_id,
-                        trace_id,
-                        event_source_id,
-                        merged_graph,
-                    ))),
-                    Err(e) => match e {
-                        Ok((_, e)) => {
-                            match e {
-                                GraphMergerError::Unexpected(ref reason) => {
-                                    tracing::error!(
-                                        message = "unexpected error",
-                                        reason = %reason,
-                                        error = %e,
-                                    );
-                                    // TODO: write message to failed topic here
-                                    Err(StreamProcessorError::from(e))
-                                }
-                                _ => {
-                                    tracing::error!(
-                                        mesage = "unexpected error",
-                                        error = %e,
-                                    );
-                                    // TODO: write message to failed topic here
-                                    Err(StreamProcessorError::from(e))
-                                }
-                            }
-                        }
-                        Err(e) => match e {
-                            GraphMergerError::Unexpected(reason) => {
-                                tracing::warn!(
+    let stream = stream_processor.stream::<_, _, StreamProcessorError>(move |event| {
+        let graph_merger = graph_merger.clone();
+        async move {
+            let envelope = event?;
+            let tenant_id = envelope.tenant_id();
+            let trace_id = envelope.trace_id();
+            let event_source_id = envelope.event_source_id();
+            match graph_merger
+                .lock()
+                .await
+                .handle_event(envelope.inner_message())
+                .await
+            {
+                Ok(merged_graph) => Ok(Some(Envelope::new(
+                    tenant_id,
+                    trace_id,
+                    event_source_id,
+                    merged_graph,
+                ))),
+                Err(e) => match e {
+                    Ok((_, e)) => {
+                        match e {
+                            GraphMergerError::Unexpected(ref reason) => {
+                                tracing::error!(
                                     message = "unexpected error",
                                     reason = %reason,
+                                    error = %e,
                                 );
-                                Ok(None)
+                                // TODO: write message to failed topic here
+                                Err(StreamProcessorError::from(e))
                             }
                             _ => {
                                 tracing::error!(
-                                    message = "unknown error",
+                                    mesage = "unexpected error",
                                     error = %e,
                                 );
+                                // TODO: write message to failed topic here
                                 Err(StreamProcessorError::from(e))
                             }
-                        },
+                        }
+                    }
+                    Err(e) => match e {
+                        GraphMergerError::Unexpected(reason) => {
+                            tracing::warn!(
+                                message = "unexpected error",
+                                reason = %reason,
+                            );
+                            Ok(None)
+                        }
+                        _ => {
+                            tracing::error!(
+                                message = "unknown error",
+                                error = %e,
+                            );
+                            Err(StreamProcessorError::from(e))
+                        }
                     },
-                }
+                },
             }
-        },
-    );
+        }
+    });
 
     stream
         .for_each_concurrent(

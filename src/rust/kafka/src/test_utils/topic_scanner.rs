@@ -21,7 +21,6 @@ use crate::{
     config::ConsumerConfig,
     ConfigurationError,
     Consumer,
-    ConsumerError,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -43,7 +42,7 @@ pub struct KafkaTopicScanner<T>
 where
     T: SerDe + Send + Sync + 'static,
 {
-    consumer: Consumer<Envelope<T>>,
+    consumer: Consumer<T>,
     timeout: Duration,
 }
 
@@ -91,24 +90,25 @@ where
             let stream = Box::pin(self.consumer.stream());
 
             let tx_mutex = Mutex::new(Some(tx));
-            let mut filtered_stream = Box::pin(stream.filter_map(
-                move |res: Result<Envelope<T>, ConsumerError>| {
-                    if let Some(tx) = tx_mutex.lock().expect("failed to acquire tx lock").take() {
-                        // notify the consumer that we're ready to receive messages
-                        tx.send(())
-                            .expect("failed to notify sender that consumer is consuming");
-                    }
+            let mut filtered_stream = Box::pin(stream.filter_map(move |res| {
+                if let Some(tx) = tx_mutex.lock().expect("failed to acquire tx lock").take() {
+                    // notify the consumer that we're ready to receive messages
+                    tx.send(())
+                        .expect("failed to notify sender that consumer is consuming");
+                }
 
-                    let predicate = predicate.clone();
-                    async move {
-                        let envelope = res.expect("error consuming message from kafka");
-                        match predicate.clone().lock().expect("locking")(envelope.clone()) {
-                            true => Some(envelope),
-                            false => None,
+                let predicate = predicate.clone();
+                async move {
+                    let (_, envelope) = res.expect("error consuming message from kafka");
+                    match predicate.clone().lock().expect("locking")(envelope.clone()) {
+                        true => {
+                            tracing::debug!("predicate matched");
+                            Some(envelope)
                         }
+                        false => None,
                     }
-                },
-            ));
+                }
+            }));
             let matched_predicate = filtered_stream.next();
 
             tracing::info!(
