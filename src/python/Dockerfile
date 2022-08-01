@@ -10,7 +10,7 @@ RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         bash=5.1-2+deb11u1 \
         libstdc++6=10.2.1-6 \
-        curl=7.74.0-1.3+deb11u1 \
+        curl=7.74.0-1.3+deb11u2 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \
         --disabled-password \
@@ -50,7 +50,7 @@ USER root
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         build-essential=12.9 \
-        curl=7.74.0-1.3+deb11u1 \
+        curl=7.74.0-1.3+deb11u2 \
         unzip=6.0-26 \
         python3-dev=3.9.2-3 \
     && rm -rf /var/lib/apt/lists/* \
