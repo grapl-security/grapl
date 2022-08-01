@@ -223,7 +223,7 @@ impl From<Session> for IdStrategy {
 // IncrementOnlyUintProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct IncrementOnlyUintProp {
     pub prop: u64,
 }
@@ -287,7 +287,7 @@ impl_from_for_unit!(
 // ImmutableUintProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct ImmutableUintProp {
     pub prop: u64,
 }
@@ -350,7 +350,7 @@ impl_from_for_unit!(
 // DecrementOnlyUintProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct DecrementOnlyUintProp {
     pub prop: u64,
 }
@@ -413,7 +413,7 @@ impl_from_for_unit!(
 // IncrementOnlyIntProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct IncrementOnlyIntProp {
     pub prop: i64,
 }
@@ -477,7 +477,7 @@ impl_from_for_unit!(
 // DecrementOnlyIntProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct DecrementOnlyIntProp {
     pub prop: i64,
 }
@@ -540,7 +540,7 @@ impl_from_for_unit!(
 // ImmutableIntProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct ImmutableIntProp {
     pub prop: i64,
 }
@@ -603,7 +603,7 @@ impl_from_for_unit!(
 // ImmutableStrProp
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct ImmutableStrProp {
     pub prop: String,
 }
