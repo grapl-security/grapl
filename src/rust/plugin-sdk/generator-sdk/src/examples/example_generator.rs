@@ -7,6 +7,7 @@ use generator_sdk::server::{
     self,
     GeneratorServiceConfig,
 };
+use grapl_tracing::setup_tracing;
 use rust_proto::{
     graplinc::grapl::api::{
         graph::v1beta1::GraphDescription,
@@ -19,10 +20,11 @@ use rust_proto::{
     },
     protocol::status::Status,
 };
+const SERVICE_NAME: &'static str = "example-generator";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (_env, _guard) = grapl_config::init_grapl_env!();
+    let _guard = setup_tracing(SERVICE_NAME)?;
     let config = GeneratorServiceConfig::from_env_vars();
     let generator = ExampleGenerator {};
     server::exec_service(generator, config).await

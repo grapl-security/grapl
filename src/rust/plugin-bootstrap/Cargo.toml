@@ -21,7 +21,7 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
-grapl-config = { path = "../grapl-config" }
+grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
 thiserror = "1.0"

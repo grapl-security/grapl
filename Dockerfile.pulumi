@@ -4,7 +4,7 @@ FROM python:${PYTHON_VERSION}-slim-bullseye as grapl-local-pulumi
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
        build-essential=12.9 \
-       curl=7.74.0-1.3+deb11u1 \
+       curl=7.74.0-1.3+deb11u2 \
        unzip=6.0-26 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \
