@@ -102,7 +102,7 @@ async fn test_sysmon_event_produces_merged_graph(
             if envelope.tenant_id() == tenant_id && envelope.event_source_id() == event_source_id {
                 tracing::debug!(
                     message="found message with tenant id and event source id",
-                    merged_graph?=merged_graph,
+                    merged_graph=?merged_graph,
                 );
                 let parent_process = find_node(
                     &merged_graph,
