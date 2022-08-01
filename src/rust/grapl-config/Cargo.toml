@@ -8,7 +8,6 @@ license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-grapl-tracing = { path = "../grapl-tracing" }
 log = "0.4"
 rusoto_s3 = { version = "0.47", default_features = false, features = [
   "rustls"

@@ -17,7 +17,7 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 consul-connect = { path = "../../consul-connect" }
-grapl-config = { path = "../../grapl-config" }
+grapl-tracing = { path = "../../grapl-tracing" }
 moka = { version = "0.8", features = ["future"] }
 rust-proto = { path = "../../rust-proto" }
 serde = { version = "1.0", features = ["derive"] }
