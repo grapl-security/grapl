@@ -62,7 +62,7 @@ async fn handler() -> Result<(), NodeIdentifierError> {
 
     // TODO: also construct a stream processor for retries
 
-    let stream_processor: StreamProcessor<Envelope<GraphDescription>, Envelope<IdentifiedGraph>> =
+    let stream_processor: StreamProcessor<GraphDescription, IdentifiedGraph> =
         StreamProcessor::new(consumer_config, producer_config)?;
 
     tracing::info!(message = "Kafka StreamProcessor configured successfully");

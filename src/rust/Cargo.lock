@@ -2339,6 +2339,7 @@ name = "kafka"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "chrono",
  "clap 3.2.13",
  "futures",
  "rdkafka",
