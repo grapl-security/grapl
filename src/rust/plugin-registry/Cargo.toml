@@ -20,6 +20,7 @@ clap = { version = "3.0", default_features = false, features = [
 ] }
 futures-retry = "0.6"
 grapl-config = { path = "../grapl-config" }
+grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
 nomad-client-gen = { path = "../nomad-client-gen" }

@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use clap::Parser;
+use grapl_tracing::setup_tracing;
 use plugin_bootstrap::{
     server::{
         PluginBootstrap,
@@ -14,9 +15,11 @@ use rust_proto::{
 };
 use tokio::net::TcpListener;
 
+const SERVICE_NAME: &'static str = "plugin-bootstrap";
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (_env, _guard) = grapl_config::init_grapl_env!();
+    let _guard = setup_tracing(SERVICE_NAME)?;
     let config = PluginBootstrapServiceConfig::parse();
     tracing::info!(message="Starting Plugin Bootstrap Service", config=?config);
 
