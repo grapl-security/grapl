@@ -1,4 +1,4 @@
-use grapl_utils::future_ext::GraplFutureExt;
+use grapl_config::PostgresClient;
 use sqlx::{
     Pool,
     Postgres,
@@ -14,49 +14,33 @@ pub struct EventSourceDbClient {
     pub pool: Pool<Postgres>,
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum EventSourceDbError {
-    #[error("MigrateError {0}")]
-    MigrateError(#[from] sqlx::migrate::MigrateError),
-    #[error("Sqlx {0}")]
-    Sqlx(#[from] sqlx::Error),
-    #[error("Timeout {0}")]
-    Timeout(#[from] tokio::time::error::Elapsed),
-}
+#[async_trait::async_trait]
+impl PostgresClient for EventSourceDbClient {
+    type Config = EventSourceDbConfig;
+    type Error = grapl_config::PostgresDbInitError;
 
-impl EventSourceDbClient {
-    pub fn new(pool: Pool<Postgres>) -> Self {
+    fn new(pool: sqlx::Pool<sqlx::Postgres>) -> Self {
         Self { pool }
     }
 
-    pub async fn try_from(db_config: EventSourceDbConfig) -> Result<Self, EventSourceDbError> {
-        let postgres_address = format!(
-            "postgresql://{}:{}@{}:{}",
-            db_config.event_source_db_username,
-            db_config.event_source_db_password,
-            db_config.event_source_db_hostname,
-            db_config.event_source_db_port,
-        );
+    #[tracing::instrument]
+    async fn migrate(pool: &sqlx::Pool<sqlx::Postgres>) -> Result<(), sqlx::migrate::MigrateError> {
+        tracing::info!(message = "Performing database migration");
 
-        let pool = sqlx::PgPool::connect(&postgres_address)
-            .timeout(std::time::Duration::from_secs(5))
-            .await??;
-
-        Ok(Self::new(pool))
+        sqlx::migrate!().run(pool).await
     }
+}
 
-    pub(crate) async fn migrate(&self) -> Result<(), EventSourceDbError> {
-        Ok(sqlx::migrate!().run(&self.pool).await?)
-    }
-
+impl EventSourceDbClient {
     #[instrument(skip(display_name, description, tenant_id), err)]
     pub async fn create_event_source(
         &self,
         display_name: String,
         description: String,
         tenant_id: Uuid,
-    ) -> Result<EventSourceRow, EventSourceDbError> {
+    ) -> Result<EventSourceRow, sqlx::Error> {
         let event_source_id = Uuid::new_v4();
+
         sqlx::query!(
             r"
             INSERT INTO event_sources (
@@ -84,7 +68,7 @@ impl EventSourceDbClient {
         display_name: String,
         description: String,
         active: bool,
-    ) -> Result<EventSourceRow, EventSourceDbError> {
+    ) -> Result<EventSourceRow, sqlx::Error> {
         sqlx::query!(
             r#"
             UPDATE event_sources
@@ -109,7 +93,7 @@ impl EventSourceDbClient {
     pub async fn get_event_source(
         &self,
         event_source_id: Uuid,
-    ) -> Result<EventSourceRow, EventSourceDbError> {
+    ) -> Result<EventSourceRow, sqlx::Error> {
         let row = sqlx::query_as!(
             EventSourceRow,
             r#"

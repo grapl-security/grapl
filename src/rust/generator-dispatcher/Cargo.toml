@@ -30,6 +30,7 @@ async-trait = "0.1"
 bytes = "1.0"
 plugin-work-queue = { path = "../plugin-work-queue", features = ["test-utils"] }
 test-context = "0.1"
+grapl-config = { path = "../grapl-config" }
 
 [features]
 integration_tests = []

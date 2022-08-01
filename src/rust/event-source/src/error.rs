@@ -1,11 +1,11 @@
 use rust_proto::protocol::status::Status;
 
-use crate::db::EventSourceDbError;
-
 #[derive(thiserror::Error, Debug)]
 pub enum EventSourceError {
-    #[error("DbError")]
-    DbError(#[from] EventSourceDbError),
+    #[error(transparent)]
+    Sqlx(#[from] sqlx::Error),
+    #[error(transparent)]
+    DbInit(#[from] grapl_config::PostgresDbInitError),
 }
 
 impl From<EventSourceError> for Status {

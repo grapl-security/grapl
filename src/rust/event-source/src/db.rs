@@ -1,6 +1,3 @@
 mod client;
 mod types;
-pub use client::{
-    EventSourceDbClient,
-    EventSourceDbError,
-};
+pub use client::EventSourceDbClient;

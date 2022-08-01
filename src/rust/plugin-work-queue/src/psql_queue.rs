@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use grapl_utils::future_ext::GraplFutureExt;
+use grapl_config::PostgresClient;
 use sqlx::{
     Pool,
     Postgres,
@@ -7,10 +7,7 @@ use sqlx::{
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::{
-    server::PluginWorkQueueInitError,
-    PluginWorkQueueDbConfig,
-};
+use crate::PluginWorkQueueDbConfig;
 
 #[derive(Clone, Debug, Eq, PartialEq, sqlx::Type)]
 #[sqlx(type_name = "status", rename_all = "lowercase")]
@@ -62,29 +59,24 @@ pub struct PsqlQueue {
     pub pool: Pool<Postgres>,
 }
 
-impl PsqlQueue {
-    pub fn new(pool: Pool<Postgres>) -> Self {
+#[async_trait::async_trait]
+impl PostgresClient for PsqlQueue {
+    type Config = PluginWorkQueueDbConfig;
+    type Error = grapl_config::PostgresDbInitError;
+
+    fn new(pool: sqlx::Pool<sqlx::Postgres>) -> Self {
         Self { pool }
     }
 
-    pub async fn try_from(
-        service_config: PluginWorkQueueDbConfig,
-    ) -> Result<Self, PluginWorkQueueInitError> {
-        let postgres_address = format!(
-            "postgresql://{}:{}@{}:{}",
-            service_config.plugin_work_queue_db_username,
-            service_config.plugin_work_queue_db_password,
-            service_config.plugin_work_queue_db_hostname,
-            service_config.plugin_work_queue_db_port,
-        );
+    #[tracing::instrument]
+    async fn migrate(pool: &sqlx::Pool<sqlx::Postgres>) -> Result<(), sqlx::migrate::MigrateError> {
+        tracing::info!(message = "Performing database migration");
 
-        let pool = sqlx::PgPool::connect(&postgres_address)
-            .timeout(std::time::Duration::from_secs(5))
-            .await??;
-
-        Ok(Self::new(pool))
+        sqlx::migrate!().run(pool).await
     }
+}
 
+impl PsqlQueue {
     #[instrument(skip(self, pipeline_message), err)]
     pub async fn put_generator_message(
         &self,

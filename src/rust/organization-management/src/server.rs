@@ -7,7 +7,7 @@ use argon2::{
     },
     PasswordHasher,
 };
-use grapl_utils::future_ext::GraplFutureExt;
+use grapl_config::PostgresClient;
 use rust_proto::{
     graplinc::grapl::api::organization_management::v1beta1::{
         server::{
@@ -70,25 +70,24 @@ pub struct OrganizationManagement {
     pool: Pool<Postgres>,
 }
 
-impl OrganizationManagement {
-    async fn try_from(
-        service_config: &OrganizationManagementServiceConfig,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        let postgres_address = format!(
-            "postgresql://{}:{}@{}:{}",
-            service_config.organization_management_db_username,
-            service_config.organization_management_db_password,
-            service_config.organization_management_db_hostname,
-            service_config.organization_management_db_port,
-        );
+#[async_trait::async_trait]
+impl PostgresClient for OrganizationManagement {
+    type Config = OrganizationManagementServiceConfig;
+    type Error = grapl_config::PostgresDbInitError;
 
-        Ok(Self {
-            pool: sqlx::PgPool::connect(&postgres_address)
-                .timeout(Duration::from_secs(5))
-                .await??,
-        })
+    fn new(pool: sqlx::Pool<sqlx::Postgres>) -> Self {
+        Self { pool }
     }
 
+    #[tracing::instrument]
+    async fn migrate(pool: &sqlx::Pool<sqlx::Postgres>) -> Result<(), sqlx::migrate::MigrateError> {
+        tracing::info!(message = "Performing database migration");
+
+        sqlx::migrate!().run(pool).await
+    }
+}
+
+impl OrganizationManagement {
     async fn create_organization(
         &self,
         request: CreateOrganizationRequest,
@@ -249,21 +248,20 @@ impl OrganizationManagementApi for ManagementApi {
 pub async fn exec_service(
     service_config: OrganizationManagementServiceConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let organization_management = OrganizationManagement::try_from(&service_config).await?;
+    let healthcheck_polling_interval = Duration::from_millis(
+        service_config.organization_management_healthcheck_polling_interval_ms,
+    );
+    let bind_address = service_config.organization_management_bind_address;
 
-    tracing::info!(message = "Performing migration",);
-
-    sqlx::migrate!().run(&organization_management.pool).await?;
+    let organization_management = OrganizationManagement::init_with_config(service_config).await?;
 
     tracing::info!(message = "Binding service",);
 
     let (server, _shutdown_tx) = OrganizationManagementServer::new(
         ManagementApi::new(organization_management),
-        TcpListener::bind(service_config.organization_management_bind_address).await?,
+        TcpListener::bind(bind_address).await?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
-        Duration::from_millis(
-            service_config.organization_management_healthcheck_polling_interval_ms,
-        ),
+        healthcheck_polling_interval,
     );
 
     Ok(server.serve().await?)

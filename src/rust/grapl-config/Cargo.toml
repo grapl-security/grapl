@@ -36,3 +36,19 @@ tokio = { version = "1.17", features = [
 color-eyre = "0.6"
 eyre = "0.6"
 async-trait = "0.1"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
+secrecy = "0.8"
+sqlx = { version = "0.6", features = [
+  "chrono",
+  "migrate",
+  "offline",
+  "postgres",
+  "runtime-tokio-rustls",
+  "uuid",
+] }
+thiserror = "1.0"
+grapl-utils = { path = "../grapl-utils" }

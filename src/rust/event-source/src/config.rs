@@ -29,11 +29,19 @@ pub struct EventSourceServiceConfig {
 #[derive(Parser, Clone, Debug)]
 pub struct EventSourceDbConfig {
     #[clap(long, env)]
-    pub event_source_db_hostname: String,
-    #[clap(long, env)]
-    pub event_source_db_port: u16,
+    pub event_source_db_address: String,
     #[clap(long, env)]
     pub event_source_db_username: String,
     #[clap(long, env)]
-    pub event_source_db_password: String,
+    pub event_source_db_password: grapl_config::SecretString,
+}
+
+impl grapl_config::ToPostgresUrl for EventSourceDbConfig {
+    fn to_postgres_url(self) -> grapl_config::PostgresUrl {
+        grapl_config::PostgresUrl {
+            address: self.event_source_db_address,
+            username: self.event_source_db_username,
+            password: self.event_source_db_password,
+        }
+    }
 }

@@ -20,6 +20,7 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 grapl-tracing = { path = "../grapl-tracing" }
+grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
 kafka = { path = "../kafka" }
 rust-proto = { path = "../rust-proto" }
