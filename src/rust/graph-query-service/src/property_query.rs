@@ -23,6 +23,10 @@ pub enum PropertyQueryError {
     MaybeFirstRowTypedError(#[from] MaybeFirstRowTypedError),
     #[error("Row was invalid {0}")]
     FromRowError(#[from] FromRowError),
+    #[error("InvalidUid: {0} reason: {1}")]
+    InvalidUidInDb(i64, String),
+    #[error("Invalid stored edge name {0}")]
+    InvalidStoredEdgeName(&'static str),
 }
 
 #[derive(Debug, Clone)]
@@ -133,8 +137,13 @@ impl PropertyQueryExecutor {
             edge_rows.push(EdgeRow {
                 source_uid: uid,
                 f_edge_name: edge_name.clone(),
-                r_edge_name: EdgeName::try_from(r_edge_name).expect("todo"),
-                destination_uid: Uid::from_i64(destination_uid).expect("todo"),
+                r_edge_name: EdgeName::try_from(r_edge_name)
+                    .map_err(PropertyQueryError::InvalidStoredEdgeName)?,
+                destination_uid: Uid::from_i64(destination_uid)
+                    .ok_or(PropertyQueryError::InvalidUidInDb(
+                        destination_uid,
+                        format!("source_uid: {uid:?} f_edge_name: {edge_name:?} invalid destination_uid {destination_uid}"),
+                    ))?,
                 tenant_id,
             });
         }

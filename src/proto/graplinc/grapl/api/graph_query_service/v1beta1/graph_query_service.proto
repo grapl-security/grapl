@@ -6,175 +6,295 @@ import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/api/graph/v1beta1/types.proto";
 import "graplinc/grapl/common/v1beta1/types.proto";
 
+// IntegerProperty wraps one of the underlying integer property
+// types
 message IntegerProperty {
+  // The inner property
   oneof property {
-    graph.v1beta1.IncrementOnlyIntProp increment_only_int = 1;
-    graph.v1beta1.DecrementOnlyIntProp decrement_only_int = 2;
-    graph.v1beta1.ImmutableIntProp immutable_int = 3;
+    // An integer that only grows
+    graph.v1beta1.IncrementOnlyIntProp increment_only = 1;
+    // An integer that only shrinks
+    graph.v1beta1.DecrementOnlyIntProp decrement_only = 2;
+    // An integer that never changes after its first write
+    graph.v1beta1.ImmutableIntProp immutable = 3;
   }
 }
 
+// A filter for querying an integer
 message IntFilter {
+  // The operation to filter with
   enum Operation {
-    UNKNOWN_OPERATION = 0;
-    HAS = 1;
-    EQUAL = 2;
-    LESS_THAN = 3;
-    LESS_THAN_OR_EQUAL = 4;
-    GREATER_THAN = 5;
-    GREATER_THAN_OR_EQUAL = 6;
+    // An unknown operation
+    OPERATION_UNSPECIFIED = 0;
+    // If the property is set at all
+    OPERATION_HAS = 1;
+    // If the property is equal to `value`
+    OPERATION_EQUAL = 2;
+    // If the property is less than `value`
+    OPERATION_LESS_THAN = 3;
+    // If the property is less than or equal to `value`
+    OPERATION_LESS_THAN_OR_EQUAL = 4;
+    // If the property is greater than `value`
+    OPERATION_GREATER_THAN = 5;
+    // If the property is greater than or equal to `value`
+    OPERATION_GREATER_THAN_OR_EQUAL = 6;
   }
+  // The filter operation to apply
   Operation operation = 1;
+  // The value to compare against. Unset if operation is `Has`
   int64 value = 2;
+  // Negation of the operation
+  // defaults to `false`
   bool negated = 3;
 }
 
+// AndIntFilters represents a group of filters that must all
+// be satisfied in order to match
 message AndIntFilters {
+  // The internal filters
   repeated IntFilter int_filters = 1;
 }
 
+// `OrIntFilters` represents groups of 'And'ed constraints, of which
+// any group can match.
 message OrIntFilters {
+  // The groups of And filters
   repeated AndIntFilters and_int_filters = 1;
 }
 
+// `StringFilter` represents a filter against a string property
 message StringFilter {
+  // The operation to apply as a filter
   enum Operation {
-    UNKNOWN_OPERATION = 0;
-    HAS = 1;
-    EQUAL = 2;
-    CONTAINS = 3;
-    REGEX = 4;
+    // The operation is unspecified
+    OPERATION_UNSPECIFIED = 0;
+    // If the property is set at all
+    OPERATION_HAS = 1;
+    // If the property is equal to `value`
+    OPERATION_EQUAL = 2;
+    // If the property contains `value`
+    OPERATION_CONTAINS = 3;
+    // If the property matches the regex `value`
+    OPERATION_REGEX = 4;
   }
+  // The operation to apply as a filter
   Operation operation = 1;
+  // The value to compare against, or an empty string if `Has`
   string value = 2;
+  // Whether to negate the filter or not
+  // defaults to `false`
   bool negated = 3;
 }
 
+// A group of StringFilter that must all match to satisfy a query
 message AndStringFilters {
+  // The underlying filters
   repeated StringFilter string_filters = 1;
 }
 
+// A group of AndStringFilters for which only one group must match
+// in order to satisfy a query
 message OrStringFilters {
+  // The underlying filters
   repeated AndStringFilters and_string_filters = 1;
 }
 
+// UidFilter represents a filter operation on a `Uid`
 message UidFilter {
+  // The operation to apply
   enum Operation {
-    UNKNOWN_OPERATION = 0;
-    EQUAL = 1;
+    // If the operation is unknown or unset
+    OPERATION_UNSPECIFIED = 0;
+    // If the uid property is equal to `value`
+    OPERATION_EQUAL = 1;
   }
+  // The operation to apply as a filter
   Operation operation = 1;
+  // The value to compare against
   graplinc.grapl.common.v1beta1.Uid value = 2;
 }
 
+// The filters to apply, of which if any match the query is satisfied
 message UidFilters {
+  // The underlying uid filters
   repeated UidFilter uid_filters = 1;
 }
 
+// QueryId is a unique identifier for a node query
 message QueryId {
+  // A non-zero value, guaranteed to be unique within a single query
   uint64 value = 1;
 }
 
+// A NodePropertyQuery is a group of filters for a node
+// where all filters must match in order for the overall query
+// to be satisfied
 message NodePropertyQuery {
+  // The type of the node
   graplinc.grapl.common.v1beta1.NodeType node_type = 1;
+  // The unique identifier of this query within an overall GraphQuery
   QueryId query_id = 2;
+  // A mapping of string property names to OrStringFilters
+  // Note that the key is `string` but when serializing and deserializing
+  // the keys must be treated as PropertyName
   map<string, OrStringFilters> string_filters = 3;
+  // A mapping of integer property names to OrIntFilters
+  // Note that the key is `string` but when serializing and deserializing
+  // the keys must be treated as PropertyName
   map<string, OrIntFilters> int_filters = 4;
-  // todo: Add other property types
+  // todo: Add unsigned 64bit property types
+  // The UidFilters
   UidFilters uid_filters = 5;
 }
 
-// Maps to `Dict[Tuple[QueryId, EdgeName], Set[QueryId]]`
+// An entry in a map, consisting of composite keys and a value
+// Used in the `EdgeQueryMap`
 message EdgeQueryEntry {
+  // The QueryId for the source of this edge
   // Part of the key
   QueryId query_id = 1;
+  // The name of the edge
   // Part of the key
   graplinc.grapl.common.v1beta1.EdgeName edge_name = 2;
-  // The value
+  // The QueryIds for destination node queries
   repeated QueryId neighbor_query_ids = 3;
 }
 
+// A Map of (QueryId, EdgeName) to List[QueryId]
 message EdgeQueryMap {
+  // The underlying map entries, stored as a list
   repeated EdgeQueryEntry entries = 1;
 }
 
-message EdgeEntry {
+// An entry in an EdgeNameMap, holding the associated forward
+// and reverse edge names
+message EdgeNameEntry {
+  // The forward edge name
   // Key
   graplinc.grapl.common.v1beta1.EdgeName forward_edge_name = 1;
+  // The reverse edge name
   // Value
   graplinc.grapl.common.v1beta1.EdgeName reverse_edge_name = 2;
 }
 
-message EdgeMap {
-  repeated EdgeEntry entries = 1;
+// A Map of EdgeName to associated EdgeName
+message EdgeNameMap {
+  // The underlying map entries, encoded as a list
+  repeated EdgeNameEntry entries = 1;
 }
 
-// Maps to `Dict[Tuple[QueryId, EdgeName], Set[QueryId]]`
+
+// An entry in the NodePropertyQueryMap, associating
+// a QueryId with a NodePropertyQuery
 message NodePropertyQueryEntry {
-  // Part of the key
+  // The unique identifier for this NodePropertyQuery
+  // The Key
   QueryId query_id = 1;
+  // The NodePropertyQuery itself
   // The value
   NodePropertyQuery node_property_query = 2;
 }
 
+// `NodePropertyQueryMap` associates `QueryIds` with `NodePropertyQuery`s
 message NodePropertyQueryMap {
+  // The underlying map entries encoded as a list
   repeated NodePropertyQueryEntry entries = 1;
 }
 
+// A query for a *connected* graph.
+// The server does not define any behavior if the graph query is disjoint,
+// clients should be careful to construct graphs such that they are always
+// connected
 message GraphQuery {
+  // The query id of the "root node". The root node
+  // is used to determine where to start the execution
+  // of the graph as well as to allow the client to associate
+  // this query id with a specific node that gets returned
   QueryId root_query_id = 1;
+  // Queries for nodes within this graph
   NodePropertyQueryMap node_property_queries = 2;
+  // Filters on edges between nodes
   EdgeQueryMap edge_filters = 3;
-  EdgeMap edge_map = 4;
+  // A mapping of every associated edge name involved in this query
+  EdgeNameMap edge_map = 4;
 }
 
+// StringProperty wraps a property name and its associated string value
 message StringProperty {
+  // The name of this property
   graplinc.grapl.common.v1beta1.PropertyName property_name = 1;
+  // The value
   string property_value = 2;
 }
 
+// A map of string property names to string property values
 message StringProperties {
+  // The underlying property entries
   repeated StringProperty properties = 1;
 }
 
+// IntProperty wraps a property name and its associated integer value
 message IntProperty {
+  // The name of this property
   graplinc.grapl.common.v1beta1.PropertyName property_name = 1;
+  // The value
   int64 property_value = 2;
 }
 
+// A map of integer property names to integer values
 message IntProperties {
+  // The underlying property entries
   repeated IntProperty properties = 1;
 }
 
+// Represents the properties of a node in the graph
 message NodePropertiesView {
   // The uid of the node
   graplinc.grapl.common.v1beta1.Uid uid = 1;
-  // The string name of the node's type
+  // The name of the node's type
   graplinc.grapl.common.v1beta1.NodeType node_type = 2;
   // The string properties of the node
   StringProperties string_properties = 3;
   // Todo: add other property types - int
 }
 
+// An entry in the NodePropertiesViewMap
 message NodePropertiesViewEntry {
+  // The uid of the node
+  // Key
   graplinc.grapl.common.v1beta1.Uid uid = 1;
+  // The node properties
+  // Value
   NodePropertiesView node_view = 2;
 }
 
+// A Map of NodePropertyViewEntrys
 message NodePropertiesViewMap {
+  // The underlying entries
   repeated NodePropertiesViewEntry entries = 1;
 }
 
+// An entry in the EdgeViewMap associating a Uid, EdgeName with
+// its neighbors
 message EdgeViewEntry {
+  // The Uid of the source node
+  // Key
   graplinc.grapl.common.v1beta1.Uid uid = 1;
+  // The name of the outgoing edge
+  // Key
   graplinc.grapl.common.v1beta1.EdgeName edge_name = 2;
+  // The neighbors targeted by this edge
+  // Value
   repeated graplinc.grapl.common.v1beta1.Uid neighbors = 3;
 }
 
+// A Map of (Uid, EdgeName) -> List[Uid]
 message EdgeViewMap {
+  // The underlying entries
   repeated EdgeViewEntry entries = 1;
 }
 
+// A view of the graph
 message GraphView {
   // The nodes in the graph
   NodePropertiesViewMap nodes = 1;
@@ -182,7 +302,9 @@ message GraphView {
   EdgeViewMap edges = 2;
 }
 
-message QueryGraphWithNodeRequest {
+// A Request to find a graph matching `GraphQuery` where
+// a node in that graph has the uid `node_uid`
+message QueryGraphWithUidRequest {
   // The tenant id that the graph is associated with
   graplinc.common.v1beta1.Uuid tenant_id = 1;
   // The node to parameterize against
@@ -191,15 +313,38 @@ message QueryGraphWithNodeRequest {
   GraphQuery graph_query = 3;
 }
 
-message QueryGraphWithNodeResponse {
-  // A view of the MergedGraph that matched our query
-  // or None if query did not match
+message MatchedGraphWithUid {
+  // A view of the graph that matched our query
   GraphView matched_graph = 1;
   // The uid of the node that corresponds to the "root" query
+  // This is *not* necessarily the `node_uid` from the request
   graplinc.grapl.common.v1beta1.Uid root_uid = 2;
 }
 
-message QueryGraphFromNodeRequest {
+// Represents a 'miss' for a QueryGraphWithUidRequest
+message NoMatchWithUid {
+  // empty
+}
+
+message MaybeMatchWithUid {
+  // The inner representation
+  oneof inner {
+    MatchedGraphWithUid matched = 1;
+    NoMatchWithUid missed = 2;
+  }
+}
+
+// The Response associated with a QueryGraphWithUidRequest
+// containing a matched graph and the associated uid
+message QueryGraphWithUidResponse {
+  MaybeMatchWithUid maybe_match = 1;
+}
+
+// The QueryGraphFromUidRequest represents a graph query
+// where the `node_uid` and the `graph_query.root_query_id`
+// represent the same node. Used for pivoting from `node_uid`
+// to any connected graphs.
+message QueryGraphFromUidRequest {
   // The tenant id that the graph is associated with
   graplinc.common.v1beta1.Uuid tenant_id = 1;
   // The node to parameterize against
@@ -208,15 +353,18 @@ message QueryGraphFromNodeRequest {
   GraphQuery graph_query = 3;
 }
 
-message QueryGraphFromNodeResponse {
+// The QueryGraphFromUidResponse contains the graph that matched
+// a QueryGraphFromUidResponse
+message QueryGraphFromUidResponse {
   // A view of the MergedGraph that matched our query
   // or None if query did not match
   GraphView matched_graph = 1;
 }
 
+// GraphQueryService manages read operations against the graph
 service GraphQueryService {
   // Used to find a node within a graph that matches a query
-  rpc QueryGraphWithUid(QueryGraphWithNodeRequest) returns (QueryGraphWithNodeResponse);
+  rpc QueryGraphWithUid(QueryGraphWithUidRequest) returns (QueryGraphWithUidResponse);
   // Performs a query on the node that corresponds to the provided uid as the root
-  rpc QueryGraphFromUid(QueryGraphFromNodeRequest) returns (QueryGraphFromNodeResponse);
+  rpc QueryGraphFromUid(QueryGraphFromUidRequest) returns (QueryGraphFromUidResponse);
 }

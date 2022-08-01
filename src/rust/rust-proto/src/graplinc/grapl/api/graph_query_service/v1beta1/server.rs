@@ -10,20 +10,20 @@ use tonic::transport::Server;
 
 use crate::{
     graplinc::grapl::api::graph_query_service::v1beta1::messages::{
-        QueryGraphFromNodeRequest,
-        QueryGraphFromNodeResponse,
-        QueryGraphWithNodeRequest,
-        QueryGraphWithNodeResponse,
+        QueryGraphFromUidRequest,
+        QueryGraphFromUidResponse,
+        QueryGraphWithUidRequest,
+        QueryGraphWithUidResponse,
     },
     protobufs::graplinc::grapl::api::graph_query_service::v1beta1::{
         graph_query_service_server::{
             GraphQueryService as GraphQueryServiceProto,
             GraphQueryServiceServer as GraphQueryServiceServerProto,
         },
-        QueryGraphFromNodeRequest as QueryGraphFromNodeRequestProto,
-        QueryGraphFromNodeResponse as QueryGraphFromNodeResponseProto,
-        QueryGraphWithNodeRequest as QueryGraphWithNodeRequestProto,
-        QueryGraphWithNodeResponse as QueryGraphWithNodeResponseProto,
+        QueryGraphFromUidRequest as QueryGraphFromUidRequestProto,
+        QueryGraphFromUidResponse as QueryGraphFromUidResponseProto,
+        QueryGraphWithUidRequest as QueryGraphWithUidRequestProto,
+        QueryGraphWithUidResponse as QueryGraphWithUidResponseProto,
     },
     protocol::{
         healthcheck::{
@@ -48,12 +48,12 @@ pub trait GraphQueryApi {
     type Error: Into<Status>;
     async fn query_graph_with_uid(
         &self,
-        request: QueryGraphWithNodeRequest,
-    ) -> Result<QueryGraphWithNodeResponse, Self::Error>;
+        request: QueryGraphWithUidRequest,
+    ) -> Result<QueryGraphWithUidResponse, Self::Error>;
     async fn query_graph_from_uid(
         &self,
-        request: QueryGraphFromNodeRequest,
-    ) -> Result<QueryGraphFromNodeResponse, Self::Error>;
+        request: QueryGraphFromUidRequest,
+    ) -> Result<QueryGraphFromUidResponse, Self::Error>;
 }
 
 #[tonic::async_trait]
@@ -64,8 +64,8 @@ where
 {
     async fn query_graph_with_uid(
         &self,
-        request: tonic::Request<QueryGraphWithNodeRequestProto>,
-    ) -> Result<tonic::Response<QueryGraphWithNodeResponseProto>, tonic::Status> {
+        request: tonic::Request<QueryGraphWithUidRequestProto>,
+    ) -> Result<tonic::Response<QueryGraphWithUidResponseProto>, tonic::Status> {
         let request = request.into_inner();
         let request = request
             .try_into()
@@ -79,8 +79,8 @@ where
 
     async fn query_graph_from_uid(
         &self,
-        request: tonic::Request<QueryGraphFromNodeRequestProto>,
-    ) -> Result<tonic::Response<QueryGraphFromNodeResponseProto>, tonic::Status> {
+        request: tonic::Request<QueryGraphFromUidRequestProto>,
+    ) -> Result<tonic::Response<QueryGraphFromUidResponseProto>, tonic::Status> {
         let request = request.into_inner();
         let request = request
             .try_into()
