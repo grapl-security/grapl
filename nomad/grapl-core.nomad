@@ -499,13 +499,13 @@ job "grapl-core" {
             readonly = false
           }
 
-          resources {
-            memory = 1024
-          }
-
-
           ports = ["dgraph-alpha-port"]
         }
+
+        resources {
+          memory = 512
+        }
+
       }
 
       service {
