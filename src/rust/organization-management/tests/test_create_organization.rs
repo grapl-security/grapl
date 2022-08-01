@@ -1,9 +1,7 @@
 #![cfg(feature = "integration_tests")]
 
-use std::time::Duration;
-
 use clap::Parser;
-use grapl_utils::future_ext::GraplFutureExt;
+use grapl_config::ToPostgresUrl;
 use organization_management::OrganizationManagementServiceConfig;
 use rust_proto::{
     client_factory::{
@@ -22,17 +20,7 @@ async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
 
     let service_config = OrganizationManagementServiceConfig::parse();
 
-    let postgres_address = format!(
-        "postgresql://{}:{}@{}:{}",
-        service_config.organization_management_db_username,
-        service_config.organization_management_db_password,
-        service_config.organization_management_db_hostname,
-        service_config.organization_management_db_port,
-    );
-
-    let pool = sqlx::PgPool::connect(&postgres_address)
-        .timeout(Duration::from_secs(5))
-        .await??;
+    let pool = service_config.to_postgres_url().connect().await?;
 
     let client_config = OrganizationManagementClientConfig::parse();
     let mut client = build_grpc_client_with_options(

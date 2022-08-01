@@ -3,6 +3,17 @@ use std::str::FromStr;
 use rusoto_core::Region;
 
 pub mod env_helpers;
+mod postgres;
+pub use postgres::{
+    PostgresClient,
+    PostgresDbInitError,
+    PostgresUrl,
+    ToPostgresUrl,
+};
+pub use secrecy::{
+    Secret,
+    SecretString,
+};
 
 pub fn region() -> Region {
     let region_override_endpoint = std::env::var("AWS_REGION_ENDPOINT_OVERRIDE");

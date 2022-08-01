@@ -1,4 +1,4 @@
-use grapl_utils::future_ext::GraplFutureExt;
+use grapl_config::PostgresClient;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginType;
 
 use super::models::{
@@ -7,9 +7,27 @@ use super::models::{
     PluginIdRow,
     PluginRow,
 };
+use crate::server::service::PluginRegistryDbConfig;
 
 pub struct PluginRegistryDbClient {
     pool: sqlx::PgPool,
+}
+
+#[async_trait::async_trait]
+impl PostgresClient for PluginRegistryDbClient {
+    type Config = PluginRegistryDbConfig;
+    type Error = grapl_config::PostgresDbInitError;
+
+    fn new(pool: sqlx::Pool<sqlx::Postgres>) -> Self {
+        Self { pool }
+    }
+
+    #[tracing::instrument]
+    async fn migrate(pool: &sqlx::Pool<sqlx::Postgres>) -> Result<(), sqlx::migrate::MigrateError> {
+        tracing::info!(message = "Performing database migration");
+
+        sqlx::migrate!().run(pool).await
+    }
 }
 
 pub struct DbCreatePluginArgs {
@@ -157,17 +175,5 @@ impl PluginRegistryDbClient {
         .execute(&self.pool)
         .await
         .map(|_| ()) // Toss result
-    }
-
-    pub async fn new(postgres_address: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let client = Self {
-            pool: sqlx::PgPool::connect(postgres_address)
-                .timeout(std::time::Duration::from_secs(5))
-                .await??,
-        };
-
-        sqlx::migrate!().run(&client.pool).await?;
-
-        Ok(client)
     }
 }

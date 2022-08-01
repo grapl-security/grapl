@@ -27,11 +27,19 @@ pub struct PluginWorkQueueServiceConfig {
 #[derive(clap::Parser, Clone, Debug)]
 pub struct PluginWorkQueueDbConfig {
     #[clap(long, env)]
-    pub plugin_work_queue_db_hostname: String,
-    #[clap(long, env)]
-    pub plugin_work_queue_db_port: u16,
+    pub plugin_work_queue_db_address: String,
     #[clap(long, env)]
     pub plugin_work_queue_db_username: String,
     #[clap(long, env)]
-    pub plugin_work_queue_db_password: String,
+    pub plugin_work_queue_db_password: grapl_config::SecretString,
+}
+
+impl grapl_config::ToPostgresUrl for PluginWorkQueueDbConfig {
+    fn to_postgres_url(self) -> grapl_config::PostgresUrl {
+        grapl_config::PostgresUrl {
+            address: self.plugin_work_queue_db_address,
+            username: self.plugin_work_queue_db_username,
+            password: self.plugin_work_queue_db_password,
+        }
+    }
 }

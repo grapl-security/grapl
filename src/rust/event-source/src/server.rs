@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use grapl_config::PostgresClient;
 use rust_proto::{
     graplinc::grapl::api::event_source::{
         v1beta1 as native,
@@ -19,10 +20,8 @@ use crate::{
 };
 
 pub async fn exec_service(config: EventSourceConfig) -> Result<(), Box<dyn std::error::Error>> {
-    let api_impl = EventSourceApiImpl::try_from(&config).await?;
-    // I haven't quite figured out the right place to put the migrate.
-    // Perhaps when we construct the db client?!
-    api_impl.db_client.migrate().await?;
+    let api_impl = EventSourceApiImpl::try_from(config.clone()).await?;
+
     let (server, _shutdown_tx) = EventSourceServer::new(
         api_impl,
         TcpListener::bind(config.service_config.event_source_bind_address.clone()).await?,
@@ -47,9 +46,8 @@ pub struct EventSourceApiImpl {
 }
 
 impl EventSourceApiImpl {
-    pub async fn try_from(config: &EventSourceConfig) -> Result<Self, EventSourceError> {
-        let config = config.clone();
-        let db_client = EventSourceDbClient::try_from(config.db_config.clone()).await?;
+    pub async fn try_from(config: EventSourceConfig) -> Result<Self, EventSourceError> {
+        let db_client = EventSourceDbClient::init_with_config(config.db_config.clone()).await?;
         Ok(Self { config, db_client })
     }
 }

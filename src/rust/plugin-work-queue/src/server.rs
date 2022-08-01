@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use grapl_config::PostgresClient;
 use kafka::{
     Producer,
     ProducerError,
@@ -47,10 +48,8 @@ pub enum PluginWorkQueueError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginWorkQueueInitError {
-    #[error("Timeout {0}")]
-    Timeout(#[from] tokio::time::error::Elapsed),
-    #[error("Sqlx {0}")]
-    Sqlx(#[from] sqlx::Error),
+    #[error(transparent)]
+    DbInit(#[from] grapl_config::PostgresDbInitError),
     #[error("Kafka {0}")]
     Kafka(#[from] kafka::ConfigurationError),
 }
@@ -75,7 +74,7 @@ pub struct PluginWorkQueue {
 
 impl PluginWorkQueue {
     pub async fn try_from(configs: &ConfigUnion) -> Result<Self, PluginWorkQueueInitError> {
-        let psql_queue = PsqlQueue::try_from(configs.db_config.clone()).await?;
+        let psql_queue = PsqlQueue::init_with_config(configs.db_config.clone()).await?;
         let generator_producer = Producer::new(configs.generator_producer_config.clone())?;
         Ok(Self {
             queue: psql_queue,
@@ -232,9 +231,6 @@ pub async fn exec_service(configs: ConfigUnion) -> Result<(), Box<dyn std::error
     );
 
     let plugin_work_queue = PluginWorkQueue::try_from(&configs).await?;
-
-    tracing::info!(message = "Performing migration",);
-    sqlx::migrate!().run(&plugin_work_queue.queue.pool).await?;
 
     tracing::info!(message = "Binding service",);
     let addr = configs.service_config.plugin_work_queue_bind_address;
