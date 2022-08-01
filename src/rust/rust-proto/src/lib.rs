@@ -224,7 +224,7 @@ pub(crate) mod type_url {
 }
 
 #[non_exhaustive]
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum SerDeError {
     #[error("failed to serialize {0}")]
     EncodingFailed(#[from] EncodeError),

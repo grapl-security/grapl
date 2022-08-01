@@ -54,11 +54,11 @@ impl From<IngressApiError> for Status {
 }
 
 struct IngressApi {
-    producer: Producer<Envelope<RawLog>>,
+    producer: Producer<RawLog>,
 }
 
 impl IngressApi {
-    fn new(producer: Producer<Envelope<RawLog>>) -> Self {
+    fn new(producer: Producer<RawLog>) -> Self {
         IngressApi { producer }
     }
 }
@@ -135,7 +135,7 @@ async fn handler() -> Result<(), ConfigurationError> {
         message = "configuring kafka producer",
         producer_config = ?producer_config,
     );
-    let producer: Producer<Envelope<RawLog>> = Producer::new(producer_config)?;
+    let producer: Producer<RawLog> = Producer::new(producer_config)?;
     tracing::info!(message = "kafka producer configured successfully",);
 
     tracing::info!(

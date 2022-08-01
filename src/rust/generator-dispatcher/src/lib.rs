@@ -33,6 +33,7 @@ use rust_proto::{
     protocol::service_client::ConnectError,
 };
 use thiserror::Error;
+use tracing::Instrument;
 use uuid::Uuid;
 
 pub mod config;
@@ -63,7 +64,7 @@ pub enum GeneratorDispatcherError {
 
 pub struct GeneratorDispatcher {
     plugin_work_queue_client: PluginWorkQueueServiceClient,
-    raw_logs_consumer: Consumer<Envelope<RawLog>>,
+    raw_logs_consumer: Consumer<RawLog>,
     raw_logs_retry_producer: RetryProducer<RawLog>,
     generator_ids_cache: GeneratorIdsCache,
 }
@@ -74,7 +75,7 @@ impl GeneratorDispatcher {
         config: GeneratorDispatcherConfig,
         plugin_work_queue_client: PluginWorkQueueServiceClient,
     ) -> Result<Self, ConfigurationError> {
-        let raw_logs_consumer: Consumer<Envelope<RawLog>> = Consumer::new(config.kafka_config)?;
+        let raw_logs_consumer: Consumer<RawLog> = Consumer::new(config.kafka_config)?;
         let raw_logs_retry_producer: RetryProducer<RawLog> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
         let generator_ids_cache = GeneratorIdsCache::new(
@@ -107,26 +108,25 @@ impl GeneratorDispatcher {
             let buffered = self.raw_logs_consumer
                 .stream()
                 .take(pool_size)
-                .map(move |raw_log_result: Result<Envelope<RawLog>, ConsumerError>| {
+                .map(move |raw_log_result: Result<(tracing::Span, Envelope<RawLog>), ConsumerError>| {
                     let generator_ids_cache = generator_ids_cache.clone();
                     let plugin_work_queue_client = plugin_work_queue_client.clone();
                     let raw_logs_retry_producer = raw_logs_retry_producer.clone();
 
                     async move {
                         match raw_log_result {
-                            Ok(envelope) => {
+                            Ok((span, envelope)) => {
                                 match generator_ids_cache
                                     .clone()
                                     .generator_ids_for_event_source(envelope.event_source_id())
+                                    .instrument(span.clone())
                                     .await
                                 {
                                     Ok(Some(generator_ids)) => {
                                         if generator_ids.is_empty() {
+                                            let _guard = span.enter();
                                             tracing::warn!(
                                                 message = "unrecognized event source",
-                                                tenant_id = %envelope.tenant_id(),
-                                                trace_id = %envelope.trace_id(),
-                                                event_source_id = %envelope.event_source_id(),
                                             );
                                         } else {
                                             // cache hit
@@ -134,7 +134,9 @@ impl GeneratorDispatcher {
                                                 plugin_work_queue_client.clone(),
                                                 generator_ids,
                                                 envelope
-                                            ).await?;
+                                            )
+                                                .instrument(span)
+                                                .await?;
                                         }
 
                                         Ok(())
@@ -143,32 +145,35 @@ impl GeneratorDispatcher {
                                         // cache miss, but an update was
                                         // successfully enqueued so we'll retry
                                         // the message
+                                        let _guard = span.enter();
                                         tracing::debug!(
                                             message = "generator IDs cache miss, retrying message",
-                                            tenant_id = %envelope.tenant_id(),
-                                            trace_id = %envelope.trace_id(),
-                                            event_source_id = %envelope.event_source_id(),
                                         );
+                                        drop(_guard);
 
                                         retry_message(
                                             &raw_logs_retry_producer,
                                             envelope
-                                        ).await?;
+                                        ).instrument(span).await?;
 
                                         Ok(())
                                     },
                                     Err(GeneratorIdsCacheError::Retryable(reason)) => {
                                         // retryable cache error, so we'll retry
                                         // the message
+                                        let _guard = span.enter();
                                         tracing::warn!(
                                             message = "generator IDs cache error, retrying message",
                                             reason =% reason,
                                         );
+                                        drop(_guard);
 
                                         retry_message(
                                             &raw_logs_retry_producer,
                                             envelope
-                                        ).await?;
+                                        )
+                                            .instrument(span)
+                                            .await?;
 
                                         Ok(())
                                     },

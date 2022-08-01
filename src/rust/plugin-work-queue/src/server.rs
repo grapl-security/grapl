@@ -69,7 +69,7 @@ impl From<PluginWorkQueueError> for Status {
 #[derive(Clone)]
 pub struct PluginWorkQueue {
     queue: PsqlQueue,
-    generator_producer: Producer<Envelope<GraphDescription>>,
+    generator_producer: Producer<GraphDescription>,
 }
 
 impl PluginWorkQueue {
