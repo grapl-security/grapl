@@ -34,6 +34,7 @@ uuid = { version = "1.0", features = ["serde", "v4"] }
 [build-dependencies]
 
 [dev-dependencies]
+env_logger = "0.9.0"
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
 
 [features]
