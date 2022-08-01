@@ -1,14 +1,14 @@
 use crate::{
     graplinc::grapl::api::graph_query_service::v1beta1::messages::{
-        QueryGraphFromNodeRequest,
-        QueryGraphFromNodeResponse,
-        QueryGraphWithNodeRequest,
-        QueryGraphWithNodeResponse,
+        QueryGraphFromUidRequest,
+        QueryGraphFromUidResponse,
+        QueryGraphWithUidRequest,
+        QueryGraphWithUidResponse,
     },
     protobufs::graplinc::grapl::api::graph_query_service::v1beta1::{
         graph_query_service_client::GraphQueryServiceClient,
-        QueryGraphFromNodeRequest as QueryGraphFromNodeRequestProto,
-        QueryGraphWithNodeRequest as QueryGraphWithNodeRequestProto,
+        QueryGraphFromUidRequest as QueryGraphFromUidRequestProto,
+        QueryGraphWithUidRequest as QueryGraphWithUidRequestProto,
     },
     protocol::status::Status,
     SerDeError,
@@ -44,9 +44,9 @@ impl GraphQueryClient {
 
     pub async fn query_graph_with_uid(
         &mut self,
-        request: QueryGraphWithNodeRequest,
-    ) -> Result<QueryGraphWithNodeResponse, GraphQueryClientError> {
-        let request: QueryGraphWithNodeRequestProto = request.into();
+        request: QueryGraphWithUidRequest,
+    ) -> Result<QueryGraphWithUidResponse, GraphQueryClientError> {
+        let request: QueryGraphWithUidRequestProto = request.into();
         Ok(self
             .inner
             .query_graph_with_uid(request)
@@ -57,9 +57,9 @@ impl GraphQueryClient {
     }
     pub async fn query_graph_from_uid(
         &mut self,
-        request: QueryGraphFromNodeRequest,
-    ) -> Result<QueryGraphFromNodeResponse, GraphQueryClientError> {
-        let request: QueryGraphFromNodeRequestProto = request.into();
+        request: QueryGraphFromUidRequest,
+    ) -> Result<QueryGraphFromUidResponse, GraphQueryClientError> {
+        let request: QueryGraphFromUidRequestProto = request.into();
         Ok(self
             .inner
             .query_graph_from_uid(request)

@@ -24,6 +24,12 @@ pub struct Visited {
     already_visited: Arc<Mutex<HashSet<(QueryId, EdgeName, QueryId)>>>,
 }
 
+impl Default for Visited {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Visited {
     pub fn new() -> Self {
         Self {

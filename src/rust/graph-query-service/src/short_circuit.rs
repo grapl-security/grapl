@@ -11,6 +11,12 @@ pub struct ShortCircuit {
     short_circuit: Arc<AtomicBool>,
 }
 
+impl Default for ShortCircuit {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ShortCircuit {
     pub fn new() -> Self {
         Self {

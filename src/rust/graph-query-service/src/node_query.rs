@@ -30,12 +30,19 @@ use rustc_hash::{
 use crate::{
     property_query::{
         EdgeRow,
+        PropertyQueryError,
         PropertyQueryExecutor,
         StringField,
     },
     short_circuit::ShortCircuit,
     visited::Visited,
 };
+
+#[derive(thiserror::Error, Debug)]
+pub enum NodeQueryError {
+    #[error("PropertyQueryError {0}")]
+    PropertyQueryError(#[from] PropertyQueryError),
+}
 
 pub(crate) fn match_property(
     node_properties_query: &NodePropertyQuery,
@@ -72,7 +79,7 @@ pub async fn fetch_node_properties(
     uid: Uid,
     tenant_id: uuid::Uuid,
     property_query_executor: PropertyQueryExecutor,
-) -> Result<Option<Vec<StringField>>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+) -> Result<Option<Vec<StringField>>, NodeQueryError> {
     let mut fields = vec![];
     if !node_properties_query.string_filters.is_empty() {
         let mut filter_names: FxHashSet<_> = node_properties_query.string_filters.keys().collect();
@@ -104,10 +111,7 @@ pub async fn fetch_edges(
     graph_query: &GraphQuery,
     tenant_id: uuid::Uuid,
     property_query_executor: PropertyQueryExecutor,
-) -> Result<
-    Option<FxHashMap<EdgeName, Vec<EdgeRow>>>,
-    Box<dyn std::error::Error + Send + Sync + 'static>,
-> {
+) -> Result<Option<FxHashMap<EdgeName, Vec<EdgeRow>>>, NodeQueryError> {
     let mut edge_rows = FxHashMap::default();
     for (src_id, edge_name) in graph_query.edge_filters.keys() {
         if *src_id != node_properties_query.query_id {
@@ -141,7 +145,7 @@ pub async fn fetch_node_with_edges(
     visited: Visited,
     x_short_circuit: ShortCircuit,
     root_node_uid: &mut Option<Uid>,
-) -> Result<Option<GraphView>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+) -> Result<Option<GraphView>, NodeQueryError> {
     if visited.get_short_circuit() || x_short_circuit.get_short_circuit() {
         return Ok(None);
     }
@@ -224,7 +228,7 @@ pub async fn fetch_node_with_edges(
         let edge_rows = &edges[edge_name];
 
         for edge_query_id in edge_queries {
-            let edge_query = &graph_query.node_property_queries[&edge_query_id];
+            let edge_query = &graph_query.node_property_queries[edge_query_id];
             // we have to check the reverse edge as well
             if visited.check_and_add(
                 node_properties_query.query_id,
@@ -291,7 +295,7 @@ pub struct NodeQuery {
 
 impl NodeQuery {
     pub fn root(node_type: NodeType) -> Self {
-        let query_id = QueryId::new();
+        let query_id = QueryId::default();
         let inner_query = NodePropertyQuery {
             query_id,
             node_type,
@@ -352,7 +356,7 @@ impl NodeQuery {
         edge_name: EdgeName,
         reverse_edge_name: EdgeName,
         node: NodePropertyQuery,
-        init_edge: impl FnOnce(&mut Self) -> (),
+        init_edge: impl FnOnce(&mut Self),
     ) -> &mut Self {
         let neighbor_query_id = node.query_id;
         {
@@ -393,9 +397,9 @@ impl NodeQuery {
         edge_name: EdgeName,
         reverse_edge_name: EdgeName,
         node_type: NodeType,
-        init_edge: impl FnOnce(&mut Self) -> (),
+        init_edge: impl FnOnce(&mut Self),
     ) -> &mut Self {
-        let new_neighbor_id = QueryId::new();
+        let new_neighbor_id = QueryId::default();
 
         {
             let graph = self.graph.as_mut().unwrap();
@@ -438,7 +442,7 @@ impl NodeQuery {
 
         let graph = Rc::get_mut(&mut graph).unwrap();
         graph.replace(GraphQuery {
-            root_query_id: QueryId::new(),
+            root_query_id: Default::default(),
             node_property_queries: Default::default(),
             edge_filters: Default::default(),
             edge_map: Default::default(),

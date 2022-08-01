@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use std::sync::Arc;
 
 use rust_proto::{
@@ -5,10 +6,13 @@ use rust_proto::{
         messages::{
             GraphQuery,
             GraphView,
-            QueryGraphFromNodeRequest,
-            QueryGraphFromNodeResponse,
-            QueryGraphWithNodeRequest,
-            QueryGraphWithNodeResponse,
+            MatchedGraphWithUid,
+            MaybeMatchWithUid,
+            NoMatchWithUid,
+            QueryGraphFromUidRequest,
+            QueryGraphFromUidResponse,
+            QueryGraphWithUidRequest,
+            QueryGraphWithUidResponse,
         },
         server::GraphQueryApi,
     },
@@ -17,21 +21,29 @@ use rust_proto::{
 use scylla::CachingSession;
 
 use crate::{
-    graph_query::query_graph,
-    node_query::fetch_node_with_edges,
+    graph_query::{
+        query_graph,
+        GraphQueryError,
+    },
+    node_query::{
+        fetch_node_with_edges,
+        NodeQueryError,
+    },
     property_query::PropertyQueryExecutor,
     short_circuit::ShortCircuit,
     visited::Visited,
 };
 
 #[derive(thiserror::Error, Debug)]
-pub enum GraphQueryError {
-    #[error("todo")]
-    Todo(&'static str),
+pub enum GraphQueryServiceError {
+    #[error("GraphQueryError {0}")]
+    GraphQueryError(#[from] GraphQueryError),
+    #[error("NodeQueryError {0}")]
+    NodeQueryError(#[from] NodeQueryError),
 }
 
-impl From<GraphQueryError> for Status {
-    fn from(_e: GraphQueryError) -> Self {
+impl From<GraphQueryServiceError> for Status {
+    fn from(_e: GraphQueryServiceError) -> Self {
         Status::unimplemented("foo")
     }
 }
@@ -51,12 +63,12 @@ impl GraphQueryService {
 
 #[async_trait::async_trait]
 impl GraphQueryApi for GraphQueryService {
-    type Error = GraphQueryError;
+    type Error = GraphQueryServiceError;
 
     async fn query_graph_with_uid(
         &self,
-        request: QueryGraphWithNodeRequest,
-    ) -> Result<QueryGraphWithNodeResponse, GraphQueryError> {
+        request: QueryGraphWithUidRequest,
+    ) -> Result<QueryGraphWithUidResponse, GraphQueryServiceError> {
         let node_uid = request.node_uid;
 
         let graph_query: GraphQuery = request.graph_query;
@@ -66,22 +78,29 @@ impl GraphQueryApi for GraphQueryService {
             request.tenant_id,
             self.property_query_executor.clone(),
         )
-        .await;
+        .await?;
 
-        let (graph, root_uid) = graph.unwrap().unwrap();
+        let (matched_graph, root_uid) = match graph {
+            Some((graph, root_uid)) => (graph, root_uid),
+            None => {
+                return Ok(QueryGraphWithUidResponse {
+                    maybe_match: MaybeMatchWithUid::Missed(NoMatchWithUid {}),
+                })
+            }
+        };
 
-        let graph_view = GraphView::from(graph);
-
-        Ok(QueryGraphWithNodeResponse {
-            matched_graph: graph_view,
-            root_uid,
+        Ok(QueryGraphWithUidResponse {
+            maybe_match: MaybeMatchWithUid::Matched(MatchedGraphWithUid {
+                matched_graph,
+                root_uid,
+            }),
         })
     }
 
     async fn query_graph_from_uid(
         &self,
-        request: QueryGraphFromNodeRequest,
-    ) -> Result<QueryGraphFromNodeResponse, GraphQueryError> {
+        request: QueryGraphFromUidRequest,
+    ) -> Result<QueryGraphFromUidResponse, GraphQueryServiceError> {
         let node_uid = request.node_uid;
 
         let graph_query: GraphQuery = request.graph_query;
@@ -102,14 +121,17 @@ impl GraphQueryApi for GraphQueryService {
             x_short_circuit,
             &mut None,
         )
-        .await
-        .expect("error: todo")
-        .expect("no match");
+        .await?;
 
-        let graph_view = GraphView::from(graph);
-
-        Ok(QueryGraphFromNodeResponse {
-            matched_graph: graph_view,
-        })
+        // let matched_graph = match graph {
+        //     Some(matched_graph)
+        // };
+        //
+        // let graph_view = GraphView::from(graph);
+        //
+        // Ok(QueryGraphFromUidResponse {
+        //     matched_graph: graph_view,
+        // })
+        todo!()
     }
 }
