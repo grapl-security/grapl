@@ -67,12 +67,12 @@ where
         node: &mut NodeDescription,
         strategy: &Session,
     ) -> Result<String, Error> {
-        let mut primary_key = String::with_capacity(32);
+        let mut primary_key = tenant_id.urn().to_string();
+        primary_key.reserve(32);
 
         if strategy.primary_key_requires_asset_id {
             panic!("asset_id resolution is currently not supported")
         }
-
         for prop_name in &strategy.primary_key_properties {
             let prop_val = node.properties.get(prop_name);
 
@@ -87,7 +87,6 @@ where
 
         // Push node type, as a natural partition
         primary_key.push_str(&node.node_key);
-
         Ok(primary_key)
     }
 
@@ -117,7 +116,7 @@ where
         }
 
         hasher.update(node.node_type.as_bytes());
-
+        hasher.update(tenant_id.as_bytes());
         Ok(hex::encode(hasher.finalize()))
     }
 

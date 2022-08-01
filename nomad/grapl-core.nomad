@@ -501,6 +501,11 @@ job "grapl-core" {
 
           ports = ["dgraph-alpha-port"]
         }
+
+        resources {
+          memory = 512
+        }
+
       }
 
       service {
