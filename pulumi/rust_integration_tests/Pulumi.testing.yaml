@@ -3,6 +3,7 @@ config:
   rust-integration-tests:artifacts:
     engagement-creator: 20220801202646-2b72332
     event-source: 20220801202646-2b72332
+    firecracker_rootfs.tar.gz: 20220801204214-06bb008
     generator-dispatcher: 20220801202646-2b72332
     generator-execution-sidecar: 20220801202646-2b72332
     generator-executor: 20220713174145-ba8f7e1
