@@ -11,7 +11,7 @@ pub struct GraphDbConfig {
     pub graph_db_auth_username: String,
     #[clap(env)]
     /// The password for the graph database
-    pub graph_db_auth_password: String,
+    pub graph_db_auth_password: secrecy::SecretString,
 }
 
 #[derive(clap::Parser, Debug, Clone)]

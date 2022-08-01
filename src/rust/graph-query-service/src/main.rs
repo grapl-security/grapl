@@ -7,6 +7,7 @@ use graph_query_service::{
 };
 use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::server::GraphQueryServiceServer;
 use scylla::CachingSession;
+use secrecy::ExposeSecret;
 use server::GraphQueryService;
 
 use crate::config::GraphQueryServiceConfig;
@@ -17,7 +18,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut scylla_config = scylla::SessionConfig::new();
     scylla_config.add_known_nodes_addr(&config.graph_db_config.graph_db_addresses[..]);
     scylla_config.auth_username = Some(config.graph_db_config.graph_db_auth_username.to_owned());
-    scylla_config.auth_password = Some(config.graph_db_config.graph_db_auth_password.to_owned());
+    scylla_config.auth_password = Some(
+        config
+            .graph_db_config
+            .graph_db_auth_password
+            .expose_secret()
+            .to_owned(),
+    );
 
     let scylla_client = Arc::new(CachingSession::from(
         scylla::Session::connect(scylla_config).await?,
