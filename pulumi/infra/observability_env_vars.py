@@ -16,8 +16,12 @@ def observability_env_vars_for_local() -> str:
         'http://{{ env "attr.unique.network.ip-address" }}:9411/api/v2/spans'
     )
 
+    # Default is 512. We were getting errors that our Thrift messages were too big.
+    otel_bsp_max_export_batch_size = 32
+
     return f"""
         OTEL_EXPORTER_JAEGER_AGENT_HOST = {otel_host}
         OTEL_EXPORTER_JAEGER_AGENT_PORT = {otel_port}
         OTEL_EXPORTER_ZIPKIN_ENDPOINT   = {zipkin_endpoint}
+        OTEL_BSP_MAX_EXPORT_BATCH_SIZE = {otel_bsp_max_export_batch_size}
     """
