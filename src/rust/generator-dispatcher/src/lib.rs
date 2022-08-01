@@ -121,12 +121,21 @@ impl GeneratorDispatcher {
                                     .await
                                 {
                                     Ok(Some(generator_ids)) => {
-                                        // cache hit
-                                        enqueue_plugin_work(
-                                            plugin_work_queue_client.clone(),
-                                            generator_ids,
-                                            envelope
-                                        ).await?;
+                                        if generator_ids.is_empty() {
+                                            tracing::warn!(
+                                                message = "unrecognized event source",
+                                                tenant_id = %envelope.tenant_id(),
+                                                trace_id = %envelope.trace_id(),
+                                                event_source_id = %envelope.event_source_id(),
+                                            );
+                                        } else {
+                                            // cache hit
+                                            enqueue_plugin_work(
+                                                plugin_work_queue_client.clone(),
+                                                generator_ids,
+                                                envelope
+                                            ).await?;
+                                        }
 
                                         Ok(())
                                     },
@@ -134,6 +143,13 @@ impl GeneratorDispatcher {
                                         // cache miss, but an update was
                                         // successfully enqueued so we'll retry
                                         // the message
+                                        tracing::debug!(
+                                            message = "generator IDs cache miss, retrying message",
+                                            tenant_id = %envelope.tenant_id(),
+                                            trace_id = %envelope.trace_id(),
+                                            event_source_id = %envelope.event_source_id(),
+                                        );
+
                                         retry_message(
                                             &raw_logs_retry_producer,
                                             envelope

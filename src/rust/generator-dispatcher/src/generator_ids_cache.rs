@@ -119,7 +119,7 @@ impl GeneratorIdsCache {
                                 Ok(response) => {
                                     response.plugin_ids
                                 },
-                                Err(PluginRegistryServiceClientError::ErrorStatus(Status{
+                                Err(PluginRegistryServiceClientError::ErrorStatus(Status {
                                     code: Code::NotFound,
                                     ..
                                 })) => {
@@ -169,12 +169,10 @@ impl GeneratorIdsCache {
                                 },
                             };
 
-                        if ! generator_ids.is_empty() {
-                            generator_ids_cache.insert(
-                                event_source_id,
-                                generator_ids,
-                            ).await;
-                        }
+                        generator_ids_cache.insert(
+                            event_source_id,
+                            generator_ids,
+                        ).await;
                     }
                 })
                 .await;

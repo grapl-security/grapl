@@ -19,7 +19,7 @@ SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        curl=7.74.0-1.3+deb11u1 \
+        curl=7.74.0-1.3+deb11u2 \
         jq=1.6-2.1 \
         unzip=6.0-26 \
     && apt-get install --yes --no-install-recommends \
