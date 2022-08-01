@@ -40,6 +40,12 @@ sudo mount -t ext4 \
     -o loop,rw \
     "${IMAGE}" "${MOUNT_POINT}"
 
+# (Automatically unmount the image, in case we need to retry)
+unmount_image() {
+    sudo umount "${MOUNT_POINT}"
+}
+trap unmount_image EXIT
+
 # Let anybody write to the mount point.
 sudo chmod 777 "${MOUNT_POINT}"
 
@@ -79,7 +85,6 @@ sudo debootstrap --include apt,nano "${DEBIAN_VERSION}" \
 # Tar the image into $OUTPUT_DIR; this will be scp'd
 # back to the Packer Host OS by Packer
 ########################################
-sudo umount "${MOUNT_POINT}"
 
 # NOTE about tar: If you specify the full path of the image,
 #   the tar will contain that full nested path of directories.
