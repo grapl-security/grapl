@@ -8,6 +8,9 @@ config:
     graph-merger:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
+    graph-query-service:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: DEBUG
     node-identifier:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG

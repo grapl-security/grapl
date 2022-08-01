@@ -28,6 +28,15 @@ pub(crate) mod protobufs {
         }
 
         pub(crate) mod grapl {
+            pub(crate) mod common {
+                pub(crate) mod v1beta1 {
+                    include!(concat!(
+                        env!("OUT_DIR"),
+                        "/graplinc.grapl.common.v1beta1.rs"
+                    ));
+                }
+            }
+
             pub(crate) mod api {
                 pub(crate) mod event_source {
                     pub(crate) mod v1beta1 {
@@ -43,6 +52,15 @@ pub(crate) mod protobufs {
                         include!(concat!(
                             env!("OUT_DIR"),
                             "/graplinc.grapl.api.graph.v1beta1.rs"
+                        ));
+                    }
+                }
+
+                pub(crate) mod graph_query_service {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.graph_query_service.v1beta1.rs"
                         ));
                     }
                 }
@@ -142,12 +160,22 @@ pub mod graplinc {
     }
 
     pub mod grapl {
+        pub mod common {
+            pub mod v1beta1 {
+                pub mod types;
+            }
+        }
+
         pub mod api {
             pub mod event_source {
                 pub mod v1beta1;
             }
 
             pub mod graph {
+                pub mod v1beta1;
+            }
+
+            pub mod graph_query_service {
                 pub mod v1beta1;
             }
 
