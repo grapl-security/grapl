@@ -265,6 +265,12 @@ FROM rust-dist AS graph-merger-deploy
 COPY --from=build /outputs/graph-merger /
 ENTRYPOINT ["/graph-merger"]
 
+##### graph-query-service
+FROM rust-dist AS graph-query-service-deploy
+
+COPY --from=build /outputs/graph-query-service /
+ENTRYPOINT ["/graph-query-service"]
+
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy
 
