@@ -5,7 +5,10 @@ use std::{
 
 use async_trait::async_trait;
 use futures::StreamExt;
-use grapl_config::env_helpers::FromEnv;
+use grapl_config::{
+    env_helpers::FromEnv,
+    PostgresClient,
+};
 use rusoto_s3::S3Client;
 use rust_proto::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
@@ -68,13 +71,21 @@ pub struct PluginRegistryConfig {
 #[derive(clap::Parser, Debug)]
 pub struct PluginRegistryDbConfig {
     #[clap(long, env)]
-    plugin_registry_db_hostname: String,
-    #[clap(long, env)]
-    plugin_registry_db_port: u16,
+    plugin_registry_db_address: String,
     #[clap(long, env)]
     plugin_registry_db_username: String,
     #[clap(long, env)]
-    plugin_registry_db_password: String,
+    plugin_registry_db_password: grapl_config::SecretString,
+}
+
+impl grapl_config::ToPostgresUrl for PluginRegistryDbConfig {
+    fn to_postgres_url(self) -> grapl_config::PostgresUrl {
+        grapl_config::PostgresUrl {
+            address: self.plugin_registry_db_address,
+            username: self.plugin_registry_db_username,
+            password: self.plugin_registry_db_password,
+        }
+    }
 }
 
 #[derive(clap::Parser, Clone, Debug)]
@@ -301,24 +312,10 @@ impl PluginRegistryApi for PluginRegistry {
 pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn std::error::Error>> {
     let db_config = config.db_config;
 
-    tracing::info!(
-        message="Connecting to plugin registry table",
-        plugin_registry_db_username=%db_config.plugin_registry_db_username,
-        plugin_registry_db_hostname=%db_config.plugin_registry_db_hostname,
-        plugin_registry_db_port=%db_config.plugin_registry_db_port,
-    );
-    let postgres_address = format!(
-        "postgresql://{}:{}@{}:{}",
-        db_config.plugin_registry_db_username,
-        db_config.plugin_registry_db_password,
-        db_config.plugin_registry_db_hostname,
-        db_config.plugin_registry_db_port,
-    );
-
     let addr = config.service_config.plugin_registry_bind_address;
 
     let plugin_registry = PluginRegistry {
-        db_client: PluginRegistryDbClient::new(&postgres_address).await?,
+        db_client: PluginRegistryDbClient::init_with_config(db_config).await?,
         nomad_client: NomadClient::from_env(),
         nomad_cli: NomadCli::default(),
         s3: S3Client::from_env(),

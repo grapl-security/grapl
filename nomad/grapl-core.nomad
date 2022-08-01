@@ -501,6 +501,11 @@ job "grapl-core" {
 
           ports = ["dgraph-alpha-port"]
         }
+
+        resources {
+          memory = 512
+        }
+
       }
 
       service {
@@ -1112,9 +1117,8 @@ job "grapl-core" {
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_organization-management-port}"
         RUST_BACKTRACE                       = local.rust_backtrace
         RUST_LOG                             = var.rust_log
-        ORGANIZATION_MANAGEMENT_DB_HOSTNAME  = var.organization_management_db.hostname
+        ORGANIZATION_MANAGEMENT_DB_ADDRESS   = "${var.organization_management_db.hostname}:${var.organization_management_db.port}"
         ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db.password
-        ORGANIZATION_MANAGEMENT_DB_PORT      = var.organization_management_db.port
         ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db.username
 
         ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = var.organization_management_healthcheck_polling_interval_ms
@@ -1227,9 +1231,8 @@ job "grapl-core" {
         AWS_REGION                                      = var.aws_region
         NOMAD_SERVICE_ADDRESS                           = "${attr.unique.network.ip-address}:4646"
         PLUGIN_REGISTRY_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_DB_HOSTNAME                     = var.plugin_registry_db.hostname
+        PLUGIN_REGISTRY_DB_ADDRESS                      = "${var.plugin_registry_db.hostname}:${var.plugin_registry_db.port}"
         PLUGIN_REGISTRY_DB_PASSWORD                     = var.plugin_registry_db.password
-        PLUGIN_REGISTRY_DB_PORT                         = var.plugin_registry_db.port
         PLUGIN_REGISTRY_DB_USERNAME                     = var.plugin_registry_db.username
         PLUGIN_BOOTSTRAP_CONTAINER_IMAGE                = var.container_images["plugin-bootstrap"]
         PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL             = var.plugin_registry_kernel_artifact_url
@@ -1301,9 +1304,8 @@ job "grapl-core" {
 
       env {
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME  = var.plugin_work_queue_db.hostname
+        PLUGIN_WORK_QUEUE_DB_ADDRESS   = "${var.plugin_work_queue_db.hostname}:${var.plugin_work_queue_db.port}"
         PLUGIN_WORK_QUEUE_DB_PASSWORD  = var.plugin_work_queue_db.password
-        PLUGIN_WORK_QUEUE_DB_PORT      = var.plugin_work_queue_db.port
         PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db.username
         # Hardcoded, but makes little sense to pipe up through Pulumi
         PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
@@ -1417,9 +1419,8 @@ job "grapl-core" {
 
       env {
         EVENT_SOURCE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_event-source-port}"
-        EVENT_SOURCE_DB_HOSTNAME  = var.event_source_db.hostname
+        EVENT_SOURCE_DB_ADDRESS   = "${var.event_source_db.hostname}:${var.event_source_db.port}"
         EVENT_SOURCE_DB_PASSWORD  = var.event_source_db.password
-        EVENT_SOURCE_DB_PORT      = var.event_source_db.port
         EVENT_SOURCE_DB_USERNAME  = var.event_source_db.username
         # Hardcoded, but makes little sense to pipe up through Pulumi
         EVENT_SOURCE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000

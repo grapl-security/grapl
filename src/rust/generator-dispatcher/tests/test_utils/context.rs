@@ -1,4 +1,5 @@
 use clap::Parser;
+use grapl_config::PostgresClient;
 use grapl_tracing::{
     setup_tracing,
     WorkerGuard,
@@ -65,9 +66,10 @@ impl AsyncTestContext for GeneratorDispatcherTestContext {
         .await
         .expect("pipeline_ingress_client");
 
-        let plugin_work_queue_psql_client = PsqlQueue::try_from(PluginWorkQueueDbConfig::parse())
-            .await
-            .expect("plugin_work_queue");
+        let plugin_work_queue_psql_client =
+            PsqlQueue::init_with_config(PluginWorkQueueDbConfig::parse())
+                .await
+                .expect("plugin_work_queue");
 
         GeneratorDispatcherTestContext {
             event_source_client,
