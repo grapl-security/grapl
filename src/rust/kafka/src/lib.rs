@@ -3,11 +3,18 @@ pub mod config;
 #[cfg(feature = "test-utils")]
 pub mod test_utils;
 
-use std::marker::PhantomData;
+use std::{
+    marker::PhantomData,
+    time::SystemTime,
+};
 
 use bytes::{
     Bytes,
     BytesMut,
+};
+use chrono::{
+    DateTime,
+    Utc,
 };
 use config::{
     ConsumerConfig,
@@ -44,6 +51,12 @@ use rust_proto::{
 use secrecy::ExposeSecret;
 use thiserror::Error;
 use tracing::Instrument;
+
+/// helper function to format a timestamp as ISO-8601 (useful for logging)
+fn format_iso8601(timestamp: SystemTime) -> String {
+    let datetime: DateTime<Utc> = timestamp.into();
+    datetime.to_rfc3339()
+}
 
 //
 // Kafka configurations
@@ -310,8 +323,8 @@ impl<T: SerDe> Consumer<T> {
                         trace_id =% envelope.trace_id(),
                         event_source_id =% envelope.event_source_id(),
                         retry_count =% envelope.retry_count(),
-                        created_time =? envelope.created_time(),
-                        last_updated_time =? envelope.last_updated_time(),
+                        created_time = format_iso8601(envelope.created_time()),
+                        last_updated_time = format_iso8601(envelope.last_updated_time()),
                     );
 
                     (span, envelope)

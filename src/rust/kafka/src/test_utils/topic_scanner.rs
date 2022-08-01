@@ -99,8 +99,11 @@ where
 
                 let predicate = predicate.clone();
                 async move {
-                    let (_, envelope) = res.expect("error consuming message from kafka");
-                    match predicate.clone().lock().expect("locking")(envelope.clone()) {
+                    let (span, envelope) = res.expect("error consuming message from kafka");
+                    let _guard = span.enter();
+                    match predicate.lock().expect("failed to acquire predicate lock")(
+                        envelope.clone(),
+                    ) {
                         true => {
                             tracing::debug!("predicate matched");
                             Some(envelope)
@@ -116,8 +119,7 @@ where
                 timeout = ?self.timeout,
             );
             let matched_predicate = tokio::time::timeout(self.timeout, matched_predicate).await?;
-            Ok(matched_predicate
-                .expect("Can't occur - if this were None we'd have the above timeout"))
+            Ok(matched_predicate.expect("envelope must be present"))
         });
 
         // wait for the kafka consumer to start consuming
