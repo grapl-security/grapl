@@ -77,13 +77,13 @@ async fn handler() -> Result<(), NodeIdentifierError> {
                 let event_source_id = envelope.event_source_id();
                 let graph_description = envelope.inner_message();
 
-                match identifier
-                    .handle_event(envelope.tenant_id(), envelope.inner_message().clone())
-                    .await
-                {
-                    Ok(identified_graph) => {
-                        Ok(Some(Envelope::create_from(envelope, identified_graph)))
-                    }
+                match identifier.handle_event(tenant_id, graph_description).await {
+                    Ok(identified_graph) => Ok(Some(Envelope::new(
+                        tenant_id,
+                        trace_id,
+                        event_source_id,
+                        identified_graph,
+                    ))),
                     Err(e) => match e {
                         Ok((_, e)) => {
                             match e {
