@@ -645,7 +645,7 @@ job "grapl-core" {
         WORKER_POOL_SIZE = 10
 
         GENERATOR_IDS_CACHE_CAPACITY            = 10000
-        GENERATOR_IDS_CACHE_TTL_MS              = 500
+        GENERATOR_IDS_CACHE_TTL_MS              = 5000
         GENERATOR_IDS_CACHE_UPDATER_POOL_SIZE   = 10
         GENERATOR_IDS_CACHE_UPDATER_QUEUE_DEPTH = 1000
 
@@ -943,6 +943,7 @@ job "grapl-core" {
         KAFKA_SASL_PASSWORD       = var.kafka_credentials["generator-dispatcher-retry"].sasl_password
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher-retry"]
         KAFKA_RETRY_TOPIC         = "raw-logs-retry"
+        KAFKA_RETRY_DELAY_MS      = 500
         KAFKA_PRODUCER_TOPIC      = "raw-logs"
 
         # TODO: should equal number of raw-logs-retry partitions
