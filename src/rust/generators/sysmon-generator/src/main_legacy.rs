@@ -21,11 +21,11 @@ use rust_proto::graplinc::grapl::{
         RawLog,
     },
 };
-use sysmon_parser::SysmonEvent;
 use tracing::instrument::WithSubscriber;
 
 mod error;
 mod models;
+use sysmon_generator::api::expect_one_event;
 
 use crate::error::SysmonGeneratorError;
 
@@ -88,7 +88,9 @@ async fn event_handler(
     let event_source_id = envelope.event_source_id();
     let raw_log = envelope.inner_message().log_event();
 
-    let sysmon_event = SysmonEvent::from_str(std::str::from_utf8(raw_log.as_ref())?)?;
+    let input_utf8 = std::str::from_utf8(raw_log.as_ref())?;
+    let events: Vec<_> = sysmon_parser::parse_events(input_utf8).collect();
+    let sysmon_event = expect_one_event(events)?;
 
     match models::generate_graph_from_event(&sysmon_event)? {
         Some(graph_description) => Ok(Some(Envelope::new(
