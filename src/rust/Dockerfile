@@ -96,8 +96,7 @@ EOF
 RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     mkdir -p /outputs && \
     find "${CARGO_TARGET_DIR}/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /outputs \;
-
-
+  
 # tarpaulin
 # This target is not merged with the `build` target because the actions to run
 # after cargo are different when building for tests and building the services,
@@ -139,7 +138,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/integration_tests,graph-merger/integration_tests,node-identifier/integration_tests,pipeline-ingress/integration_tests,plugin-registry/integration_tests,plugin-work-queue/integration_tests,sysmon-generator/integration_tests,organization-management/integration_tests,grapl-web-ui/integration_tests"
+ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/integration_tests,graph-merger/integration_tests,node-identifier/integration_tests,pipeline-ingress/integration_tests,plugin-registry/integration_tests,plugin-work-queue/integration_tests,sysmon-generator/integration_tests,organization-management/integration_tests,grapl-web-ui/integration_tests,e2e-tests/integration_tests"
 ENV TEST_DIR=/grapl/tests
 
 # This will build the integration test binaries and parse the manifest to find
@@ -196,6 +195,9 @@ COPY --from=build /nomad/nomad /bin
 RUN mkdir -p /test-fixtures
 COPY --from=build /outputs/example-generator /test-fixtures
 COPY --from=build /outputs/sysmon-generator /test-fixtures
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=etc-ctx sample_data/36_eventlog.xml /test-fixtures
 
 COPY --from=build-test-integration /grapl/tests /tests
 # Named context support https://github.com/hadolint/hadolint/issues/830

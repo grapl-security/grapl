@@ -27,7 +27,7 @@ use crate::{
 pub enum KafkaTopicContainsError {
     #[error("Timed out looking for a message matching this predicate: {0}")]
     KafkaTopicContainsElapsed(#[from] Elapsed),
-    #[error("RecvError: failed to receive notification that consumer is consuming")]
+    #[error("RecvError: failed to receive notification that consumer is consuming: {0}")]
     RecvError(#[from] RecvError),
     #[error("JoinError: could not join kafka subscriber")]
     JoinError(#[from] JoinError),

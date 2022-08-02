@@ -192,10 +192,10 @@ impl serde_impl::ProtobufSerializable for CreateUserResponse {
 //
 
 pub mod client {
+    use crate::protocol::endpoint::Endpoint;
     use futures::FutureExt;
     use thiserror::Error;
     use tonic::Request;
-    use crate::protocol::endpoint::Endpoint;
 
     use crate::{
         protobufs::graplinc::grapl::api::organization_management::v1beta1::organization_management_service_client::OrganizationManagementServiceClient as OrganizationManagementServiceClientProto,
@@ -204,9 +204,7 @@ pub mod client {
     };
 
     use super::{
-        CreateOrganizationRequest,
-        CreateOrganizationResponse,
-        CreateUserRequest,
+        CreateOrganizationRequest, CreateOrganizationResponse, CreateUserRequest,
         CreateUserResponse,
     };
 

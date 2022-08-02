@@ -2,6 +2,7 @@
 members = [
   "./derive-dynamic-node",
   "./consul-connect",
+  "./e2e-tests",
   "./endpoint-plugin",
   "./event-source",
   "./generator-dispatcher",

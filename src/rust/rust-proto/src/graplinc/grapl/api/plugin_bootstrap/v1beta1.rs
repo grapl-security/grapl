@@ -171,10 +171,7 @@ pub mod client {
         SerDeError,
     };
 
-    use super::{
-        GetBootstrapRequest,
-        GetBootstrapResponse,
-    };
+    use super::{GetBootstrapRequest, GetBootstrapResponse};
     use crate::protocol::endpoint::Endpoint;
 
     #[non_exhaustive]
