@@ -34,7 +34,7 @@ pub struct E2eTestContext {
     pub _guard: WorkerGuard,
 }
 
-const SERVICE_NAME: &'static str = "generator-dispatcher-integration-tests";
+const SERVICE_NAME: &'static str = "e2e-tests";
 
 #[async_trait::async_trait]
 impl AsyncTestContext for E2eTestContext {

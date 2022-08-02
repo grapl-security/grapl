@@ -91,9 +91,6 @@ impl AsyncTestContext for GraphMergerTestContext {
 async fn test_sysmon_event_produces_merged_graph(
     ctx: &mut GraphMergerTestContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if true {
-        return Ok(());
-    }
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
 
