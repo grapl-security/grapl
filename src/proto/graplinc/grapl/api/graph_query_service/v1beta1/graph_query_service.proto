@@ -183,7 +183,6 @@ message EdgeNameMap {
   repeated EdgeNameEntry entries = 1;
 }
 
-
 // An entry in the NodePropertyQueryMap, associating
 // a QueryId with a NodePropertyQuery
 message NodePropertyQueryEntry {
