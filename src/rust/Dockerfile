@@ -138,6 +138,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
+# hadolint ignore=SC3054
 RUN <<EOF
 INTEGRATION_TEST_FEATURES=(
 generator-dispatcher/integration_tests
