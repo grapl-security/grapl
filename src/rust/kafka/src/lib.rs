@@ -5,7 +5,10 @@ pub mod test_utils;
 
 use std::{
     marker::PhantomData,
-    time::SystemTime,
+    time::{
+        Duration,
+        SystemTime,
+    },
 };
 
 use bytes::{
@@ -336,6 +339,7 @@ impl<T: SerDe> Consumer<T> {
 
 pub struct BytesConsumer {
     consumer: StreamConsumer,
+    delay_ms: u64,
 }
 
 impl BytesConsumer {
@@ -353,17 +357,50 @@ impl BytesConsumer {
             return Err(ConfigurationError::SubscriptionFailed(e));
         }
 
-        Ok(Self { consumer })
+        Ok(Self {
+            consumer,
+            delay_ms: config.delay_ms,
+        })
     }
 
     #[tracing::instrument(skip(self))]
     pub fn stream(&self) -> impl Stream<Item = Result<Bytes, ConsumerError>> + '_ {
         self.consumer.stream().then(move |res| async move {
-            res.map_err(ConsumerError::from).and_then(|msg| {
-                let mut buf = BytesMut::with_capacity(msg.payload_len());
-                buf.extend_from_slice(msg.payload().ok_or(ConsumerError::PayloadAbsent)?);
-                Ok(buf.freeze())
-            })
+            match res {
+                Ok(msg) => {
+                    let timestamp = msg.timestamp();
+                    if let Some(millis_i64) = timestamp.to_millis() {
+                        let millis = if millis_i64 < 0 {
+                            0
+                        } else {
+                            millis_i64.unsigned_abs()
+                        };
+
+                        let message_ts = SystemTime::UNIX_EPOCH + Duration::from_millis(millis);
+                        let target = message_ts + Duration::from_millis(self.delay_ms);
+
+                        if let Err(e) = target.elapsed() {
+                            let duration = e.duration();
+
+                            tracing::debug!(
+                                message = "delaying kafka message consumption",
+                                kafka_timestamp = format_iso8601(message_ts),
+                                delay_ms =% self.delay_ms,
+                                delay_duration_ms =% duration.as_millis(),
+                            );
+
+                            tokio::time::sleep(duration).await;
+                        }
+                    } else {
+                        tracing::error!("kafka message timestamp unavailable");
+                    }
+
+                    let mut buf = BytesMut::with_capacity(msg.payload_len());
+                    buf.extend_from_slice(msg.payload().ok_or(ConsumerError::PayloadAbsent)?);
+                    Ok(buf.freeze())
+                }
+                Err(err) => Err(ConsumerError::from(err)),
+            }
         })
     }
 }

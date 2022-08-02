@@ -38,6 +38,8 @@ pub struct RetryConsumerConfig {
     pub consumer_group_name: String,
     #[clap(long, env = "KAFKA_RETRY_TOPIC")]
     pub topic: String,
+    #[clap(long, env = "KAFKA_RETRY_DELAY_MS")]
+    pub delay_ms: u64,
 }
 
 #[derive(clap::Parser, Clone, Debug)]

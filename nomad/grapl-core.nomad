@@ -943,6 +943,7 @@ job "grapl-core" {
         KAFKA_SASL_PASSWORD       = var.kafka_credentials["generator-dispatcher-retry"].sasl_password
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher-retry"]
         KAFKA_RETRY_TOPIC         = "raw-logs-retry"
+        KAFKA_RETRY_DELAY_MS      = "5000"
         KAFKA_PRODUCER_TOPIC      = "raw-logs"
 
         # TODO: should equal number of raw-logs-retry partitions
