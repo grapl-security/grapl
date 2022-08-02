@@ -152,11 +152,9 @@ plugin-work-queue/integration_tests
 sysmon-generator/integration_tests
 )
 
+# cargo --features expects a comma-separated feature1,feature2,feature3
 function join_by { local IFS="$1"; shift; echo "$*"; }
-
 join_by , "${INTEGRATION_TEST_FEATURES[@]}" > integration_test_features.csv
-
-echo integration_test_features.csv
 EOF
 
 ENV TEST_DIR=/grapl/tests
