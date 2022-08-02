@@ -137,8 +137,6 @@ class Kafka(pulumi.ComponentResource):
             # This list must match the set of all topics specified in
             # confluent-cloud-infrastructure/pulumi/ccloud_bootstrap/index.ts
             topics = [
-                "logs",
-                "metrics",
                 "raw-logs",
                 "raw-logs-retry",
                 "generated-graphs",
