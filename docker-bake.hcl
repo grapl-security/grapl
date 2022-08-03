@@ -396,14 +396,6 @@ target "generator-execution-sidecar" {
   ]
 }
 
-target "sysmon-generator" {
-  inherits = ["_rust-base"]
-  target   = "sysmon-generator-deploy"
-  tags = [
-    upstream_aware_tag("sysmon-generator")
-  ]
-}
-
 target "uid-allocator" {
   inherits = ["_rust-base"]
   target   = "uid-allocator-deploy"

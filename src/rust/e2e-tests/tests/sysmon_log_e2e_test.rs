@@ -124,8 +124,6 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     // Plugin Work Queue to write to the "generated-graphs" topic.
     tracing::info!(">> Testing that the generator eventually writes to `generated-graphs`");
     let generated_graphs = generated_graphs_scanner_handle.await?;
-    // PSA: ^ This likely is picking up output from `sysmon-generator-legacy`,
-    // there's no way to currently discriminate between the two paths.
     assert!(!generated_graphs.is_empty());
 
     tracing::info!(">> Test: node-identifier can identify nodes of the unidentified graph, then write to 'identified-graphs'");
