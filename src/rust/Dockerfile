@@ -138,7 +138,26 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="generator-dispatcher/integration_tests,graph-merger/integration_tests,node-identifier/integration_tests,pipeline-ingress/integration_tests,plugin-registry/integration_tests,plugin-work-queue/integration_tests,sysmon-generator/integration_tests,organization-management/integration_tests,grapl-web-ui/integration_tests,e2e-tests/integration_tests"
+# hadolint ignore=SC3054
+RUN <<EOF
+INTEGRATION_TEST_FEATURES=(
+generator-dispatcher/integration_tests
+e2e-tests/integration_tests
+graph-merger/integration_tests
+grapl-web-ui/integration_tests
+node-identifier/integration_tests
+organization-management/integration_tests
+pipeline-ingress/integration_tests
+plugin-registry/integration_tests
+plugin-work-queue/integration_tests
+sysmon-generator/integration_tests
+)
+
+# cargo --features expects a comma-separated feature1,feature2,feature3
+function join_by { local IFS="$1"; shift; echo "$*"; }
+join_by , "${INTEGRATION_TEST_FEATURES[@]}" > integration_test_features.csv
+EOF
+
 ENV TEST_DIR=/grapl/tests
 
 # This will build the integration test binaries and parse the manifest to find
@@ -156,14 +175,14 @@ RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     # First, run cargo test without --message-format=json; this will expose
     # errors to the developer over stdout/err in human-readable format.
     cargo test \
-        --features "${RUST_INTEGRATION_TEST_FEATURES}" \
+        --features "$(cat integration_test_features.csv)" \
         --no-run \
         --test "*"
 
     # Run cargo test again - everything's already compiled - but this time, 
     # the message is used as input to the jq script
     cargo test \
-        --features "${RUST_INTEGRATION_TEST_FEATURES}" \
+        --features "$(cat integration_test_features.csv)" \
         --no-run \
         --message-format=json \
         --test "*" | \
