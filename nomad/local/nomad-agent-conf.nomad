@@ -1,4 +1,3 @@
-
 # This is not specified by default for nomad agent -dev
 plugin_dir = "/opt/nomad/plugins"
 
@@ -42,6 +41,10 @@ client {
     # Turn on consul connect proxy debug logs. Consul connect sidecars now have access logs, etc.
     connect.log_level = "debug"
   }
+  gc_interval = "30m"
+  gc_disk_usage_threshold = 99
+  gc_inode_usage_threshold = 95
+  gc_max_allocs = 200
 }
 
 ####################
