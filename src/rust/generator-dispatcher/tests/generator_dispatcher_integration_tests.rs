@@ -1,59 +1,33 @@
 #![cfg(feature = "integration_tests")]
 
-mod test_utils;
-
 use bytes::Bytes;
-use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
-use rust_proto::graplinc::grapl::api::{
-    event_source::v1beta1::CreateEventSourceRequest,
-    pipeline_ingress::v1beta1::PublishRawLogRequest,
-    plugin_registry::v1beta1::{
-        PluginMetadata,
-        PluginType,
-    },
+use e2e_tests::test_utils::context::{
+    E2eTestContext,
+    SetupGeneratorOptions,
+    SetupResult,
 };
+use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
+use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::PublishRawLogRequest;
 use test_context::test_context;
-use test_utils::context::GeneratorDispatcherTestContext;
-use uuid::Uuid;
 
-#[test_context(GeneratorDispatcherTestContext)]
+#[test_context(E2eTestContext)]
 #[tokio::test]
 async fn test_dispatcher_inserts_job_into_plugin_work_queue(
-    ctx: &mut GeneratorDispatcherTestContext,
+    ctx: &mut E2eTestContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let display_name = "test_dispatcher_inserts_job_into_plugin_work_queue";
-    let tenant_id = Uuid::new_v4();
-
-    // Register an Event Source
-    let event_source_id = {
-        let create = ctx
-            .event_source_client
-            .create_event_source(CreateEventSourceRequest {
-                display_name: display_name.to_string(),
-                description: "arbitrary".to_string(),
-                tenant_id,
-            })
-            .await?;
-        create.event_source_id
-    };
-
-    // Create a Generator Plugin that responds to that event_source_id
-    let plugin_id = {
-        let plugin_artifact = futures::stream::once(async { Bytes::from("arbitrary binary") });
-        let create = ctx
-            .plugin_registry_client
-            .create_plugin(
-                PluginMetadata {
-                    tenant_id,
-                    display_name: display_name.to_string(),
-                    plugin_type: PluginType::Generator,
-                    event_source_id: Some(event_source_id),
-                },
-                plugin_artifact,
-            )
-            .await?;
-        create.plugin_id
-    };
+    let test_name = "test_dispatcher_inserts_job_into_plugin_work_queue";
+    let generator_artifact = Bytes::from("arbitrary binary");
+    let SetupResult {
+        tenant_id,
+        plugin_id,
+        event_source_id,
+    } = ctx
+        .setup_generator(SetupGeneratorOptions {
+            test_name: test_name.to_owned(),
+            generator_artifact,
+            should_deploy_generator: false,
+        })
+        .await?;
 
     // Send in the Raw Log Event
     let log_event: Bytes = r#"
