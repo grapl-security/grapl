@@ -1,7 +1,16 @@
 #![cfg(feature = "integration_tests")]
-mod test_utils;
 
 use bytes::Bytes;
+use e2e_tests::{
+    test_fixtures,
+    test_utils::{
+        context::E2eTestContext,
+        predicates::{
+            events_36lines_merged_graph_predicate,
+            events_36lines_node_identity_predicate,
+        },
+    },
+};
 use kafka::{
     config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
@@ -21,28 +30,7 @@ use rust_proto::graplinc::grapl::{
     pipeline::v1beta1::RawLog,
 };
 use test_context::test_context;
-use test_utils::context::E2eTestContext;
 use uuid::Uuid;
-
-use crate::test_utils::predicates::{
-    events_36lines_merged_graph_predicate,
-    events_36lines_node_identity_predicate,
-};
-
-mod test_fixtures {
-    use super::*;
-
-    /// Send 1 line (well, event) at a time
-    pub fn get_36_eventlog_xml_separate_lines() -> Result<Vec<String>, std::io::Error> {
-        let filename = "/test-fixtures/36_eventlog.xml"; // This path is created in rust/Dockerfile
-        let content = std::fs::read_to_string(filename)?;
-        Ok(content.lines().map(&str::to_owned).collect())
-    }
-
-    pub fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
-        std::fs::read("/test-fixtures/sysmon-generator").map(Bytes::from)
-    }
-}
 
 #[test_context(E2eTestContext)]
 #[tokio::test]
