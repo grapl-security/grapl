@@ -174,7 +174,6 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
-    "sysmon-generator",
     "uid-allocator",
   ]
 }
