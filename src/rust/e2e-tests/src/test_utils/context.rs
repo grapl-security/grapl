@@ -46,7 +46,7 @@ pub struct E2eTestContext {
     pub _guard: WorkerGuard,
 }
 
-const SERVICE_NAME: &'static str = "e2e-tests";
+const SERVICE_NAME: &'static str = "E2eTestContext";
 
 #[async_trait::async_trait]
 impl AsyncTestContext for E2eTestContext {
@@ -99,19 +99,29 @@ pub struct SetupResult {
     pub event_source_id: Uuid,
 }
 
+pub struct SetupGeneratorOptions {
+    pub test_name: String,
+    pub generator_artifact: Bytes,
+    pub should_deploy_generator: bool,
+}
+
 impl E2eTestContext {
     pub async fn setup_sysmon_generator(
         &mut self,
         test_name: &str,
     ) -> Result<SetupResult, Box<dyn std::error::Error>> {
-        let plugin_artifact = test_fixtures::get_sysmon_generator()?;
-        self.setup_generator(test_name, plugin_artifact).await
+        let generator_artifact = test_fixtures::get_sysmon_generator()?;
+        self.setup_generator(SetupGeneratorOptions {
+            test_name: test_name.to_owned(),
+            generator_artifact,
+            should_deploy_generator: true,
+        })
+        .await
     }
 
-    async fn setup_generator(
+    pub async fn setup_generator(
         &mut self,
-        test_name: &str,
-        plugin_artifact: Bytes,
+        options: SetupGeneratorOptions,
     ) -> Result<SetupResult, Box<dyn std::error::Error>> {
         tracing::info!(">> Settting up Event Source, Plugin");
 
@@ -121,7 +131,7 @@ impl E2eTestContext {
         let event_source = self
             .event_source_client
             .create_event_source(CreateEventSourceRequest {
-                display_name: test_name.to_string(),
+                display_name: options.test_name.clone(),
                 description: "arbitrary".to_string(),
                 tenant_id,
             })
@@ -134,19 +144,21 @@ impl E2eTestContext {
                 .create_plugin(
                     PluginMetadata {
                         tenant_id,
-                        display_name: test_name.to_string(),
+                        display_name: options.test_name.clone(),
                         plugin_type: PluginType::Generator,
                         event_source_id: Some(event_source.event_source_id),
                     },
-                    futures::stream::once(async move { plugin_artifact }),
+                    futures::stream::once(async move { options.generator_artifact }),
                 )
                 .await?;
 
-            self.plugin_registry_client
-                .deploy_plugin(DeployPluginRequest {
-                    plugin_id: plugin.plugin_id,
-                })
-                .await?;
+            if options.should_deploy_generator {
+                self.plugin_registry_client
+                    .deploy_plugin(DeployPluginRequest {
+                        plugin_id: plugin.plugin_id,
+                    })
+                    .await?;
+            }
             plugin
         };
 
