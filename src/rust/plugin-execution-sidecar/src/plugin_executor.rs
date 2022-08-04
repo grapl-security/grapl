@@ -44,6 +44,7 @@ where
     #[tracing::instrument(skip(self), err)]
     pub async fn main_loop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         // Continually scan for new work for this Plugin.
+        let mut fail_count = 0;
         loop {
             if let Ok(work) = self
                 .plugin_work_processor
@@ -90,6 +91,10 @@ where
                     continue;
                 }
             } else {
+                fail_count += 1;
+                if fail_count > 3 {
+                    return Err("Unable to get work multiple times".into())
+                }
                 tracing::warn!("Couldn't get new work, sleeping 5");
                 tokio::time::sleep(Duration::from_secs(5)).await;
             }
