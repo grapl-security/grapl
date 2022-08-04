@@ -956,7 +956,7 @@ job "grapl-core" {
   }
 
   group "web-ui" {
-    count = 2
+    count = 1
 
     network {
       mode = "bridge"
