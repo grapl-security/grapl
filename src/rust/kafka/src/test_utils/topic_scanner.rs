@@ -1,5 +1,9 @@
 use std::{
-    sync::Mutex,
+    marker::PhantomData,
+    sync::{
+        Arc,
+        Mutex,
+    },
     time::Duration,
 };
 
@@ -9,61 +13,69 @@ use rust_proto::{
     SerDe,
 };
 use tokio::{
-    sync::{
-        oneshot,
-        oneshot::error::RecvError,
-    },
-    task::JoinError,
-    time::error::Elapsed,
+    sync::oneshot,
+    task::JoinHandle,
 };
+use tracing::Instrument;
 
 use crate::{
     config::ConsumerConfig,
-    ConfigurationError,
     Consumer,
 };
 
-#[derive(thiserror::Error, Debug)]
-pub enum KafkaTopicContainsError {
-    #[error("Timed out looking for a message matching this predicate: {0}")]
-    KafkaTopicContainsElapsed(#[from] Elapsed),
-    #[error("RecvError: failed to receive notification that consumer is consuming: {0}")]
-    RecvError(#[from] RecvError),
-    #[error("JoinError: could not join kafka subscriber")]
-    JoinError(#[from] JoinError),
-}
-
 /// Usage:
-/// 1. Construct a KafkaTopicScanner
-/// 2. Call `.contains*().await`
-/// 3. Kick off an event that'll result in logs showing up in Kafka
-/// 4. Call `.get_listen_result().await` to wait for the first matching element
+///
+///   1. Construct a KafkaTopicScanner with a predicate to filter events.
+///   2. Call `.contains*().await` to receive a JoinHandle. Once you receive the
+///   JoinHandle you can be confident the scanner is consuming messages from the
+///   topic.
+///   3. Do something that'll result in logs showing up in Kafka.
+///   4. `.await?` the JoinHandle to receive all the matching events (or a
+///   JoinError containing information about any panics that may have occurred).
+///   5. Make your test assertions on this list of matching events.
+///
+/// N.B.: These results will be materialized in memory, so don't make your
+/// predicate too permissive!
 pub struct KafkaTopicScanner<T>
 where
     T: SerDe + Send + Sync + 'static,
 {
-    consumer: Consumer<T>,
+    consumer_config: ConsumerConfig,
     timeout: Duration,
+    t_: PhantomData<T>,
 }
 
 impl<T> KafkaTopicScanner<T>
 where
     T: SerDe + Send + Sync,
 {
-    pub fn new(consumer_config: ConsumerConfig) -> Result<Self, ConfigurationError> {
-        let consumer = Consumer::new(consumer_config)?;
-        let timeout = Duration::from_secs(30); // hardcoded for now, whatever
-        Ok(Self { consumer, timeout })
+    pub fn new(consumer_config: ConsumerConfig, timeout: Duration) -> Self {
+        // this overridden config adds a unique suffix to the consumer group,
+        // ensuring that each test consumer belongs to its own unique group
+        let overridden_config = ConsumerConfig {
+            bootstrap_servers: consumer_config.bootstrap_servers,
+            sasl_username: consumer_config.sasl_username,
+            sasl_password: consumer_config.sasl_password,
+            consumer_group_name: format!(
+                "{}-{}",
+                consumer_config.consumer_group_name,
+                uuid::Uuid::new_v4(),
+            ),
+            topic: consumer_config.topic,
+        };
+
+        Self {
+            consumer_config: overridden_config,
+            timeout,
+            t_: PhantomData,
+        }
     }
 
     pub async fn contains_for_tenant(
         self,
         tenant_id: uuid::Uuid,
         mut predicate: impl FnMut(T) -> bool + Send + Sync + 'static,
-    ) -> Result<
-        ScanReadyToGetResult<Result<Envelope<T>, KafkaTopicContainsError>>,
-        KafkaTopicContainsError,
-    > {
+    ) -> JoinHandle<Vec<Envelope<T>>> {
         let tenant_eq_predicate = move |envelope: Envelope<T>| {
             let envelope_tenant_id = envelope.tenant_id();
             let inner_message = envelope.inner_message();
@@ -75,67 +87,68 @@ where
     pub async fn contains(
         self,
         predicate: impl FnMut(Envelope<T>) -> bool + Send + Sync + 'static,
-    ) -> Result<
-        ScanReadyToGetResult<Result<Envelope<T>, KafkaTopicContainsError>>,
-        KafkaTopicContainsError,
-    > {
+    ) -> JoinHandle<Vec<Envelope<T>>> {
         // we'll use this channel to communicate that the consumer is ready to
         // consume messages
         let (tx, rx) = oneshot::channel::<()>();
-
-        let predicate = std::sync::Arc::new(std::sync::Mutex::new(predicate));
+        let tx_mutex = Mutex::new(Some(tx));
 
         tracing::info!("creating kafka subscriber thread");
-        let kafka_subscriber = tokio::task::spawn(async move {
-            let stream = Box::pin(self.consumer.stream());
+        let handle = tokio::task::spawn(async move {
+            let predicate = Arc::new(Mutex::new(predicate));
+            let consumer =
+                Consumer::new(self.consumer_config).expect("failed to configure consumer");
 
-            let tx_mutex = Mutex::new(Some(tx));
-            let mut filtered_stream = Box::pin(stream.filter_map(move |res| {
-                if let Some(tx) = tx_mutex.lock().expect("failed to acquire tx lock").take() {
-                    // notify the consumer that we're ready to receive messages
-                    tx.send(())
-                        .expect("failed to notify sender that consumer is consuming");
-                }
-
-                let predicate = predicate.clone();
-                async move {
+            let filtered_stream = consumer
+                .stream()
+                .then(move |res| {
                     let (span, envelope) = res.expect("error consuming message from kafka");
                     let _guard = span.enter();
-                    match predicate.lock().expect("failed to acquire predicate lock")(
-                        envelope.clone(),
-                    ) {
-                        true => {
-                            tracing::debug!("predicate matched");
-                            Some(envelope)
-                        }
-                        false => None,
+
+                    tracing::debug!(message = "consumed kafka message");
+
+                    if let Some(tx) = tx_mutex.lock().expect("failed to acquire tx lock").take() {
+                        // notify the channel that we're ready to receive messages
+                        tracing::info!("kafka consumer is receiving messages");
+                        tx.send(())
+                            .expect("failed to notify sender that consumer is consuming");
                     }
-                }
-            }));
-            let matched_predicate = filtered_stream.next();
+
+                    let predicate = predicate.clone();
+                    async move {
+                        match predicate.lock().expect("failed to acquire predicate lock")(
+                            envelope.clone(),
+                        ) {
+                            true => {
+                                tracing::debug!("predicate matched");
+                                Some(envelope)
+                            }
+                            false => None,
+                        }
+                    }
+                    .instrument(span.clone())
+                })
+                .then(|matched| async {
+                    consumer.commit().expect("failed to commit consumer offset");
+                    matched
+                })
+                .filter_map(move |matched| async move { matched });
 
             tracing::info!(
-                message = "Consuming kafka messages",
+                message = "waiting for kafka messages",
                 timeout = ?self.timeout,
             );
-            let matched_predicate = tokio::time::timeout(self.timeout, matched_predicate).await?;
-            Ok(matched_predicate.expect("envelope must be present"))
+
+            tokio::time::timeout(self.timeout, filtered_stream.collect::<Vec<Envelope<T>>>())
+                .await
+                .expect("timed out waiting for predicate to match")
         });
 
         // wait for the kafka consumer to start consuming
         tracing::info!("waiting for kafka consumer to report ready");
-        rx.await?;
-        Ok(ScanReadyToGetResult {
-            listen_result: kafka_subscriber,
-        })
-    }
-}
+        rx.await
+            .expect("failed to receive consumer ready notification");
 
-pub struct ScanReadyToGetResult<T> {
-    listen_result: tokio::task::JoinHandle<T>,
-}
-impl<T> ScanReadyToGetResult<T> {
-    pub async fn get_listen_result(self) -> Result<T, KafkaTopicContainsError> {
-        Ok(self.listen_result.await?)
+        handle
     }
 }

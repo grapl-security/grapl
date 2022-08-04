@@ -1,4 +1,6 @@
-#![cfg(feature = "integration_tests")]
+//#![cfg(feature = "integration_tests")]
+
+use std::time::Duration;
 
 use bytes::Bytes;
 use clap::Parser;
@@ -31,7 +33,6 @@ use test_context::{
     test_context,
     AsyncTestContext,
 };
-use tracing::Instrument;
 use uuid::Uuid;
 
 static CONSUMER_TOPIC: &'static str = "raw-logs";
@@ -67,6 +68,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
     }
 }
 
+#[tracing::instrument(skip(ctx))]
 #[test_context(PipelineIngressTestContext)]
 #[tokio::test]
 async fn test_publish_raw_log_sends_message_to_kafka(
@@ -118,36 +120,42 @@ async fn test_publish_raw_log_sends_message_to_kafka(
   </EventData>
 </Event>
 "#.into();
-    let expected_log_event = log_event.clone();
 
-    let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
+    let kafka_scanner =
+        KafkaTopicScanner::new(ctx.consumer_config.clone(), Duration::from_secs(30));
+    let handle = kafka_scanner
         .contains(move |envelope: Envelope<RawLog>| -> bool {
             let envelope_tenant_id = envelope.tenant_id();
             let envelope_event_source_id = envelope.event_source_id();
-            let raw_log = envelope.inner_message();
 
             tracing::debug!(message = "consumed kafka message");
 
-            envelope_tenant_id == tenant_id
-                && envelope_event_source_id == event_source_id
-                && raw_log.log_event() == expected_log_event
+            envelope_tenant_id == tenant_id && envelope_event_source_id == event_source_id
         })
-        .await?;
+        .await;
 
     tracing::info!("sending publish_raw_log request");
     ctx.grpc_client
         .publish_raw_log(PublishRawLogRequest {
             event_source_id,
             tenant_id,
-            log_event,
+            log_event: log_event.clone(),
         })
         .await
         .expect("received error response");
 
     tracing::info!("waiting for kafka_scanner to complete");
-    kafka_scanner
-        .get_listen_result()
-        .instrument(tracing::debug_span!("kafka_scanner"))
-        .await??;
+    let envelopes = handle.await?;
+
+    assert_eq!(envelopes.len(), 0);
+
+    let envelope = envelopes[0].clone();
+
+    assert_eq!(envelope.tenant_id(), tenant_id);
+    assert_eq!(envelope.event_source_id(), event_source_id);
+
+    let raw_log = envelope.inner_message();
+    assert_eq!(raw_log.log_event(), log_event);
+
     Ok(())
 }
