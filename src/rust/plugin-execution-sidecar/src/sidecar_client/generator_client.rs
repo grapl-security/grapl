@@ -1,6 +1,8 @@
 use rust_proto::{
     client_factory::{
-        services::GeneratorClientConfig, build_grpc_client_with_options, BuildGrpcClientOptions,
+        build_grpc_client_with_options,
+        services::GeneratorClientConfig,
+        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::GeneratorServiceClient,
     protocol::service_client::ConnectError,
@@ -21,8 +23,12 @@ pub async fn get_generator_client(
     let client_config = GeneratorClientConfig {
         generator_client_address: address.parse().expect("generator_client_address"),
     };
-    build_grpc_client_with_options(client_config, BuildGrpcClientOptions{
-        perform_healthcheck: true,
-        ..Default::default()
-    }).await
+    build_grpc_client_with_options(
+        client_config,
+        BuildGrpcClientOptions {
+            perform_healthcheck: true,
+            ..Default::default()
+        },
+    )
+    .await
 }

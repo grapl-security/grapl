@@ -93,7 +93,7 @@ where
             } else {
                 fail_count += 1;
                 if fail_count > 3 {
-                    return Err("Unable to get work multiple times".into())
+                    return Err("Unable to get work multiple times".into());
                 }
                 tracing::warn!("Couldn't get new work, sleeping 5");
                 tokio::time::sleep(Duration::from_secs(5)).await;

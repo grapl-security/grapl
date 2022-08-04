@@ -163,7 +163,6 @@ impl E2eTestContext {
             plugin
         };
 
-
         let setup_result = SetupResult {
             tenant_id,
             plugin_id: plugin.plugin_id,
