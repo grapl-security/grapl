@@ -37,7 +37,11 @@ use futures::{
 };
 use rdkafka::{
     config::ClientConfig,
-    consumer::stream_consumer::StreamConsumer,
+    consumer::{
+        stream_consumer::StreamConsumer,
+        CommitMode,
+        Consumer as KafkaConsumer,
+    },
     error::KafkaError,
     producer::{
         FutureProducer,
@@ -256,7 +260,7 @@ fn consumer(
     configure(bootstrap_servers, sasl_username, sasl_password)
         .set("group.id", consumer_group_name)
         .set("enable.auto.commit", "true")
-        .set("auto.offset.reset", "earliest")
+        .set("auto.offset.reset", "latest")
         .set("session.timeout.ms", "45000")
         .create()
         .map_err(|e| ConfigurationError::ConsumerCreateFailed(e))
@@ -273,6 +277,13 @@ pub enum ConsumerError {
 
     #[error("message payload absent")]
     PayloadAbsent,
+}
+
+#[non_exhaustive]
+#[derive(Error, Debug, Clone)]
+pub enum CommitError {
+    #[error("failed to commit consumer offsets {0}")]
+    CommitFailed(#[from] KafkaError),
 }
 
 /// A consumer consumes data from a topic. This consumer deserializes each
@@ -334,6 +345,11 @@ impl<T: SerDe> Consumer<T> {
                 })
             })
         })
+    }
+
+    #[tracing::instrument(skip(self), err)]
+    pub fn commit(&self) -> Result<(), CommitError> {
+        Ok(self.consumer.commit_consumer_state(CommitMode::Sync)?)
     }
 }
 
@@ -409,6 +425,11 @@ impl BytesConsumer {
             }
         })
     }
+
+    #[tracing::instrument(skip(self), err)]
+    pub fn commit(&self) -> Result<(), CommitError> {
+        Ok(self.consumer.commit_consumer_state(CommitMode::Sync)?)
+    }
 }
 
 //
@@ -418,13 +439,16 @@ impl BytesConsumer {
 #[non_exhaustive]
 #[derive(Error, Debug, Clone)]
 pub enum StreamProcessorError {
-    #[error("encountered consumer error {0}")]
+    #[error("consumer error {0}")]
     ConsumerError(#[from] ConsumerError),
 
-    #[error("encountered producer error {0}")]
+    #[error("commit error {0}")]
+    CommitError(#[from] CommitError),
+
+    #[error("producer error {0}")]
     ProducerError(#[from] ProducerError),
 
-    #[error("encountered event handler error {0}")]
+    #[error("event handler error {0}")]
     EventHandlerError(String),
 }
 
@@ -455,6 +479,16 @@ where
         })
     }
 
+    /// Constructs a stream which does the following things:
+    ///
+    ///   1. Consumes a message from Kafka
+    ///   2. Deserializes the message
+    ///   3. Applies the event_handler to the message
+    ///   4. Publishes the event_handler's result to Kafka
+    ///   5. Commits the message offset
+    ///
+    /// N.B.: You must consume this stream serially to ensure proper commit
+    /// ordering. Consuming this stream concurrently could result in data loss.
     #[tracing::instrument(skip(self, event_handler))]
     pub fn stream<'a, F, R, E>(
         &'a self,
@@ -493,9 +527,21 @@ where
                     Err(e) => Err(e.into()),
                 }
             })
+            .then(move |result| async {
+                if let Ok(_) = result {
+                    Ok(self.consumer.commit()?)
+                } else {
+                    result
+                }
+            })
     }
 }
 
+/// A RetryProcessor handles messages on a service's retry topic, imposes a
+/// configurable delay, and then sends the message back to the service's main
+/// topic. The RetryProcessor does no serialization or deserialization, it just
+/// passes the bytes along. This is to prevent a deserialization error, which
+/// may have broken the main service, from also breaking the retry service.
 pub struct RetryProcessor {
     consumer: BytesConsumer,
     producer: BytesProducer,
@@ -512,6 +558,16 @@ impl RetryProcessor {
         })
     }
 
+    /// Constructs a stream which does the following things:
+    ///
+    ///  1. Consumes a message from Kafka
+    ///  2. Inspects the message timestamp, and if necessary pauses for long
+    ///  enough to impose this processor's configured delay
+    ///  3. Publishes the message to Kafka
+    ///  4. Commits the message offset
+    ///
+    /// N.B.: You must consume this stream serially to ensure proper commit
+    /// ordering. Consuming this stream concurrently could result in data loss.
     #[tracing::instrument(skip(self))]
     pub fn stream<'a>(&'a self) -> impl Stream<Item = Result<(), StreamProcessorError>> + '_ {
         self.consumer
@@ -526,6 +582,13 @@ impl RetryProcessor {
                         .await
                 } else {
                     result.map(|_| ())
+                }
+            })
+            .then(|result| async {
+                if let Ok(_) = result {
+                    Ok(self.consumer.commit()?)
+                } else {
+                    result
                 }
             })
     }
