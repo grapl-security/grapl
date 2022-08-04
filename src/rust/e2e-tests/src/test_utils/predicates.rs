@@ -14,7 +14,7 @@ pub fn events_36lines_node_identity_predicate(identified_graph: IdentifiedGraph)
     let child_process =
         identified_graph.find_node("process_id", ImmutableUintProp { prop: 5752 }.into());
 
-    tracing::debug!(identified_graph =?identified_graph);
+    // tracing::debug!(identified_graph =?identified_graph);
 
     match (parent_process, child_process) {
         (Some(parent_process), Some(child_process)) => {
