@@ -147,7 +147,11 @@ class Kafka(pulumi.ComponentResource):
             ]
             provider = Provider(
                 "grapl:kafka:Provider",
-                bootstrap_servers=["host.docker.internal:29092"],
+                bootstrap_servers=[
+                    "host.docker.internal:29092",
+                    "host.docker.internal:29093",
+                    "host.docker.internal:29094",
+                ],
                 tls_enabled=False,
             )
             if create_local_topics:
@@ -155,9 +159,12 @@ class Kafka(pulumi.ComponentResource):
                     KafkaTopic(
                         f"grapl:kafka:Topic:{topic}",
                         name=topic,
-                        partitions=1,
-                        replication_factor=1,
-                        config={"compression.type": "zstd"},
+                        partitions=2,
+                        replication_factor=3,
+                        config={
+                            "compression.type": "zstd",
+                            "min.insync.replicas": 2,
+                        },
                         opts=pulumi.ResourceOptions(provider=provider),
                     )
         else:
@@ -170,7 +177,9 @@ class Kafka(pulumi.ComponentResource):
 
     def bootstrap_servers(self) -> pulumi.Output[str]:
         if self.confluent_environment is None:  # local-grapl
-            return pulumi.Output.from_input(f"{config.HOST_IP_IN_NOMAD}:19092")
+            return pulumi.Output.from_input(
+                f"{config.HOST_IP_IN_NOMAD}:19092,{config.HOST_IP_IN_NOMAD}:19093,{config.HOST_IP_IN_NOMAD}:19094"
+            )
         else:
             return self.confluent_environment.apply(lambda e: e.bootstrap_servers)
 

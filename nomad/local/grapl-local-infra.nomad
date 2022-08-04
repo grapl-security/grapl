@@ -3,22 +3,58 @@ variable "image_tag" {
   description = "The tag for all container images we should deploy. This is ultimately set in the top-level Makefile."
 }
 
-variable "kafka_broker_port" {
+variable "kafka0_broker_port" {
   type        = number
-  description = "Kafka Broker's port to listen on, for other Nomad clients"
+  description = "Kafka Broker 0's port to listen on, for other Nomad clients"
   default     = 19092
 }
 
-variable "kafka_broker_port_for_host_os" {
+variable "kafka0_broker_port_for_host_os" {
   type        = number
-  description = "Kafka Broker's port to listen on, for things on the host OS (like Pulumi)"
+  description = "Kafka Broker 0's port to listen on, for things on the host OS (like Pulumi)"
   default     = 29092
 }
 
-variable "kafka_jmx_port" {
+variable "kafka0_jmx_port" {
   type        = number
-  description = "Port for Kafka JMX"
+  description = "Port for Kafka 0 JMX"
   default     = 9101
+}
+
+variable "kafka1_broker_port" {
+  type        = number
+  description = "Kafka Broker 1's port to listen on, for other Nomad clients"
+  default     = 19093
+}
+
+variable "kafka1_broker_port_for_host_os" {
+  type        = number
+  description = "Kafka Broker 1's port to listen on, for things on the host OS (like Pulumi)"
+  default     = 29093
+}
+
+variable "kafka1_jmx_port" {
+  type        = number
+  description = "Port for Kafka 1 JMX"
+  default     = 9102
+}
+
+variable "kafka2_broker_port" {
+  type        = number
+  description = "Kafka Broker 2's port to listen on, for other Nomad clients"
+  default     = 19094
+}
+
+variable "kafka2_broker_port_for_host_os" {
+  type        = number
+  description = "Kafka Broker 2's port to listen on, for things on the host OS (like Pulumi)"
+  default     = 29094
+}
+
+variable "kafka2_jmx_port" {
+  type        = number
+  description = "Port for Kafka 2 JMX"
+  default     = 9103
 }
 
 variable "localstack_port" {
@@ -201,29 +237,41 @@ job "grapl-local-infra" {
   group "kafka" {
     network {
       mode = "bridge"
-      port "kafka-for-other-nomad-tasks" {
-        static = var.kafka_broker_port
+      port "kafka0-for-other-nomad-tasks" {
+        static = var.kafka0_broker_port
       }
-      port "kafka-for-host-os" {
-        static = var.kafka_broker_port_for_host_os
+      port "kafka0-for-host-os" {
+        static = var.kafka0_broker_port_for_host_os
+      }
+      port "kafka1-for-other-nomad-tasks" {
+        static = var.kafka1_broker_port
+      }
+      port "kafka1-for-host-os" {
+        static = var.kafka1_broker_port_for_host_os
+      }
+      port "kafka2-for-other-nomad-tasks" {
+        static = var.kafka2_broker_port
+      }
+      port "kafka2-for-host-os" {
+        static = var.kafka2_broker_port_for_host_os
       }
     }
 
-    task "kafka" {
+    task "kafka0" {
       driver = "docker"
 
       config {
         image = "confluentinc/cp-kafka:7.0.1"
-        ports = ["kafka-for-other-nomad-tasks", "kafka-for-host-os"]
+        ports = ["kafka0-for-other-nomad-tasks", "kafka0-for-host-os"]
       }
 
       resources {
-        memory = 2000
+        memory = 1200
       }
 
       env {
-        kafka_broker_port       = 9092 # Only used by healthcheck
-        KAFKA_BROKER_ID         = 1
+        kafka0_broker_port      = 9092 # Only used by healthcheck
+        KAFKA_BROKER_ID         = 0
         KAFKA_ZOOKEEPER_CONNECT = local.zookeeper_endpoint
 
         # Some clients (like Pulumi) will need `host.docker.internal`
@@ -232,24 +280,24 @@ job "grapl-local-infra" {
         # So a receive on 29092 means HOST_OS
         KAFKA_ADVERTISED_LISTENERS = join(",", [
           "WITHIN_TASK://localhost:9092",
-          "HOST_OS://host.docker.internal:${var.kafka_broker_port_for_host_os}",
-          "OTHER_NOMADS://${local.localhost_within_bridge}:${var.kafka_broker_port}"
+          "HOST_OS://host.docker.internal:${var.kafka0_broker_port_for_host_os}",
+          "OTHER_NOMADS://${local.localhost_within_bridge}:${var.kafka0_broker_port}"
         ])
         KAFKA_AUTO_CREATE_TOPICS_ENABLE      = "false"
         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "WITHIN_TASK:PLAINTEXT,HOST_OS:PLAINTEXT,OTHER_NOMADS:PLAINTEXT"
-        KAFKA_INTER_BROKER_LISTENER_NAME     = "WITHIN_TASK"
+        KAFKA_INTER_BROKER_LISTENER_NAME     = "OTHER_NOMADS"
 
-        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 1
-        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 1
-        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 1
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 3
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 2
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 3
         KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
-        KAFKA_JMX_PORT                                 = var.kafka_jmx_port
+        KAFKA_JMX_PORT                                 = var.kafka0_jmx_port
         KAFKA_JMX_HOSTNAME                             = "localhost"
         KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
       }
 
       service {
-        name = "kafka"
+        name = "kafka0"
         check {
           type    = "script"
           name    = "check_kafka"
@@ -258,10 +306,10 @@ job "grapl-local-infra" {
             "-v", # verbose
             "-z", # "zero I/O mode" - used for scanning
             "localhost",
-            "${var.kafka_broker_port}"
+            "${var.kafka0_broker_port}"
           ]
-          interval = "20s"
-          timeout  = "10s"
+          interval = "60s"
+          timeout  = "30s"
 
           check_restart {
             limit           = 2
@@ -270,7 +318,132 @@ job "grapl-local-infra" {
           }
         }
       }
+    }
 
+    task "kafka1" {
+      driver = "docker"
+
+      config {
+        image = "confluentinc/cp-kafka:7.0.1"
+        ports = ["kafka1-for-other-nomad-tasks", "kafka1-for-host-os"]
+      }
+
+      resources {
+        memory = 1200
+      }
+
+      env {
+        kafka1_broker_port      = 9093 # Only used by healthcheck
+        KAFKA_BROKER_ID         = 1
+        KAFKA_ZOOKEEPER_CONNECT = local.zookeeper_endpoint
+
+        # Some clients (like Pulumi) will need `host.docker.internal`
+        # Some clients (like grapl-core services) will need localhost_within_bridge
+        # We differentiate between which client it is based on which port we receive on.
+        # So a receive on 29092 means HOST_OS
+        KAFKA_ADVERTISED_LISTENERS = join(",", [
+          "WITHIN_TASK://localhost:9093",
+          "HOST_OS://host.docker.internal:${var.kafka1_broker_port_for_host_os}",
+          "OTHER_NOMADS://${local.localhost_within_bridge}:${var.kafka1_broker_port}"
+        ])
+        KAFKA_AUTO_CREATE_TOPICS_ENABLE      = "false"
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "WITHIN_TASK:PLAINTEXT,HOST_OS:PLAINTEXT,OTHER_NOMADS:PLAINTEXT"
+        KAFKA_INTER_BROKER_LISTENER_NAME     = "OTHER_NOMADS"
+
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 3
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 2
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 3
+        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
+        KAFKA_JMX_PORT                                 = var.kafka1_jmx_port
+        KAFKA_JMX_HOSTNAME                             = "localhost"
+        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
+      }
+
+      service {
+        name = "kafka1"
+        check {
+          type    = "script"
+          name    = "check_kafka"
+          command = "nc"
+          args = [
+            "-v", # verbose
+            "-z", # "zero I/O mode" - used for scanning
+            "localhost",
+            "${var.kafka1_broker_port}"
+          ]
+          interval = "60s"
+          timeout  = "30s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+    }
+
+    task "kafka2" {
+      driver = "docker"
+
+      config {
+        image = "confluentinc/cp-kafka:7.0.1"
+        ports = ["kafka2-for-other-nomad-tasks", "kafka2-for-host-os"]
+      }
+
+      resources {
+        memory = 1200
+      }
+
+      env {
+        kafka2_broker_port      = 9094 # Only used by healthcheck
+        KAFKA_BROKER_ID         = 2
+        KAFKA_ZOOKEEPER_CONNECT = local.zookeeper_endpoint
+
+        # Some clients (like Pulumi) will need `host.docker.internal`
+        # Some clients (like grapl-core services) will need localhost_within_bridge
+        # We differentiate between which client it is based on which port we receive on.
+        # So a receive on 29092 means HOST_OS
+        KAFKA_ADVERTISED_LISTENERS = join(",", [
+          "WITHIN_TASK://localhost:9094",
+          "HOST_OS://host.docker.internal:${var.kafka2_broker_port_for_host_os}",
+          "OTHER_NOMADS://${local.localhost_within_bridge}:${var.kafka2_broker_port}"
+        ])
+        KAFKA_AUTO_CREATE_TOPICS_ENABLE      = "false"
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "WITHIN_TASK:PLAINTEXT,HOST_OS:PLAINTEXT,OTHER_NOMADS:PLAINTEXT"
+        KAFKA_INTER_BROKER_LISTENER_NAME     = "OTHER_NOMADS"
+
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 3
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 2
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 3
+        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
+        KAFKA_JMX_PORT                                 = var.kafka2_jmx_port
+        KAFKA_JMX_HOSTNAME                             = "localhost"
+        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
+      }
+
+      service {
+        name = "kafka2"
+        check {
+          type    = "script"
+          name    = "check_kafka"
+          command = "nc"
+          args = [
+            "-v", # verbose
+            "-z", # "zero I/O mode" - used for scanning
+            "localhost",
+            "${var.kafka2_broker_port}"
+          ]
+          interval = "60s"
+          timeout  = "30s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
     }
   }
 

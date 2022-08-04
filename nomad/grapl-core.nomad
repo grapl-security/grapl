@@ -176,21 +176,9 @@ variable "plugin_registry_bucket_name" {
   description = "The name of the bucket where plugins are stored"
 }
 
-variable "num_graph_mergers" {
-  type        = number
-  default     = 1
-  description = "The number of graph merger instances to run."
-}
-
 variable "test_user_name" {
   type        = string
   description = "The name of the test user"
-}
-
-variable "num_node_identifiers" {
-  type        = number
-  default     = 1
-  description = "The number of node identifiers to run."
 }
 
 variable "user_auth_table" {
@@ -607,6 +595,8 @@ job "grapl-core" {
   #######################################
 
   group "generator-dispatcher" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -674,7 +664,7 @@ job "grapl-core" {
   }
 
   group "graph-merger" {
-    count = var.num_graph_mergers
+    count = 2
 
     network {
       mode = "bridge"
@@ -742,7 +732,7 @@ job "grapl-core" {
   }
 
   group "node-identifier" {
-    count = var.num_node_identifiers
+    count = 2
 
     network {
       mode = "bridge"
@@ -794,6 +784,8 @@ job "grapl-core" {
   }
 
   group "engagement-creator" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -852,6 +844,8 @@ job "grapl-core" {
   }
 
   group "graphql-endpoint" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -916,6 +910,8 @@ job "grapl-core" {
   }
 
   group "kafka-retry" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -960,6 +956,8 @@ job "grapl-core" {
   }
 
   group "web-ui" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -1038,6 +1036,8 @@ job "grapl-core" {
   }
 
   group "sysmon-generator" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -1083,6 +1083,8 @@ job "grapl-core" {
   }
 
   group "organization-management" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -1137,6 +1139,8 @@ job "grapl-core" {
   }
 
   group "pipeline-ingress" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -1198,6 +1202,8 @@ job "grapl-core" {
   }
 
   group "plugin-registry" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -1273,6 +1279,8 @@ job "grapl-core" {
   }
 
   group "plugin-work-queue" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -1342,6 +1350,8 @@ job "grapl-core" {
   }
 
   group "uid-allocator" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
@@ -1388,6 +1398,8 @@ job "grapl-core" {
   }
 
   group "event-source" {
+    count = 2
+
     network {
       mode = "bridge"
       dns {
