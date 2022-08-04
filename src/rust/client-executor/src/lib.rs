@@ -44,7 +44,7 @@ pub enum Error<E: std::error::Error> {
     Rejected,
     /// A timeout for an underlying call has occurred
     #[error("Elapsed")]
-    Elapsed(Elapsed),
+    Elapsed,
 }
 
 #[pin_project(project = ExecuteStateProj)]
@@ -119,7 +119,7 @@ where
         match this.future.poll(cx) {
             Poll::Ready(Ok(Ok(p))) => Poll::Ready(Ok(p)),
             Poll::Ready(Ok(Err(e))) => Poll::Ready(Err(Error::Inner(e))),
-            Poll::Ready(Err(e @ Elapsed { .. })) => Poll::Ready(Err(Error::Elapsed(e))),
+            Poll::Ready(Err(Elapsed { .. })) => Poll::Ready(Err(Error::Elapsed)),
             Poll::Pending => Poll::Pending,
         }
     }
