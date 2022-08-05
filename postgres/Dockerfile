@@ -7,5 +7,5 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=postgreg-apt 
     postgresql-13-cron=1.3.0-2 && \
     rm -rf /var/lib/apt/lists/*
 
-RUN echo "shared_preload_libraries = 'pg_cron'" >> /usr/share/postgresql/13/postgresql.conf.sample && \
-    echo "cron.database_name = 'postgres'" >> /usr/share/postgresql/13/postgresql.conf.sample
+COPY postgres.conf /tmp/postgres.conf
+RUN cat /tmp/postgres.conf >> /usr/share/postgresql/13/postgresql.conf.sample
