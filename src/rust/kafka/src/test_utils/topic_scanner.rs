@@ -74,6 +74,7 @@ where
     pub async fn contains_for_tenant(
         self,
         tenant_id: uuid::Uuid,
+        max_envelopes: usize,
         mut predicate: impl FnMut(T) -> bool + Send + Sync + 'static,
     ) -> JoinHandle<Vec<Envelope<T>>> {
         let tenant_eq_predicate = move |envelope: Envelope<T>| {
@@ -81,12 +82,16 @@ where
             let inner_message = envelope.inner_message();
             envelope_tenant_id == tenant_id && predicate(inner_message)
         };
-        self.contains(tenant_eq_predicate).await
+        self.contains(tenant_eq_predicate, move |idx, _envelope| {
+            idx == max_envelopes
+        })
+        .await
     }
 
     pub async fn contains(
         self,
-        predicate: impl FnMut(Envelope<T>) -> bool + Send + Sync + 'static,
+        filter_predicate: impl FnMut(Envelope<T>) -> bool + Send + Sync + 'static,
+        stop_predicate: impl FnMut(usize, Envelope<T>) -> bool + Send + Sync + 'static,
     ) -> JoinHandle<Vec<Envelope<T>>> {
         // we'll use this channel to communicate that the consumer is ready to
         // consume messages
@@ -95,9 +100,11 @@ where
 
         tracing::info!("creating kafka subscriber thread");
         let handle = tokio::task::spawn(async move {
-            let predicate = Arc::new(Mutex::new(predicate));
-            let consumer =
-                Consumer::new(self.consumer_config).expect("failed to configure consumer");
+            let filter_predicate = Arc::new(Mutex::new(filter_predicate));
+            let stop_predicate = Arc::new(Mutex::new(stop_predicate));
+            let consumer = Arc::new(
+                Consumer::new(self.consumer_config).expect("failed to configure consumer"),
+            );
 
             let filtered_stream = consumer
                 .stream()
@@ -107,20 +114,15 @@ where
 
                     tracing::debug!(message = "consumed kafka message");
 
-                    if let Some(tx) = tx_mutex.lock().expect("failed to acquire tx lock").take() {
-                        // notify the channel that we're ready to receive messages
-                        tracing::info!("kafka consumer is receiving messages");
-                        tx.send(())
-                            .expect("failed to notify sender that consumer is consuming");
-                    }
-
-                    let predicate = predicate.clone();
+                    let filter_predicate = filter_predicate.clone();
                     async move {
-                        match predicate.lock().expect("failed to acquire predicate lock")(
-                            envelope.clone(),
+                        match filter_predicate
+                            .lock()
+                            .expect("failed to acquire predicate lock")(
+                            envelope.clone()
                         ) {
                             true => {
-                                tracing::debug!("predicate matched");
+                                tracing::debug!("filter predicate matched");
                                 Some(envelope)
                             }
                             false => None,
@@ -128,11 +130,42 @@ where
                     }
                     .instrument(span.clone())
                 })
-                .then(|matched| async {
-                    consumer.commit().expect("failed to commit consumer offset");
-                    matched
+                .then(|matched| {
+                    let consumer = consumer.clone();
+                    async move {
+                        consumer.commit().expect("failed to commit consumer offset");
+                        matched
+                    }
                 })
-                .filter_map(move |matched| async move { matched });
+                .filter_map(|matched| async move { matched })
+                .enumerate()
+                .take_while(|(idx, envelope)| {
+                    let stop_predicate = stop_predicate.clone();
+                    let idx = *idx;
+                    let envelope = envelope.clone();
+                    async move {
+                        if stop_predicate
+                            .lock()
+                            .expect("failed to acquire stopping predicate lock")(
+                            idx, envelope
+                        ) {
+                            tracing::debug!("stop predicate matched");
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                })
+                .map(|(_, envelope)| envelope);
+
+            // notify the receiver that the consumer is ready to consume
+            // messages from kafka
+            if let Some(tx) = tx_mutex.lock().expect("failed to acquire tx lock").take() {
+                // notify the channel that we're ready to receive messages
+                tracing::info!("kafka consumer is ready to consume messages");
+                tx.send(())
+                    .expect("failed to notify sender that consumer is consuming");
+            }
 
             tracing::info!(
                 message = "waiting for kafka messages",

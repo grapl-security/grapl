@@ -18,20 +18,17 @@ use rust_proto::{
         services::PipelineIngressClientConfig,
         BuildGrpcClientOptions,
     },
-    graplinc::grapl::{
-        api::{
-            graph::v1beta1::{
-                ImmutableUintProp,
-                MergedGraph,
-                MergedNode,
-                Property,
-            },
-            pipeline_ingress::v1beta1::{
-                client::PipelineIngressClient,
-                PublishRawLogRequest,
-            },
+    graplinc::grapl::api::{
+        graph::v1beta1::{
+            ImmutableUintProp,
+            MergedGraph,
+            MergedNode,
+            Property,
         },
-        pipeline::v1beta1::Envelope,
+        pipeline_ingress::v1beta1::{
+            client::PipelineIngressClient,
+            PublishRawLogRequest,
+        },
     },
 };
 use test_context::{
@@ -100,12 +97,7 @@ async fn test_sysmon_event_produces_merged_graph(
         KafkaTopicScanner::new(ctx.consumer_config.clone(), Duration::from_secs(30));
 
     let handle = kafka_scanner
-        .contains(move |envelope: Envelope<MergedGraph>| -> bool {
-            let envelope_tenant_id = envelope.tenant_id();
-            let envelope_event_source_id = envelope.event_source_id();
-
-            envelope_tenant_id == tenant_id && envelope_event_source_id == event_source_id
-        })
+        .contains_for_tenant(tenant_id, 1, |_: MergedGraph| true)
         .await;
 
     let log_event: Bytes = r#"

@@ -1,4 +1,4 @@
-//#![cfg(feature = "integration_tests")]
+#![cfg(feature = "integration_tests")]
 
 use std::time::Duration;
 
@@ -23,10 +23,7 @@ use rust_proto::{
             client::PipelineIngressClient,
             PublishRawLogRequest,
         },
-        pipeline::v1beta1::{
-            Envelope,
-            RawLog,
-        },
+        pipeline::v1beta1::RawLog,
     },
 };
 use test_context::{
@@ -124,14 +121,7 @@ async fn test_publish_raw_log_sends_message_to_kafka(
     let kafka_scanner =
         KafkaTopicScanner::new(ctx.consumer_config.clone(), Duration::from_secs(30));
     let handle = kafka_scanner
-        .contains(move |envelope: Envelope<RawLog>| -> bool {
-            let envelope_tenant_id = envelope.tenant_id();
-            let envelope_event_source_id = envelope.event_source_id();
-
-            tracing::debug!(message = "consumed kafka message");
-
-            envelope_tenant_id == tenant_id && envelope_event_source_id == event_source_id
-        })
+        .contains_for_tenant(tenant_id, 1, |_: RawLog| true)
         .await;
 
     tracing::info!("sending publish_raw_log request");
@@ -147,7 +137,7 @@ async fn test_publish_raw_log_sends_message_to_kafka(
     tracing::info!("waiting for kafka_scanner to complete");
     let envelopes = handle.await?;
 
-    assert_eq!(envelopes.len(), 0);
+    assert_eq!(envelopes.len(), 1);
 
     let envelope = envelopes[0].clone();
 
