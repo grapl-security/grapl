@@ -102,6 +102,7 @@ impl Connectable for PluginRegistryServiceClient {
 impl PluginRegistryServiceClient {
     /// create a new plugin.
     /// NOTE: Most consumers will want `create_plugin`, not `create_plugin_raw`.
+    /// NOTE: streaming RPCs aren't hooked up to client-executor just yet.
     pub async fn create_plugin_raw<S>(
         &mut self,
         request: S,
@@ -109,16 +110,13 @@ impl PluginRegistryServiceClient {
     where
         S: Stream<Item = native::CreatePluginRequest> + Send + 'static,
     {
-        let response = match self
+        let proto_response = self
             .proto_client
             .create_plugin(request.map(proto::CreatePluginRequest::from))
             .await
-        {
-            Ok(r) => r,
-            Err(e) => return Err(Status::from(e).into()),
-        };
-        let response = native::CreatePluginResponse::try_from(response.into_inner())?;
-        Ok(response)
+            .map_err(Status::from)?;
+        let native_response = native::CreatePluginResponse::try_from(proto_response.into_inner())?;
+        Ok(native_response)
     }
 
     /// Create a new plugin
