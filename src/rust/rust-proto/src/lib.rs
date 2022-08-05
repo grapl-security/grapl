@@ -12,6 +12,7 @@ use thiserror::Error;
 
 #[cfg(feature = "client-factory")]
 pub mod client_factory;
+mod client_macros;
 pub mod protocol;
 
 pub(crate) mod server_internals;

@@ -40,7 +40,7 @@ impl From<client_executor::Error<ConnectError>> for ConnectError {
     fn from(e: client_executor::Error<ConnectError>) -> Self {
         match e {
             client_executor::Error::Inner(e) => e,
-            client_executor::Error::Rejected => {Self::CircuitBreakerOpen}
+            client_executor::Error::Rejected => Self::CircuitBreakerOpen,
             client_executor::Error::Elapsed => Self::TimeoutElapsed,
         }
     }

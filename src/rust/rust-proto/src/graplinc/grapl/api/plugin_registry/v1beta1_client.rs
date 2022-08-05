@@ -1,4 +1,5 @@
 use std::{
+    convert::Infallible,
     fmt::Debug,
     time::Duration,
 };
@@ -16,6 +17,7 @@ use futures::{
 use proto::plugin_registry_service_client::PluginRegistryServiceClient as PluginRegistryServiceClientProto;
 
 use crate::{
+    execute_client_rpc,
     graplinc::grapl::api::plugin_registry::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
     protocol::{
@@ -39,6 +41,15 @@ pub enum PluginRegistryServiceClientError {
     CircuitOpen,
     #[error("Timeout")]
     Elapsed,
+}
+
+// This likely should be removed in favor of making all SerDe conversions
+// TryFrom<Error = SerDeError> instead of From.
+// Currently it's kind of scattershot.
+impl From<Infallible> for PluginRegistryServiceClientError {
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
 }
 
 impl From<client_executor::Error<tonic::Status>> for PluginRegistryServiceClientError {
@@ -134,26 +145,13 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::GetPluginRequest,
     ) -> Result<native::GetPluginResponse, PluginRegistryServiceClientError> {
-        let response = self
-            .executor
-            .spawn(
-                client_executor::strategy::FibonacciBackoff::from_millis(10)
-                    .map(jitter)
-                    .take(20),
-                || {
-                    let mut proto_client = self.proto_client.clone();
-                    let request = request.clone();
-                    async move {
-                        proto_client
-                            .get_plugin(proto::GetPluginRequest::from(request))
-                            .await
-                    }
-                },
-            )
-            .await?;
-
-        let response = native::GetPluginResponse::try_from(response.into_inner())?;
-        Ok(response)
+        execute_client_rpc!(
+            self,
+            request,
+            get_plugin,
+            proto::GetPluginRequest,
+            native::GetPluginResponse,
+        )
     }
 
     /// turn on a particular plugin's code
@@ -161,25 +159,13 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::DeployPluginRequest,
     ) -> Result<native::DeployPluginResponse, PluginRegistryServiceClientError> {
-        let response = self
-            .executor
-            .spawn(
-                client_executor::strategy::FibonacciBackoff::from_millis(10)
-                    .map(jitter)
-                    .take(20),
-                || {
-                    let mut proto_client = self.proto_client.clone();
-                    let request = request.clone();
-                    async move {
-                        proto_client
-                            .deploy_plugin(proto::DeployPluginRequest::from(request))
-                            .await
-                    }
-                },
-            )
-            .await?;
-        let response = native::DeployPluginResponse::try_from(response.into_inner())?;
-        Ok(response)
+        execute_client_rpc!(
+            self,
+            request,
+            deploy_plugin,
+            proto::DeployPluginRequest,
+            native::DeployPluginResponse,
+        )
     }
 
     /// turn off a particular plugin's code
@@ -187,36 +173,26 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::TearDownPluginRequest,
     ) -> Result<native::TearDownPluginResponse, PluginRegistryServiceClientError> {
-        self.proto_client
-            .tear_down_plugin(proto::TearDownPluginRequest::from(request))
-            .await
-            .map_err(Status::from)?;
-        todo!()
+        execute_client_rpc!(
+            self,
+            request,
+            tear_down_plugin,
+            proto::TearDownPluginRequest,
+            native::TearDownPluginResponse,
+        )
     }
 
     pub async fn get_plugin_health(
         &mut self,
         request: native::GetPluginHealthRequest,
     ) -> Result<native::GetPluginHealthResponse, PluginRegistryServiceClientError> {
-        let response = self
-            .executor
-            .spawn(
-                client_executor::strategy::FibonacciBackoff::from_millis(10)
-                    .map(jitter)
-                    .take(20),
-                || {
-                    let mut proto_client = self.proto_client.clone();
-                    let request = request.clone();
-                    async move {
-                        proto_client
-                            .get_plugin_health(proto::GetPluginHealthRequest::from(request))
-                            .await
-                    }
-                },
-            )
-            .await?;
-        let response = native::GetPluginHealthResponse::try_from(response.into_inner())?;
-        Ok(response)
+        execute_client_rpc!(
+            self,
+            request,
+            get_plugin_health,
+            proto::GetPluginHealthRequest,
+            native::GetPluginHealthResponse,
+        )
     }
 
     /// Given information about an event source, return all generators that handle that event source
@@ -225,28 +201,13 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::GetGeneratorsForEventSourceRequest,
     ) -> Result<native::GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> {
-        let response = self
-            .executor
-            .spawn(
-                client_executor::strategy::FibonacciBackoff::from_millis(10)
-                    .map(jitter)
-                    .take(20),
-                || {
-                    let mut proto_client = self.proto_client.clone();
-                    let request = request.clone();
-                    async move {
-                        proto_client
-                            .get_generators_for_event_source(
-                                proto::GetGeneratorsForEventSourceRequest::from(request),
-                            )
-                            .await
-                    }
-                },
-            )
-            .await?;
-        let response = native::GetGeneratorsForEventSourceResponse::from(response.into_inner());
-
-        Ok(response)
+        execute_client_rpc!(
+            self,
+            request,
+            get_generators_for_event_source,
+            proto::GetGeneratorsForEventSourceRequest,
+            native::GetGeneratorsForEventSourceResponse,
+        )
     }
 
     /// Given information about a tenant, return all analyzers for that tenant
@@ -254,14 +215,12 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::GetAnalyzersForTenantRequest,
     ) -> Result<native::GetAnalyzersForTenantResponse, PluginRegistryServiceClientError> {
-        let response = self
-            .proto_client
-            .get_analyzers_for_tenant(proto::GetAnalyzersForTenantRequest::from(request))
-            .await
-            .map_err(Status::from)?;
-
-        let response = native::GetAnalyzersForTenantResponse::try_from(response.into_inner())?;
-
-        Ok(response)
+        execute_client_rpc!(
+            self,
+            request,
+            get_analyzers_for_tenant,
+            proto::GetAnalyzersForTenantRequest,
+            native::GetAnalyzersForTenantResponse,
+        )
     }
 }
