@@ -71,6 +71,12 @@ where
         }
     }
 
+    /// Consume messages from Kafka matching the given tenant_id, filtered by
+    /// the predicate. This will terminate after max_envelopes have been
+    /// consumed. Panics if this takes longer than self.timeout.
+    ///
+    /// N.B.: If fewer than max_envelopes messages matching the tenant_id and
+    /// predicate are available, this will time out.
     pub async fn contains_for_tenant(
         self,
         tenant_id: uuid::Uuid,
@@ -83,11 +89,14 @@ where
             envelope_tenant_id == tenant_id && predicate(inner_message)
         };
         self.contains(tenant_eq_predicate, move |idx, _envelope| {
-            idx == max_envelopes
+            idx >= max_envelopes
         })
         .await
     }
 
+    /// Consume messages from Kafka matching filter_predicate into a list until
+    /// the stop_predicate returns true. Panics if this takes longer than
+    /// self.timeout.
     pub async fn contains(
         self,
         filter_predicate: impl FnMut(Envelope<T>) -> bool + Send + Sync + 'static,
@@ -118,7 +127,7 @@ where
                     async move {
                         match filter_predicate
                             .lock()
-                            .expect("failed to acquire predicate lock")(
+                            .expect("failed to acquire filter predicate lock")(
                             envelope.clone()
                         ) {
                             true => {
@@ -146,7 +155,7 @@ where
                     async move {
                         if stop_predicate
                             .lock()
-                            .expect("failed to acquire stopping predicate lock")(
+                            .expect("failed to acquire stop predicate lock")(
                             idx, envelope
                         ) {
                             tracing::debug!("stop predicate matched");

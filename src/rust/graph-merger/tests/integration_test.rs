@@ -3,39 +3,24 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use clap::Parser;
-use grapl_tracing::{
-    setup_tracing,
-    WorkerGuard,
+use e2e_tests::test_utils::context::{
+    E2eTestContext,
+    SetupResult,
 };
 use kafka::{
     config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
 };
-use rust_proto::{
-    client_factory::{
-        build_grpc_client_with_options,
-        services::PipelineIngressClientConfig,
-        BuildGrpcClientOptions,
+use rust_proto::graplinc::grapl::api::{
+    graph::v1beta1::{
+        ImmutableUintProp,
+        MergedGraph,
+        MergedNode,
+        Property,
     },
-    graplinc::grapl::api::{
-        graph::v1beta1::{
-            ImmutableUintProp,
-            MergedGraph,
-            MergedNode,
-            Property,
-        },
-        pipeline_ingress::v1beta1::{
-            client::PipelineIngressClient,
-            PublishRawLogRequest,
-        },
-    },
+    pipeline_ingress::v1beta1::PublishRawLogRequest,
 };
-use test_context::{
-    test_context,
-    AsyncTestContext,
-};
-use uuid::Uuid;
+use test_context::test_context;
 
 fn find_node<'a>(
     graph: &'a MergedGraph,
@@ -49,52 +34,24 @@ fn find_node<'a>(
     })
 }
 
-struct GraphMergerTestContext {
-    pipeline_ingress_client: PipelineIngressClient,
-    consumer_config: ConsumerConfig,
-    _guard: WorkerGuard,
-}
-
 const CONSUMER_TOPIC: &'static str = "merged-graphs";
-const SERVICE_NAME: &'static str = "graph-merger-integration-tests";
 
-#[async_trait::async_trait]
-impl AsyncTestContext for GraphMergerTestContext {
-    async fn setup() -> Self {
-        let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
-
-        let client_config = PipelineIngressClientConfig::parse();
-        let pipeline_ingress_client = build_grpc_client_with_options(
-            client_config,
-            BuildGrpcClientOptions {
-                perform_healthcheck: true,
-                ..Default::default()
-            },
-        )
-        .await
-        .expect("pipeline_ingress_client");
-
-        let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
-
-        GraphMergerTestContext {
-            pipeline_ingress_client,
-            consumer_config,
-            _guard,
-        }
-    }
-}
-
-#[tracing::instrument(skip(ctx))]
-#[test_context(GraphMergerTestContext)]
+#[test_context(E2eTestContext)]
 #[tokio::test]
 async fn test_sysmon_event_produces_merged_graph(
-    ctx: &mut GraphMergerTestContext,
+    ctx: &mut E2eTestContext,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let event_source_id = Uuid::new_v4();
-    let tenant_id = Uuid::new_v4();
+    let test_name = "test_sysmon_event_produces_merged_graph";
+    let SetupResult {
+        tenant_id,
+        plugin_id: _,
+        event_source_id,
+    } = ctx.setup_sysmon_generator(test_name).await?;
 
-    let kafka_scanner =
-        KafkaTopicScanner::new(ctx.consumer_config.clone(), Duration::from_secs(30));
+    let kafka_scanner = KafkaTopicScanner::new(
+        ConsumerConfig::with_topic(CONSUMER_TOPIC),
+        Duration::from_secs(30),
+    );
 
     let handle = kafka_scanner
         .contains_for_tenant(tenant_id, 1, |_: MergedGraph| true)

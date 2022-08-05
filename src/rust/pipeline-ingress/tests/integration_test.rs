@@ -36,7 +36,6 @@ static CONSUMER_TOPIC: &'static str = "raw-logs";
 
 struct PipelineIngressTestContext {
     grpc_client: PipelineIngressClient,
-    consumer_config: ConsumerConfig,
     _guard: WorkerGuard,
 }
 
@@ -55,11 +54,9 @@ impl AsyncTestContext for PipelineIngressTestContext {
         )
         .await
         .expect("pipeline_ingress_client");
-        let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 
         PipelineIngressTestContext {
             grpc_client: pipeline_ingress_client,
-            consumer_config,
             _guard,
         }
     }
@@ -118,13 +115,21 @@ async fn test_publish_raw_log_sends_message_to_kafka(
 </Event>
 "#.into();
 
-    let kafka_scanner =
-        KafkaTopicScanner::new(ctx.consumer_config.clone(), Duration::from_secs(30));
+    let kafka_scanner = KafkaTopicScanner::new(
+        ConsumerConfig::with_topic(CONSUMER_TOPIC),
+        Duration::from_secs(30),
+    );
+
     let handle = kafka_scanner
         .contains_for_tenant(tenant_id, 1, |_: RawLog| true)
         .await;
 
-    tracing::info!("sending publish_raw_log request");
+    tracing::info!(
+        message = "sending publish_raw_log request",
+        tenant_id =% tenant_id,
+        event_source_id =% event_source_id,
+    );
+
     ctx.grpc_client
         .publish_raw_log(PublishRawLogRequest {
             event_source_id,

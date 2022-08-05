@@ -553,6 +553,10 @@ job "grapl-local-infra" {
               }
             }
           }
+
+          resources {
+            memory = 500
+          }
         }
       }
     }

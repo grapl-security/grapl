@@ -1,9 +1,21 @@
-#![cfg(feature = "integration_tests")]
-mod test_utils;
+//#![cfg(feature = "integration_tests")]
 
 use std::time::Duration;
 
 use bytes::Bytes;
+use e2e_tests::{
+    test_fixtures,
+    test_utils::{
+        context::{
+            E2eTestContext,
+            SetupResult,
+        },
+        predicates::{
+            events_36lines_merged_graph_predicate,
+            events_36lines_node_identity_predicate,
+        },
+    },
+};
 use kafka::{
     config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
@@ -11,53 +23,31 @@ use kafka::{
 use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
 use rust_proto::graplinc::grapl::{
     api::{
-        event_source::v1beta1::CreateEventSourceRequest,
-        graph::v1beta1::GraphDescription,
-        pipeline_ingress::v1beta1::PublishRawLogRequest,
-        plugin_registry::v1beta1::{
-            DeployPluginRequest,
-            PluginMetadata,
-            PluginType,
+        graph::v1beta1::{
+            GraphDescription,
+            IdentifiedGraph,
+            MergedGraph,
         },
+        pipeline_ingress::v1beta1::PublishRawLogRequest,
     },
-    pipeline::v1beta1::RawLog,
+    pipeline::v1beta1::{
+        Envelope,
+        RawLog,
+    },
 };
 use test_context::test_context;
-use test_utils::context::E2eTestContext;
-use uuid::Uuid;
-
-use crate::test_utils::predicates::{
-    events_36lines_merged_graph_predicate,
-    events_36lines_node_identity_predicate,
-};
-
-mod test_fixtures {
-    use super::*;
-
-    /// Send 1 line (well, event) at a time
-    pub fn get_36_eventlog_xml_separate_lines() -> Result<Vec<String>, std::io::Error> {
-        let filename = "/test-fixtures/36_eventlog.xml"; // This path is created in rust/Dockerfile
-        let content = std::fs::read_to_string(filename)?;
-        Ok(content.lines().map(&str::to_owned).collect())
-    }
-
-    pub fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
-        std::fs::read("/test-fixtures/sysmon-generator").map(Bytes::from)
-    }
-}
 
 #[tracing::instrument(skip(ctx))]
 #[test_context(E2eTestContext)]
 #[tokio::test]
 async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std::error::Error>> {
     let test_name = "test_sysmon_log_e2e";
-    let tenant_id = Uuid::new_v4();
 
     let SetupResult {
         tenant_id,
         plugin_id,
         event_source_id,
-    } = common_setup(ctx, test_name, tenant_id).await?;
+    } = ctx.setup_sysmon_generator(test_name).await?;
 
     tracing::info!(">> Setup complete. Now let's test milestones in the pipeline.");
 
@@ -72,23 +62,21 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
         ConsumerConfig::with_topic("generated-graphs"),
         Duration::from_secs(30),
     )
-    .contains_for_tenant(tenant_id, 36, |graph: GraphDescription| {
-        graph.nodes.len() > 1
-    })
+    .contains_for_tenant(tenant_id, 36, |_graph: GraphDescription| true)
     .await;
 
     let node_identifier_scanner_handle = KafkaTopicScanner::new(
         ConsumerConfig::with_topic("identified-graphs"),
         Duration::from_secs(30),
     )
-    .contains_for_tenant(tenant_id, 36, events_36lines_node_identity_predicate)
+    .contains_for_tenant(tenant_id, 36, |_graph: IdentifiedGraph| true)
     .await;
 
     let graph_merger_scanner_handle = KafkaTopicScanner::new(
         ConsumerConfig::with_topic("merged-graphs"),
         Duration::from_secs(30),
     )
-    .contains_for_tenant(tenant_id, 36, events_36lines_merged_graph_predicate)
+    .contains_for_tenant(tenant_id, 36, |_graph: MergedGraph| true)
     .await;
 
     tracing::info!(">> Inserting logs into pipeline-ingress!");
@@ -137,64 +125,37 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     let identified_graphs = node_identifier_scanner_handle.await?;
     assert!(!identified_graphs.is_empty());
 
+    let filtered_identified_graphs = identified_graphs
+        .iter()
+        .cloned()
+        .filter(move |envelope| {
+            let envelope = envelope.clone();
+            let identified_graph = envelope.inner_message();
+            events_36lines_node_identity_predicate(identified_graph)
+        })
+        .collect::<Vec<Envelope<IdentifiedGraph>>>();
+
+    assert!(!filtered_identified_graphs.is_empty());
+    assert_eq!(filtered_identified_graphs.len(), identified_graphs.len());
+
     tracing::info!(">> Test: graph-merger wrote these identified nodes to our graph database, then write to 'merged-graphs'");
     let merged_graphs = graph_merger_scanner_handle.await?;
     assert!(!merged_graphs.is_empty());
 
+    let filtered_merged_graphs = merged_graphs
+        .iter()
+        .cloned()
+        .filter(move |envelope| {
+            let envelope = envelope.clone();
+            let merged_graph = envelope.inner_message();
+            events_36lines_merged_graph_predicate(merged_graph)
+        })
+        .collect::<Vec<Envelope<MergedGraph>>>();
+
+    assert!(!filtered_merged_graphs.is_empty());
+    assert_eq!(filtered_merged_graphs.len(), merged_graphs.len());
+
     // TODO: Perhaps add a test here that looks in dgraph/scylla for those identified nodes
 
     Ok(())
-}
-
-pub struct SetupResult {
-    tenant_id: Uuid,
-    plugin_id: Uuid,
-    event_source_id: Uuid,
-}
-async fn common_setup(
-    ctx: &mut E2eTestContext,
-    test_name: &str,
-    tenant_id: Uuid,
-) -> Result<SetupResult, Box<dyn std::error::Error>> {
-    tracing::info!(">> Settting up Event Source, Plugin");
-
-    // Register an Event Source
-    let event_source = ctx
-        .event_source_client
-        .create_event_source(CreateEventSourceRequest {
-            display_name: test_name.to_string(),
-            description: "arbitrary".to_string(),
-            tenant_id,
-        })
-        .await?;
-
-    // Deploy a Generator Plugin that responds to that event_source_id
-    let plugin = {
-        let plugin_artifact = test_fixtures::get_sysmon_generator()?;
-        let plugin = ctx
-            .plugin_registry_client
-            .create_plugin(
-                PluginMetadata {
-                    tenant_id,
-                    display_name: test_name.to_string(),
-                    plugin_type: PluginType::Generator,
-                    event_source_id: Some(event_source.event_source_id),
-                },
-                futures::stream::once(async move { plugin_artifact }),
-            )
-            .await?;
-
-        ctx.plugin_registry_client
-            .deploy_plugin(DeployPluginRequest {
-                plugin_id: plugin.plugin_id,
-            })
-            .await?;
-        plugin
-    };
-
-    Ok(SetupResult {
-        tenant_id,
-        plugin_id: plugin.plugin_id,
-        event_source_id: event_source.event_source_id,
-    })
 }
