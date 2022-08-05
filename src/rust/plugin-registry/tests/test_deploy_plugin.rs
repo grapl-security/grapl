@@ -7,9 +7,8 @@ use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::{
     client_factory::{
-        build_grpc_client_with_options,
+        build_grpc_client,
         services::PluginRegistryClientConfig,
-        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::plugin_registry::v1beta1::{
         DeployPluginRequest,
@@ -36,14 +35,7 @@ fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
 #[test_log::test(tokio::test)]
 async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client_with_options(
-        client_config,
-        BuildGrpcClientOptions {
-            perform_healthcheck: true,
-            ..Default::default()
-        },
-    )
-    .await?;
+    let mut client = build_grpc_client(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -82,14 +74,7 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
 #[test_log::test(tokio::test)]
 async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client_with_options(
-        client_config,
-        BuildGrpcClientOptions {
-            perform_healthcheck: true,
-            ..Default::default()
-        },
-    )
-    .await?;
+    let mut client = build_grpc_client(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -167,14 +152,7 @@ async fn assert_health(
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client_with_options(
-        client_config,
-        BuildGrpcClientOptions {
-            perform_healthcheck: true,
-            ..Default::default()
-        },
-    )
-    .await?;
+    let mut client = build_grpc_client(client_config).await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 
