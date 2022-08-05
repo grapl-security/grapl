@@ -41,10 +41,10 @@ client {
     # Turn on consul connect proxy debug logs. Consul connect sidecars now have access logs, etc.
     connect.log_level = "debug"
   }
-  gc_interval = "30m"
-  gc_disk_usage_threshold = 99
+  gc_interval              = "30m"
+  gc_disk_usage_threshold  = 99
   gc_inode_usage_threshold = 95
-  gc_max_allocs = 200
+  gc_max_allocs            = 200
 }
 
 ####################

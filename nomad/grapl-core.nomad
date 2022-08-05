@@ -784,7 +784,7 @@ job "grapl-core" {
   }
 
   group "engagement-creator" {
-    count = 2
+    count = 1
 
     network {
       mode = "bridge"
