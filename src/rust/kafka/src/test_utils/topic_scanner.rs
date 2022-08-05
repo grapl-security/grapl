@@ -123,6 +123,15 @@ where
 
                     tracing::debug!(message = "consumed kafka message");
 
+                    // notify the receiver that the consumer is ready to consume
+                    // messages from kafka
+                    if let Some(tx) = tx_mutex.lock().expect("failed to acquire tx lock").take() {
+                        // notify the channel that we're ready to receive messages
+                        if let Err(_) = tx.send(()) {
+                            tracing::warn!("receiver was dropped");
+                        }
+                    }
+
                     let filter_predicate = filter_predicate.clone();
                     async move {
                         match filter_predicate
@@ -167,15 +176,6 @@ where
                 })
                 .map(|(_, envelope)| envelope);
 
-            // notify the receiver that the consumer is ready to consume
-            // messages from kafka
-            if let Some(tx) = tx_mutex.lock().expect("failed to acquire tx lock").take() {
-                // notify the channel that we're ready to receive messages
-                tracing::info!("kafka consumer is ready to consume messages");
-                tx.send(())
-                    .expect("failed to notify sender that consumer is consuming");
-            }
-
             tracing::info!(
                 message = "waiting for kafka messages",
                 timeout = ?self.timeout,
@@ -188,8 +188,25 @@ where
 
         // wait for the kafka consumer to start consuming
         tracing::info!("waiting for kafka consumer to report ready");
-        rx.await
-            .expect("failed to receive consumer ready notification");
+        let branch = tokio::select!(
+            // If the topic isn't very active, the receiver may never get a
+            // notification, so we fall back to a 10 second sleep. A
+            // deterministic solution might involve spamming the topic with
+            // messages and waiting for the notification, but this seems
+            // reliable enough...
+            _ = tokio::time::sleep(Duration::from_secs(10)) => {
+                "did not receive notification"
+            },
+            result = rx => {
+                result.expect("failed to receive consumer ready notification");
+                "received notification"
+            }
+        );
+
+        tracing::info!(
+            message = "kafka consumer is ready to consume messages",
+            branch = branch,
+        );
 
         handle
     }
