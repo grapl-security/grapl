@@ -34,6 +34,7 @@ BUILD @christophermaier
 /pants @christophermaier
 /pants.ci.toml @christophermaier
 /pants.toml @christophermaier
+/postgres/ @colin-grapl @wimax-grapl
 /pulumi/ @christophermaier
 /pyproject.toml @christophermaier
 /README.md @christophermaier
