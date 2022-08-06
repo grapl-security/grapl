@@ -58,21 +58,18 @@ async fn handler() -> Result<(), SysmonGeneratorError> {
     let stream = stream_processor.stream(event_handler);
 
     stream
-        .for_each_concurrent(
-            10, // TODO: make configurable?
-            |res| async move {
-                if let Err(e) = res {
-                    // TODO: retry the message?
-                    tracing::error!(
-                        message = "Error processing Kafka message",
-                        reason = %e,
-                    );
-                } else {
-                    // TODO: collect some metrics
-                    tracing::debug!(message = "Generated graph from sysmon event");
-                }
-            },
-        )
+        .for_each(|res| async move {
+            if let Err(e) = res {
+                // TODO: retry the message?
+                tracing::error!(
+                    message = "Error processing Kafka message",
+                    reason = %e,
+                );
+            } else {
+                // TODO: collect some metrics
+                tracing::debug!(message = "Generated graph from sysmon event");
+            }
+        })
         .with_current_subscriber()
         .await;
 
