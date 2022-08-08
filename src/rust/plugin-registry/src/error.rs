@@ -70,6 +70,9 @@ impl From<PluginRegistryServiceError> for Status {
             Error::SqlxError(sqlx::Error::Configuration(_)) => {
                 Status::internal("Invalid SQL configuration")
             }
+            Error::SqlxError(rnf_error @ sqlx::Error::RowNotFound) => {
+                Status::not_found(rnf_error.to_string())
+            }
             Error::SqlxError(_) => Status::internal("Failed to operate on postgres"),
             Error::S3PutObjectError(_) => Status::internal("Failed to put s3 object"),
             Error::S3GetObjectError(_) => Status::internal("Failed to get s3 object"),
