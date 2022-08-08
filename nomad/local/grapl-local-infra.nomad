@@ -254,7 +254,7 @@ job "grapl-local-infra" {
         }
 
         resources {
-          memory = 1200
+          memory = 1256
         }
 
         env {
@@ -417,7 +417,7 @@ job "grapl-local-infra" {
           }
 
           resources {
-            memory = 512
+            memory = 1024
           }
         }
       }
