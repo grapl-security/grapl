@@ -60,7 +60,7 @@ def dump_all(
         ns_nomad_client = _get_nomad_client(namespace=ns)
         ns_dir = artifacts_dir if ns == "default" else artifacts_dir / "namespaces" / ns
 
-        allocations = _get_allocations(ns_nomad_client, parent=namespace)
+        allocations = _get_allocations(ns_nomad_client, parent=namespace, opts=opts)
 
         _get_nomad_logs_for_each_service(ns_dir, ns_nomad_client, allocations)
 

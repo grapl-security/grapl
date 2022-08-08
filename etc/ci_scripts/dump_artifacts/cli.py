@@ -44,7 +44,7 @@ class Args:
             "--no-dump-agent-logs", dest="dump_agent_logs", action="store_false"
         )
         parser.add_argument(
-            "--dump-connext-proxy-logs",
+            "--dump-connect-proxy-logs",
             dest="dump_connect_proxy_logs",
             action="store_true",
             help="Dump the logs for Consul Connect",
