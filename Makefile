@@ -221,6 +221,8 @@ graplctl: ## Build graplctl and install it to ./bin
 
 .PHONY: dump-artifacts-local
 dump-artifacts-local:  ## Run the script that dumps Nomad/Docker logs after test runs
+	# Rarely needed, but you can temporarily append
+	# `--dump-connect-proxy-logs` to debug Consul Connect.
 	./pants run ./etc/ci_scripts/dump_artifacts -- \
 		--compose-project="${COMPOSE_PROJECT_NAME}" \
 		--dump-agent-logs

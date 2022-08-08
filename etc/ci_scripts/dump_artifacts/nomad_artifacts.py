@@ -25,6 +25,14 @@ consul_agent_log_path = Path("/tmp/consul-agent.log").resolve()
 vault_agent_log_path = Path("/tmp/vault-agent.log").resolve()
 
 
+@dataclasses.dataclass
+class NomadDumpOptions:
+    # Dump `nomad-agent` logs
+    dump_agent_logs: bool
+    # Dump the Consul Connect proxy logs for each service
+    dump_connect_proxy_logs: bool
+
+
 def _get_nomad_client(namespace: str | None = None) -> Nomad:
     address = os.getenv("NOMAD_ADDRESS") or "http://localhost:4646"
     assert address.startswith("http"), f"Your nomad address needs a protocol: {address}"
@@ -32,8 +40,11 @@ def _get_nomad_client(namespace: str | None = None) -> Nomad:
     return nomad_client
 
 
-def dump_all(artifacts_dir: Path, dump_agent_logs: bool) -> None:
-    if dump_agent_logs:
+def dump_all(
+    artifacts_dir: Path,
+    opts: NomadDumpOptions,
+) -> None:
+    if opts.dump_agent_logs:
         _dump_hashicorp_agent_logs(artifacts_dir)
 
     # Get every namespace.
@@ -49,7 +60,7 @@ def dump_all(artifacts_dir: Path, dump_agent_logs: bool) -> None:
         ns_nomad_client = _get_nomad_client(namespace=ns)
         ns_dir = artifacts_dir if ns == "default" else artifacts_dir / "namespaces" / ns
 
-        allocations = _get_allocations(ns_nomad_client, parent=namespace)
+        allocations = _get_allocations(ns_nomad_client, parent=namespace, opts=opts)
 
         _get_nomad_logs_for_each_service(ns_dir, ns_nomad_client, allocations)
 
@@ -81,17 +92,24 @@ class NomadAllocation:
     status: str
     tasks: list[NomadTask]
 
-    def __init__(self, input: dict[str, Any], parent: NomadNamespace) -> None:
+    def __init__(
+        self,
+        input: dict[str, Any],
+        parent: NomadNamespace,
+        opts: NomadDumpOptions,
+    ) -> None:
         self.parent = parent
         self.allocation_id = input["ID"]
         self.allocation_name = input["Name"]
         self.status = input["ClientStatus"]
         if not input["TaskStates"]:
             raise Exception(f"Why are there no TaskStates? {input}")
-        # Remove tasks we don't super care about
-        task_names = [
-            t for t in input["TaskStates"].keys() if not t.startswith("connect-proxy")
-        ]
+
+        task_names = [t for t in input["TaskStates"].keys()]
+        # Optionally filter out task names we don't care about
+        if not opts.dump_connect_proxy_logs:
+            task_names = [t for t in task_names if not t.startswith("connect-proxy")]
+
         self.tasks = [
             NomadTask(
                 parent=self,
@@ -140,11 +158,15 @@ class NomadTask:
 JobToAllocDict = dict[str, list[NomadAllocation]]
 
 
-def _get_allocations(nomad_client: Nomad, parent: NomadNamespace) -> JobToAllocDict:
+def _get_allocations(
+    nomad_client: Nomad,
+    parent: NomadNamespace,
+    opts: NomadDumpOptions,
+) -> JobToAllocDict:
     job_names = _get_nomad_job_names(nomad_client)
     job_to_allocs: JobToAllocDict = {
         job_name: [
-            NomadAllocation(a, parent=parent)
+            NomadAllocation(a, parent=parent, opts=opts)
             for a in nomad_client.job.get_allocations(job_name)
         ]
         for job_name in job_names
