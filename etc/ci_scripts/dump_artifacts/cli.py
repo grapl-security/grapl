@@ -43,10 +43,22 @@ class Args:
         parser.add_argument(
             "--no-dump-agent-logs", dest="dump_agent_logs", action="store_false"
         )
-        parser.set_defaults(dump_agent_logs=False)
+        parser.add_argument(
+            "--dump-connect-proxy-logs",
+            dest="dump_connect_proxy_logs",
+            action="store_true",
+            help="Dump the logs for Consul Connect",
+        )
+        parser.add_argument(
+            "--no-dump-connect-proxy-logs",
+            dest="dump_connect_proxy_logs",
+            action="store_false",
+        )
+        parser.set_defaults(dump_agent_logs=False, dump_connect_proxy_logs=False)
         args = parser.parse_args()
         self.compose_project: str | None = args.compose_project
         self.dump_agent_logs: bool = args.dump_agent_logs
+        self.dump_connect_proxy_logs: bool = args.dump_connect_proxy_logs
 
 
 def main() -> None:
@@ -74,7 +86,14 @@ def main() -> None:
         compose_project=None, volume_name="dynamodb_dump", artifacts_dir=artifacts_dir
     )
 
-    nomad_artifacts.dump_all(artifacts_dir, dump_agent_logs=args.dump_agent_logs)
+    nomad_dump_options = nomad_artifacts.NomadDumpOptions(
+        dump_agent_logs=args.dump_agent_logs,
+        dump_connect_proxy_logs=args.dump_connect_proxy_logs,
+    )
+    nomad_artifacts.dump_all(
+        artifacts_dir,
+        opts=nomad_dump_options,
+    )
 
     # Run meta-analyses on the Nomad logs
     analysis_dir = artifacts_dir / "analysis"
