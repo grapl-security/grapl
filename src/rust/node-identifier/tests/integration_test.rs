@@ -54,7 +54,7 @@ async fn test_sysmon_event_produces_identified_graph(
     );
 
     let handle = kafka_scanner
-        .contains_for_tenant(tenant_id, 1, |_: IdentifiedGraph| true)
+        .scan_for_tenant(tenant_id, 1, |_: IdentifiedGraph| true)
         .await;
 
     let log_event: Bytes = r#"

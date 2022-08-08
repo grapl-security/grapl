@@ -55,28 +55,28 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
         ConsumerConfig::with_topic("raw-logs"),
         Duration::from_secs(60),
     )
-    .contains_for_tenant(tenant_id, 36, |_log: RawLog| true)
+    .scan_for_tenant(tenant_id, 36, |_log: RawLog| true)
     .await;
 
     let generated_graphs_scanner_handle = KafkaTopicScanner::new(
         ConsumerConfig::with_topic("generated-graphs"),
         Duration::from_secs(60),
     )
-    .contains_for_tenant(tenant_id, 36, |_graph: GraphDescription| true)
+    .scan_for_tenant(tenant_id, 36, |_graph: GraphDescription| true)
     .await;
 
     let node_identifier_scanner_handle = KafkaTopicScanner::new(
         ConsumerConfig::with_topic("identified-graphs"),
         Duration::from_secs(60),
     )
-    .contains_for_tenant(tenant_id, 36, |_graph: IdentifiedGraph| true)
+    .scan_for_tenant(tenant_id, 36, |_graph: IdentifiedGraph| true)
     .await;
 
     let graph_merger_scanner_handle = KafkaTopicScanner::new(
         ConsumerConfig::with_topic("merged-graphs"),
         Duration::from_secs(60),
     )
-    .contains_for_tenant(tenant_id, 36, |_graph: MergedGraph| true)
+    .scan_for_tenant(tenant_id, 36, |_graph: MergedGraph| true)
     .await;
 
     tracing::info!(">> Inserting logs into pipeline-ingress!");

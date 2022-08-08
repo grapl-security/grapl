@@ -77,7 +77,7 @@ where
     ///
     /// N.B.: If fewer than max_envelopes messages matching the tenant_id and
     /// predicate are available, this will time out.
-    pub async fn contains_for_tenant(
+    pub async fn scan_for_tenant(
         self,
         tenant_id: uuid::Uuid,
         max_envelopes: usize,
@@ -88,7 +88,7 @@ where
             let inner_message = envelope.inner_message();
             envelope_tenant_id == tenant_id && predicate(inner_message)
         };
-        self.contains(tenant_eq_predicate, move |idx, _envelope| {
+        self.scan(tenant_eq_predicate, move |idx, _envelope| {
             idx >= max_envelopes
         })
         .await
@@ -97,7 +97,7 @@ where
     /// Consume messages from Kafka matching filter_predicate into a list until
     /// the stop_predicate returns true. Panics if this takes longer than
     /// self.timeout.
-    pub async fn contains(
+    pub async fn scan(
         self,
         filter_predicate: impl FnMut(Envelope<T>) -> bool + Send + Sync + 'static,
         stop_predicate: impl FnMut(usize, Envelope<T>) -> bool + Send + Sync + 'static,

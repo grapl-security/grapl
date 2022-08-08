@@ -527,13 +527,7 @@ where
                     Err(e) => Err(e.into()),
                 }
             })
-            .then(move |result| async {
-                if let Ok(_) = result {
-                    Ok(self.consumer.commit()?)
-                } else {
-                    result
-                }
-            })
+            .then(move |result| async { result.and_then(|_| Ok(self.consumer.commit()?)) })
     }
 }
 

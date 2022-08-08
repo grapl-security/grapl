@@ -121,7 +121,7 @@ async fn test_publish_raw_log_sends_message_to_kafka(
     );
 
     let handle = kafka_scanner
-        .contains_for_tenant(tenant_id, 1, |_: RawLog| true)
+        .scan_for_tenant(tenant_id, 1, |_: RawLog| true)
         .await;
 
     tracing::info!(
