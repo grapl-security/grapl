@@ -93,6 +93,7 @@ impl AsyncTestContext for E2eTestContext {
     }
 }
 
+#[derive(Debug)]
 pub struct SetupResult {
     pub tenant_id: Uuid,
     pub plugin_id: Uuid,
@@ -123,7 +124,7 @@ impl E2eTestContext {
         &mut self,
         options: SetupGeneratorOptions,
     ) -> Result<SetupResult, Box<dyn std::error::Error>> {
-        tracing::info!(">> Settting up Event Source, Plugin");
+        tracing::info!(">> Generator Setup for {}", options.test_name);
 
         let tenant_id = Uuid::new_v4();
 
@@ -162,10 +163,17 @@ impl E2eTestContext {
             plugin
         };
 
-        Ok(SetupResult {
+        let setup_result = SetupResult {
             tenant_id,
             plugin_id: plugin.plugin_id,
             event_source_id: event_source.event_source_id,
-        })
+        };
+
+        tracing::info!(
+            message = ">> Generator Setup result",
+            result = ?setup_result,
+        );
+
+        Ok(setup_result)
     }
 }

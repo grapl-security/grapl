@@ -88,8 +88,8 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
 
     tracing::info!(">> Inserting logs into pipeline-ingress!");
 
-    let log_lines = test_fixtures::get_36_eventlog_xml_separate_lines()?;
-    for log_line in &log_lines {
+    let input_log_lines = test_fixtures::get_36_eventlog_xml_separate_lines()?;
+    for log_line in &input_log_lines {
         ctx.pipeline_ingress_client
             .publish_raw_log(PublishRawLogRequest {
                 event_source_id,
@@ -102,8 +102,7 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     tracing::info!(">> Test: that input shows up in raw-logs");
 
     let raw_logs = raw_logs_scanner_handle.await?;
-    assert_eq!(raw_logs.len(), 36);
-    assert_eq!(raw_logs.len(), log_lines.len());
+    assert_eq!(raw_logs.len(), input_log_lines.len());
     assert!(raw_logs.iter().all(|envelope| {
         envelope.tenant_id() == tenant_id && envelope.event_source_id() == event_source_id
     }));
@@ -124,13 +123,11 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     // Plugin Work Queue to write to the "generated-graphs" topic.
     tracing::info!(">> Testing that the generator eventually writes to `generated-graphs`");
     let generated_graphs = generated_graphs_scanner_handle.await?;
-    // PSA: ^ This likely is picking up output from `sysmon-generator-legacy`,
-    // there's no way to currently discriminate between the two paths.
-    assert!(!generated_graphs.is_empty());
+    assert_eq!(generated_graphs.len(), input_log_lines.len());
 
     tracing::info!(">> Test: node-identifier can identify nodes of the unidentified graph, then write to 'identified-graphs'");
     let identified_graphs = node_identifier_scanner_handle.await?;
-    assert!(!identified_graphs.is_empty());
+    assert_eq!(identified_graphs.len(), input_log_lines.len());
 
     let filtered_identified_graphs = identified_graphs
         .iter()
@@ -142,12 +139,12 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
         })
         .collect::<Vec<Envelope<IdentifiedGraph>>>();
 
-    assert!(!filtered_identified_graphs.is_empty());
-    assert_eq!(filtered_identified_graphs.len(), 2); // FIXME: why 2?
+    assert!(!filtered_identified_graphs.is_empty()); // quiet a lint about preferring iterator
+    assert_eq!(filtered_identified_graphs.len(), 1);
 
     tracing::info!(">> Test: graph-merger wrote these identified nodes to our graph database, then write to 'merged-graphs'");
     let merged_graphs = graph_merger_scanner_handle.await?;
-    assert!(!merged_graphs.is_empty());
+    assert_eq!(merged_graphs.len(), input_log_lines.len());
 
     let filtered_merged_graphs = merged_graphs
         .iter()
@@ -159,8 +156,8 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
         })
         .collect::<Vec<Envelope<MergedGraph>>>();
 
-    assert!(!filtered_merged_graphs.is_empty());
-    assert_eq!(filtered_merged_graphs.len(), 2); // FIXME: why 2?
+    assert!(!filtered_merged_graphs.is_empty()); // quiet a lint about preferring iterator
+    assert_eq!(filtered_merged_graphs.len(), 1);
 
     // TODO: Perhaps add a test here that looks in dgraph/scylla for those identified nodes
 
