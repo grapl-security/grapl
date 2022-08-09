@@ -30,11 +30,6 @@ config:
   grapl:artifacts:
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-c595a79
     firecracker_rootfs.tar.gz: 20220405165304-c595a79
-  kafka:bootstrapServers:
-    # If this ever changes - i.e. to localhost - you'll need to change the
-    # `host.docker.internal` that occurs in grapl-local-infra.nomad::kafka
-    - "host.docker.internal:29092"
-  kafka:tlsEnabled: "false"
   grapl:confluent-environment-name: "local-grapl"
   # Host OS's Nomad instance
   nomad:address: http://host.docker.internal:4646

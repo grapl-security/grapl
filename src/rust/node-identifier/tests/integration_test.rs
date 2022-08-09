@@ -1,5 +1,7 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use bytes::Bytes;
 use e2e_tests::test_utils::context::{
     E2eTestContext,
@@ -9,20 +11,16 @@ use kafka::{
     config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
 };
-use rust_proto::graplinc::grapl::{
-    api::{
-        graph::v1beta1::{
-            IdentifiedGraph,
-            IdentifiedNode,
-            ImmutableUintProp,
-            Property,
-        },
-        pipeline_ingress::v1beta1::PublishRawLogRequest,
+use rust_proto::graplinc::grapl::api::{
+    graph::v1beta1::{
+        IdentifiedGraph,
+        IdentifiedNode,
+        ImmutableUintProp,
+        Property,
     },
-    pipeline::v1beta1::Envelope,
+    pipeline_ingress::v1beta1::PublishRawLogRequest,
 };
 use test_context::test_context;
-use tracing::Instrument;
 
 static CONSUMER_TOPIC: &'static str = "identified-graphs";
 
@@ -50,43 +48,14 @@ async fn test_sysmon_event_produces_identified_graph(
         event_source_id,
     } = ctx.setup_sysmon_generator(test_name).await?;
 
-    let kafka_scanner = KafkaTopicScanner::new(ConsumerConfig::with_topic(CONSUMER_TOPIC))?
-        .contains(move |envelope: Envelope<IdentifiedGraph>| -> bool {
-            let envelope_tenant_id = envelope.tenant_id();
-            let envelope_event_source_id = envelope.event_source_id();
-            let identified_graph = envelope.inner_message();
+    let kafka_scanner = KafkaTopicScanner::new(
+        ConsumerConfig::with_topic(CONSUMER_TOPIC),
+        Duration::from_secs(60),
+    );
 
-            tracing::debug!(message = "consumed kafka message");
-
-            if envelope_tenant_id == tenant_id && envelope_event_source_id == event_source_id {
-                let parent_process = find_node(
-                    &identified_graph,
-                    "process_id",
-                    ImmutableUintProp { prop: 6132 }.into(),
-                )
-                .expect("parent process missing");
-
-                let child_process = find_node(
-                    &identified_graph,
-                    "process_id",
-                    ImmutableUintProp { prop: 5752 }.into(),
-                )
-                .expect("child process missing");
-
-                let parent_to_child_edge = identified_graph
-                    .edges
-                    .get(parent_process.get_node_key())
-                    .iter()
-                    .flat_map(|edge_list| edge_list.edges.iter())
-                    .find(|edge| edge.to_node_key == child_process.get_node_key())
-                    .expect("missing edge from parent to child");
-
-                parent_to_child_edge.edge_name == "children"
-            } else {
-                false
-            }
-        })
-        .await?;
+    let handle = kafka_scanner
+        .scan_for_tenant(tenant_id, 1, |_: IdentifiedGraph| true)
+        .await;
 
     let log_event: Bytes = r#"
 <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
@@ -144,10 +113,39 @@ async fn test_sysmon_event_produces_identified_graph(
         .expect("received error response");
 
     tracing::info!("waiting for kafka_scanner to complete");
-    kafka_scanner
-        .get_listen_result()
-        .instrument(tracing::debug_span!("kafka_scanner"))
-        .await??;
+    let envelopes = handle.await?;
+
+    assert_eq!(envelopes.len(), 1);
+
+    let envelope = envelopes[0].clone();
+    assert_eq!(envelope.event_source_id(), event_source_id);
+    assert_eq!(envelope.tenant_id(), tenant_id);
+
+    let identified_graph = envelope.inner_message();
+
+    let parent_process = find_node(
+        &identified_graph,
+        "process_id",
+        ImmutableUintProp { prop: 6132 }.into(),
+    )
+    .expect("parent process missing");
+
+    let child_process = find_node(
+        &identified_graph,
+        "process_id",
+        ImmutableUintProp { prop: 5752 }.into(),
+    )
+    .expect("child process missing");
+
+    let parent_to_child_edge = identified_graph
+        .edges
+        .get(parent_process.get_node_key())
+        .iter()
+        .flat_map(|edge_list| edge_list.edges.iter())
+        .find(|edge| edge.to_node_key == child_process.get_node_key())
+        .expect("missing edge from parent to child");
+
+    assert_eq!(parent_to_child_edge.edge_name, "children");
 
     Ok(())
 }

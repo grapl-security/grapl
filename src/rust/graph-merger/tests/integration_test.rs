@@ -1,5 +1,7 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use bytes::Bytes;
 use e2e_tests::test_utils::context::{
     E2eTestContext,
@@ -9,20 +11,16 @@ use kafka::{
     config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
 };
-use rust_proto::graplinc::grapl::{
-    api::{
-        graph::v1beta1::{
-            ImmutableUintProp,
-            MergedGraph,
-            MergedNode,
-            Property,
-        },
-        pipeline_ingress::v1beta1::PublishRawLogRequest,
+use rust_proto::graplinc::grapl::api::{
+    graph::v1beta1::{
+        ImmutableUintProp,
+        MergedGraph,
+        MergedNode,
+        Property,
     },
-    pipeline::v1beta1::Envelope,
+    pipeline_ingress::v1beta1::PublishRawLogRequest,
 };
 use test_context::test_context;
-use tracing::Instrument;
 
 fn find_node<'a>(
     graph: &'a MergedGraph,
@@ -50,51 +48,14 @@ async fn test_sysmon_event_produces_merged_graph(
         event_source_id,
     } = ctx.setup_sysmon_generator(test_name).await?;
 
-    let kafka_scanner = KafkaTopicScanner::new(ConsumerConfig::with_topic(CONSUMER_TOPIC))?
-        .contains(move |envelope: Envelope<MergedGraph>| -> bool {
-            let envelope_tenant_id = envelope.tenant_id();
-            let envelope_event_source_id = envelope.event_source_id();
-            let merged_graph = envelope.inner_message();
-            if envelope_tenant_id == tenant_id && envelope_event_source_id == event_source_id {
-                tracing::debug!(
-                    message="found message with tenant id and event source id",
-                    merged_graph=?merged_graph,
-                );
-                let parent_process = find_node(
-                    &merged_graph,
-                    "process_id",
-                    ImmutableUintProp { prop: 6132 }.into(),
-                )
-                .expect("parent process missing");
+    let kafka_scanner = KafkaTopicScanner::new(
+        ConsumerConfig::with_topic(CONSUMER_TOPIC),
+        Duration::from_secs(60),
+    );
 
-                let child_process = find_node(
-                    &merged_graph,
-                    "process_id",
-                    ImmutableUintProp { prop: 5752 }.into(),
-                )
-                .expect("child process missing");
-
-                // NOTE: here, unlike node-identifier, we expect the edge
-                // connecting the parent and child proceses to be *absent*
-                // in the message emitted to the merged-graphs topic. The
-                // reason for this is that downstream services (analyzers)
-                // don't operate on edges, just nodes. So the view of the
-                // graph diverges at the graph-merger--we now tell one story
-                // in our Kafka messages and a totally different story in
-                // Dgraph. This is confusing and we should fix it:
-                //
-                // https://app.zenhub.com/workspaces/grapl-6036cbd36bacff000ef314f2/issues/grapl-security/issue-tracker/950
-                !merged_graph
-                    .edges
-                    .get(parent_process.get_node_key())
-                    .iter()
-                    .flat_map(|edge_list| edge_list.edges.iter())
-                    .any(|edge| edge.to_node_key == child_process.get_node_key())
-            } else {
-                false
-            }
-        })
-        .await?;
+    let handle = kafka_scanner
+        .scan_for_tenant(tenant_id, 1, |_: MergedGraph| true)
+        .await;
 
     let log_event: Bytes = r#"
 <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
@@ -152,10 +113,45 @@ async fn test_sysmon_event_produces_merged_graph(
         .expect("received error response");
 
     tracing::info!("waiting for kafka_scanner to complete");
-    kafka_scanner
-        .get_listen_result()
-        .instrument(tracing::debug_span!("kafka_scanner"))
-        .await??;
+
+    let envelopes = handle.await?;
+    assert_eq!(envelopes.len(), 1);
+
+    let envelope = envelopes[0].clone();
+    assert_eq!(envelope.tenant_id(), tenant_id);
+    assert_eq!(envelope.event_source_id(), event_source_id);
+
+    let merged_graph = envelope.inner_message();
+
+    let parent_process = find_node(
+        &merged_graph,
+        "process_id",
+        ImmutableUintProp { prop: 6132 }.into(),
+    )
+    .expect("parent process missing");
+
+    let child_process = find_node(
+        &merged_graph,
+        "process_id",
+        ImmutableUintProp { prop: 5752 }.into(),
+    )
+    .expect("child process missing");
+
+    // NOTE: here, unlike node-identifier, we expect the edge connecting the
+    // parent and child proceses to be *absent* in the message emitted to the
+    // merged-graphs topic. The reason for this is that downstream services
+    // (analyzers) don't operate on edges, just nodes. So the view of the graph
+    // diverges at the graph-merger--we now tell one story in our Kafka messages
+    // and a totally different story in Dgraph. This is confusing and we should
+    // fix it:
+    //
+    // https://app.zenhub.com/workspaces/grapl-6036cbd36bacff000ef314f2/issues/grapl-security/issue-tracker/950
+    assert!(!merged_graph
+        .edges
+        .get(parent_process.get_node_key())
+        .iter()
+        .flat_map(|edge_list| edge_list.edges.iter())
+        .any(|edge| edge.to_node_key == child_process.get_node_key()));
 
     Ok(())
 }

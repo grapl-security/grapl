@@ -11,6 +11,7 @@ use generator_ids_cache::{
     GeneratorIdsCacheError,
 };
 use kafka::{
+    CommitError,
     ConfigurationError as KafkaConfigurationError,
     Consumer,
     ConsumerError,
@@ -60,6 +61,9 @@ pub enum GeneratorDispatcherError {
     // FIXME: also don't crash the service when this happens
     #[error("error trying to send message to kafka {0}")]
     ProducerError(#[from] ProducerError),
+
+    #[error("error committing kafka consumer offsets {0}")]
+    CommitError(#[from] CommitError),
 }
 
 pub struct GeneratorDispatcher {
@@ -105,10 +109,10 @@ impl GeneratorDispatcher {
             let plugin_work_queue_client = plugin_work_queue_client.clone();
             let raw_logs_retry_producer = raw_logs_retry_producer.clone();
 
-            let buffered = self.raw_logs_consumer
+            let stream = self.raw_logs_consumer
                 .stream()
                 .take(pool_size)
-                .map(move |raw_log_result: Result<(tracing::Span, Envelope<RawLog>), ConsumerError>| {
+                .then(move |raw_log_result: Result<(tracing::Span, Envelope<RawLog>), ConsumerError>| {
                     let generator_ids_cache = generator_ids_cache.clone();
                     let plugin_work_queue_client = plugin_work_queue_client.clone();
                     let raw_logs_retry_producer = raw_logs_retry_producer.clone();
@@ -194,11 +198,14 @@ impl GeneratorDispatcher {
                         }
                     }
                 })
-                .buffer_unordered(pool_size);
+                .then(|result| async {
+                    self.raw_logs_consumer.commit()?;
+                    result
+                });
 
-            pin_mut!(buffered);
+            pin_mut!(stream);
 
-            while let Some(result) = buffered.next().await {
+            while let Some(result) = stream.next().await {
                 if let Err(e) = result {
                     tracing::error!(
                         message = "fatal error",
