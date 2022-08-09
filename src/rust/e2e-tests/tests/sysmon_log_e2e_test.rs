@@ -139,6 +139,7 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
         })
         .collect::<Vec<Envelope<IdentifiedGraph>>>();
 
+    assert!(!filtered_identified_graphs.is_empty()); // quiet a lint about preferring iterator
     assert_eq!(filtered_identified_graphs.len(), 1);
 
     tracing::info!(">> Test: graph-merger wrote these identified nodes to our graph database, then write to 'merged-graphs'");
@@ -155,6 +156,7 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
         })
         .collect::<Vec<Envelope<MergedGraph>>>();
 
+    assert!(!filtered_merged_graphs.is_empty()); // quiet a lint about preferring iterator
     assert_eq!(filtered_merged_graphs.len(), 1);
 
     // TODO: Perhaps add a test here that looks in dgraph/scylla for those identified nodes
