@@ -395,11 +395,11 @@ impl BytesConsumer {
                         let message_ts = SystemTime::UNIX_EPOCH + Duration::from_millis(millis);
                         let target = message_ts + Duration::from_millis(self.delay_ms);
 
-                        // If the current time is greater than the target time
-                        // we delay for the duration between the current time
-                        // and the target time. In other words, if the target
-                        // time has elapsed we continue without delay, otherwise
-                        // we wait long enough for it to have elapsed and then
+                        // If the current time is less than the target time we
+                        // delay for the duration between the current time and
+                        // the target time. In other words, if the target time
+                        // has elapsed we continue without delay, otherwise we
+                        // wait long enough for it to have elapsed and then
                         // continue.
                         if let Err(e) = target.elapsed() {
                             let duration = e.duration();
