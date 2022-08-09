@@ -50,7 +50,7 @@ async fn test_sysmon_event_produces_identified_graph(
 
     let kafka_scanner = KafkaTopicScanner::new(
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
-        Duration::from_secs(30),
+        Duration::from_secs(60),
     );
 
     let handle = kafka_scanner

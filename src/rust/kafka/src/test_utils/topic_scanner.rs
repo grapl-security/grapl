@@ -4,7 +4,10 @@ use std::{
         Arc,
         Mutex,
     },
-    time::Duration,
+    time::{
+        Duration,
+        SystemTime,
+    },
 };
 
 use futures::StreamExt;
@@ -35,7 +38,9 @@ use crate::{
 ///   5. Make your test assertions on this list of matching events.
 ///
 /// N.B.: These results will be materialized in memory, so don't make your
-/// predicate too permissive!
+/// predicate too permissive! Also, if your timeout is less than 10s and you try
+/// to consume from a topic without much activity, you may not end up consuming
+/// any messages. See the scan(..) method for more details.
 pub struct KafkaTopicScanner<T>
 where
     T: SerDe + Send + Sync + 'static,
@@ -72,11 +77,14 @@ where
     }
 
     /// Consume messages from Kafka matching the given tenant_id, filtered by
-    /// the predicate. This will terminate after max_envelopes have been
-    /// consumed. Panics if this takes longer than self.timeout.
+    /// the predicate. This returns a JoinHandle to a task which will terminate
+    /// after max_envelopes have been consumed or self.timeout has elapsed.
     ///
-    /// N.B.: If fewer than max_envelopes messages matching the tenant_id and
-    /// predicate are available, this will time out.
+    /// N.B.: This method may block for up to 10s waiting for activity on the
+    /// Kafka topic. Once it consumes the first message the countdown will reset
+    /// to make an effort to consume messages continuously for self.timeout
+    /// seconds. Make sure you set self.timeout appropriately s.t. it doesn't
+    /// elapse before the scanner encounters its first message!
     pub async fn scan_for_tenant(
         self,
         tenant_id: uuid::Uuid,
@@ -95,8 +103,15 @@ where
     }
 
     /// Consume messages from Kafka matching filter_predicate into a list until
-    /// the stop_predicate returns true. Panics if this takes longer than
-    /// self.timeout.
+    /// the stop_predicate returns true or self.timeout has elapsed. Returns a
+    /// JoinHandle to the task which will terminate when these conditions are
+    /// met.
+    ///
+    /// N.B.: This method may block for up to 10s waiting for activity on the
+    /// Kafka topic. Once it consumes the first message the countdown will reset
+    /// to make an effort to consume messages continuously for self.timeout
+    /// seconds. Make sure you set self.timeout appropriately s.t. it doesn't
+    /// elapse before the scanner encounters its first message!
     pub async fn scan(
         self,
         filter_predicate: impl FnMut(Envelope<T>) -> bool + Send + Sync + 'static,
@@ -115,10 +130,21 @@ where
                 Consumer::new(self.consumer_config).expect("failed to configure consumer"),
             );
 
+            let mut stop_time = SystemTime::now() + self.timeout;
+
             let filtered_stream = consumer
                 .stream()
+                .take_until(futures::future::poll_fn(|_ctx| {
+                    if let Ok(_) = stop_time.elapsed() {
+                        tracing::warn!("timeout elapsed");
+                        futures::task::Poll::Ready(())
+                    } else {
+                        futures::task::Poll::Pending
+                    }
+                }))
                 .then(move |res| {
                     let (span, envelope) = res.expect("error consuming message from kafka");
+                    let ret_span = span.clone();
                     let _guard = span.enter();
 
                     tracing::debug!(message = "consumed kafka message");
@@ -126,6 +152,12 @@ where
                     // notify the receiver that the consumer is ready to consume
                     // messages from kafka
                     if let Some(tx) = tx_mutex.lock().expect("failed to acquire tx lock").take() {
+                        // reset the stop_time, because we are now actually
+                        // consuming messages, and we want to preserve the
+                        // "consume messages for N seconds" semantics of
+                        // self.timeout.
+                        let mut new_stop_time = SystemTime::now() + self.timeout;
+                        std::mem::swap(&mut stop_time, &mut new_stop_time);
                         // notify the channel that we're ready to receive messages
                         if let Err(_) = tx.send(()) {
                             tracing::warn!("receiver was dropped");
@@ -134,16 +166,15 @@ where
 
                     let filter_predicate = filter_predicate.clone();
                     async move {
-                        match filter_predicate
+                        if filter_predicate
                             .lock()
                             .expect("failed to acquire filter predicate lock")(
                             envelope.clone()
                         ) {
-                            true => {
-                                tracing::debug!("filter predicate matched");
-                                Some(envelope)
-                            }
-                            false => None,
+                            tracing::debug!("filter predicate matched");
+                            Some((ret_span, envelope))
+                        } else {
+                            None
                         }
                     }
                     .instrument(span.clone())
@@ -157,10 +188,11 @@ where
                 })
                 .filter_map(|matched| async move { matched })
                 .enumerate()
-                .take_while(|(idx, envelope)| {
+                .take_while(|(idx, (span, envelope))| {
                     let stop_predicate = stop_predicate.clone();
                     let idx = *idx;
                     let envelope = envelope.clone();
+                    let span = span.clone();
                     async move {
                         if stop_predicate
                             .lock()
@@ -173,32 +205,30 @@ where
                             true
                         }
                     }
+                    .instrument(span)
                 })
-                .map(|(_, envelope)| envelope);
+                .map(|(_, (_, envelope))| envelope);
 
             tracing::info!(
                 message = "waiting for kafka messages",
                 timeout = ?self.timeout,
             );
 
-            tokio::time::timeout(self.timeout, filtered_stream.collect::<Vec<Envelope<T>>>())
-                .await
-                .expect("timed out waiting for predicate to match")
+            filtered_stream.collect::<Vec<Envelope<T>>>().await
         });
 
         // wait for the kafka consumer to start consuming
         tracing::info!("waiting for kafka consumer to report ready");
         let branch = tokio::select!(
             // If the topic isn't very active, the receiver may never get a
-            // notification, so we fall back to a 10 second sleep. A
-            // deterministic solution might involve spamming the topic with
-            // messages and waiting for the notification, but this seems
-            // reliable enough...
+            // notification, so we fall back to a 10s sleep. A deterministic
+            // solution might involve spamming the topic with messages and
+            // waiting for the notification, but this seems reliable enough...
             _ = tokio::time::sleep(Duration::from_secs(10)) => {
                 "did not receive notification"
             },
             result = rx => {
-                result.expect("failed to receive consumer ready notification");
+                result.expect("sender was dropped");
                 "received notification"
             }
         );
