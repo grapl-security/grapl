@@ -125,21 +125,18 @@ async fn handler() -> Result<(), NodeIdentifierError> {
     );
 
     stream
-        .for_each_concurrent(
-            10, // TODO: make configurable?
-            |res| async move {
-                if let Err(e) = res {
-                    // TODO: retry the message?
-                    tracing::error!(
-                        message = "error processing kafka message",
-                        reason = %e,
-                    );
-                } else {
-                    // TODO: collect some metrics
-                    tracing::debug!(message = "identified graph from graph description");
-                }
-            },
-        )
+        .for_each(|res| async move {
+            if let Err(e) = res {
+                // TODO: retry the message?
+                tracing::error!(
+                    message = "error processing kafka message",
+                    reason = %e,
+                );
+            } else {
+                // TODO: collect some metrics
+                tracing::debug!(message = "identified graph from graph description");
+            }
+        })
         .with_current_subscriber()
         .await;
 

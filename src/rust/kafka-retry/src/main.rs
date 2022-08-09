@@ -10,16 +10,9 @@ use kafka::{
 };
 use tracing::instrument::WithSubscriber;
 
-#[derive(clap::Parser, Clone, Debug)]
-struct Config {
-    #[clap(long, env = "KAFKA_RETRY_WORKER_POOL_SIZE")]
-    kafka_retry_worker_pool_size: usize,
-}
-
 struct KafkaRetryConfig {
     kafka_retry_consumer_config: RetryConsumerConfig,
     kafka_producer_config: ProducerConfig,
-    config: Config,
 }
 
 impl KafkaRetryConfig {
@@ -27,7 +20,6 @@ impl KafkaRetryConfig {
         KafkaRetryConfig {
             kafka_retry_consumer_config: RetryConsumerConfig::parse(),
             kafka_producer_config: ProducerConfig::parse(),
-            config: Config::parse(),
         }
     }
 }
@@ -52,20 +44,17 @@ async fn handler() -> Result<(), ConfigurationError> {
 
     retry_processor
         .stream()
-        .for_each_concurrent(
-            config.config.kafka_retry_worker_pool_size,
-            |res| async move {
-                if let Err(e) = res {
-                    tracing::error!(
-                        message = "Error processing Kafka message",
-                        reason =% e,
-                    );
-                } else {
-                    // TODO: collect metrics
-                    tracing::debug!("Processed Kafka message");
-                }
-            },
-        )
+        .for_each(|res| async move {
+            if let Err(e) = res {
+                tracing::error!(
+                    message = "Error processing Kafka message",
+                    reason =% e,
+                );
+            } else {
+                // TODO: collect metrics
+                tracing::debug!("Processed Kafka message");
+            }
+        })
         .with_current_subscriber()
         .await;
 

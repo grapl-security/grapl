@@ -3,24 +3,6 @@ variable "image_tag" {
   description = "The tag for all container images we should deploy. This is ultimately set in the top-level Makefile."
 }
 
-variable "kafka_broker_port" {
-  type        = number
-  description = "Kafka Broker's port to listen on, for other Nomad clients"
-  default     = 19092
-}
-
-variable "kafka_broker_port_for_host_os" {
-  type        = number
-  description = "Kafka Broker's port to listen on, for things on the host OS (like Pulumi)"
-  default     = 29092
-}
-
-variable "kafka_jmx_port" {
-  type        = number
-  description = "Port for Kafka JMX"
-  default     = 9101
-}
-
 variable "localstack_port" {
   type        = number
   description = "Port for Localstack"
@@ -34,6 +16,8 @@ variable "zookeeper_port" {
 }
 
 locals {
+  confluent_platform_version = "7.2.1"
+
   # This is the equivalent of `localhost` within a bridge network.
   # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
   localhost_within_bridge = attr.unique.network.ip-address
@@ -61,6 +45,33 @@ locals {
     {
       name = "event-source-db",
       port = 5436
+    },
+  ]
+
+  kafka_broker_descriptors = [
+    {
+      name             = "kafka0"
+      broker_id        = 0
+      broker_port      = 19092
+      broker_port_host = 29092
+      broker_port_task = 9092
+      jmx_port         = 9101
+    },
+    {
+      name             = "kafka1"
+      broker_id        = 1
+      broker_port      = 19093
+      broker_port_host = 29093
+      broker_port_task = 9093
+      jmx_port         = 9102
+    },
+    {
+      name             = "kafka2"
+      broker_id        = 2
+      broker_port      = 19094
+      broker_port_host = 29094
+      broker_port_task = 9094
+      jmx_port         = 9103
     },
   ]
 }
@@ -201,76 +212,100 @@ job "grapl-local-infra" {
   group "kafka" {
     network {
       mode = "bridge"
-      port "kafka-for-other-nomad-tasks" {
-        static = var.kafka_broker_port
-      }
-      port "kafka-for-host-os" {
-        static = var.kafka_broker_port_for_host_os
-      }
-    }
 
-    task "kafka" {
-      driver = "docker"
+      dynamic "port" {
+        for_each = local.kafka_broker_descriptors
+        iterator = broker_descriptor
 
-      config {
-        image = "confluentinc/cp-kafka:7.0.1"
-        ports = ["kafka-for-other-nomad-tasks", "kafka-for-host-os"]
-      }
+        labels = ["${broker_descriptor.value.name}-nomad"]
 
-      resources {
-        memory = 2000
-      }
-
-      env {
-        kafka_broker_port       = 9092 # Only used by healthcheck
-        KAFKA_BROKER_ID         = 1
-        KAFKA_ZOOKEEPER_CONNECT = local.zookeeper_endpoint
-
-        # Some clients (like Pulumi) will need `host.docker.internal`
-        # Some clients (like grapl-core services) will need localhost_within_bridge
-        # We differentiate between which client it is based on which port we receive on.
-        # So a receive on 29092 means HOST_OS
-        KAFKA_ADVERTISED_LISTENERS = join(",", [
-          "WITHIN_TASK://localhost:9092",
-          "HOST_OS://host.docker.internal:${var.kafka_broker_port_for_host_os}",
-          "OTHER_NOMADS://${local.localhost_within_bridge}:${var.kafka_broker_port}"
-        ])
-        KAFKA_AUTO_CREATE_TOPICS_ENABLE      = "false"
-        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "WITHIN_TASK:PLAINTEXT,HOST_OS:PLAINTEXT,OTHER_NOMADS:PLAINTEXT"
-        KAFKA_INTER_BROKER_LISTENER_NAME     = "WITHIN_TASK"
-
-        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 1
-        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 1
-        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 1
-        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
-        KAFKA_JMX_PORT                                 = var.kafka_jmx_port
-        KAFKA_JMX_HOSTNAME                             = "localhost"
-        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
-      }
-
-      service {
-        name = "kafka"
-        check {
-          type    = "script"
-          name    = "check_kafka"
-          command = "nc"
-          args = [
-            "-v", # verbose
-            "-z", # "zero I/O mode" - used for scanning
-            "localhost",
-            "${var.kafka_broker_port}"
-          ]
-          interval = "20s"
-          timeout  = "10s"
-
-          check_restart {
-            limit           = 2
-            grace           = "30s"
-            ignore_warnings = false
-          }
+        content {
+          static = broker_descriptor.value.broker_port
         }
       }
 
+      dynamic "port" {
+        for_each = local.kafka_broker_descriptors
+        iterator = broker_descriptor
+
+        labels = ["${broker_descriptor.value.name}-host"]
+
+        content {
+          static = broker_descriptor.value.broker_port_host
+        }
+      }
+    }
+
+    dynamic "task" {
+      for_each = local.kafka_broker_descriptors
+      iterator = broker_descriptor
+
+      labels = [broker_descriptor.value.name]
+
+      content {
+        driver = "docker"
+
+        config {
+          image = "confluentinc/cp-kafka:${local.confluent_platform_version}"
+          ports = [
+            "${broker_descriptor.value.name}-nomad",
+            "${broker_descriptor.value.name}-host"
+          ]
+        }
+
+        resources {
+          memory = 1256
+        }
+
+        env {
+          KAFKA_BROKER_ID         = broker_descriptor.value.broker_id
+          KAFKA_ZOOKEEPER_CONNECT = local.zookeeper_endpoint
+
+          # Some clients (like Pulumi) will need `host.docker.internal`
+          # Some clients (like grapl-core services) will need localhost_within_bridge
+          # We differentiate between which client it is based on which port we receive on.
+          # So a receive on e.g. 29092 means HOST_OS
+          KAFKA_ADVERTISED_LISTENERS = join(",", [
+            "WITHIN_TASK://localhost:${broker_descriptor.value.broker_port_task}",
+            "HOST_OS://host.docker.internal:${broker_descriptor.value.broker_port_host}",
+            "OTHER_NOMADS://${local.localhost_within_bridge}:${broker_descriptor.value.broker_port}"
+          ])
+          KAFKA_AUTO_CREATE_TOPICS_ENABLE      = "false"
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "WITHIN_TASK:PLAINTEXT,HOST_OS:PLAINTEXT,OTHER_NOMADS:PLAINTEXT"
+          KAFKA_INTER_BROKER_LISTENER_NAME     = "WITHIN_TASK"
+
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 3
+          KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 2
+          KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 3
+          KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
+          KAFKA_JMX_PORT                                 = broker_descriptor.value.jmx_port
+          KAFKA_JMX_HOSTNAME                             = "localhost"
+          KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
+        }
+
+        service {
+          name = broker_descriptor.value.name
+          check {
+            type    = "script"
+            name    = "check_kafka"
+            command = "nc"
+            args = [
+              "-v", # verbose
+              "-z", # "zero I/O mode" - used for scanning
+              "localhost",
+              "${broker_descriptor.value.broker_port_task}"
+            ]
+            interval = "20s"
+            timeout  = "10s"
+
+            check_restart {
+              limit           = 2
+              grace           = "30s"
+              ignore_warnings = false
+            }
+          }
+        }
+      }
     }
   }
 
@@ -287,7 +322,7 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "confluentinc/cp-zookeeper:7.0.1"
+        image = "confluentinc/cp-zookeeper:${local.confluent_platform_version}"
         ports = ["zookeeper"] # may not be necessary
       }
 
@@ -379,6 +414,10 @@ job "grapl-local-infra" {
                 ignore_warnings = false
               }
             }
+          }
+
+          resources {
+            memory = 1024
           }
         }
       }

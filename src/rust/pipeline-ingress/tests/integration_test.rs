@@ -1,5 +1,7 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use bytes::Bytes;
 use clap::Parser;
 use grapl_tracing::{
@@ -21,24 +23,19 @@ use rust_proto::{
             client::PipelineIngressClient,
             PublishRawLogRequest,
         },
-        pipeline::v1beta1::{
-            Envelope,
-            RawLog,
-        },
+        pipeline::v1beta1::RawLog,
     },
 };
 use test_context::{
     test_context,
     AsyncTestContext,
 };
-use tracing::Instrument;
 use uuid::Uuid;
 
 static CONSUMER_TOPIC: &'static str = "raw-logs";
 
 struct PipelineIngressTestContext {
     grpc_client: PipelineIngressClient,
-    consumer_config: ConsumerConfig,
     _guard: WorkerGuard,
 }
 
@@ -57,16 +54,15 @@ impl AsyncTestContext for PipelineIngressTestContext {
         )
         .await
         .expect("pipeline_ingress_client");
-        let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
 
         PipelineIngressTestContext {
             grpc_client: pipeline_ingress_client,
-            consumer_config,
             _guard,
         }
     }
 }
 
+#[tracing::instrument(skip(ctx))]
 #[test_context(PipelineIngressTestContext)]
 #[tokio::test]
 async fn test_publish_raw_log_sends_message_to_kafka(
@@ -118,36 +114,43 @@ async fn test_publish_raw_log_sends_message_to_kafka(
   </EventData>
 </Event>
 "#.into();
-    let expected_log_event = log_event.clone();
 
-    let kafka_scanner = KafkaTopicScanner::new(ctx.consumer_config.clone())?
-        .contains(move |envelope: Envelope<RawLog>| -> bool {
-            let envelope_tenant_id = envelope.tenant_id();
-            let envelope_event_source_id = envelope.event_source_id();
-            let raw_log = envelope.inner_message();
+    let kafka_scanner = KafkaTopicScanner::new(
+        ConsumerConfig::with_topic(CONSUMER_TOPIC),
+        Duration::from_secs(30),
+    );
 
-            tracing::debug!(message = "consumed kafka message");
+    let handle = kafka_scanner
+        .scan_for_tenant(tenant_id, 1, |_: RawLog| true)
+        .await;
 
-            envelope_tenant_id == tenant_id
-                && envelope_event_source_id == event_source_id
-                && raw_log.log_event() == expected_log_event
-        })
-        .await?;
+    tracing::info!(
+        message = "sending publish_raw_log request",
+        tenant_id =% tenant_id,
+        event_source_id =% event_source_id,
+    );
 
-    tracing::info!("sending publish_raw_log request");
     ctx.grpc_client
         .publish_raw_log(PublishRawLogRequest {
             event_source_id,
             tenant_id,
-            log_event,
+            log_event: log_event.clone(),
         })
         .await
         .expect("received error response");
 
     tracing::info!("waiting for kafka_scanner to complete");
-    kafka_scanner
-        .get_listen_result()
-        .instrument(tracing::debug_span!("kafka_scanner"))
-        .await??;
+    let envelopes = handle.await?;
+
+    assert_eq!(envelopes.len(), 1);
+
+    let envelope = envelopes[0].clone();
+
+    assert_eq!(envelope.tenant_id(), tenant_id);
+    assert_eq!(envelope.event_source_id(), event_source_id);
+
+    let raw_log = envelope.inner_message();
+    assert_eq!(raw_log.log_event(), log_event);
+
     Ok(())
 }
