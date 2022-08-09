@@ -51,12 +51,12 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
     let create_response = {
         let display_name = uuid::Uuid::new_v4().to_string();
         let artifact = get_example_generator()?;
-        let metadata = PluginMetadata {
+        let metadata = PluginMetadata::new(
             tenant_id,
-            display_name: display_name.clone(),
-            plugin_type: PluginType::Generator,
-            event_source_id: Some(event_source_id.clone()),
-        };
+            display_name.clone(),
+            PluginType::Generator,
+            Some(event_source_id.clone()),
+        );
 
         client
             .create_plugin(
@@ -67,9 +67,9 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
             .await??
     };
 
-    let plugin_id = create_response.plugin_id;
+    let plugin_id = create_response.plugin_id();
 
-    let request = DeployPluginRequest { plugin_id };
+    let request = DeployPluginRequest::new(plugin_id);
 
     let _response = client
         .deploy_plugin(request)
@@ -97,12 +97,12 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
     let create_response = {
         let display_name = "sysmon-generator";
         let artifact = get_sysmon_generator()?;
-        let metadata = PluginMetadata {
+        let metadata = PluginMetadata::new(
             tenant_id,
-            display_name: display_name.to_owned(),
-            plugin_type: PluginType::Generator,
-            event_source_id: Some(event_source_id.clone()),
-        };
+            display_name.to_owned(),
+            PluginType::Generator,
+            Some(event_source_id.clone()),
+        );
 
         client
             .create_plugin(
@@ -113,13 +113,13 @@ async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>
             .await??
     };
 
-    let plugin_id = create_response.plugin_id;
+    let plugin_id = create_response.plugin_id();
 
     // Ensure that an un-deployed plugin is NotDeployed
     assert_health(&mut client, plugin_id, PluginHealthStatus::NotDeployed).await?;
 
     let _deploy_response = client
-        .deploy_plugin(DeployPluginRequest { plugin_id })
+        .deploy_plugin(DeployPluginRequest::new(plugin_id))
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
@@ -150,11 +150,11 @@ async fn assert_health(
     expected: PluginHealthStatus,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let get_health_response: GetPluginHealthResponse = client
-        .get_plugin_health(GetPluginHealthRequest { plugin_id })
+        .get_plugin_health(GetPluginHealthRequest::new(plugin_id))
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
-    let actual = get_health_response.health_status;
+    let actual = get_health_response.health_status();
     if expected == actual {
         Ok(())
     } else {
@@ -178,9 +178,7 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn s
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 
-    let request = DeployPluginRequest {
-        plugin_id: randomly_selected_plugin_id,
-    };
+    let request = DeployPluginRequest::new(randomly_selected_plugin_id);
 
     let response = client
         .deploy_plugin(request)

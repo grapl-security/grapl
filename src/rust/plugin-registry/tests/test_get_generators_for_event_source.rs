@@ -38,26 +38,26 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
     let analyzer_display_name = "my analyzer".to_string();
     let event_source_id = uuid::Uuid::new_v4();
 
-    let generator1_metadata = PluginMetadata {
+    let generator1_metadata = PluginMetadata::new(
         tenant_id,
-        display_name: generator1_display_name.clone(),
-        plugin_type: PluginType::Generator,
-        event_source_id: Some(event_source_id),
-    };
+        generator1_display_name.clone(),
+        PluginType::Generator,
+        Some(event_source_id),
+    );
 
-    let generator2_metadata = PluginMetadata {
+    let generator2_metadata = PluginMetadata::new(
         tenant_id,
-        display_name: generator2_display_name.clone(),
-        plugin_type: PluginType::Generator,
-        event_source_id: Some(event_source_id),
-    };
+        generator2_display_name.clone(),
+        PluginType::Generator,
+        Some(event_source_id),
+    );
 
-    let analyzer_metadata = PluginMetadata {
+    let analyzer_metadata = PluginMetadata::new(
         tenant_id,
-        display_name: analyzer_display_name.clone(),
-        plugin_type: PluginType::Analyzer,
-        event_source_id: None,
-    };
+        analyzer_display_name.clone(),
+        PluginType::Analyzer,
+        None,
+    );
 
     let chunk = Bytes::from("chonk");
 
@@ -69,7 +69,7 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
         )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
-    let generator1_plugin_id = create_generator1_response.plugin_id;
+    let generator1_plugin_id = create_generator1_response.plugin_id();
 
     let create_generator2_chunk = chunk.clone();
     let create_generator2_response = client
@@ -79,7 +79,7 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
         )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
-    let generator2_plugin_id = create_generator2_response.plugin_id;
+    let generator2_plugin_id = create_generator2_response.plugin_id();
 
     let create_analyzer_chunk = chunk.clone();
     let create_analyzer_response = client
@@ -89,22 +89,22 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
         )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
-    let analyzer_plugin_id = create_analyzer_response.plugin_id;
+    let analyzer_plugin_id = create_analyzer_response.plugin_id();
 
     let generators_for_event_source_response = client
-        .get_generators_for_event_source(GetGeneratorsForEventSourceRequest { event_source_id })
+        .get_generators_for_event_source(GetGeneratorsForEventSourceRequest::new(event_source_id))
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
-    assert_eq!(generators_for_event_source_response.plugin_ids.len(), 2);
+    assert_eq!(generators_for_event_source_response.plugin_ids().len(), 2);
     assert!(generators_for_event_source_response
-        .plugin_ids
+        .plugin_ids()
         .contains(&generator1_plugin_id));
     assert!(generators_for_event_source_response
-        .plugin_ids
+        .plugin_ids()
         .contains(&generator2_plugin_id));
     assert!(!generators_for_event_source_response
-        .plugin_ids
+        .plugin_ids()
         .contains(&analyzer_plugin_id));
 
     Ok(())

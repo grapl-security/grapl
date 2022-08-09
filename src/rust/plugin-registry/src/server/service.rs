@@ -149,12 +149,7 @@ impl PluginRegistryApi for PluginRegistry {
 
         let mut request = request;
 
-        let PluginMetadata {
-            tenant_id,
-            display_name,
-            plugin_type,
-            event_source_id,
-        } = match request.next().await {
+        let plugin_metadata = match request.next().await {
             Some(CreatePluginRequest::Metadata(m)) => m,
             _ => {
                 return Err(Self::Error::StreamInputError(
@@ -162,6 +157,9 @@ impl PluginRegistryApi for PluginRegistry {
                 ));
             }
         };
+        let tenant_id = plugin_metadata.tenant_id();
+        let plugin_type = plugin_metadata.plugin_type();
+        let display_name = plugin_metadata.display_name();
 
         let plugin_id = generate_plugin_id();
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
@@ -193,15 +191,15 @@ impl PluginRegistryApi for PluginRegistry {
                 &plugin_id,
                 DbCreatePluginArgs {
                     tenant_id,
-                    display_name,
+                    display_name: display_name.to_string(),
                     plugin_type,
-                    event_source_id,
+                    event_source_id: plugin_metadata.event_source_id(),
                 },
                 &s3_key,
             )
             .await?;
 
-        Ok(CreatePluginResponse { plugin_id })
+        Ok(CreatePluginResponse::new(plugin_id))
     }
 
     #[tracing::instrument(skip(self, request), err)]
@@ -216,19 +214,14 @@ impl PluginRegistryApi for PluginRegistry {
             display_name,
             tenant_id,
             event_source_id,
-        } = self.db_client.get_plugin(&request.plugin_id).await?;
+        } = self.db_client.get_plugin(&request.plugin_id()).await?;
 
         let plugin_type: PluginType = try_from(&plugin_type)?;
 
-        let response = GetPluginResponse {
+        let response = GetPluginResponse::new(
             plugin_id,
-            plugin_metadata: PluginMetadata {
-                tenant_id,
-                display_name,
-                plugin_type,
-                event_source_id,
-            },
-        };
+            PluginMetadata::new(tenant_id, display_name, plugin_type, event_source_id),
+        );
 
         Ok(response)
     }
@@ -238,7 +231,7 @@ impl PluginRegistryApi for PluginRegistry {
         &self,
         request: DeployPluginRequest,
     ) -> Result<DeployPluginResponse, Self::Error> {
-        let plugin_id = request.plugin_id;
+        let plugin_id = request.plugin_id();
         let plugin_row = self.db_client.get_plugin(&plugin_id).await?;
 
         // TODO: Given how many fields I'm forwarding here, it may just
@@ -272,7 +265,7 @@ impl PluginRegistryApi for PluginRegistry {
     ) -> Result<GetGeneratorsForEventSourceResponse, Self::Error> {
         let plugin_ids: Vec<Uuid> = self
             .db_client
-            .get_generators_for_event_source(&request.event_source_id)
+            .get_generators_for_event_source(&request.event_source_id())
             .await?
             .iter()
             .map(|row| row.plugin_id)
@@ -281,7 +274,7 @@ impl PluginRegistryApi for PluginRegistry {
         if plugin_ids.is_empty() {
             Err(PluginRegistryServiceError::NotFound)
         } else {
-            Ok(GetGeneratorsForEventSourceResponse { plugin_ids })
+            Ok(GetGeneratorsForEventSourceResponse::new(plugin_ids))
         }
     }
 
@@ -302,10 +295,10 @@ impl PluginRegistryApi for PluginRegistry {
         let health_status = get_plugin_health::get_plugin_health(
             &self.nomad_client,
             &self.db_client,
-            request.plugin_id,
+            request.plugin_id(),
         )
         .await?;
-        Ok(GetPluginHealthResponse { health_status })
+        Ok(GetPluginHealthResponse::new(health_status))
     }
 }
 

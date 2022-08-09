@@ -14,7 +14,10 @@ pub use crate::graplinc::grapl::api::plugin_registry::{
     },
 };
 use crate::{
-    protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
+    protobufs::graplinc::grapl::api::plugin_registry::{
+        v1beta1 as proto,
+        v1beta1::get_plugin_health_response::PluginHealthStatus as PluginHealthStatusProto,
+    },
     serde_impl::ProtobufSerializable,
     type_url,
     SerDeError,
@@ -79,14 +82,46 @@ impl From<PluginType> for proto::PluginType {
 #[derive(Debug, Clone, PartialEq)]
 pub struct PluginMetadata {
     /// The platform tenant this plugin belongs to
-    pub tenant_id: uuid::Uuid,
+    tenant_id: uuid::Uuid,
     /// The string value to display to a user, non-empty
-    pub display_name: String,
+    display_name: String,
     /// The type of the plugin
-    pub plugin_type: PluginType,
+    plugin_type: PluginType,
     /// The event source id associated with this plugin. Present if
     /// PluginType::Generator, absent otherwise.
-    pub event_source_id: Option<uuid::Uuid>,
+    event_source_id: Option<uuid::Uuid>,
+}
+
+impl PluginMetadata {
+    pub fn new(
+        tenant_id: uuid::Uuid,
+        display_name: String,
+        plugin_type: PluginType,
+        event_source_id: Option<uuid::Uuid>,
+    ) -> Self {
+        Self {
+            tenant_id,
+            display_name,
+            plugin_type,
+            event_source_id,
+        }
+    }
+
+    pub fn tenant_id(&self) -> uuid::Uuid {
+        self.tenant_id
+    }
+
+    pub fn display_name(&self) -> &str {
+        &self.display_name
+    }
+
+    pub fn plugin_type(&self) -> PluginType {
+        self.plugin_type
+    }
+
+    pub fn event_source_id(&self) -> Option<uuid::Uuid> {
+        self.event_source_id
+    }
 }
 
 impl type_url::TypeUrl for PluginMetadata {
@@ -210,7 +245,17 @@ impl ProtobufSerializable for CreatePluginRequest {
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreatePluginResponse {
     /// The identity of the plugin that was created
-    pub plugin_id: uuid::Uuid,
+    plugin_id: uuid::Uuid,
+}
+
+impl CreatePluginResponse {
+    pub fn new(plugin_id: uuid::Uuid) -> Self {
+        Self { plugin_id }
+    }
+
+    pub fn plugin_id(&self) -> uuid::Uuid {
+        self.plugin_id
+    }
 }
 
 impl type_url::TypeUrl for CreatePluginResponse {
@@ -249,7 +294,17 @@ impl ProtobufSerializable for CreatePluginResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeployPluginRequest {
-    pub plugin_id: uuid::Uuid,
+    plugin_id: uuid::Uuid,
+}
+
+impl DeployPluginRequest {
+    pub fn new(plugin_id: uuid::Uuid) -> Self {
+        Self { plugin_id }
+    }
+
+    pub fn plugin_id(&self) -> uuid::Uuid {
+        self.plugin_id
+    }
 }
 
 impl type_url::TypeUrl for DeployPluginRequest {
@@ -319,7 +374,17 @@ impl ProtobufSerializable for DeployPluginResponse {
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetAnalyzersForTenantRequest {
     /// The tenant id for the tenant whose analyzers we wish to fetch
-    pub tenant_id: uuid::Uuid,
+    tenant_id: uuid::Uuid,
+}
+
+impl GetAnalyzersForTenantRequest {
+    pub fn new(tenant_id: uuid::Uuid) -> Self {
+        Self { tenant_id }
+    }
+
+    pub fn tenant_id(&self) -> uuid::Uuid {
+        self.tenant_id
+    }
 }
 
 impl type_url::TypeUrl for GetAnalyzersForTenantRequest {
@@ -361,7 +426,17 @@ impl ProtobufSerializable for GetAnalyzersForTenantRequest {
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetAnalyzersForTenantResponse {
     /// The plugin ids for the analyzers belonging to a tenant
-    pub plugin_ids: Vec<uuid::Uuid>,
+    plugin_ids: Vec<uuid::Uuid>,
+}
+
+impl GetAnalyzersForTenantResponse {
+    pub fn new(plugin_ids: Vec<uuid::Uuid>) -> Self {
+        Self { plugin_ids }
+    }
+
+    pub fn plugin_ids(&self) -> &[uuid::Uuid] {
+        &self.plugin_ids
+    }
 }
 
 impl type_url::TypeUrl for GetAnalyzersForTenantResponse {
@@ -403,7 +478,17 @@ impl ProtobufSerializable for GetAnalyzersForTenantResponse {
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetGeneratorsForEventSourceRequest {
     /// The event source id
-    pub event_source_id: uuid::Uuid,
+    event_source_id: uuid::Uuid,
+}
+
+impl GetGeneratorsForEventSourceRequest {
+    pub fn new(event_source_id: uuid::Uuid) -> Self {
+        Self { event_source_id }
+    }
+
+    pub fn event_source_id(&self) -> uuid::Uuid {
+        self.event_source_id
+    }
 }
 
 impl type_url::TypeUrl for GetGeneratorsForEventSourceRequest {
@@ -444,7 +529,17 @@ impl ProtobufSerializable for GetGeneratorsForEventSourceRequest {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetGeneratorsForEventSourceResponse {
-    pub plugin_ids: Vec<uuid::Uuid>,
+    plugin_ids: Vec<uuid::Uuid>,
+}
+
+impl GetGeneratorsForEventSourceResponse {
+    pub fn new(plugin_ids: Vec<uuid::Uuid>) -> Self {
+        Self { plugin_ids }
+    }
+
+    pub fn plugin_ids(&self) -> &[uuid::Uuid] {
+        &self.plugin_ids
+    }
 }
 
 impl type_url::TypeUrl for GetGeneratorsForEventSourceResponse {
@@ -479,9 +574,26 @@ impl ProtobufSerializable for GetGeneratorsForEventSourceResponse {
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginRequest {
     /// The identity of the plugin
-    pub plugin_id: uuid::Uuid,
+    plugin_id: uuid::Uuid,
     /// The tenant for which the plugin belongs to
-    pub tenant_id: uuid::Uuid,
+    tenant_id: uuid::Uuid,
+}
+
+impl GetPluginRequest {
+    pub fn new(plugin_id: uuid::Uuid, tenant_id: uuid::Uuid) -> Self {
+        Self {
+            plugin_id,
+            tenant_id,
+        }
+    }
+
+    pub fn plugin_id(&self) -> uuid::Uuid {
+        self.plugin_id
+    }
+
+    pub fn tenant_id(&self) -> uuid::Uuid {
+        self.tenant_id
+    }
 }
 
 impl type_url::TypeUrl for GetPluginRequest {
@@ -531,8 +643,25 @@ impl ProtobufSerializable for GetPluginRequest {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginResponse {
-    pub plugin_id: uuid::Uuid,
-    pub plugin_metadata: PluginMetadata,
+    plugin_id: uuid::Uuid,
+    plugin_metadata: PluginMetadata,
+}
+
+impl GetPluginResponse {
+    pub fn new(plugin_id: uuid::Uuid, plugin_metadata: PluginMetadata) -> Self {
+        Self {
+            plugin_id,
+            plugin_metadata,
+        }
+    }
+
+    pub fn plugin_id(&self) -> uuid::Uuid {
+        self.plugin_id
+    }
+
+    pub fn plugin_metadata(&self) -> &PluginMetadata {
+        &self.plugin_metadata
+    }
 }
 
 impl type_url::TypeUrl for GetPluginResponse {
@@ -582,7 +711,17 @@ impl ProtobufSerializable for GetPluginResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TearDownPluginRequest {
-    pub plugin_id: uuid::Uuid,
+    plugin_id: uuid::Uuid,
+}
+
+impl TearDownPluginRequest {
+    pub fn new(plugin_id: uuid::Uuid) -> Self {
+        Self { plugin_id }
+    }
+
+    pub fn plugin_id(&self) -> uuid::Uuid {
+        self.plugin_id
+    }
 }
 
 impl type_url::TypeUrl for TearDownPluginRequest {
@@ -651,7 +790,17 @@ impl ProtobufSerializable for TearDownPluginResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginHealthRequest {
-    pub plugin_id: uuid::Uuid,
+    plugin_id: uuid::Uuid,
+}
+
+impl GetPluginHealthRequest {
+    pub fn new(plugin_id: uuid::Uuid) -> Self {
+        Self { plugin_id }
+    }
+
+    pub fn plugin_id(&self) -> uuid::Uuid {
+        self.plugin_id
+    }
 }
 
 impl type_url::TypeUrl for GetPluginHealthRequest {
@@ -696,7 +845,6 @@ pub enum PluginHealthStatus {
     Dead,
 }
 
-use proto::get_plugin_health_response::PluginHealthStatus as PluginHealthStatusProto;
 impl TryFrom<PluginHealthStatusProto> for PluginHealthStatus {
     type Error = SerDeError;
 
@@ -730,7 +878,17 @@ impl From<PluginHealthStatus> for PluginHealthStatusProto {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginHealthResponse {
-    pub health_status: PluginHealthStatus,
+    health_status: PluginHealthStatus,
+}
+
+impl GetPluginHealthResponse {
+    pub fn new(health_status: PluginHealthStatus) -> Self {
+        Self { health_status }
+    }
+
+    pub fn health_status(&self) -> PluginHealthStatus {
+        self.health_status
+    }
 }
 
 impl type_url::TypeUrl for GetPluginHealthResponse {

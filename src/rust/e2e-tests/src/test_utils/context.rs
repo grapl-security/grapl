@@ -142,21 +142,19 @@ impl E2eTestContext {
             let plugin = self
                 .plugin_registry_client
                 .create_plugin(
-                    PluginMetadata {
+                    PluginMetadata::new(
                         tenant_id,
-                        display_name: options.test_name.clone(),
-                        plugin_type: PluginType::Generator,
-                        event_source_id: Some(event_source.event_source_id),
-                    },
+                        options.test_name.clone(),
+                        PluginType::Generator,
+                        Some(event_source.event_source_id),
+                    ),
                     futures::stream::once(async move { options.generator_artifact }),
                 )
                 .await?;
 
             if options.should_deploy_generator {
                 self.plugin_registry_client
-                    .deploy_plugin(DeployPluginRequest {
-                        plugin_id: plugin.plugin_id,
-                    })
+                    .deploy_plugin(DeployPluginRequest::new(plugin.plugin_id()))
                     .await?;
             }
             plugin
@@ -164,7 +162,7 @@ impl E2eTestContext {
 
         Ok(SetupResult {
             tenant_id,
-            plugin_id: plugin.plugin_id,
+            plugin_id: plugin.plugin_id(),
             event_source_id: event_source.event_source_id,
         })
     }

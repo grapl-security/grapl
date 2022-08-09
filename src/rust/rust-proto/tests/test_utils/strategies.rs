@@ -694,18 +694,18 @@ pub mod plugin_registry {
             event_source_id in uuids(),
         ) -> PluginMetadata {
             match plugin_type {
-                PluginType::Generator => PluginMetadata {
+                PluginType::Generator => PluginMetadata::new(
                     tenant_id,
                     display_name,
                     plugin_type,
-                    event_source_id: Some(event_source_id),
-                },
-                _ => PluginMetadata {
+                    Some(event_source_id),
+                ),
+                _ => PluginMetadata::new(
                     tenant_id,
                     display_name,
                     plugin_type,
-                    event_source_id: None,
-                }
+                    None,
+                )
             }
         }
     }
@@ -721,9 +721,7 @@ pub mod plugin_registry {
         pub fn create_plugin_responses()(
             plugin_id in uuids(),
         ) -> CreatePluginResponse {
-            CreatePluginResponse{
-                plugin_id,
-            }
+            CreatePluginResponse::new(plugin_id)
         }
     }
 
@@ -731,18 +729,14 @@ pub mod plugin_registry {
         pub fn get_analyzers_for_tenant_requests()(
             tenant_id in uuids(),
         ) -> GetAnalyzersForTenantRequest {
-            GetAnalyzersForTenantRequest{
-                tenant_id,
-            }
+            GetAnalyzersForTenantRequest::new(tenant_id)
         }
     }
     prop_compose! {
         pub fn get_analyzers_for_tenant_responses()(
             plugin_ids in vec_of_uuids()
         ) -> GetAnalyzersForTenantResponse {
-            GetAnalyzersForTenantResponse{
-                plugin_ids
-            }
+            GetAnalyzersForTenantResponse::new(plugin_ids)
         }
     }
 
@@ -750,9 +744,7 @@ pub mod plugin_registry {
         pub fn deploy_plugin_requests()(
             plugin_id in uuids()
         ) -> DeployPluginRequest {
-            DeployPluginRequest{
-                plugin_id
-            }
+            DeployPluginRequest::new(plugin_id)
         }
     }
 
@@ -764,9 +756,7 @@ pub mod plugin_registry {
         pub fn get_generators_for_event_source_requests()(
             event_source_id in uuids()
         ) -> GetGeneratorsForEventSourceRequest {
-            GetGeneratorsForEventSourceRequest{
-                event_source_id
-            }
+            GetGeneratorsForEventSourceRequest::new(event_source_id)
         }
     }
 
@@ -774,9 +764,7 @@ pub mod plugin_registry {
         pub fn get_generators_for_event_source_responses()(
             plugin_ids in vec_of_uuids()
         ) -> GetGeneratorsForEventSourceResponse {
-            GetGeneratorsForEventSourceResponse {
-                plugin_ids
-            }
+            GetGeneratorsForEventSourceResponse::new(plugin_ids)
         }
     }
 
@@ -785,10 +773,7 @@ pub mod plugin_registry {
             plugin_id in uuids(),
             tenant_id in uuids(),
         ) -> GetPluginRequest {
-            GetPluginRequest {
-                plugin_id,
-                tenant_id,
-            }
+            GetPluginRequest::new(plugin_id, tenant_id)
         }
     }
 
@@ -797,10 +782,7 @@ pub mod plugin_registry {
             plugin_id in uuids(),
             plugin_metadata in plugin_metadatas(),
         ) -> GetPluginResponse {
-            GetPluginResponse {
-                plugin_id,
-                plugin_metadata,
-            }
+            GetPluginResponse::new(plugin_id, plugin_metadata)
         }
     }
 
@@ -808,9 +790,7 @@ pub mod plugin_registry {
         pub fn tear_down_plugin_requests()(
             plugin_id in uuids()
         ) -> TearDownPluginRequest {
-            TearDownPluginRequest{
-                plugin_id
-            }
+            TearDownPluginRequest::new(plugin_id)
         }
     }
 
@@ -822,9 +802,7 @@ pub mod plugin_registry {
         pub fn get_plugin_health_requests()(
             plugin_id in uuids()
         ) -> GetPluginHealthRequest {
-            GetPluginHealthRequest{
-                plugin_id
-            }
+            GetPluginHealthRequest::new(plugin_id)
         }
     }
 
@@ -843,9 +821,7 @@ pub mod plugin_registry {
         pub fn get_plugin_health_responses()(
             health_status in plugin_health_statuses()
         ) -> GetPluginHealthResponse{
-            GetPluginHealthResponse{
-                health_status
-            }
+            GetPluginHealthResponse::new(health_status)
         }
     }
 }
