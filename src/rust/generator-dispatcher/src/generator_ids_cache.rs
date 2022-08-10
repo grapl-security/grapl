@@ -111,12 +111,12 @@ impl GeneratorIdsCache {
                     async move {
 
                         let generator_ids = match plugin_registry_client
-                            .get_generators_for_event_source(GetGeneratorsForEventSourceRequest {
-                                event_source_id
-                            })
+                            .get_generators_for_event_source(
+                                GetGeneratorsForEventSourceRequest::new(event_source_id)
+                            )
                             .await {
                                 Ok(response) => {
-                                    response.plugin_ids
+                                    response.plugin_ids().to_vec()
                                 },
                                 Err(PluginRegistryServiceClientError::ErrorStatus(Status {
                                     code: Code::NotFound,
@@ -156,15 +156,16 @@ impl GeneratorIdsCache {
                                         tokio::time::sleep(backoff).await;
 
                                         result = plugin_registry_client
-                                            .get_generators_for_event_source(GetGeneratorsForEventSourceRequest {
-                                                event_source_id
-                                            })
+                                            .get_generators_for_event_source(
+                                                GetGeneratorsForEventSourceRequest::new(event_source_id)
+                                            )
                                             .await;
                                     };
 
                                     result
                                         .expect("fatal error, unknown state")
-                                        .plugin_ids
+                                        .plugin_ids()
+                                        .to_vec()
                                 },
                             };
 
