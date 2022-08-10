@@ -25,6 +25,7 @@ use crate::{
         ConsumerConfig,
         ProducerConfig,
     },
+    format_iso8601,
     Consumer,
     Producer,
 };
@@ -173,7 +174,7 @@ where
                             tracing::info!(
                                 message = "starting countdown",
                                 timeout =? self.timeout,
-                                stop_time =? new_stop_time,
+                                stop_time =% format_iso8601(*new_stop_time),
                             );
                             tx.send(()).expect("receiver was dropped");
                         }
