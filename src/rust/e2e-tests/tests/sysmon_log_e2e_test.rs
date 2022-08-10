@@ -17,10 +17,7 @@ use e2e_tests::{
     },
 };
 use kafka::{
-    config::{
-        ConsumerConfig,
-        ProducerConfig,
-    },
+    config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
 };
 use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
@@ -56,7 +53,6 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     tracing::info!(">> Setup complete. Now let's test milestones in the pipeline.");
 
     let raw_logs_scanner_handle = KafkaTopicScanner::new(
-        ProducerConfig::with_topic("raw-logs"),
         ConsumerConfig::with_topic("raw-logs"),
         Duration::from_secs(60),
         Envelope::new(
@@ -70,7 +66,6 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     .await;
 
     let generated_graphs_scanner_handle = KafkaTopicScanner::new(
-        ProducerConfig::with_topic("generated-graphs"),
         ConsumerConfig::with_topic("generated-graphs"),
         Duration::from_secs(60),
         Envelope::new(
@@ -84,7 +79,6 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     .await;
 
     let node_identifier_scanner_handle = KafkaTopicScanner::new(
-        ProducerConfig::with_topic("identified-graphs"),
         ConsumerConfig::with_topic("identified-graphs"),
         Duration::from_secs(60),
         Envelope::new(
@@ -98,7 +92,6 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     .await;
 
     let graph_merger_scanner_handle = KafkaTopicScanner::new(
-        ProducerConfig::with_topic("merged-graphs"),
         ConsumerConfig::with_topic("merged-graphs"),
         Duration::from_secs(60),
         Envelope::new(

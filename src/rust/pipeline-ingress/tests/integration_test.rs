@@ -9,10 +9,7 @@ use grapl_tracing::{
     WorkerGuard,
 };
 use kafka::{
-    config::{
-        ConsumerConfig,
-        ProducerConfig,
-    },
+    config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
 };
 use rust_proto::{
@@ -122,7 +119,6 @@ async fn test_publish_raw_log_sends_message_to_kafka(
 "#.into();
 
     let kafka_scanner = KafkaTopicScanner::new(
-        ProducerConfig::with_topic(CONSUMER_TOPIC),
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
         Duration::from_secs(30),
         Envelope::new(

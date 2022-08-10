@@ -64,10 +64,21 @@ impl ProducerConfig {
         Self::with_topic(&topic)
     }
 
-    pub fn with_topic(topic: &str) -> Self {
+    fn with_topic(topic: &str) -> Self {
         let app_args = std::env::args();
         let extra_args = ["--topic".to_string(), topic.to_string()];
         Self::parse_from(app_args.chain(extra_args.into_iter()))
+    }
+}
+
+impl From<ConsumerConfig> for ProducerConfig {
+    fn from(consumer_config: ConsumerConfig) -> Self {
+        Self {
+            bootstrap_servers: consumer_config.bootstrap_servers,
+            sasl_username: consumer_config.sasl_username,
+            sasl_password: consumer_config.sasl_password,
+            topic: consumer_config.topic,
+        }
     }
 }
 

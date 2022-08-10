@@ -8,10 +8,7 @@ use e2e_tests::test_utils::context::{
     SetupResult,
 };
 use kafka::{
-    config::{
-        ConsumerConfig,
-        ProducerConfig,
-    },
+    config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
 };
 use rust_proto::graplinc::grapl::{
@@ -56,7 +53,6 @@ async fn test_sysmon_event_produces_merged_graph(
     } = ctx.setup_sysmon_generator(test_name).await?;
 
     let kafka_scanner = KafkaTopicScanner::new(
-        ProducerConfig::with_topic(CONSUMER_TOPIC),
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
         Duration::from_secs(60),
         Envelope::new(

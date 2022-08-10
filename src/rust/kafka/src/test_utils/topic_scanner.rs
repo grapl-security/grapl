@@ -72,7 +72,6 @@ where
     T: SerDe + Send + Sync,
 {
     pub fn new(
-        producer_config: ProducerConfig,
         consumer_config: ConsumerConfig,
         timeout: Duration,
         priming_message: Envelope<T>,
@@ -92,7 +91,7 @@ where
         };
 
         Self {
-            producer_config,
+            producer_config: overridden_consumer_config.clone().into(),
             consumer_config: overridden_consumer_config,
             timeout,
             priming_message,
