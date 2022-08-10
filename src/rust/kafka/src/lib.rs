@@ -60,7 +60,7 @@ use thiserror::Error;
 use tracing::Instrument;
 
 /// helper function to format a timestamp as ISO-8601 (useful for logging)
-fn format_iso8601(timestamp: SystemTime) -> String {
+pub fn format_iso8601(timestamp: SystemTime) -> String {
     let datetime: DateTime<Utc> = timestamp.into();
     datetime.to_rfc3339()
 }
@@ -259,7 +259,8 @@ fn consumer(
 ) -> Result<StreamConsumer, ConfigurationError> {
     configure(bootstrap_servers, sasl_username, sasl_password)
         .set("group.id", consumer_group_name)
-        .set("enable.auto.commit", "true")
+        .set("enable.auto.commit", "false")
+        .set("enable.auto.offset.store", "true")
         .set("auto.offset.reset", "latest")
         .set("session.timeout.ms", "45000")
         .create()
