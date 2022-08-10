@@ -4,10 +4,6 @@ version = "1.0.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2021"
 
-[[bin]]
-name = "sysmon-generator-kafka-legacy"
-path = "src/main_legacy.rs"
-
 [dependencies]
 async-trait = "0.1"
 chrono = { version = "0.4" }
