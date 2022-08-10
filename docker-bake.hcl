@@ -174,7 +174,6 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
-    "sysmon-generator",
     "uid-allocator",
   ]
 }
@@ -393,14 +392,6 @@ target "generator-execution-sidecar" {
   target   = "generator-execution-sidecar-deploy"
   tags = [
     upstream_aware_tag("generator-execution-sidecar")
-  ]
-}
-
-target "sysmon-generator" {
-  inherits = ["_rust-base"]
-  target   = "sysmon-generator-deploy"
-  tags = [
-    upstream_aware_tag("sysmon-generator")
   ]
 }
 
