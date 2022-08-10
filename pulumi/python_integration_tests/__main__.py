@@ -106,7 +106,6 @@ class GraplStack:
         self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")
-        self.sysmon_log_bucket = require_str("sysmon-log-bucket")
         self.test_user_name = require_str("test-user-name")
 
         self.plugin_work_queue_db = cast(
