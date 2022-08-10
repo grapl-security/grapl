@@ -31,6 +31,7 @@ use tokio::time::{
     Timeout,
 };
 pub use tokio_retry::strategy;
+use tokio_retry::Condition;
 
 pub mod action;
 
@@ -128,10 +129,11 @@ where
 /// Future that drives multiple attempts at an action via a retry strategy.
 /// All executions go through a circuit breaker.
 #[pin_project]
-pub struct Execution<'a, I, A>
+pub struct Execution<'a, I, A, C>
 where
     I: Iterator<Item = Duration>,
     A: Action,
+    C: Condition<A::Error>,
 {
     strategy: I,
     #[pin]
@@ -139,12 +141,14 @@ where
     recloser: &'a AsyncRecloser,
     timeout: Duration,
     action: A,
+    condition: C,
 }
 
-impl<'a, I, A> Execution<'a, I, A>
+impl<'a, I, A, C> Execution<'a, I, A, C>
 where
     I: Iterator<Item = Duration>,
     A: Action,
+    C: Condition<A::Error>,
 {
     fn attempt(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<ActionResult<A>> {
         let future = {
@@ -184,10 +188,11 @@ where
     }
 }
 
-impl<'a, I, A> Future for Execution<'a, I, A>
+impl<'a, I, A, C> Future for Execution<'a, I, A, C>
 where
     I: Iterator<Item = Duration>,
     A: Action,
+    C: Condition<A::Error>,
 {
     type Output = ActionResult<A>;
 
@@ -196,7 +201,20 @@ where
             ExecuteFuturePoll::Running(poll_result) => match poll_result {
                 Poll::Ready(Ok(ok)) => Poll::Ready(Ok(ok)),
                 Poll::Pending => Poll::Pending,
-                Poll::Ready(Err(err)) => match self.retry(err, cx) {
+                // Received an Action::Error
+                Poll::Ready(Err(Error::Inner(action_err))) => {
+                    // Check if that's worth retrying
+                    if self.as_mut().project().condition.should_retry(&action_err) {
+                        match self.retry(Error::Inner(action_err), cx) {
+                            Ok(poll) => poll,
+                            Err(err) => Poll::Ready(Err(err)),
+                        }
+                    } else {
+                        Poll::Ready(Err(Error::Inner(action_err)))
+                    }
+                }
+                // Received a Rejected or Elapsed
+                Poll::Ready(Err(outer_err)) => match self.retry(outer_err, cx) {
                     Ok(poll) => poll,
                     Err(err) => Poll::Ready(Err(err)),
                 },
@@ -292,6 +310,8 @@ pub struct Executor {
     timeout: Duration,
 }
 
+type ConcreteCondition<E> = fn(&E) -> bool;
+
 impl Executor {
     pub fn new(config: ExecutorConfig) -> Self {
         let timeout = config.timeout;
@@ -301,10 +321,33 @@ impl Executor {
         }
     }
 
-    pub fn spawn<A, I, T>(&self, strategy: T, mut action: A) -> Execution<I, A>
+    /// A wrapper around spawn_conditional where the condition is always true.
+    /// Compare with tokio-retry's Retry::spawn
+    pub fn spawn<A, I, T>(
+        &self,
+        strategy: T,
+        action: A,
+    ) -> Execution<I, A, ConcreteCondition<A::Error>>
     where
         I: Iterator<Item = Duration>,
         A: Action,
+        T: IntoIterator<IntoIter = I, Item = Duration>,
+    {
+        let condition = { |_| true } as fn(&A::Error) -> bool;
+        self.spawn_conditional(strategy, action, condition)
+    }
+
+    /// Compare with tokio-retry's RetryIf::spawn
+    pub fn spawn_conditional<A, I, T, C>(
+        &self,
+        strategy: T,
+        mut action: A,
+        condition: C,
+    ) -> Execution<I, A, C>
+    where
+        I: Iterator<Item = Duration>,
+        A: Action,
+        C: Condition<A::Error>,
         T: IntoIterator<IntoIter = I, Item = Duration>,
     {
         Execution {
@@ -315,6 +358,7 @@ impl Executor {
             ),
             timeout: self.timeout.clone(),
             recloser: &self.recloser,
+            condition,
             action,
         }
     }
@@ -331,7 +375,7 @@ mod tests {
 
     #[derive(thiserror::Error, Debug)]
     enum MyCustomError {
-        #[error("OhNo!")]
+        #[error("OhNo {0}")]
         OhNo(i32),
     }
 
@@ -414,6 +458,43 @@ mod tests {
             .await;
         // Circuit is closed
         assert!(matches!(third_try, Ok(())));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_conditional_retries() -> Result<(), Box<dyn std::error::Error>> {
+        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(10)));
+
+        let i = Arc::new(std::sync::atomic::AtomicI32::new(0));
+
+        // Use the Condition to bail out if we encounter an error with value 2.
+        // That will happen on the first retry (aka the second attempt).
+        let retry_condition = (|e: &MyCustomError| matches!(e, MyCustomError::OhNo(i) if { *i != 2 }))
+            as ConcreteCondition<MyCustomError>;
+
+        // However, notably, we request >1 retry!
+        let zero_ms = Duration::from_millis(0);
+        let exec_result = executor
+            .spawn_conditional(
+                [zero_ms, zero_ms, zero_ms],
+                || {
+                    let i = i.clone();
+                    async move {
+                        // Use i to count number of attempts, always return an error
+                        let i = i.fetch_add(1, Ordering::Acquire);
+                        Err::<(), _>(MyCustomError::OhNo(i))
+                    }
+                },
+                retry_condition,
+            )
+            .await;
+
+        let exec_result = exec_result.expect_err("expected err");
+        assert!(
+            matches!(exec_result, Error::Inner(MyCustomError::OhNo(2))),
+            "expected ohno 2, got {exec_result}"
+        );
+
         Ok(())
     }
 }

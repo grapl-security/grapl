@@ -75,6 +75,7 @@ impl Connectable for PluginRegistryServiceClient {
 
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        // TODO: We may want to macro-ize this like we did with the RPCs.
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = executor
             .spawn(

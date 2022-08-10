@@ -19,7 +19,8 @@ use rust_proto::{
         PluginRegistryServiceClient,
         PluginRegistryServiceClientError,
         PluginType,
-    }, protocol::status::{Code},
+    },
+    protocol::status::Code,
 };
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");
@@ -165,9 +166,8 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn s
 
     match response {
         Err(PluginRegistryServiceClientError::ErrorStatus(s)) => {
-            // TODO: We should consider a dedicated "PluginIDDoesntExist" exception
             assert_eq!(s.code(), Code::NotFound);
-            assert_contains(s.message(), "Failed to operate on postgres");
+            assert_contains(s.message(), &sqlx::Error::RowNotFound.to_string());
         }
         _ => panic!("Expected an error"),
     };
