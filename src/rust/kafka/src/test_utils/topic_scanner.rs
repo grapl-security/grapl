@@ -251,37 +251,50 @@ where
         // send the self.priming_message every 0.5s until we catch it
         let priming_message = self.priming_message.clone();
         let producer_config = self.producer_config.clone();
+        let (primer_tx, primer_rx) = oneshot::channel::<()>();
+
         let primer_handle = tokio::task::spawn(async move {
             let priming_message = priming_message.clone();
             let producer: Producer<T> =
                 Producer::new(producer_config.clone()).expect("failed to configure producer");
             let mut interval = tokio::time::interval(Duration::from_millis(500));
 
-            loop {
-                interval.tick().await;
-                let producer = producer.clone();
+            // wait for whichever completes first--we receive a termination
+            // signal on primer_rx or the sender loop errors out
+            tokio::select!(
+                primer_rx_result = primer_rx => {
+                    primer_rx_result.expect("primer_tx sender was dropped");
+                },
+                _ = async move {
+                    loop {
+                        interval.tick().await;
+                        let producer = producer.clone();
 
-                tracing::info!(
-                    message = "sending priming message",
-                    tenant_id =% priming_message.tenant_id(),
-                );
+                        tracing::info!(
+                            message = "sending priming message",
+                            tenant_id =% priming_message.tenant_id(),
+                        );
 
-                if let Err(e) = producer
-                    .send(priming_message.clone())
-                    .await
-                {
-                    tracing::warn!(
-                        message = "error sending priming message",
-                        tenant_id =% priming_message.tenant_id(),
-                        reason =% e,
-                    )
-                } else {
-                    tracing::info!(
-                        message = "sent priming message",
-                        tenant_id =% priming_message.tenant_id(),
-                    );
+                        if let Err(e) = producer
+                            .send(priming_message.clone())
+                            .await
+                        {
+                            tracing::warn!(
+                                message = "error sending priming message",
+                                tenant_id =% priming_message.tenant_id(),
+                                reason =% e,
+                            )
+                        } else {
+                            tracing::info!(
+                                message = "sent priming message",
+                                tenant_id =% priming_message.tenant_id(),
+                            );
+                        }
+                    }
+                } => {
+                    // nothing to see here
                 }
-            }
+            );
         });
 
         // wait for the kafka consumer to start consuming
@@ -289,14 +302,13 @@ where
 
         tokio::select!(
             rx_result = rx => {
+                primer_tx.send(()).expect("failed to notify primer_tx to shutdown");
                 rx_result.expect("sender was dropped");
             },
             primer_result = primer_handle => {
                 primer_result.expect("primer failed");
             }
         );
-
-        primer_handle.abort();
 
         tracing::info!(message = "kafka consumer is ready to consume messages",);
 
