@@ -174,5 +174,26 @@
       }
     },
     "query": "\n            SELECT\n            plugin_id,\n            tenant_id,\n            display_name,\n            plugin_type,\n            artifact_s3_key,\n            event_source_id\n            FROM plugins\n            WHERE plugin_id = $1\n            "
+  },
+  "ee70c580b98542fdf5cc49230ba968c926009e5cbba9b85b93af277927e92cb9": {
+    "describe": {
+      "columns": [
+        {
+          "name": "plugin_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            SELECT\n            plugin_id\n            FROM plugins\n            WHERE tenant_id = $1 AND plugin_type = $2;\n            "
   }
 }
