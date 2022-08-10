@@ -17,10 +17,12 @@ use rust_proto::{
         PluginHealthStatus,
         PluginMetadata,
         PluginRegistryServiceClient,
-        PluginRegistryServiceClientError,
         PluginType,
     },
-    protocol::status::Code,
+    protocol::{
+        error::GrpcClientError,
+        status::Code,
+    },
 };
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");
@@ -165,7 +167,7 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn s
         .await?;
 
     match response {
-        Err(PluginRegistryServiceClientError::ErrorStatus(s)) => {
+        Err(GrpcClientError::ErrorStatus(s)) => {
             assert_eq!(s.code(), Code::NotFound);
             assert_contains(s.message(), &sqlx::Error::RowNotFound.to_string());
         }

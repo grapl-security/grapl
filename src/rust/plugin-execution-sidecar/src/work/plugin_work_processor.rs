@@ -1,12 +1,10 @@
 use rust_proto::{
-    graplinc::grapl::api::{
-        plugin_sdk::generators::v1beta1::client::GeneratorServiceClientError,
-        plugin_work_queue::v1beta1::{
-            ExecutionJob,
-            PluginWorkQueueServiceClient,
-            PluginWorkQueueServiceClientError,
-        },
+    graplinc::grapl::api::plugin_work_queue::v1beta1::{
+        ExecutionJob,
+        PluginWorkQueueServiceClient,
+        PluginWorkQueueServiceClientError,
     },
+    protocol::error::GrpcClientError,
     SerDe,
 };
 use uuid::Uuid;
@@ -19,8 +17,8 @@ pub type RequestId = i64;
 pub enum PluginWorkProcessorError {
     #[error("PluginWorkQueueServiceClientError {0}")]
     PluginWorkQueueServiceClientError(#[from] PluginWorkQueueServiceClientError),
-    #[error("GeneratorServiceClientError {0}")]
-    GeneratorServiceClientError(#[from] GeneratorServiceClientError),
+    #[error("GrpcClientError {0}")]
+    GrpcClientError(#[from] GrpcClientError),
     // Likely want one for Analyzer as well once that SDK exists
     #[error("ProcessJob {0}")]
     ProcessJob(String),

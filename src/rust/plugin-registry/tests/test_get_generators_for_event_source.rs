@@ -12,10 +12,12 @@ use rust_proto::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
         GetGeneratorsForEventSourceRequest,
         PluginMetadata,
-        PluginRegistryServiceClientError,
         PluginType,
     },
-    protocol::status::Code,
+    protocol::{
+        error::GrpcClientError,
+        status::Code,
+    },
 };
 
 #[test_log::test(tokio::test)]
@@ -137,7 +139,7 @@ async fn test_get_generators_for_event_source_not_found() -> Result<(), Box<dyn 
         .await?
     {
         match e {
-            PluginRegistryServiceClientError::ErrorStatus(s) => {
+            GrpcClientError::ErrorStatus(s) => {
                 if let Code::NotFound = s.code() {
                     Ok(()) // 👍 great success 👍
                 } else {

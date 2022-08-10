@@ -1,8 +1,4 @@
-use std::{
-    convert::Infallible,
-    fmt::Debug,
-    time::Duration,
-};
+use std::time::Duration;
 
 use bytes::Bytes;
 use client_executor::{
@@ -22,47 +18,14 @@ use crate::{
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
     protocol::{
         endpoint::Endpoint,
+        error::GrpcClientError,
         service_client::{
             ConnectError,
             Connectable,
         },
         status::Status,
     },
-    SerDeError,
 };
-
-// TODO It looks like *ClientError is basically duplicated everywhere, we could
-// simplify and have GrpcClientError or something
-#[derive(Debug, thiserror::Error)]
-pub enum PluginRegistryServiceClientError {
-    #[error("ErrorStatus {0}")]
-    ErrorStatus(#[from] Status),
-    #[error("PluginRegistryDeserializationError {0}")]
-    PluginRegistryDeserializationError(#[from] SerDeError),
-    #[error("CircuitOpen")]
-    CircuitOpen,
-    #[error("Timeout")]
-    Elapsed,
-}
-
-// A compatibility layer for using
-// TryFrom<Error = SerDeError>
-// in place of From.
-impl From<Infallible> for PluginRegistryServiceClientError {
-    fn from(_: Infallible) -> Self {
-        unreachable!()
-    }
-}
-
-impl From<client_executor::Error<tonic::Status>> for PluginRegistryServiceClientError {
-    fn from(e: client_executor::Error<tonic::Status>) -> Self {
-        match e {
-            client_executor::Error::Inner(e) => Self::ErrorStatus(e.into()),
-            client_executor::Error::Rejected => Self::CircuitOpen,
-            client_executor::Error::Elapsed => Self::Elapsed,
-        }
-    }
-}
 
 #[derive(Clone)]
 pub struct PluginRegistryServiceClient {
@@ -98,7 +61,7 @@ impl PluginRegistryServiceClient {
     pub async fn create_plugin_raw<S>(
         &mut self,
         request: S,
-    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError>
+    ) -> Result<native::CreatePluginResponse, GrpcClientError>
     where
         S: Stream<Item = native::CreatePluginRequest> + Send + 'static,
     {
@@ -117,7 +80,7 @@ impl PluginRegistryServiceClient {
         &mut self,
         metadata: native::PluginMetadata,
         plugin_artifact: S,
-    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError>
+    ) -> Result<native::CreatePluginResponse, GrpcClientError>
     where
         S: Stream<Item = Bytes> + Send + 'static,
     {
@@ -134,7 +97,7 @@ impl PluginRegistryServiceClient {
     pub async fn get_plugin(
         &mut self,
         request: native::GetPluginRequest,
-    ) -> Result<native::GetPluginResponse, PluginRegistryServiceClientError> {
+    ) -> Result<native::GetPluginResponse, GrpcClientError> {
         execute_client_rpc!(
             self,
             request,
@@ -148,7 +111,7 @@ impl PluginRegistryServiceClient {
     pub async fn deploy_plugin(
         &mut self,
         request: native::DeployPluginRequest,
-    ) -> Result<native::DeployPluginResponse, PluginRegistryServiceClientError> {
+    ) -> Result<native::DeployPluginResponse, GrpcClientError> {
         execute_client_rpc!(
             self,
             request,
@@ -162,7 +125,7 @@ impl PluginRegistryServiceClient {
     pub async fn tear_down_plugin(
         &mut self,
         request: native::TearDownPluginRequest,
-    ) -> Result<native::TearDownPluginResponse, PluginRegistryServiceClientError> {
+    ) -> Result<native::TearDownPluginResponse, GrpcClientError> {
         execute_client_rpc!(
             self,
             request,
@@ -175,7 +138,7 @@ impl PluginRegistryServiceClient {
     pub async fn get_plugin_health(
         &mut self,
         request: native::GetPluginHealthRequest,
-    ) -> Result<native::GetPluginHealthResponse, PluginRegistryServiceClientError> {
+    ) -> Result<native::GetPluginHealthResponse, GrpcClientError> {
         execute_client_rpc!(
             self,
             request,
@@ -190,7 +153,7 @@ impl PluginRegistryServiceClient {
     pub async fn get_generators_for_event_source(
         &mut self,
         request: native::GetGeneratorsForEventSourceRequest,
-    ) -> Result<native::GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> {
+    ) -> Result<native::GetGeneratorsForEventSourceResponse, GrpcClientError> {
         execute_client_rpc!(
             self,
             request,
@@ -204,7 +167,7 @@ impl PluginRegistryServiceClient {
     pub async fn get_analyzers_for_tenant(
         &mut self,
         request: native::GetAnalyzersForTenantRequest,
-    ) -> Result<native::GetAnalyzersForTenantResponse, PluginRegistryServiceClientError> {
+    ) -> Result<native::GetAnalyzersForTenantResponse, GrpcClientError> {
         execute_client_rpc!(
             self,
             request,
