@@ -44,7 +44,7 @@ pub enum PluginRegistryServiceClientError {
 }
 
 // A compatibility layer for using
-// TryFrom<Error = SerDeError> 
+// TryFrom<Error = SerDeError>
 // in place of From.
 impl From<Infallible> for PluginRegistryServiceClientError {
     fn from(_: Infallible) -> Self {
