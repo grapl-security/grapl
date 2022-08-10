@@ -279,12 +279,24 @@ impl PluginRegistryApi for PluginRegistry {
     }
 
     #[allow(dead_code)]
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn get_analyzers_for_tenant(
         &self,
-        _request: GetAnalyzersForTenantRequest,
+        request: GetAnalyzersForTenantRequest,
     ) -> Result<GetAnalyzersForTenantResponse, Self::Error> {
-        todo!()
+        let plugin_ids: Vec<Uuid> = self
+            .db_client
+            .get_analyzers_for_tenant(&request.tenant_id())
+            .await?
+            .iter()
+            .map(|row| row.plugin_id)
+            .collect();
+
+        if plugin_ids.is_empty() {
+            Err(PluginRegistryServiceError::NotFound)
+        } else {
+            Ok(GetAnalyzersForTenantResponse::new(plugin_ids))
+        }
     }
 
     #[tracing::instrument(skip(self, request), err)]

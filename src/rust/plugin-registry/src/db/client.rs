@@ -39,6 +39,26 @@ pub struct DbCreatePluginArgs {
 
 impl PluginRegistryDbClient {
     #[tracing::instrument(skip(self), err)]
+    pub async fn get_analyzers_for_tenant(
+        &self,
+        tenant_id: &uuid::Uuid,
+    ) -> Result<Vec<PluginIdRow>, sqlx::Error> {
+        sqlx::query_as!(
+            PluginIdRow,
+            r"
+            SELECT
+            plugin_id
+            FROM plugins
+            WHERE tenant_id = $1 AND plugin_type = $2;
+            ",
+            tenant_id,
+            PluginType::Analyzer.type_name(),
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    #[tracing::instrument(skip(self), err)]
     pub async fn get_generators_for_event_source(
         &self,
         event_source_id: &uuid::Uuid,

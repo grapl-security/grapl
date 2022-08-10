@@ -1,4 +1,4 @@
-#![cfg(feature = "integration_tests")]
+//#![cfg(feature = "integration_tests")]
 
 use bytes::Bytes;
 use clap::Parser;
@@ -10,7 +10,7 @@ use rust_proto::{
         BuildGrpcClientOptions,
     },
     graplinc::grapl::api::plugin_registry::v1beta1::{
-        GetGeneratorsForEventSourceRequest,
+        GetAnalyzersForTenantRequest,
         PluginMetadata,
         PluginRegistryServiceClientError,
         PluginType,
@@ -19,7 +19,7 @@ use rust_proto::{
 };
 
 #[test_log::test(tokio::test)]
-async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_get_analyzers_for_tenant() -> Result<(), Box<dyn std::error::Error>> {
     tracing::debug!(
         env=?std::env::args(),
     );
@@ -35,86 +35,86 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
     .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
-    let generator1_display_name = "my first generator".to_string();
-    let generator2_display_name = "my second generator".to_string();
-    let analyzer_display_name = "my analyzer".to_string();
+    let analyzer1_display_name = "my first analyzer".to_string();
+    let analyzer2_display_name = "my second analyzer".to_string();
+
+    let generator_display_name = "my generator".to_string();
     let event_source_id = uuid::Uuid::new_v4();
 
-    let generator1_metadata = PluginMetadata::new(
+    let analyzer1_metadata = PluginMetadata::new(
         tenant_id,
-        generator1_display_name.clone(),
-        PluginType::Generator,
-        Some(event_source_id),
-    );
-
-    let generator2_metadata = PluginMetadata::new(
-        tenant_id,
-        generator2_display_name.clone(),
-        PluginType::Generator,
-        Some(event_source_id),
-    );
-
-    let analyzer_metadata = PluginMetadata::new(
-        tenant_id,
-        analyzer_display_name.clone(),
+        analyzer1_display_name.clone(),
         PluginType::Analyzer,
         None,
     );
 
+    let analyzer2_metadata = PluginMetadata::new(
+        tenant_id,
+        analyzer2_display_name.clone(),
+        PluginType::Analyzer,
+        None,
+    );
+
+    let generator_metadata = PluginMetadata::new(
+        tenant_id,
+        generator_display_name.clone(),
+        PluginType::Generator,
+        Some(event_source_id),
+    );
+
     let chunk = Bytes::from("chonk");
 
-    let create_generator1_chunk = chunk.clone();
-    let create_generator1_response = client
+    let create_analyzer1_chunk = chunk.clone();
+    let create_analyzer1_response = client
         .create_plugin(
-            generator1_metadata,
-            futures::stream::once(async move { create_generator1_chunk }),
+            analyzer1_metadata,
+            futures::stream::once(async move { create_analyzer1_chunk }),
         )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
-    let generator1_plugin_id = create_generator1_response.plugin_id();
+    let analyzer1_plugin_id = create_analyzer1_response.plugin_id();
 
-    let create_generator2_chunk = chunk.clone();
-    let create_generator2_response = client
+    let create_analyzer2_chunk = chunk.clone();
+    let create_analyzer2_response = client
         .create_plugin(
-            generator2_metadata,
-            futures::stream::once(async move { create_generator2_chunk }),
+            analyzer2_metadata,
+            futures::stream::once(async move { create_analyzer2_chunk }),
         )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
-    let generator2_plugin_id = create_generator2_response.plugin_id();
+    let analyzer2_plugin_id = create_analyzer2_response.plugin_id();
 
-    let create_analyzer_chunk = chunk.clone();
-    let create_analyzer_response = client
+    let create_generator_chunk = chunk.clone();
+    let create_generator_response = client
         .create_plugin(
-            analyzer_metadata,
-            futures::stream::once(async move { create_analyzer_chunk }),
+            generator_metadata,
+            futures::stream::once(async move { create_generator_chunk }),
         )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
-    let analyzer_plugin_id = create_analyzer_response.plugin_id();
+    let generator_plugin_id = create_generator_response.plugin_id();
 
-    let generators_for_event_source_response = client
-        .get_generators_for_event_source(GetGeneratorsForEventSourceRequest::new(event_source_id))
+    let analyzers_for_tenant_response = client
+        .get_analyzers_for_tenant(GetAnalyzersForTenantRequest::new(tenant_id))
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
-    assert_eq!(generators_for_event_source_response.plugin_ids().len(), 2);
-    assert!(generators_for_event_source_response
+    assert_eq!(analyzers_for_tenant_response.plugin_ids().len(), 2);
+    assert!(analyzers_for_tenant_response
         .plugin_ids()
-        .contains(&generator1_plugin_id));
-    assert!(generators_for_event_source_response
+        .contains(&analyzer1_plugin_id));
+    assert!(analyzers_for_tenant_response
         .plugin_ids()
-        .contains(&generator2_plugin_id));
-    assert!(!generators_for_event_source_response
+        .contains(&analyzer2_plugin_id));
+    assert!(!analyzers_for_tenant_response
         .plugin_ids()
-        .contains(&analyzer_plugin_id));
+        .contains(&generator_plugin_id));
 
     Ok(())
 }
 
 #[test_log::test(tokio::test)]
-async fn test_get_generators_for_event_source_not_found() -> Result<(), Box<dyn std::error::Error>>
-{
+async fn test_get_analyzers_for_tenant_not_found() -> Result<(), Box<dyn std::error::Error>> {
     tracing::debug!(
         env=?std::env::args(),
     );
@@ -132,7 +132,7 @@ async fn test_get_generators_for_event_source_not_found() -> Result<(), Box<dyn 
     let tenant_id = uuid::Uuid::new_v4();
 
     if let Err(e) = client
-        .get_generators_for_event_source(GetGeneratorsForEventSourceRequest::new(tenant_id))
+        .get_analyzers_for_tenant(GetAnalyzersForTenantRequest::new(tenant_id))
         .timeout(std::time::Duration::from_secs(5))
         .await?
     {

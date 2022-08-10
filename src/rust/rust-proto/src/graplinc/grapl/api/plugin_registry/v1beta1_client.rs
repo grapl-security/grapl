@@ -168,10 +168,14 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::GetAnalyzersForTenantRequest,
     ) -> Result<native::GetAnalyzersForTenantResponse, PluginRegistryServiceClientError> {
-        self.proto_client
+        let response = self
+            .proto_client
             .get_analyzers_for_tenant(proto::GetAnalyzersForTenantRequest::from(request))
             .await
             .map_err(Status::from)?;
-        todo!()
+
+        let response = native::GetAnalyzersForTenantResponse::try_from(response.into_inner())?;
+
+        Ok(response)
     }
 }
