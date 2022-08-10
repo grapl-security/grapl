@@ -6,7 +6,6 @@ use std::{
 
 use bytes::Bytes;
 use client_executor::{
-    strategy::jitter,
     Executor,
     ExecutorConfig,
 };
@@ -18,6 +17,7 @@ use proto::plugin_registry_service_client::PluginRegistryServiceClient as Plugin
 
 use crate::{
     execute_client_rpc,
+    get_proto_client,
     graplinc::grapl::api::plugin_registry::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
     protocol::{
@@ -31,6 +31,8 @@ use crate::{
     SerDeError,
 };
 
+// TODO It looks like *ClientError is basically duplicated everywhere, we could
+// simplify and have GrpcClientError or something
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceClientError {
     #[error("ErrorStatus {0}")]
@@ -75,23 +77,12 @@ impl Connectable for PluginRegistryServiceClient {
 
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        // TODO: We may want to macro-ize this like we did with the RPCs.
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = executor
-            .spawn(
-                client_executor::strategy::FibonacciBackoff::from_millis(10)
-                    .map(jitter)
-                    .take(20),
-                || {
-                    let endpoint = endpoint.clone();
-                    async move {
-                        PluginRegistryServiceClientProto::connect(endpoint)
-                            .await
-                            .map_err(ConnectError::from)
-                    }
-                },
-            )
-            .await?;
+        let proto_client = get_proto_client!(
+            executor,
+            PluginRegistryServiceClientProto<tonic::transport::Channel>,
+            endpoint,
+        );
 
         Ok(PluginRegistryServiceClient {
             proto_client,
