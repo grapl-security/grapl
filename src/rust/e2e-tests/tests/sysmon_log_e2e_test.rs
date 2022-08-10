@@ -75,7 +75,7 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
             GraphDescription::new(),
         ),
     )
-    .scan_for_tenant(tenant_id, 360, |_graph: GraphDescription| true)
+    .scan_for_tenant(tenant_id, 36, |_graph: GraphDescription| true)
     .await;
 
     let node_identifier_scanner_handle = KafkaTopicScanner::new(
@@ -88,7 +88,7 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
             IdentifiedGraph::new(),
         ),
     )
-    .scan_for_tenant(tenant_id, 360, |_graph: IdentifiedGraph| true)
+    .scan_for_tenant(tenant_id, 36, |_graph: IdentifiedGraph| true)
     .await;
 
     let graph_merger_scanner_handle = KafkaTopicScanner::new(
@@ -101,7 +101,7 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
             MergedGraph::new(),
         ),
     )
-    .scan_for_tenant(tenant_id, 360, |_graph: MergedGraph| true)
+    .scan_for_tenant(tenant_id, 36, |_graph: MergedGraph| true)
     .await;
 
     tracing::info!(">> Inserting logs into pipeline-ingress!");
