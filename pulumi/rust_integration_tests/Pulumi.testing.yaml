@@ -6,12 +6,10 @@ config:
     firecracker_rootfs.tar.gz: 20220801204214-06bb008
     generator-dispatcher: 20220809152144-3c3caf3
     generator-execution-sidecar: 20220809152144-3c3caf3
-    generator-executor: 20220713174145-ba8f7e1
     graph-merger: 20220809152144-3c3caf3
     graphql-endpoint: 20220809152144-3c3caf3
     grapl-web-ui: 20220809152144-3c3caf3
     kafka-retry: 20220809152144-3c3caf3
-    model-plugin-deployer: 20220701185023-1e957d5
     node-identifier: 20220809152144-3c3caf3
     organization-management: 20220809152144-3c3caf3
     pipeline-ingress: 20220809152144-3c3caf3
