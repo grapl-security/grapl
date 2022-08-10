@@ -42,21 +42,6 @@ use crate::{
 ///
 /// N.B.: These results will be materialized in memory, so don't make your
 /// predicate too permissive!
-///
-/// Arguments:
-///
-/// - consumer_config: The configuration for this scanner's Kafka consumer
-///
-/// - timeout: Duration for which we'll consume messages before terminating the
-///   stream.
-///
-/// - priming_message: A throw-away message that will be used to "prime" this
-///   Kafka consumer. You should make this message invisible to your tests by
-///   ensuring it has a unique tenant_id that is different from your test data's
-///   tenant_id. This message will be sent to the topic every 500ms and the
-///   KafkaTopicScanner will only report "ready" upon first receipt of this
-///   message. Be judicious in how you construct this message, as other
-///   listeners on the topic will receive it also!
 pub struct KafkaTopicScanner<T>
 where
     T: SerDe + Send + Sync + 'static,
@@ -71,6 +56,20 @@ impl<T> KafkaTopicScanner<T>
 where
     T: SerDe + Send + Sync,
 {
+    /// Arguments:
+    ///
+    /// - consumer_config: The configuration for this scanner's Kafka consumer
+    ///
+    /// - timeout: Duration for which we'll consume messages before terminating
+    ///   the stream.
+    ///
+    /// - priming_message: A throw-away message that will be used to "prime"
+    ///   this Kafka consumer. You should make this message invisible to your
+    ///   tests by ensuring it has a unique tenant_id that is different from
+    ///   your test data's tenant_id. This message will be sent to the topic
+    ///   every 500ms and the KafkaTopicScanner will only report "ready" upon
+    ///   first receipt of this message. Be judicious in how you construct this
+    ///   message, as other listeners on the topic will receive it also!
     pub fn new(
         consumer_config: ConsumerConfig,
         timeout: Duration,
