@@ -8,19 +8,26 @@ use e2e_tests::test_utils::context::{
     SetupResult,
 };
 use kafka::{
-    config::ConsumerConfig,
+    config::{
+        ConsumerConfig,
+        ProducerConfig,
+    },
     test_utils::topic_scanner::KafkaTopicScanner,
 };
-use rust_proto::graplinc::grapl::api::{
-    graph::v1beta1::{
-        IdentifiedGraph,
-        IdentifiedNode,
-        ImmutableUintProp,
-        Property,
+use rust_proto::graplinc::grapl::{
+    api::{
+        graph::v1beta1::{
+            IdentifiedGraph,
+            IdentifiedNode,
+            ImmutableUintProp,
+            Property,
+        },
+        pipeline_ingress::v1beta1::PublishRawLogRequest,
     },
-    pipeline_ingress::v1beta1::PublishRawLogRequest,
+    pipeline::v1beta1::Envelope,
 };
 use test_context::test_context;
+use uuid::Uuid;
 
 static CONSUMER_TOPIC: &'static str = "identified-graphs";
 
@@ -49,8 +56,15 @@ async fn test_sysmon_event_produces_identified_graph(
     } = ctx.setup_sysmon_generator(test_name).await?;
 
     let kafka_scanner = KafkaTopicScanner::new(
+        ProducerConfig::with_topic(CONSUMER_TOPIC),
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
         Duration::from_secs(60),
+        Envelope::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            IdentifiedGraph::new(),
+        ),
     );
 
     let handle = kafka_scanner

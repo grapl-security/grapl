@@ -64,7 +64,7 @@ impl ProducerConfig {
         Self::with_topic(&topic)
     }
 
-    fn with_topic(topic: &str) -> Self {
+    pub fn with_topic(topic: &str) -> Self {
         let app_args = std::env::args();
         let extra_args = ["--topic".to_string(), topic.to_string()];
         Self::parse_from(app_args.chain(extra_args.into_iter()))

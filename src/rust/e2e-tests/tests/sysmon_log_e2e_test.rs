@@ -17,7 +17,10 @@ use e2e_tests::{
     },
 };
 use kafka::{
-    config::ConsumerConfig,
+    config::{
+        ConsumerConfig,
+        ProducerConfig,
+    },
     test_utils::topic_scanner::KafkaTopicScanner,
 };
 use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
@@ -36,6 +39,7 @@ use rust_proto::graplinc::grapl::{
     },
 };
 use test_context::test_context;
+use uuid::Uuid;
 
 #[tracing::instrument(skip(ctx))]
 #[test_context(E2eTestContext)]
@@ -52,39 +56,60 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     tracing::info!(">> Setup complete. Now let's test milestones in the pipeline.");
 
     let raw_logs_scanner_handle = KafkaTopicScanner::new(
+        ProducerConfig::with_topic("raw-logs"),
         ConsumerConfig::with_topic("raw-logs"),
         Duration::from_secs(60),
+        Envelope::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            RawLog::new(test_fixtures::single_sysmon_event()),
+        ),
     )
     .scan_for_tenant(tenant_id, 36, |_log: RawLog| true)
-    .await; // this blocks for 10s
+    .await;
 
     let generated_graphs_scanner_handle = KafkaTopicScanner::new(
+        ProducerConfig::with_topic("generated-graphs"),
         ConsumerConfig::with_topic("generated-graphs"),
         Duration::from_secs(60),
+        Envelope::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            GraphDescription::new(),
+        ),
     )
     .scan_for_tenant(tenant_id, 360, |_graph: GraphDescription| true)
-    .await; // this blocks for 10s
+    .await;
 
     let node_identifier_scanner_handle = KafkaTopicScanner::new(
+        ProducerConfig::with_topic("identified-graphs"),
         ConsumerConfig::with_topic("identified-graphs"),
         Duration::from_secs(60),
+        Envelope::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            IdentifiedGraph::new(),
+        ),
     )
     .scan_for_tenant(tenant_id, 360, |_graph: IdentifiedGraph| true)
-    .await; // this blocks for another 10s
+    .await;
 
     let graph_merger_scanner_handle = KafkaTopicScanner::new(
+        ProducerConfig::with_topic("merged-graphs"),
         ConsumerConfig::with_topic("merged-graphs"),
         Duration::from_secs(60),
+        Envelope::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            MergedGraph::new(),
+        ),
     )
     .scan_for_tenant(tenant_id, 360, |_graph: MergedGraph| true)
-    .await; // and finally this blocks for another 10s
-
-    // Adding up all of the above, we have 40+s of blocking to get to this
-    // point. So the timeouts above need to each be at least 40s. See the
-    // warning in the docs for KafkaTopicScanner.scan().
-    // TODO: get those 40s back by running these all concurrently. This should
-    // allow us to reduce the timeouts to ~30s which will give significant gains
-    // in total test time.
+    .await;
 
     tracing::info!(">> Inserting logs into pipeline-ingress!");
 
