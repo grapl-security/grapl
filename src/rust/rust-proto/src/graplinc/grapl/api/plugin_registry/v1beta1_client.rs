@@ -43,9 +43,9 @@ pub enum PluginRegistryServiceClientError {
     Elapsed,
 }
 
-// This likely should be removed in favor of making all SerDe conversions
-// TryFrom<Error = SerDeError> instead of From.
-// Currently it's kind of scattershot.
+// A compatibility layer for using
+// TryFrom<Error = SerDeError> 
+// in place of From.
 impl From<Infallible> for PluginRegistryServiceClientError {
     fn from(_: Infallible) -> Self {
         unreachable!()
