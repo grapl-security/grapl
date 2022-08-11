@@ -1,6 +1,13 @@
-use std::fmt::Debug;
+use std::time::Duration;
+
+use client_executor::{
+    Executor,
+    ExecutorConfig,
+};
 
 use crate::{
+    create_proto_client,
+    execute_client_rpc,
     graplinc::grapl::api::event_source::v1beta1 as native,
     protobufs::graplinc::grapl::api::event_source::v1beta1::{
         self as proto,
@@ -8,33 +15,20 @@ use crate::{
     },
     protocol::{
         endpoint::Endpoint,
+        error::GrpcClientError,
         service_client::{
             ConnectError,
             Connectable,
         },
-        status::Status,
     },
-    SerDeError,
 };
 
-#[derive(Debug, thiserror::Error)]
-pub enum EventSourceServiceClientError {
-    #[error("ErrorStatus")]
-    ErrorStatus(#[from] Status),
-
-    #[error("SerDeError")]
-    SerDeError(#[from] SerDeError),
-}
-
-impl From<tonic::Status> for EventSourceServiceClientError {
-    fn from(tonic_status: tonic::Status) -> Self {
-        EventSourceServiceClientError::ErrorStatus(Status::from(tonic_status))
-    }
-}
+pub type EventSourceServiceClientError = GrpcClientError;
 
 #[derive(Clone)]
 pub struct EventSourceServiceClient {
     proto_client: EventSourceServiceClientProto<tonic::transport::Channel>,
+    executor: Executor,
 }
 
 #[async_trait::async_trait]
@@ -43,8 +37,16 @@ impl Connectable for EventSourceServiceClient {
 
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
+        let proto_client = create_proto_client!(
+            executor,
+            EventSourceServiceClientProto<tonic::transport::Channel>,
+            endpoint,
+        );
+
         Ok(EventSourceServiceClient {
-            proto_client: EventSourceServiceClientProto::connect(endpoint).await?,
+            executor,
+            proto_client,
         })
     }
 }
@@ -54,32 +56,38 @@ impl EventSourceServiceClient {
         &mut self,
         request: native::CreateEventSourceRequest,
     ) -> Result<native::CreateEventSourceResponse, EventSourceServiceClientError> {
-        let response = self
-            .proto_client
-            .create_event_source(proto::CreateEventSourceRequest::from(request))
-            .await?;
-        Ok(response.into_inner().try_into()?)
+        execute_client_rpc!(
+            self,
+            request,
+            create_event_source,
+            proto::CreateEventSourceRequest,
+            native::CreateEventSourceResponse,
+        )
     }
 
     pub async fn update_event_source(
         &mut self,
         request: native::UpdateEventSourceRequest,
     ) -> Result<native::UpdateEventSourceResponse, EventSourceServiceClientError> {
-        let response = self
-            .proto_client
-            .update_event_source(proto::UpdateEventSourceRequest::from(request))
-            .await?;
-        Ok(response.into_inner().try_into()?)
+        execute_client_rpc!(
+            self,
+            request,
+            update_event_source,
+            proto::UpdateEventSourceRequest,
+            native::UpdateEventSourceResponse,
+        )
     }
 
     pub async fn get_event_source(
         &mut self,
         request: native::GetEventSourceRequest,
     ) -> Result<native::GetEventSourceResponse, EventSourceServiceClientError> {
-        let response = self
-            .proto_client
-            .get_event_source(proto::GetEventSourceRequest::from(request))
-            .await?;
-        Ok(response.into_inner().try_into()?)
+        execute_client_rpc!(
+            self,
+            request,
+            get_event_source,
+            proto::GetEventSourceRequest,
+            native::GetEventSourceResponse,
+        )
     }
 }

@@ -5,9 +5,8 @@ use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::{
     client_factory::{
-        build_grpc_client_with_options,
+        build_grpc_client,
         services::PluginRegistryClientConfig,
-        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::plugin_registry::v1beta1::{
         GetAnalyzersForTenantRequest,
@@ -27,14 +26,7 @@ async fn test_get_analyzers_for_tenant() -> Result<(), Box<dyn std::error::Error
     );
 
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client_with_options(
-        client_config,
-        BuildGrpcClientOptions {
-            perform_healthcheck: true,
-            ..Default::default()
-        },
-    )
-    .await?;
+    let mut client = build_grpc_client(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let analyzer1_display_name = "my first analyzer".to_string();
@@ -122,14 +114,7 @@ async fn test_get_analyzers_for_tenant_not_found() -> Result<(), Box<dyn std::er
     );
 
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client_with_options(
-        client_config,
-        BuildGrpcClientOptions {
-            perform_healthcheck: true,
-            ..Default::default()
-        },
-    )
-    .await?;
+    let mut client = build_grpc_client(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

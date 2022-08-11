@@ -2,7 +2,6 @@ use rust_proto::{
     graplinc::grapl::api::plugin_work_queue::v1beta1::{
         ExecutionJob,
         PluginWorkQueueServiceClient,
-        PluginWorkQueueServiceClientError,
     },
     protocol::error::GrpcClientError,
     SerDe,
@@ -15,8 +14,6 @@ pub type RequestId = i64;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PluginWorkProcessorError {
-    #[error("PluginWorkQueueServiceClientError {0}")]
-    PluginWorkQueueServiceClientError(#[from] PluginWorkQueueServiceClientError),
     #[error("GrpcClientError {0}")]
     GrpcClientError(#[from] GrpcClientError),
     // Likely want one for Analyzer as well once that SDK exists
