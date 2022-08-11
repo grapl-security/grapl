@@ -18,12 +18,12 @@ serde = ["dep:serde", "uuid/serde", "chrono/serde"]
 chrono = { version = "0.4" }
 derive-into-owned = "0.2"
 memchr = "2"
-thiserror = "1.0"
-uuid = "1.0"
-xmlparser = "0.13"
 serde = { version = "1.0", default-features = false, features = [
   "derive"
 ], optional = true }
+thiserror = "1.0"
+uuid = "1.0"
+xmlparser = "0.13"
 
 [dev-dependencies]
 criterion = "0.3"
