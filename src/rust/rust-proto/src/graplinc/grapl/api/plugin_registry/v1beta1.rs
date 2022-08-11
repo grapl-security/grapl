@@ -4,10 +4,7 @@ use bytes::Bytes;
 use proto::create_plugin_request;
 
 pub use crate::graplinc::grapl::api::plugin_registry::{
-    v1beta1_client::{
-        PluginRegistryServiceClient,
-        PluginRegistryServiceClientError,
-    },
+    v1beta1_client::PluginRegistryServiceClient,
     v1beta1_server::{
         PluginRegistryApi,
         PluginRegistryServer,

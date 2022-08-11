@@ -18,9 +18,9 @@ use rust_proto::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
-        PluginRegistryServiceClientError,
     },
     protocol::{
+        error::GrpcClientError,
         service_client::ConnectError,
         status::{
             Code,
@@ -118,7 +118,7 @@ impl GeneratorIdsCache {
                                 Ok(response) => {
                                     response.plugin_ids().to_vec()
                                 },
-                                Err(PluginRegistryServiceClientError::ErrorStatus(Status {
+                                Err(GrpcClientError::ErrorStatus(Status {
                                     code: Code::NotFound,
                                     ..
                                 })) => {
@@ -135,7 +135,7 @@ impl GeneratorIdsCache {
                                     // exponential backoff with jitter, capped
                                     // at 5s.
 
-                                    let mut result: Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> = Err(e);
+                                    let mut result: Result<GetGeneratorsForEventSourceResponse, GrpcClientError> = Err(e);
                                     let mut n = 0;
                                     while let Err(ref e) = result {
                                         n += 1;
