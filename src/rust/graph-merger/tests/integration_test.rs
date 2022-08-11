@@ -112,7 +112,12 @@ async fn test_sysmon_event_produces_merged_graph(
 </Event>
 "#.into();
 
-    tracing::info!("sending publish_raw_log request");
+    tracing::info!(
+        message = "sending publish_raw_log request",
+        event_source_id =% event_source_id,
+        tenant_id =% tenant_id,
+    );
+
     ctx.pipeline_ingress_client
         .publish_raw_log(PublishRawLogRequest::new(
             event_source_id,
