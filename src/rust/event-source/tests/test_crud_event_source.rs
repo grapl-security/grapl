@@ -14,10 +14,7 @@ use rust_proto::{
 #[test_log::test(tokio::test)]
 async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = EventSourceClientConfig::parse();
-    let mut client = build_grpc_client(
-        client_config,
-    )
-    .await?;
+    let mut client = build_grpc_client(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 
@@ -28,9 +25,7 @@ async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
             description: "Description v1".to_owned(),
             tenant_id,
         };
-        client
-            .create_event_source(request)
-            .await?
+        client.create_event_source(request).await?
     };
 
     assert!(create_response.created_time <= SystemTime::now());
@@ -40,9 +35,7 @@ async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
         let request = es_api::GetEventSourceRequest {
             event_source_id: create_response.event_source_id,
         };
-        client
-            .get_event_source(request)
-            .await?
+        client.get_event_source(request).await?
     };
 
     assert!(get_response.event_source.display_name == "Name v1");
@@ -58,9 +51,7 @@ async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
             description: "Description v2".to_owned(),
             active: false,
         };
-        client
-            .update_event_source(request)
-            .await?
+        client.update_event_source(request).await?
     };
 
     // Ensure the update time has changed
@@ -71,9 +62,7 @@ async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
         let request = es_api::GetEventSourceRequest {
             event_source_id: create_response.event_source_id,
         };
-        client
-            .get_event_source(request)
-            .await?
+        client.get_event_source(request).await?
     };
 
     assert!(get_response.event_source.display_name == "Name v2");

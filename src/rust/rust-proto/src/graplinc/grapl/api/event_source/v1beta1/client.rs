@@ -1,8 +1,13 @@
-use std::{time::Duration};
+use std::time::Duration;
 
-use client_executor::{Executor, ExecutorConfig};
+use client_executor::{
+    Executor,
+    ExecutorConfig,
+};
 
 use crate::{
+    create_proto_client,
+    execute_client_rpc,
     graplinc::grapl::api::event_source::v1beta1 as native,
     protobufs::graplinc::grapl::api::event_source::v1beta1::{
         self as proto,
@@ -10,13 +15,12 @@ use crate::{
     },
     protocol::{
         endpoint::Endpoint,
+        error::GrpcClientError,
         service_client::{
             ConnectError,
             Connectable,
         },
-        error::GrpcClientError,
     },
-    create_proto_client, execute_client_rpc,
 };
 
 type EventSourceServiceClientError = GrpcClientError;
