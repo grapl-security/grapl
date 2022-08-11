@@ -12,6 +12,7 @@ use plugin_work_queue::{
 use rust_proto::{
     client_factory::{
         build_grpc_client_with_options,
+        build_grpc_client,
         services::{
             EventSourceClientConfig,
             PipelineIngressClientConfig,
@@ -64,12 +65,9 @@ impl AsyncTestContext for E2eTestContext {
         .await
         .expect("event_source_client");
 
-        let plugin_registry_client = build_grpc_client_with_options(
-            PluginRegistryClientConfig::parse(),
-            get_grpc_options.clone(),
-        )
-        .await
-        .expect("event_source_client");
+        let plugin_registry_client = build_grpc_client(PluginRegistryClientConfig::parse())
+            .await
+            .expect("plugin_registry_client");
 
         let pipeline_ingress_client = build_grpc_client_with_options(
             PipelineIngressClientConfig::parse(),
