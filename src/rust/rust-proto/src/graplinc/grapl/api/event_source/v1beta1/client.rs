@@ -23,7 +23,7 @@ use crate::{
     },
 };
 
-type EventSourceServiceClientError = GrpcClientError;
+pub type EventSourceServiceClientError = GrpcClientError;
 
 #[derive(Clone)]
 pub struct EventSourceServiceClient {
