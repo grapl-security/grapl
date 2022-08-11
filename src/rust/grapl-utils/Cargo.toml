@@ -7,10 +7,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-trait = "0.1"
-tokio = { version = "1.17", features = ["time"] }
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
 rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
+tokio = { version = "1.17", features = ["time"] }

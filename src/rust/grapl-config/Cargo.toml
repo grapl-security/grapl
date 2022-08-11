@@ -8,38 +8,24 @@ license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-log = "0.4"
-rusoto_s3 = { version = "0.47", default_features = false, features = [
-  "rustls"
-] }
-rusoto_core = { version = "0.47", default_features = false, features = [
-  "rustls"
-] }
-rusoto_sqs = { version = "0.47", default_features = false, features = [
-  "rustls"
-] }
-rusoto_dynamodb = { version = "0.47", default_features = false, features = [
-  "rustls"
-] }
-rusoto_cloudwatch = { version = "0.47", default_features = false, features = [
-  "rustls"
-] }
-rusoto_credential = { version = "0.47", default_features = false }
-tracing = "0.1"
-tokio = { version = "1.17", features = [
-  "macros",
-  "rt",
-  "rt-multi-thread",
-  "sync",
-  "time",
-] }
-color-eyre = "0.6"
-eyre = "0.6"
 async-trait = "0.1"
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",
   "derive"
+] }
+color-eyre = "0.6"
+eyre = "0.6"
+grapl-utils = { path = "../grapl-utils" }
+rusoto_core = { version = "0.47", default_features = false, features = [
+  "rustls"
+] }
+rusoto_credential = { version = "0.47", default_features = false }
+rusoto_dynamodb = { version = "0.47", default_features = false, features = [
+  "rustls"
+] }
+rusoto_s3 = { version = "0.47", default_features = false, features = [
+  "rustls"
 ] }
 secrecy = "0.8"
 sqlx = { version = "0.6", features = [
@@ -51,4 +37,11 @@ sqlx = { version = "0.6", features = [
   "uuid",
 ] }
 thiserror = "1.0"
-grapl-utils = { path = "../grapl-utils" }
+tokio = { version = "1.17", features = [
+  "macros",
+  "rt",
+  "rt-multi-thread",
+  "sync",
+  "time",
+] }
+tracing = "0.1"

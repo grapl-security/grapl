@@ -19,6 +19,6 @@ plugin-work-queue = { path = "../plugin-work-queue", features = ["test-utils"] }
 rust-proto = { path = "../rust-proto" }
 test-context = "0.1"
 thiserror = "1.0"
-tracing = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
