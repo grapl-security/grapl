@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use client_executor::{Executor, ExecutorConfig};
 use proto::plugin_work_queue_service_client::PluginWorkQueueServiceClient as PluginWorkQueueServiceClientProto;
 
@@ -10,7 +12,7 @@ use crate::{
             ConnectError,
             Connectable,
         }, error::GrpcClientError,
-    }, create_proto_client,
+    }, create_proto_client, execute_client_rpc,
 };
 
 pub type PluginWorkQueueServiceClientError = GrpcClientError;
@@ -49,11 +51,13 @@ impl PluginWorkQueueServiceClient {
         &mut self,
         request: native::PushExecuteGeneratorRequest,
     ) -> Result<native::PushExecuteGeneratorResponse, PluginWorkQueueServiceClientError> {
-        let response = self
-            .proto_client
-            .push_execute_generator(proto::PushExecuteGeneratorRequest::from(request))
-            .await?;
-        Ok(response.into_inner().try_into()?)
+        execute_client_rpc!(
+            self,
+            request,
+            push_execute_generator,
+            proto::PushExecuteGeneratorRequest,
+            native::PushExecuteGeneratorResponse,
+        )
     }
 
     /// Adds a new execution job for an analyzer
@@ -62,11 +66,13 @@ impl PluginWorkQueueServiceClient {
         &mut self,
         request: native::PushExecuteAnalyzerRequest,
     ) -> Result<native::PushExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
-        let response = self
-            .proto_client
-            .push_execute_analyzer(proto::PushExecuteAnalyzerRequest::from(request))
-            .await?;
-        Ok(response.into_inner().try_into()?)
+        execute_client_rpc!(
+            self,
+            request,
+            push_execute_analyzer,
+            proto::PushExecuteAnalyzerRequest,
+            native::PushExecuteAnalyzerResponse,
+        )
     }
 
     /// Retrieves a new execution job for a generator
@@ -75,11 +81,13 @@ impl PluginWorkQueueServiceClient {
         &mut self,
         request: native::GetExecuteGeneratorRequest,
     ) -> Result<native::GetExecuteGeneratorResponse, PluginWorkQueueServiceClientError> {
-        let response = self
-            .proto_client
-            .get_execute_generator(proto::GetExecuteGeneratorRequest::from(request))
-            .await?;
-        Ok(response.into_inner().try_into()?)
+        execute_client_rpc!(
+            self,
+            request,
+            get_execute_generator,
+            proto::GetExecuteGeneratorRequest,
+            native::GetExecuteGeneratorResponse,
+        )
     }
 
     /// Retrieves a new execution job for an analyzer
@@ -88,11 +96,14 @@ impl PluginWorkQueueServiceClient {
         &mut self,
         request: native::GetExecuteAnalyzerRequest,
     ) -> Result<native::GetExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
-        let response = self
-            .proto_client
-            .get_execute_analyzer(proto::GetExecuteAnalyzerRequest::from(request))
-            .await?;
-        Ok(response.into_inner().try_into()?)
+
+        execute_client_rpc!(
+            self,
+            request,
+            get_execute_analyzer,
+            proto::GetExecuteAnalyzerRequest,
+            native::GetExecuteAnalyzerResponse,
+        )
     }
 
     /// Acknowledges the completion of a generator job
@@ -101,11 +112,14 @@ impl PluginWorkQueueServiceClient {
         &mut self,
         request: native::AcknowledgeGeneratorRequest,
     ) -> Result<native::AcknowledgeGeneratorResponse, PluginWorkQueueServiceClientError> {
-        let response = self
-            .proto_client
-            .acknowledge_generator(proto::AcknowledgeGeneratorRequest::from(request))
-            .await?;
-        Ok(response.into_inner().try_into()?)
+
+        execute_client_rpc!(
+            self,
+            request,
+            acknowledge_generator,
+            proto::AcknowledgeGeneratorRequest,
+            native::AcknowledgeGeneratorResponse,
+        )
     }
 
     /// Acknowledges the completion of an analyzer job
@@ -114,10 +128,13 @@ impl PluginWorkQueueServiceClient {
         &mut self,
         request: native::AcknowledgeAnalyzerRequest,
     ) -> Result<native::AcknowledgeAnalyzerResponse, PluginWorkQueueServiceClientError> {
-        let response = self
-            .proto_client
-            .acknowledge_analyzer(proto::AcknowledgeAnalyzerRequest::from(request))
-            .await?;
-        Ok(response.into_inner().try_into()?)
+
+        execute_client_rpc!(
+            self,
+            request,
+            acknowledge_analyzer,
+            proto::AcknowledgeAnalyzerRequest,
+            native::AcknowledgeAnalyzerResponse,
+        )
     }
 }
