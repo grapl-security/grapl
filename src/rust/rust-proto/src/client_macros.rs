@@ -16,11 +16,9 @@ macro_rules! execute_client_rpc {
         $native_response_type: ty,
     ) => {{
         {
-            // Taking fib sequence 10 times:
-            // 1 + 1 + 2 + 3 + 5 + 8 + 13 + 21 + 34 + 55 = 143
-            // We're arbitrarily selecting 5000ms as a maximum delay, so we'll
-            // choose 5000/143 as our starter, that's 35
-            let backoff = client_executor::strategy::FibonacciBackoff::from_millis(35);
+            let backoff = client_executor::strategy::FibonacciBackoff::from_millis(100)
+                .max_delay(Duration::from_millis(5000))
+                .map(client_executor::strategy::jitter);
             let num_retries = 10;
 
             let proto_request = <$proto_request_type>::try_from($native_request)?;
@@ -35,9 +33,7 @@ macro_rules! execute_client_rpc {
             let proto_response = $self
                 .executor
                 .spawn_conditional(
-                    backoff
-                        .map(client_executor::strategy::jitter)
-                        .take(num_retries),
+                    backoff.take(num_retries),
                     || {
                         let mut proto_client = $self.proto_client.clone();
                         let proto_request = proto_request.clone();
@@ -64,27 +60,20 @@ macro_rules! create_proto_client {
         $endpoint: ident,
     ) => {{
         {
-            // Taking fib sequence 10 times:
-            // 1 + 1 + 2 + 3 + 5 + 8 + 13 + 21 + 34 + 55 = 143
-            // We're arbitrarily selecting 5000ms as a maximum delay, so we'll
-            // choose 5000/143 as our starter, that's 35
-            let backoff = client_executor::strategy::FibonacciBackoff::from_millis(35);
+            let backoff = client_executor::strategy::FibonacciBackoff::from_millis(100)
+                .max_delay(Duration::from_millis(5000))
+                .map(client_executor::strategy::jitter);
             let num_retries = 10;
 
             let proto_client = $executor
-                .spawn(
-                    backoff
-                        .map(client_executor::strategy::jitter)
-                        .take(num_retries),
-                    || {
-                        let endpoint = $endpoint.clone();
-                        async move {
-                            <$proto_client_type>::connect(endpoint)
-                                .await
-                                .map_err(ConnectError::from)
-                        }
-                    },
-                )
+                .spawn(backoff.take(num_retries), || {
+                    let endpoint = $endpoint.clone();
+                    async move {
+                        <$proto_client_type>::connect(endpoint)
+                            .await
+                            .map_err(ConnectError::from)
+                    }
+                })
                 .await?;
             proto_client
         }
