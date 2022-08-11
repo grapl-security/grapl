@@ -908,12 +908,18 @@ pub mod plugin_work_queue {
             request_id in any::<i64>(),
             success in any::<bool>(),
             plugin_id in uuids(),
+            tenant_id in uuids(),
+            trace_id in uuids(),
+            event_source_id in uuids(),
         ) -> native::AcknowledgeAnalyzerRequest {
-            native::AcknowledgeAnalyzerRequest {
+            native::AcknowledgeAnalyzerRequest::new(
                 request_id,
                 success,
                 plugin_id,
-            }
+                tenant_id,
+                trace_id,
+                event_source_id,
+            )
         }
     }
 

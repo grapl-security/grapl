@@ -98,6 +98,14 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let event_source_id = execution_job.event_source_id();
         let data = execution_job.data();
 
+        tracing::debug!(
+            message = "enqueueing generator execution",
+            tenant_id =% tenant_id,
+            trace_id =% trace_id,
+            event_source_id =% event_source_id,
+            plugin_id =% plugin_id,
+        );
+
         self.queue
             .put_generator_message(plugin_id, tenant_id, trace_id, event_source_id, data)
             .await?;
@@ -117,6 +125,14 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let event_source_id = execution_job.event_source_id();
         let data = execution_job.data();
 
+        tracing::debug!(
+            message = "enqueueing analyzer execution",
+            tenant_id =% tenant_id,
+            trace_id =% trace_id,
+            event_source_id =% event_source_id,
+            plugin_id =% plugin_id,
+        );
+
         self.queue
             .put_analyzer_message(plugin_id, tenant_id, trace_id, event_source_id, data)
             .await?;
@@ -133,17 +149,34 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let message = match message {
             Some(message) => message,
             None => {
+                tracing::warn!(
+                    message = "found no generator executions",
+                    plugin_id =% request.plugin_id,
+                );
                 return Ok(v1beta1::GetExecuteGeneratorResponse {
                     execution_job: None,
                     request_id: 0,
-                })
+                });
             }
         };
+
+        let tenant_id = message.request.tenant_id;
+        let trace_id = message.request.trace_id;
+        let event_source_id = message.request.event_source_id;
+
+        tracing::debug!(
+            message = "retrieving generator execution",
+            tenant_id =% tenant_id,
+            trace_id =% trace_id,
+            event_source_id =% event_source_id,
+            plugin_id =% request.plugin_id,
+        );
+
         let execution_job = v1beta1::ExecutionJob::new(
             message.request.pipeline_message.into(),
-            message.request.tenant_id,
-            message.request.trace_id,
-            message.request.event_source_id,
+            tenant_id,
+            trace_id,
+            event_source_id,
         );
         Ok(v1beta1::GetExecuteGeneratorResponse {
             execution_job: Some(execution_job),
@@ -160,17 +193,34 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let message = match message {
             Some(message) => message,
             None => {
+                tracing::warn!(
+                    message = "found no analyzer executions",
+                    plugin_id =% request.plugin_id,
+                );
                 return Ok(v1beta1::GetExecuteAnalyzerResponse {
                     execution_job: None,
                     request_id: 0,
-                })
+                });
             }
         };
+
+        let tenant_id = message.request.tenant_id;
+        let trace_id = message.request.trace_id;
+        let event_source_id = message.request.event_source_id;
+
+        tracing::debug!(
+            message = "retrieving analyzer execution",
+            tenant_id =% tenant_id,
+            trace_id =% trace_id,
+            event_source_id =% event_source_id,
+            plugin_id =% request.plugin_id,
+        );
+
         let execution_job = v1beta1::ExecutionJob::new(
             message.request.pipeline_message.into(),
-            message.request.tenant_id,
-            message.request.trace_id,
-            message.request.event_source_id,
+            tenant_id,
+            trace_id,
+            event_source_id,
         );
         Ok(v1beta1::GetExecuteAnalyzerResponse {
             execution_job: Some(execution_job),
@@ -187,6 +237,15 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let trace_id = request.trace_id();
         let event_source_id = request.event_source_id();
         let request_id = request.request_id();
+        let plugin_id = request.plugin_id();
+
+        tracing::debug!(
+            message = "acknowledging generator execution",
+            tenant_id =% tenant_id,
+            trace_id =% trace_id,
+            event_source_id =% event_source_id,
+            plugin_id =% plugin_id,
+        );
 
         let status = match request.graph_description() {
             Some(graph_description) => {
@@ -213,12 +272,25 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         &self,
         request: v1beta1::AcknowledgeAnalyzerRequest,
     ) -> Result<v1beta1::AcknowledgeAnalyzerResponse, PluginWorkQueueError> {
-        let status = match request.success {
+        let tenant_id = request.tenant_id();
+        let trace_id = request.trace_id();
+        let event_source_id = request.event_source_id();
+        let plugin_id = request.plugin_id();
+
+        tracing::debug!(
+            message = "acknowledging analyzer execution",
+            tenant_id =% tenant_id,
+            trace_id =% trace_id,
+            event_source_id =% event_source_id,
+            plugin_id =% plugin_id,
+        );
+
+        let status = match request.success() {
             true => psql_queue::Status::Processed,
             false => psql_queue::Status::Failed,
         };
         self.queue
-            .ack_analyzer(request.request_id.into(), status)
+            .ack_analyzer(request.request_id().into(), status)
             .await?;
         Ok(v1beta1::AcknowledgeAnalyzerResponse {})
     }

@@ -253,9 +253,56 @@ impl type_url::TypeUrl for AcknowledgeGeneratorResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AcknowledgeAnalyzerRequest {
-    pub request_id: i64,
-    pub success: bool,
-    pub plugin_id: Uuid,
+    request_id: i64,
+    success: bool,
+    plugin_id: Uuid,
+    tenant_id: Uuid,
+    trace_id: Uuid,
+    event_source_id: Uuid,
+}
+
+impl AcknowledgeAnalyzerRequest {
+    pub fn new(
+        request_id: i64,
+        success: bool,
+        plugin_id: Uuid,
+        tenant_id: Uuid,
+        trace_id: Uuid,
+        event_source_id: Uuid,
+    ) -> Self {
+        Self {
+            request_id,
+            success,
+            plugin_id,
+            tenant_id,
+            trace_id,
+            event_source_id,
+        }
+    }
+
+    pub fn request_id(&self) -> i64 {
+        self.request_id
+    }
+
+    pub fn success(&self) -> bool {
+        self.success
+    }
+
+    pub fn plugin_id(&self) -> Uuid {
+        self.plugin_id
+    }
+
+    pub fn tenant_id(&self) -> Uuid {
+        self.tenant_id
+    }
+
+    pub fn trace_id(&self) -> Uuid {
+        self.trace_id
+    }
+
+    pub fn event_source_id(&self) -> Uuid {
+        self.event_source_id
+    }
 }
 
 impl TryFrom<proto::AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequest {
@@ -268,10 +315,26 @@ impl TryFrom<proto::AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequest {
             .plugin_id
             .ok_or(Self::Error::MissingField("plugin_id"))?
             .into();
+        let tenant_id = value
+            .tenant_id
+            .ok_or(Self::Error::MissingField("tenant_id"))?
+            .into();
+        let trace_id = value
+            .trace_id
+            .ok_or(Self::Error::MissingField("trace_id"))?
+            .into();
+        let event_source_id = value
+            .event_source_id
+            .ok_or(Self::Error::MissingField("event_source_id"))?
+            .into();
+
         Ok(Self {
             request_id,
             success,
             plugin_id,
+            tenant_id,
+            trace_id,
+            event_source_id,
         })
     }
 }
@@ -282,6 +345,9 @@ impl From<AcknowledgeAnalyzerRequest> for proto::AcknowledgeAnalyzerRequest {
             request_id: value.request_id,
             success: value.success,
             plugin_id: Some(value.plugin_id.into()),
+            tenant_id: Some(value.tenant_id.into()),
+            trace_id: Some(value.trace_id.into()),
+            event_source_id: Some(value.event_source_id.into()),
         }
     }
 }
