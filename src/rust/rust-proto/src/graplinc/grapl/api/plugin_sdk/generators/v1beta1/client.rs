@@ -8,8 +8,8 @@ use generator_service_client::GeneratorServiceClient as GeneratorServiceClientPr
 
 pub use crate::protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1::generator_service_client;
 use crate::{
+    create_proto_client,
     execute_client_rpc,
-    get_proto_client,
     graplinc::grapl::api::plugin_sdk::generators::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as proto,
     protocol::{
@@ -35,7 +35,7 @@ impl Connectable for GeneratorServiceClient {
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = get_proto_client!(
+        let proto_client = create_proto_client!(
             executor,
             GeneratorServiceClientProto<tonic::transport::Channel>,
             endpoint,

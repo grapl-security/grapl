@@ -48,12 +48,12 @@ macro_rules! execute_client_rpc {
     }};
 }
 
-/// This macro implements boilerplace code to connect to
+/// This macro implements boilerplate code to connect to
 /// a gRPC service (and do retries if needed).
 /// Unfortunately, each $proto_client_type doesn't share traits, so a
 /// macro is the quickest solution.
 #[macro_export]
-macro_rules! get_proto_client {
+macro_rules! create_proto_client {
     (
         $executor: ident,
         $proto_client_type: ty,
