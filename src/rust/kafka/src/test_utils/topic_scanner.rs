@@ -9,7 +9,10 @@ use std::{
     },
 };
 
-use futures::StreamExt;
+use futures::{
+    pin_mut,
+    StreamExt,
+};
 use rust_proto::{
     graplinc::grapl::pipeline::v1beta1::Envelope,
     SerDe,
@@ -190,20 +193,6 @@ where
 
                     async { (ret_span, envelope) }
                 })
-                .take_until(futures::future::poll_fn(|_ctx| {
-                    let stop_time_guard =
-                        stop_time.lock().expect("failed to acquire stop_time lock");
-                    if let Some(stop_time) = stop_time_guard.as_ref() {
-                        if let Ok(_) = stop_time.elapsed() {
-                            tracing::warn!("timeout elapsed");
-                            futures::task::Poll::Ready(())
-                        } else {
-                            futures::task::Poll::Pending
-                        }
-                    } else {
-                        futures::task::Poll::Pending
-                    }
-                }))
                 .then(move |(span, envelope)| {
                     let ret_span = span.clone();
                     let filter_predicate = filter_predicate.clone();
@@ -252,7 +241,27 @@ where
                 })
                 .map(|(_, (_, envelope))| envelope);
 
-            filtered_stream.collect::<Vec<Envelope<T>>>().await
+            pin_mut!(filtered_stream);
+
+            let mut retval: Vec<Envelope<T>> = vec![];
+            loop {
+                if let Some(envelope) = tokio::select!(
+                    result = filtered_stream.next() => result,
+                    _ = tokio::time::sleep(Duration::from_millis(100)) => None
+                ) {
+                    retval.push(envelope);
+                }
+
+                let stop_time_guard = stop_time.lock().expect("failed to acquire stop_time lock");
+                if let Some(stop_time) = stop_time_guard.as_ref() {
+                    if let Ok(_) = stop_time.elapsed() {
+                        tracing::warn!("timeout elapsed");
+                        break;
+                    }
+                }
+            }
+
+            retval
         });
 
         // send the self.priming_message every 0.5s until we catch it
