@@ -14,9 +14,8 @@ use kafka::{
 };
 use rust_proto::{
     client_factory::{
-        build_grpc_client_with_options,
+        build_grpc_client,
         services::PipelineIngressClientConfig,
-        BuildGrpcClientOptions,
     },
     graplinc::grapl::{
         api::pipeline_ingress::v1beta1::{
@@ -45,15 +44,9 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let _guard = setup_tracing("pipeline-ingress-integration-tests").expect("setup_tracing");
 
         let client_config = PipelineIngressClientConfig::parse();
-        let pipeline_ingress_client = build_grpc_client_with_options(
-            client_config,
-            BuildGrpcClientOptions {
-                perform_healthcheck: true,
-                ..Default::default()
-            },
-        )
-        .await
-        .expect("pipeline_ingress_client");
+        let pipeline_ingress_client = build_grpc_client(client_config)
+            .await
+            .expect("pipeline_ingress_client");
 
         PipelineIngressTestContext {
             grpc_client: pipeline_ingress_client,
