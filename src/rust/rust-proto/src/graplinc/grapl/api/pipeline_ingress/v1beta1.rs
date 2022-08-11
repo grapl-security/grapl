@@ -23,9 +23,31 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PublishRawLogRequest {
-    pub event_source_id: Uuid,
-    pub tenant_id: Uuid,
-    pub log_event: Bytes,
+    event_source_id: Uuid,
+    tenant_id: Uuid,
+    log_event: Bytes,
+}
+
+impl PublishRawLogRequest {
+    pub fn new(event_source_id: Uuid, tenant_id: Uuid, log_event: Bytes) -> Self {
+        Self {
+            event_source_id,
+            tenant_id,
+            log_event,
+        }
+    }
+
+    pub fn event_source_id(&self) -> Uuid {
+        self.event_source_id
+    }
+
+    pub fn tenant_id(&self) -> Uuid {
+        self.tenant_id
+    }
+
+    pub fn log_event(self) -> Bytes {
+        self.log_event
+    }
 }
 
 impl TryFrom<PublishRawLogRequestProto> for PublishRawLogRequest {
@@ -73,15 +95,23 @@ impl serde_impl::ProtobufSerializable for PublishRawLogRequest {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PublishRawLogResponse {
-    pub created_time: SystemTime,
+    created_time: SystemTime,
 }
 
 impl PublishRawLogResponse {
+    pub fn new(created_time: SystemTime) -> Self {
+        Self { created_time }
+    }
+
     /// build a response with created_time set to SystemTime::now()
     pub fn ok() -> Self {
         PublishRawLogResponse {
             created_time: SystemTime::now(),
         }
+    }
+
+    pub fn created_time(&self) -> SystemTime {
+        self.created_time
     }
 }
 

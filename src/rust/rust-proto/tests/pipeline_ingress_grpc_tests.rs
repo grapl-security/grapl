@@ -88,12 +88,12 @@ impl PipelineIngressApi for MockPipelineIngressApi {
         request: PublishRawLogRequest,
     ) -> Result<PublishRawLogResponse, Self::Error> {
         let tenant_id = Uuid::parse_str(TENANT_ID).expect("failed to parse TENANT_ID");
-        assert!(request.tenant_id == tenant_id);
+        assert!(request.tenant_id() == tenant_id);
 
         let bad_event_source_id =
             Uuid::parse_str(BAD_EVENT_SOURCE_ID).expect("failed to parse BAD_EVENT_SOURCE_ID");
 
-        if request.event_source_id == bad_event_source_id {
+        if request.event_source_id() == bad_event_source_id {
             // we can trigger the error response by sending a request with
             // event_source_id set to BAD_EVENT_SOURCE_ID
             Err(MockPipelineIngressApiError::PublishRawLogFailed)
@@ -175,11 +175,11 @@ impl AsyncTestContext for PipelineIngressTestContext {
 #[tokio::test]
 async fn test_publish_raw_log_returns_ok_response(ctx: &mut PipelineIngressTestContext) {
     ctx.client
-        .publish_raw_log(PublishRawLogRequest {
-            event_source_id: Uuid::new_v4(),
-            tenant_id: Uuid::parse_str(TENANT_ID).expect("failed to parse TENANT_ID"),
-            log_event: "success!".into(),
-        })
+        .publish_raw_log(PublishRawLogRequest::new(
+            Uuid::new_v4(),
+            Uuid::parse_str(TENANT_ID).expect("failed to parse TENANT_ID"),
+            "success!".into(),
+        ))
         .await
         .expect("received error response");
 }
@@ -191,12 +191,11 @@ async fn test_publish_raw_log_returns_err_response(ctx: &mut PipelineIngressTest
 
     if let Ok(res) = ctx
         .client
-        .publish_raw_log(PublishRawLogRequest {
-            event_source_id: Uuid::parse_str(BAD_EVENT_SOURCE_ID)
-                .expect("failed to parse BAD_EVENT_SOURCE_ID"),
+        .publish_raw_log(PublishRawLogRequest::new(
+            Uuid::parse_str(BAD_EVENT_SOURCE_ID).expect("failed to parse BAD_EVENT_SOURCE_ID"),
             tenant_id,
-            log_event: "fail!".into(),
-        })
+            "fail!".into(),
+        ))
         .await
     {
         tracing::error!(

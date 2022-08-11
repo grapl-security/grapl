@@ -140,11 +140,11 @@ async fn test_publish_raw_log_sends_message_to_kafka(
     );
 
     ctx.grpc_client
-        .publish_raw_log(PublishRawLogRequest {
+        .publish_raw_log(PublishRawLogRequest::new(
             event_source_id,
             tenant_id,
-            log_event: log_event.clone(),
-        })
+            log_event.clone(),
+        ))
         .await
         .expect("received error response");
 

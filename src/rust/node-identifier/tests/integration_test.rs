@@ -114,11 +114,11 @@ async fn test_sysmon_event_produces_identified_graph(
 
     tracing::info!("sending publish_raw_log request");
     ctx.pipeline_ingress_client
-        .publish_raw_log(PublishRawLogRequest {
+        .publish_raw_log(PublishRawLogRequest::new(
             event_source_id,
             tenant_id,
             log_event,
-        })
+        ))
         .await
         .expect("received error response");
 

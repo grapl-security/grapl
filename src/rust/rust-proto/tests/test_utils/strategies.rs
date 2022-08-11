@@ -529,11 +529,11 @@ pub mod pipeline_ingress {
             tenant_id in uuids(),
             log_event in bytes(256),
         ) -> PublishRawLogRequest {
-            PublishRawLogRequest {
+            PublishRawLogRequest::new(
                 event_source_id,
                 tenant_id,
                 log_event
-            }
+            )
         }
     }
 
@@ -545,9 +545,9 @@ pub mod pipeline_ingress {
         pub fn publish_raw_log_responses()(
             created_time in any::<SystemTime>(),
         ) -> PublishRawLogResponse {
-            PublishRawLogResponse {
+            PublishRawLogResponse::new(
                 created_time,
-            }
+            )
         }
     }
 }

@@ -109,11 +109,11 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     let input_log_lines = test_fixtures::get_36_eventlog_xml_separate_lines()?;
     for log_line in &input_log_lines {
         ctx.pipeline_ingress_client
-            .publish_raw_log(PublishRawLogRequest {
+            .publish_raw_log(PublishRawLogRequest::new(
                 event_source_id,
                 tenant_id,
-                log_event: Bytes::from(log_line.clone()),
-            })
+                Bytes::from(log_line.clone()),
+            ))
             .await?;
     }
 
