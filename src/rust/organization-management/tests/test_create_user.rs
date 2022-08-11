@@ -5,9 +5,8 @@ use grapl_config::ToPostgresUrl;
 use organization_management::OrganizationManagementServiceConfig;
 use rust_proto::{
     client_factory::{
-        build_grpc_client_with_options,
+        build_grpc_client,
         services::OrganizationManagementClientConfig,
-        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::organization_management::v1beta1::{
         CreateOrganizationRequest,
@@ -26,14 +25,7 @@ async fn test_create_user() -> Result<(), Box<dyn std::error::Error>> {
     let pool = service_config.to_postgres_url().connect().await?;
 
     let client_config = OrganizationManagementClientConfig::parse();
-    let mut client = build_grpc_client_with_options(
-        client_config,
-        BuildGrpcClientOptions {
-            perform_healthcheck: true,
-            ..Default::default()
-        },
-    )
-    .await?;
+    let mut client = build_grpc_client(client_config).await?;
 
     // create organization with admin user
     let organization_display_name = uuid::Uuid::new_v4().to_string();

@@ -11,13 +11,12 @@ use plugin_work_queue::{
 };
 use rust_proto::{
     client_factory::{
-        build_grpc_client_with_options,
+        build_grpc_client,
         services::{
             EventSourceClientConfig,
             PipelineIngressClientConfig,
             PluginRegistryClientConfig,
         },
-        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::{
         event_source::v1beta1::{
@@ -52,31 +51,18 @@ const SERVICE_NAME: &'static str = "E2eTestContext";
 impl AsyncTestContext for E2eTestContext {
     async fn setup() -> Self {
         let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
-        let get_grpc_options = BuildGrpcClientOptions {
-            perform_healthcheck: true,
-            ..Default::default()
-        };
 
-        let event_source_client = build_grpc_client_with_options(
-            EventSourceClientConfig::parse(),
-            get_grpc_options.clone(),
-        )
-        .await
-        .expect("event_source_client");
+        let event_source_client = build_grpc_client(EventSourceClientConfig::parse())
+            .await
+            .expect("event_source_client");
 
-        let plugin_registry_client = build_grpc_client_with_options(
-            PluginRegistryClientConfig::parse(),
-            get_grpc_options.clone(),
-        )
-        .await
-        .expect("event_source_client");
+        let plugin_registry_client = build_grpc_client(PluginRegistryClientConfig::parse())
+            .await
+            .expect("plugin_registry_client");
 
-        let pipeline_ingress_client = build_grpc_client_with_options(
-            PipelineIngressClientConfig::parse(),
-            get_grpc_options.clone(),
-        )
-        .await
-        .expect("pipeline_ingress_client");
+        let pipeline_ingress_client = build_grpc_client(PipelineIngressClientConfig::parse())
+            .await
+            .expect("pipeline_ingress_client");
 
         let plugin_work_queue_psql_client =
             PsqlQueue::init_with_config(PluginWorkQueueDbConfig::parse())
