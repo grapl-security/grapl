@@ -106,7 +106,13 @@ where
                     )
                     .await?;
             } else {
-                tokio::time::sleep(Duration::from_secs(1)).await; // FIXME: backoff?
+                let delay = Duration::from_secs(1);
+                tracing::warn!(
+                    message = "found no execution job",
+                    request_id =% request_id,
+                    delay =? delay,
+                );
+                tokio::time::sleep(delay).await; // FIXME: backoff?
                 continue;
             }
         }
