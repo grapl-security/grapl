@@ -3,9 +3,8 @@
 use clap::Parser;
 use rust_proto::{
     client_factory::{
-        build_grpc_client_with_options,
+        build_grpc_client,
         services::PluginWorkQueueClientConfig,
-        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::plugin_work_queue::v1beta1::{
         ExecutionJob,
@@ -16,14 +15,7 @@ use rust_proto::{
 
 #[tokio::test]
 async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error::Error>> {
-    let mut pwq_client = build_grpc_client_with_options(
-        PluginWorkQueueClientConfig::parse(),
-        BuildGrpcClientOptions {
-            perform_healthcheck: true,
-            ..Default::default()
-        },
-    )
-    .await?;
+    let mut pwq_client = build_grpc_client(PluginWorkQueueClientConfig::parse()).await?;
 
     // Send 2 jobs to Plugin Work Queue
     let tenant_id = uuid::Uuid::new_v4();

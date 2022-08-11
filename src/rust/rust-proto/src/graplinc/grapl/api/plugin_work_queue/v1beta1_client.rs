@@ -1,18 +1,24 @@
 use std::time::Duration;
 
-use client_executor::{Executor, ExecutorConfig};
+use client_executor::{
+    Executor,
+    ExecutorConfig,
+};
 use proto::plugin_work_queue_service_client::PluginWorkQueueServiceClient as PluginWorkQueueServiceClientProto;
 
 use crate::{
+    create_proto_client,
+    execute_client_rpc,
     graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
     protocol::{
         endpoint::Endpoint,
+        error::GrpcClientError,
         service_client::{
             ConnectError,
             Connectable,
-        }, error::GrpcClientError,
-    }, create_proto_client, execute_client_rpc,
+        },
+    },
 };
 
 pub type PluginWorkQueueServiceClientError = GrpcClientError;
@@ -96,7 +102,6 @@ impl PluginWorkQueueServiceClient {
         &mut self,
         request: native::GetExecuteAnalyzerRequest,
     ) -> Result<native::GetExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
-
         execute_client_rpc!(
             self,
             request,
@@ -112,7 +117,6 @@ impl PluginWorkQueueServiceClient {
         &mut self,
         request: native::AcknowledgeGeneratorRequest,
     ) -> Result<native::AcknowledgeGeneratorResponse, PluginWorkQueueServiceClientError> {
-
         execute_client_rpc!(
             self,
             request,
@@ -128,7 +132,6 @@ impl PluginWorkQueueServiceClient {
         &mut self,
         request: native::AcknowledgeAnalyzerRequest,
     ) -> Result<native::AcknowledgeAnalyzerResponse, PluginWorkQueueServiceClientError> {
-
         execute_client_rpc!(
             self,
             request,

@@ -16,7 +16,7 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct BuildGrpcClientOptions {
+struct BuildGrpcClientOptions {
     pub perform_healthcheck: bool,
     pub healthcheck_polling_interval: Duration,
 }
@@ -36,7 +36,7 @@ pub async fn build_grpc_client<C: GrpcClientConfig>(
     build_grpc_client_with_options(client_config, Default::default()).await
 }
 
-pub async fn build_grpc_client_with_options<C: GrpcClientConfig>(
+async fn build_grpc_client_with_options<C: GrpcClientConfig>(
     client_config: C,
     options: BuildGrpcClientOptions,
 ) -> Result<C::Client, ConnectError> {
