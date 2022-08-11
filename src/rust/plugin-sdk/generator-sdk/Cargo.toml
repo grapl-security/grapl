@@ -21,12 +21,12 @@ grapl-tracing = { path = "../../grapl-tracing" }
 moka = { version = "0.8", features = ["future"] }
 rust-proto = { path = "../../rust-proto" }
 serde = { version = "1.0", features = ["derive"] }
+# Only for test_utils
+test-context = { version = "0.1", optional = true }
 thiserror = "1.0"
 tokio = { version = "1.17", features = ["full"] }
 tracing = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
-# Only for test_utils
-test-context = { version = "0.1", optional = true }
 
 [features]
 test_utils = ["test-context"]

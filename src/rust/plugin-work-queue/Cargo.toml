@@ -14,20 +14,18 @@ name = "plugin_work_queue"
 [dependencies]
 async-trait = "0.1"
 bytes = "1.1"
+chrono = "0.4"
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",
   "derive"
 ] }
-grapl-tracing = { path = "../grapl-tracing" }
+futures = "0.3"
 grapl-config = { path = "../grapl-config" }
+grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 kafka = { path = "../kafka" }
 rust-proto = { path = "../rust-proto" }
-thiserror = "1.0"
-tokio = { version = "1.17", features = ["full"] }
-tracing = "0.1"
-uuid = { version = "1.0", features = ["v4"] }
 sqlx = { version = "0.6", features = [
   "chrono",
   "migrate",
@@ -36,8 +34,10 @@ sqlx = { version = "0.6", features = [
   "uuid",
   "offline",
 ] }
-chrono = "0.4"
-futures = "0.3"
+thiserror = "1.0"
+tokio = { version = "1.17", features = ["full"] }
+tracing = "0.1"
+uuid = { version = "1.0", features = ["v4"] }
 
 [dev-dependencies]
 tracing-subscriber = "0.3"
