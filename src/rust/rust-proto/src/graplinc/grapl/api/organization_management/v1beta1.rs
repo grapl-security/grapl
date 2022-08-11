@@ -192,33 +192,35 @@ impl serde_impl::ProtobufSerializable for CreateUserResponse {
 //
 
 pub mod client {
-    use crate::protocol::endpoint::Endpoint;
-    use futures::FutureExt;
-    use thiserror::Error;
-    use tonic::Request;
+    use std::time::Duration;
+
+    use client_executor::{
+        Executor,
+        ExecutorConfig,
+    };
 
     use crate::{
-        protobufs::graplinc::grapl::api::organization_management::v1beta1::organization_management_service_client::OrganizationManagementServiceClient as OrganizationManagementServiceClientProto,
-        protocol::{service_client::Connectable, service_client::ConnectError},
-        SerDeError,
+        create_proto_client,
+        execute_client_rpc,
+        graplinc::grapl::api::organization_management::v1beta1 as native,
+        protobufs::graplinc::grapl::api::organization_management::{
+            v1beta1 as proto,
+            v1beta1::organization_management_service_client::OrganizationManagementServiceClient as OrganizationManagementServiceClientProto,
+        },
+        protocol::{
+            endpoint::Endpoint,
+            error::GrpcClientError,
+            service_client::{
+                ConnectError,
+                Connectable,
+            },
+        },
     };
 
-    use super::{
-        CreateOrganizationRequest, CreateOrganizationResponse, CreateUserRequest,
-        CreateUserResponse,
-    };
-
-    #[non_exhaustive]
-    #[derive(Debug, Error)]
-    pub enum OrganizationManagementClientError {
-        #[error("failed to serialize/deserialize {0}")]
-        SerDeError(#[from] SerDeError),
-
-        #[error("received unfavorable gRPC status {0}")]
-        GrpcStatus(#[from] tonic::Status),
-    }
+    pub type OrganizationManagementClientError = GrpcClientError;
 
     pub struct OrganizationManagementClient {
+        executor: Executor,
         proto_client: OrganizationManagementServiceClientProto<tonic::transport::Channel>,
     }
 
@@ -226,9 +228,18 @@ pub mod client {
     impl Connectable for OrganizationManagementClient {
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.organization_management.v1beta1.OrganizationManagementService";
+
         async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
-            Ok(OrganizationManagementClient {
-                proto_client: OrganizationManagementServiceClientProto::connect(endpoint).await?,
+            let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
+            let proto_client = create_proto_client!(
+                executor,
+                OrganizationManagementServiceClientProto<tonic::transport::Channel>,
+                endpoint,
+            );
+
+            Ok(Self {
+                executor,
+                proto_client,
             })
         }
     }
@@ -236,32 +247,28 @@ pub mod client {
     impl OrganizationManagementClient {
         pub async fn create_organization(
             &mut self,
-            create_organization_request: CreateOrganizationRequest,
-        ) -> Result<CreateOrganizationResponse, OrganizationManagementClientError> {
-            self.proto_client
-                .create_organization(Request::new(create_organization_request.into()))
-                .map(
-                    |response| -> Result<CreateOrganizationResponse, OrganizationManagementClientError> {
-                        let inner = response?.into_inner();
-                        Ok(inner.try_into()?)
-                    }
-                )
-                .await
+            request: native::CreateOrganizationRequest,
+        ) -> Result<native::CreateOrganizationResponse, OrganizationManagementClientError> {
+            execute_client_rpc!(
+                self,
+                request,
+                create_organization,
+                proto::CreateOrganizationRequest,
+                native::CreateOrganizationResponse,
+            )
         }
 
         pub async fn create_user(
             &mut self,
-            create_user_request: CreateUserRequest,
-        ) -> Result<CreateUserResponse, OrganizationManagementClientError> {
-            self.proto_client
-                .create_user(Request::new(create_user_request.into()))
-                .map(
-                    |response| -> Result<CreateUserResponse, OrganizationManagementClientError> {
-                        let inner = response?.into_inner();
-                        Ok(inner.try_into()?)
-                    },
-                )
-                .await
+            request: native::CreateUserRequest,
+        ) -> Result<native::CreateUserResponse, OrganizationManagementClientError> {
+            execute_client_rpc!(
+                self,
+                request,
+                create_user,
+                proto::CreateUserRequest,
+                native::CreateUserResponse,
+            )
         }
     }
 }
