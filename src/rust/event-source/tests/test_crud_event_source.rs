@@ -3,12 +3,10 @@
 use std::time::SystemTime;
 
 use clap::Parser;
-use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::{
     client_factory::{
-        build_grpc_client_with_options,
+        build_grpc_client,
         services::EventSourceClientConfig,
-        BuildGrpcClientOptions,
     },
     graplinc::grapl::api::event_source::v1beta1 as es_api,
 };
@@ -16,15 +14,10 @@ use rust_proto::{
 #[test_log::test(tokio::test)]
 async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = EventSourceClientConfig::parse();
-    let mut client = build_grpc_client_with_options(
+    let mut client = build_grpc_client(
         client_config,
-        BuildGrpcClientOptions {
-            perform_healthcheck: true,
-            ..Default::default()
-        },
     )
     .await?;
-    let common_timeout = std::time::Duration::from_secs(5);
 
     let tenant_id = uuid::Uuid::new_v4();
 
@@ -37,8 +30,7 @@ async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
         };
         client
             .create_event_source(request)
-            .timeout(common_timeout.clone())
-            .await??
+            .await?
     };
 
     assert!(create_response.created_time <= SystemTime::now());
@@ -50,8 +42,7 @@ async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
         };
         client
             .get_event_source(request)
-            .timeout(common_timeout.clone())
-            .await??
+            .await?
     };
 
     assert!(get_response.event_source.display_name == "Name v1");
@@ -69,8 +60,7 @@ async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
         };
         client
             .update_event_source(request)
-            .timeout(common_timeout.clone())
-            .await??
+            .await?
     };
 
     // Ensure the update time has changed
@@ -83,8 +73,7 @@ async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
         };
         client
             .get_event_source(request)
-            .timeout(common_timeout.clone())
-            .await??
+            .await?
     };
 
     assert!(get_response.event_source.display_name == "Name v2");

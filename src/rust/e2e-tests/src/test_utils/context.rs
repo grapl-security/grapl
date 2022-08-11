@@ -58,9 +58,8 @@ impl AsyncTestContext for E2eTestContext {
             ..Default::default()
         };
 
-        let event_source_client = build_grpc_client_with_options(
+        let event_source_client = build_grpc_client(
             EventSourceClientConfig::parse(),
-            get_grpc_options.clone(),
         )
         .await
         .expect("event_source_client");
