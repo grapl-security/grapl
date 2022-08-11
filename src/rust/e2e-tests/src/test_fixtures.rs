@@ -12,7 +12,7 @@ pub fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
 }
 
 pub fn single_sysmon_event() -> Bytes {
-    let log_event: Bytes = r#"
+    r#"
 <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
   <System>
     <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385F-C22A-43E0-BF4C-06F5698FFBD9}"/>
@@ -55,7 +55,5 @@ pub fn single_sysmon_event() -> Bytes {
     <Data Name="ParentCommandLine">.\svchost.exe</Data>
   </EventData>
 </Event>
-"#.into();
-
-    log_event
+"#.into()
 }

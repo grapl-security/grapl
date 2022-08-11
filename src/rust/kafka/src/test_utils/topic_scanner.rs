@@ -33,12 +33,17 @@ use crate::{
 /// Usage:
 ///
 ///   1. Construct a KafkaTopicScanner with a predicate to filter events.
-///   2. Call `.contains*().await` to receive a JoinHandle. Once you receive the
-///   JoinHandle you can be confident the scanner is consuming messages from the
-///   topic.
+///
+///   2. Call `.scan*().await` to receive a JoinHandle. Once you receive the
+///      JoinHandle you can be confident the scanner is consuming messages from
+///      the topic.
+///
 ///   3. Do something that'll result in logs showing up in Kafka.
+///
 ///   4. `.await?` the JoinHandle to receive all the matching events (or a
-///   JoinError containing information about any panics that may have occurred).
+///      JoinError containing information about any panics that may have
+///      occurred).
+///
 ///   5. Make your test assertions on this list of matching events.
 ///
 /// N.B.: These results will be materialized in memory, so don't make your
@@ -70,7 +75,10 @@ where
     ///   your test data's tenant_id. This message will be sent to the topic
     ///   every 500ms and the KafkaTopicScanner will only report "ready" upon
     ///   first receipt of this message. Be judicious in how you construct this
-    ///   message, as other listeners on the topic will receive it also!
+    ///   message, as other listeners on the topic will receive it also! For
+    ///   example, if you construct a priming message which causes the service
+    ///   under test to crash that would be counterproductive, albeit
+    ///   interesting.
     pub fn new(
         consumer_config: ConsumerConfig,
         timeout: Duration,
@@ -143,7 +151,7 @@ where
                 Consumer::new(self.consumer_config).expect("failed to configure consumer"),
             );
 
-            let stop_time: Mutex<Option<SystemTime>> = Mutex::new(None);
+            let stop_time: Mutex<Option<SystemTime>> = Default::default();
             let filtered_stream = consumer
                 .stream()
                 .then(|res| {
@@ -262,6 +270,7 @@ where
             // signal on primer_rx or the sender loop errors out
             tokio::select!(
                 primer_rx_result = primer_rx => {
+                    tracing::info!("received primer shutdown notification");
                     primer_rx_result.expect("primer_tx sender was dropped");
                 },
                 _ = async move {
@@ -302,9 +311,11 @@ where
         tokio::select!(
             rx_result = rx => {
                 primer_tx.send(()).expect("failed to notify primer_tx to shutdown");
+                tracing::info!("primer shutdown notification sent");
                 rx_result.expect("sender was dropped");
             },
             primer_result = primer_handle => {
+                tracing::error!("primer returned early");
                 primer_result.expect("primer failed");
             }
         );
