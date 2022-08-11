@@ -77,6 +77,8 @@ async fn handler() -> Result<(), NodeIdentifierError> {
                 let event_source_id = envelope.event_source_id();
                 let graph_description = envelope.inner_message();
 
+                tracing::debug!("received kafka message");
+
                 match identifier.handle_event(tenant_id, graph_description).await {
                     Ok(identified_graph) => Ok(Some(Envelope::new(
                         tenant_id,
