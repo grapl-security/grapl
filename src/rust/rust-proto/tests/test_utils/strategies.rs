@@ -947,10 +947,10 @@ pub mod plugin_work_queue {
             execution_job in maybe_jobs(),
             request_id in any::<i64>(),
         ) -> native::GetExecuteAnalyzerResponse {
-            native::GetExecuteAnalyzerResponse {
+            native::GetExecuteAnalyzerResponse::new(
                 execution_job,
                 request_id,
-            }
+            )
         }
     }
 
@@ -958,9 +958,9 @@ pub mod plugin_work_queue {
         pub fn get_execute_generator_requests()(
             plugin_id in uuids(),
         ) -> native::GetExecuteGeneratorRequest {
-            native::GetExecuteGeneratorRequest {
+            native::GetExecuteGeneratorRequest::new(
                 plugin_id,
-            }
+            )
         }
     }
 
@@ -969,10 +969,10 @@ pub mod plugin_work_queue {
             execution_job in maybe_jobs(),
             request_id in any::<i64>(),
         ) -> native::GetExecuteGeneratorResponse {
-            native::GetExecuteGeneratorResponse {
+            native::GetExecuteGeneratorResponse::new(
                 execution_job,
                 request_id,
-            }
+            )
         }
     }
 

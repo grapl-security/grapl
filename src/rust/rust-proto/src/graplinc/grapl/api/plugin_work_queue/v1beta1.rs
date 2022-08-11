@@ -423,8 +423,25 @@ impl type_url::TypeUrl for GetExecuteAnalyzerRequest {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetExecuteAnalyzerResponse {
-    pub execution_job: Option<ExecutionJob>,
-    pub request_id: i64,
+    execution_job: Option<ExecutionJob>,
+    request_id: i64,
+}
+
+impl GetExecuteAnalyzerResponse {
+    pub fn new(execution_job: Option<ExecutionJob>, request_id: i64) -> Self {
+        Self {
+            execution_job,
+            request_id,
+        }
+    }
+
+    pub fn execution_job(self) -> Option<ExecutionJob> {
+        self.execution_job
+    }
+
+    pub fn request_id(&self) -> i64 {
+        self.request_id
+    }
 }
 
 impl TryFrom<proto::GetExecuteAnalyzerResponse> for GetExecuteAnalyzerResponse {
@@ -466,7 +483,17 @@ impl type_url::TypeUrl for GetExecuteAnalyzerResponse {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetExecuteGeneratorRequest {
-    pub plugin_id: Uuid,
+    plugin_id: Uuid,
+}
+
+impl GetExecuteGeneratorRequest {
+    pub fn new(plugin_id: Uuid) -> Self {
+        Self { plugin_id }
+    }
+
+    pub fn plugin_id(&self) -> Uuid {
+        self.plugin_id
+    }
 }
 
 impl TryFrom<proto::GetExecuteGeneratorRequest> for GetExecuteGeneratorRequest {
@@ -500,8 +527,25 @@ impl type_url::TypeUrl for GetExecuteGeneratorRequest {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetExecuteGeneratorResponse {
-    pub execution_job: Option<ExecutionJob>,
-    pub request_id: i64,
+    execution_job: Option<ExecutionJob>,
+    request_id: i64,
+}
+
+impl GetExecuteGeneratorResponse {
+    pub fn new(execution_job: Option<ExecutionJob>, request_id: i64) -> Self {
+        Self {
+            execution_job,
+            request_id,
+        }
+    }
+
+    pub fn execution_job(self) -> Option<ExecutionJob> {
+        self.execution_job
+    }
+
+    pub fn request_id(&self) -> i64 {
+        self.request_id
+    }
 }
 
 impl TryFrom<proto::GetExecuteGeneratorResponse> for GetExecuteGeneratorResponse {
