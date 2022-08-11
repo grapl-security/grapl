@@ -1,5 +1,4 @@
-use std::fmt::Debug;
-
+use client_executor::{Executor, ExecutorConfig};
 use proto::plugin_work_queue_service_client::PluginWorkQueueServiceClient as PluginWorkQueueServiceClientProto;
 
 use crate::{
@@ -10,21 +9,15 @@ use crate::{
         service_client::{
             ConnectError,
             Connectable,
-        },
-    },
-    SerDeError,
+        }, error::GrpcClientError,
+    }, create_proto_client,
 };
 
-#[derive(Debug, thiserror::Error)]
-pub enum PluginWorkQueueServiceClientError {
-    #[error("ErrorStatus")]
-    ErrorStatus(#[from] tonic::Status),
-    #[error(transparent)]
-    PluginRegistryDeserializationError(#[from] SerDeError),
-}
+pub type PluginWorkQueueServiceClientError = GrpcClientError;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct PluginWorkQueueServiceClient {
+    executor: Executor,
     proto_client: PluginWorkQueueServiceClientProto<tonic::transport::Channel>,
 }
 
@@ -35,19 +28,21 @@ impl Connectable for PluginWorkQueueServiceClient {
 
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
+        let proto_client = create_proto_client!(
+            executor,
+            PluginWorkQueueServiceClientProto<tonic::transport::Channel>,
+            endpoint,
+        );
+
         Ok(Self {
-            proto_client: PluginWorkQueueServiceClientProto::connect(endpoint).await?,
+            executor,
+            proto_client,
         })
     }
 }
 
 impl PluginWorkQueueServiceClient {
-    pub fn new(inner: PluginWorkQueueServiceClientProto<tonic::transport::Channel>) -> Self {
-        Self {
-            proto_client: inner,
-        }
-    }
-
     /// Adds a new execution job for a generator
     #[tracing::instrument(skip(self, request), err)]
     pub async fn push_execute_generator(
