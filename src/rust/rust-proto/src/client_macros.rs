@@ -1,6 +1,16 @@
-#[derive(Default)]
+/// Return true if this RPC should be retried.
+type RetryPredicate = fn(&tonic::Status) -> bool;
 pub struct ExecuteClientRpcOptions {
-    pub retriable_codes: Vec<tonic::Code>,
+    pub retry_predicate: RetryPredicate,
+}
+
+impl Default for ExecuteClientRpcOptions {
+    fn default() -> Self {
+        let retry_on_nothing = (|_| false) as RetryPredicate;
+        Self {
+            retry_predicate: retry_on_nothing,
+        }
+    }
 }
 
 /// This macro implements boilerplate code to:
@@ -29,11 +39,10 @@ macro_rules! execute_client_rpc {
 
             let proto_request = <$proto_request_type>::try_from($native_request)?;
 
-            let retry_condition = |status: &tonic::Status| {
+            let executor_retry_condition = |status: &tonic::Status| {
                 // Always retry if Unavailable, and optionally retry if
                 // specified by the ExecuteClientRpcOptions.
-                status.code() == tonic::Code::Unavailable
-                    || $opts.retriable_codes.contains(&status.code())
+                status.code() == tonic::Code::Unavailable || ($opts.retry_predicate)(status)
             };
 
             let proto_response = $self
@@ -45,7 +54,7 @@ macro_rules! execute_client_rpc {
                         let proto_request = proto_request.clone();
                         async move { proto_client.$rpc_name(proto_request).await }
                     },
-                    retry_condition,
+                    executor_retry_condition,
                 )
                 .await?;
             let native_response = <$native_response_type>::try_from(proto_response.into_inner())?;
