@@ -22,7 +22,10 @@ use rust_proto::{
             client::PipelineIngressClient,
             PublishRawLogRequest,
         },
-        pipeline::v1beta1::RawLog,
+        pipeline::v1beta1::{
+            Envelope,
+            RawLog,
+        },
     },
 };
 use test_context::{
@@ -111,6 +114,12 @@ async fn test_publish_raw_log_sends_message_to_kafka(
     let kafka_scanner = KafkaTopicScanner::new(
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
         Duration::from_secs(30),
+        Envelope::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            RawLog::new(log_event.clone()),
+        ),
     );
 
     let handle = kafka_scanner
@@ -124,11 +133,11 @@ async fn test_publish_raw_log_sends_message_to_kafka(
     );
 
     ctx.grpc_client
-        .publish_raw_log(PublishRawLogRequest {
+        .publish_raw_log(PublishRawLogRequest::new(
             event_source_id,
             tenant_id,
-            log_event: log_event.clone(),
-        })
+            log_event.clone(),
+        ))
         .await
         .expect("received error response");
 

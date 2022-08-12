@@ -63,48 +63,40 @@ async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error:
     // GetExecuteGenerator doesn't pay attention to the plugin_id *at all*.
 
     let retrieve_job_for_plugin_id_2 = pwq_client
-        .get_execute_generator(GetExecuteGeneratorRequest {
-            plugin_id: plugin_id_2,
-        })
+        .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id_2))
         .await?;
 
     assert_eq!(
-        retrieve_job_for_plugin_id_2.execution_job,
+        retrieve_job_for_plugin_id_2.execution_job(),
         Some(job_2.execution_job())
     );
 
     // Fetch for plugin_id 1
     let retrieve_job_for_plugin_id_1 = pwq_client
-        .get_execute_generator(GetExecuteGeneratorRequest {
-            plugin_id: plugin_id_1,
-        })
+        .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id_1))
         .await?;
 
     assert_eq!(
-        retrieve_job_for_plugin_id_1.execution_job,
+        retrieve_job_for_plugin_id_1.execution_job(),
         Some(job_1.execution_job())
     );
 
     // Fetch for plugin_id 2 again, we should get Job 3
     let retrieve_job_for_plugin_id_2 = pwq_client
-        .get_execute_generator(GetExecuteGeneratorRequest {
-            plugin_id: plugin_id_2,
-        })
+        .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id_2))
         .await?;
 
     assert_eq!(
-        retrieve_job_for_plugin_id_2.execution_job,
+        retrieve_job_for_plugin_id_2.execution_job(),
         Some(job_3.execution_job())
     );
 
     // Fetch one more time, we should be out of work
     let retrieve_job_for_plugin_id_2 = pwq_client
-        .get_execute_generator(GetExecuteGeneratorRequest {
-            plugin_id: plugin_id_2,
-        })
+        .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id_2))
         .await?;
 
-    assert_eq!(retrieve_job_for_plugin_id_2.execution_job, None);
+    assert_eq!(retrieve_job_for_plugin_id_2.execution_job(), None);
 
     Ok(())
 }

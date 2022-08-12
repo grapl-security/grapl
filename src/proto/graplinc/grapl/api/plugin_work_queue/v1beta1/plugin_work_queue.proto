@@ -95,7 +95,7 @@ message AcknowledgeGeneratorRequest {
   graplinc.common.v1beta1.Uuid tenant_id = 4;
   // The logical operation this request is tied to
   graplinc.common.v1beta1.Uuid trace_id = 5;
-  // The event source from which the graph description originated
+  // The event source from which the data originated
   graplinc.common.v1beta1.Uuid event_source_id = 6;
 }
 
@@ -111,6 +111,12 @@ message AcknowledgeAnalyzerRequest {
   bool success = 2;
   // The plugin id of the plugin that completed the request
   graplinc.common.v1beta1.Uuid plugin_id = 3;
+  // The tenant the plugin belongs to
+  graplinc.common.v1beta1.Uuid tenant_id = 4;
+  // The logical operation this request is tied to
+  graplinc.common.v1beta1.Uuid trace_id = 5;
+  // The event source from which the data originated
+  graplinc.common.v1beta1.Uuid event_source_id = 6;
 }
 
 // A response to an AcknowledgeAnalyzerRequest

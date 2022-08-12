@@ -71,6 +71,17 @@ impl ProducerConfig {
     }
 }
 
+impl From<ConsumerConfig> for ProducerConfig {
+    fn from(consumer_config: ConsumerConfig) -> Self {
+        Self {
+            bootstrap_servers: consumer_config.bootstrap_servers,
+            sasl_username: consumer_config.sasl_username,
+            sasl_password: consumer_config.sasl_password,
+            topic: consumer_config.topic,
+        }
+    }
+}
+
 #[derive(clap::Parser, Clone, Debug)]
 pub struct RetryProducerConfig {
     #[clap(long, env = "KAFKA_BOOTSTRAP_SERVERS")]
