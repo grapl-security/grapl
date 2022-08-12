@@ -62,8 +62,7 @@ pub fn get_job(
     let plugin_execution_sidecar_image = match plugin_type {
         PluginType::Generator => passthru.generator_sidecar_image,
         PluginType::Analyzer => passthru.analyzer_sidecar_image,
-    }
-    .to_string();
+    };
     match plugin_runtime {
         PluginRuntime::HaxDocker => {
             let job_file_hcl = static_files::HAX_DOCKER_PLUGIN_JOB;
