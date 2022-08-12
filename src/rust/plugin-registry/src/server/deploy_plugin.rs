@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use nomad_client_gen::models;
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginType;
 
 use super::{
     plugin_nomad_job,
@@ -56,6 +57,7 @@ pub fn get_job(
         get_s3_url(bucket, key)
     };
     let passthru = service_config.passthrough_vars;
+    let plugin_type = PluginType::try_from(plugin.plugin_type.as_str()).expect("Unknown plugin-type in DB is bad news");
     let plugin_execution_sidecar_image = match plugin_type {
         PluginType::Generator => passthru.generator_sidecar_image,
         PluginType::Analyzer => passthru.analyzer_sidecar_image,
@@ -96,8 +98,8 @@ pub fn get_job(
                     service_config.plugin_bootstrap_container_image,
                 ),
                 (
-                    "plugin_execution_image",
-                    service_config.plugin_execution_image,
+                    "plugin_execution_sidecar_image",
+                    plugin_execution_sidecar_image,
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("rootfs_artifact_url", service_config.rootfs_artifact_url),
