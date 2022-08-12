@@ -6,9 +6,6 @@
 
 ## Grapl Services - main pipeline
 
-Unless otherwise specified, the input to a service is the output of the one
-described above it.
-
 ### Pipeline Ingress
 
 **Input:** Receives an RPC to insert event logs (e.g. sysmon logs, osquery logs,
@@ -18,12 +15,12 @@ may revisit this in the future.)
 **Work:** We wrap those logs in an Envelope and throw it in Kafka. No transforms
 are performed.
 
-**Output:** Put those logs on the 'raw-logs' topic for the next service,
-Generator Dispatcher.
+**Output:** Push logs to the 'raw-logs' topic for the next service, Generator
+Dispatcher.
 
 ### Generator Dispatcher
 
-**Input:** Pulls event logs from 'raw-logs'
+**Input:** Pulls event logs from topic 'raw-logs'
 
 **Work:** This service will:
 
@@ -62,11 +59,14 @@ Identifier.
 **Input:** Receives an RPC containing an event log (i.e. a sysmon event)
 
 **Work:** Turns these events into a standalone subgraph, independent of existing
-Dgraph state.
+Dgraph/Scylla state.
 
-**Output:** Stores the subgraph to S3 for Node Identifier.
+**Output:** The subgraph is returned as a response to the incoming RPC, going to
+the Plugin Execution Sidecar.
 
 ### Node Identifier
+
+**Input:** Pulls generated graphs from topic 'generated-graphs'
 
 **Work:** Identifies nodes in the incoming subgraph against the canonical
 identities of nodes in DynamoDB. The incoming nodes may be new, or they may
@@ -77,35 +77,45 @@ For instance, an incoming subgraph may refer to a process
 Dgraph already has a node representing this exact same process. We'd like to
 de-duplicate this process node.
 
-**Output:** TODO
+**Output:** Push identified subgraphs to the 'identified-subgraph' topic for the
+next service, Graph Merger.
 
 ### Graph Merger
 
+**Input:** Pulls identified graphs from topic 'identified-graphs'
+
 **Work:** Write the new edges and nodes from Node Identifier to Dgraph.
 
-**Output:** TODO (it looks like exactly the same as node identifier's output,
-just re-encoded?)
+**Output:** Push merged graphs to the 'merged-graphs' topic for the next
+service.
 
-### Engagement Creator
+### TODO: Analyzer-dispatcher and analyzer subsystem
 
-**Work:** Simply appends the risks and lenses described in its input to Dgraph.
+## Managerial RPC services
 
-**Output:** Nothing is written to S3; the desired output is a mutation to
-Dgraph.
+Services that
+
+### Organization Management
+
+TODO
+
+### Plugin Registry
+
+This service manages Generator and Analyzer plugins, letting one create, deploy
+and teardown those plugins via RPC calls.
 
 ## Other services
-
-### Metric Forwarder
-
-**Input:** This services receives `stdout` from other lambdas via Cloudwatch
-Logs. We subscribe only to logs that contain the reserved keyword `MONITORING|`.
-
-**Work:** Metric Forwarder parses these log lines - which are `statsd`
-serialized metrics - and forwards them to Cloudwatch as metrics.
 
 ### Model Plugin Deployer
 
 TODO
+
+### Event Source
+
+Create, get and update an Event Source, which is an ID that lets us tie incoming
+Generator work to which Plugin we think should process it.
+
+## Other services
 
 ### Engagement View (aka UX)
 
