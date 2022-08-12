@@ -57,8 +57,8 @@ pub enum PluginWorkQueueInitError {
 impl From<PluginWorkQueueError> for Status {
     fn from(err: PluginWorkQueueError) -> Self {
         match err {
-            PluginWorkQueueError::PsqlQueueError(_) => Status::internal("Sql Error"),
-            PluginWorkQueueError::KafkaProducerError(_) => Status::internal("Kafka Produce error"),
+            PluginWorkQueueError::PsqlQueueError(_) => Status::unknown("Sql Error"),
+            PluginWorkQueueError::KafkaProducerError(_) => Status::unknown("Kafka Produce error"),
             PluginWorkQueueError::DeserializationError(_) => {
                 Status::invalid_argument("Invalid argument")
             }

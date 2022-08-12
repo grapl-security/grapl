@@ -39,7 +39,7 @@ pub enum ExampleGeneratorError {
 
 impl From<ExampleGeneratorError> for Status {
     fn from(e: ExampleGeneratorError) -> Self {
-        Status::internal(e.to_string())
+        Status::unknown(e.to_string())
     }
 }
 

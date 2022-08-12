@@ -1,3 +1,18 @@
+/// Return true if this RPC should be retried.
+type RetryPredicate = fn(&tonic::Status) -> bool;
+pub struct ExecuteClientRpcOptions {
+    pub retry_predicate: RetryPredicate,
+}
+
+impl Default for ExecuteClientRpcOptions {
+    fn default() -> Self {
+        let retry_on_nothing = (|_| false) as RetryPredicate;
+        Self {
+            retry_predicate: retry_on_nothing,
+        }
+    }
+}
+
 /// This macro implements boilerplate code to:
 /// - translate between the native types and tonic/prost types
 ///   in the transport layer
@@ -14,6 +29,7 @@ macro_rules! execute_client_rpc {
         $rpc_name: ident,
         $proto_request_type: ty,
         $native_response_type: ty,
+        $opts: expr,
     ) => {{
         {
             let backoff = client_executor::strategy::FibonacciBackoff::from_millis(100)
@@ -23,11 +39,10 @@ macro_rules! execute_client_rpc {
 
             let proto_request = <$proto_request_type>::try_from($native_request)?;
 
-            // We can revisit this; potentially passing in a retry_condition
-            // per-RPC and not globally applied.
-            let retry_condition = |status: &tonic::Status| {
-                // Retry if the status code is Internal Error or Unavailable.
-                status.code() == tonic::Code::Internal || status.code() == tonic::Code::Unavailable
+            let executor_retry_condition = |status: &tonic::Status| {
+                // Always retry if Unavailable, and optionally retry if
+                // specified by the ExecuteClientRpcOptions.
+                status.code() == tonic::Code::Unavailable || ($opts.retry_predicate)(status)
             };
 
             let proto_response = $self
@@ -39,7 +54,7 @@ macro_rules! execute_client_rpc {
                         let proto_request = proto_request.clone();
                         async move { proto_client.$rpc_name(proto_request).await }
                     },
-                    retry_condition,
+                    executor_retry_condition,
                 )
                 .await?;
             let native_response = <$native_response_type>::try_from(proto_response.into_inner())?;

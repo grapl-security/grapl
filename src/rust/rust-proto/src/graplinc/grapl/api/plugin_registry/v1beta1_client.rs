@@ -12,6 +12,7 @@ use futures::{
 use proto::plugin_registry_service_client::PluginRegistryServiceClient as PluginRegistryServiceClientProto;
 
 use crate::{
+    client_macros::ExecuteClientRpcOptions,
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::plugin_registry::v1beta1 as native,
@@ -104,6 +105,7 @@ impl PluginRegistryServiceClient {
             get_plugin,
             proto::GetPluginRequest,
             native::GetPluginResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -118,6 +120,7 @@ impl PluginRegistryServiceClient {
             deploy_plugin,
             proto::DeployPluginRequest,
             native::DeployPluginResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -132,6 +135,7 @@ impl PluginRegistryServiceClient {
             tear_down_plugin,
             proto::TearDownPluginRequest,
             native::TearDownPluginResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -145,6 +149,7 @@ impl PluginRegistryServiceClient {
             get_plugin_health,
             proto::GetPluginHealthRequest,
             native::GetPluginHealthResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -160,6 +165,7 @@ impl PluginRegistryServiceClient {
             get_generators_for_event_source,
             proto::GetGeneratorsForEventSourceRequest,
             native::GetGeneratorsForEventSourceResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -174,6 +180,7 @@ impl PluginRegistryServiceClient {
             get_analyzers_for_tenant,
             proto::GetAnalyzersForTenantRequest,
             native::GetAnalyzersForTenantResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 }

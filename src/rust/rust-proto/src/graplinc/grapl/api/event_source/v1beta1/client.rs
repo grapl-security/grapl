@@ -6,6 +6,7 @@ use client_executor::{
 };
 
 use crate::{
+    client_macros::ExecuteClientRpcOptions,
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::event_source::v1beta1 as native,
@@ -62,6 +63,7 @@ impl EventSourceServiceClient {
             create_event_source,
             proto::CreateEventSourceRequest,
             native::CreateEventSourceResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -75,6 +77,7 @@ impl EventSourceServiceClient {
             update_event_source,
             proto::UpdateEventSourceRequest,
             native::UpdateEventSourceResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -88,6 +91,7 @@ impl EventSourceServiceClient {
             get_event_source,
             proto::GetEventSourceRequest,
             native::GetEventSourceResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 }

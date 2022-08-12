@@ -39,6 +39,6 @@ impl From<SysmonGeneratorError> for kafka::StreamProcessorError {
 
 impl From<SysmonGeneratorError> for Status {
     fn from(e: SysmonGeneratorError) -> Self {
-        Status::internal(e.to_string())
+        Status::unknown(e.to_string())
     }
 }
