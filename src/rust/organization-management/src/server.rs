@@ -59,7 +59,8 @@ impl From<argon2::password_hash::Error> for OrganizationManagementServiceError {
 impl From<OrganizationManagementServiceError> for Status {
     fn from(e: OrganizationManagementServiceError) -> Self {
         match e {
-            OrganizationManagementServiceError::Sql(e) => Status::internal(e.to_string()),
+            OrganizationManagementServiceError::ServeError(e) => Status::internal(e.to_string()),
+            OrganizationManagementServiceError::Sql(e) => Status::unknown(e.to_string()),
             _ => todo!(),
         }
     }

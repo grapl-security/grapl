@@ -1,3 +1,8 @@
+#[derive(Default)]
+pub struct ExecuteClientRpcOptions {
+    pub retriable_codes: Vec<tonic::Code>,
+}
+
 /// This macro implements boilerplate code to:
 /// - translate between the native types and tonic/prost types
 ///   in the transport layer
@@ -14,6 +19,7 @@ macro_rules! execute_client_rpc {
         $rpc_name: ident,
         $proto_request_type: ty,
         $native_response_type: ty,
+        $opts: expr,
     ) => {{
         {
             let backoff = client_executor::strategy::FibonacciBackoff::from_millis(100)
@@ -23,11 +29,11 @@ macro_rules! execute_client_rpc {
 
             let proto_request = <$proto_request_type>::try_from($native_request)?;
 
-            // We can revisit this; potentially passing in a retry_condition
-            // per-RPC and not globally applied.
             let retry_condition = |status: &tonic::Status| {
-                // Only retry if the status code is Internal Error.
-                status.code() == tonic::Code::Internal
+                // Always retry if Unavailable, and optionally retry if
+                // specified by the ExecuteClientRpcOptions.
+                status.code() == tonic::Code::Unavailable
+                    || $opts.retriable_codes.contains(&status.code())
             };
 
             let proto_response = $self

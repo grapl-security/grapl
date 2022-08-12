@@ -29,7 +29,7 @@ pub enum PluginBootstrapError {
 impl From<PluginBootstrapError> for Status {
     fn from(e: PluginBootstrapError) -> Self {
         match e {
-            PluginBootstrapError::IoError(e) => Status::internal(e.to_string()),
+            PluginBootstrapError::IoError(e) => Status::unknown(e.to_string()),
             PluginBootstrapError::ServeError(e) => Status::internal(e.to_string()),
         }
     }

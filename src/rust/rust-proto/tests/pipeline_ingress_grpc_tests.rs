@@ -75,7 +75,7 @@ enum MockPipelineIngressApiError {
 
 impl From<MockPipelineIngressApiError> for Status {
     fn from(e: MockPipelineIngressApiError) -> Self {
-        Status::internal(e.to_string())
+        Status::unknown(e.to_string())
     }
 }
 

@@ -122,7 +122,7 @@ where
                     let req = req?.try_into()?;
                     tx.send(req)
                         .await
-                        .map_err(|e| Status::internal(e.to_string()))?;
+                        .map_err(|e| Status::unknown(e.to_string()))?;
                 }
                 Ok(())
             } as Result<(), Status>)
