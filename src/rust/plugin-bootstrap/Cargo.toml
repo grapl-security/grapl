@@ -21,6 +21,7 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
+futures = "0.3"
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
@@ -28,7 +29,6 @@ thiserror = "1.0"
 tokio = { version = "1.14.0", features = ["full"] }
 tracing = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
-futures = "0.3"
 
 [features]
 integration = []
