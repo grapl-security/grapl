@@ -1,6 +1,6 @@
 # Services
 
-## Network Diagram
+## Network Diagram (Outdated)
 
 ![Network Diagram](network_diagram.png)
 
@@ -9,10 +9,57 @@
 Unless otherwise specified, the input to a service is the output of the one
 described above it.
 
-### Graph Generator
+### Pipeline Ingress
 
-**Input:** Event logs (e.g. sysmon logs, osquery logs, Cloudtrail logs) from the
-customer's S3 bucket.
+**Input:** Receives an RPC to insert event logs (e.g. sysmon logs, osquery logs,
+Cloudtrail logs). (Currently the plan is to allow one event/log per call, but we
+may revisit this in the future.)
+
+**Work:** We wrap those logs in an Envelope and throw it in Kafka. No transforms
+are performed.
+
+**Output:** Put those logs on the 'raw-logs' topic for the next service,
+Generator Dispatcher.
+
+### Generator Dispatcher
+
+**Input:** Pulls event logs from 'raw-logs'
+
+**Work:** This service will:
+
+- figure out which generators would respond to the incoming event-source
+- call into Plugin Work Queue to enqueue that work in a durable Postgres store.
+
+**Output:** Push this work to the Plugin Work Queue.
+
+### Plugin Work Queue (for generators)
+
+**Input:** Receives an RPC `push_execute_generator` to store generator work
+
+**Work:** PWQ is a simple facade over a postgres database that lets us store and
+manage work for a Generator plugin.
+
+**Output:** Work is pulled from PWQ by Plugin Execution Sidecar.
+
+## Plugin Execution Sidecar (for generators)
+
+**Input:** Pulls work from Plugin Work Queue over gRPC
+
+**Work:**
+
+- Loop, querying for new work from PWQ
+- When there is new work, delegate it to the Generator binary that runs
+  alongside this sidecar over gRPC
+- When the Generator's work is completed - successful or failure - call
+  `acknowledge_generator` in PWQ. This will send the generator's output onto a
+  Kafka queue.
+
+**Output:** Put generated graphs on the 'generated-graphs' topic for the Node
+Identifier.
+
+### Plugin (generator)
+
+**Input:** Receives an RPC containing an event log (i.e. a sysmon event)
 
 **Work:** Turns these events into a standalone subgraph, independent of existing
 Dgraph state.
