@@ -146,7 +146,7 @@ where
         let tx_mutex = Mutex::new(Some(tx));
         let priming_message_tenant_id = self.priming_message.tenant_id();
 
-        tracing::info!("creating kafka subscriber thread");
+        tracing::info!("creating kafka scanner thread");
         let handle = tokio::task::spawn(async move {
             let filter_predicate = Arc::new(Mutex::new(filter_predicate));
             let stop_predicate = Arc::new(Mutex::new(stop_predicate));

@@ -163,22 +163,32 @@ impl<T: SerDe> Producer<T> {
 
     #[tracing::instrument(err, skip(self))]
     pub async fn send(&self, msg: Envelope<T>) -> Result<(), ProducerError> {
+        let tenant_id = msg.tenant_id();
+        let trace_id = msg.trace_id();
+        let event_source_id = msg.event_source_id();
+
         let serialized = msg.serialize()?;
         let record: FutureRecord<[u8], [u8]> = FutureRecord::to(&self.topic).payload(&serialized);
 
-        self.producer
+        let result = self
+            .producer
             .send(record, Timeout::Never)
             .map(|res| -> Result<(), ProducerError> {
                 res.map_err(|(e, _)| -> ProducerError { e.into() })
                     .map(|(partition, offset)| {
-                        tracing::trace!(
-                            message = "wrote message",
+                        tracing::debug!(
+                            message = "wrote kafka message",
                             partition = partition,
                             offset = offset,
+                            tenant_id =% tenant_id,
+                            trace_id =% trace_id,
+                            event_source_id =% event_source_id,
                         );
                     })
             })
-            .await
+            .await;
+
+        result
     }
 }
 
@@ -209,8 +219,8 @@ impl BytesProducer {
             .map(|res| -> Result<(), ProducerError> {
                 res.map_err(|(e, _)| -> ProducerError { e.into() })
                     .map(|(partition, offset)| {
-                        tracing::trace!(
-                            message = "wrote message",
+                        tracing::debug!(
+                            message = "wrote kafka message",
                             partition = partition,
                             offset = offset,
                         );

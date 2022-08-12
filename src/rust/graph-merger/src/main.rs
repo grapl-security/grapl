@@ -161,7 +161,7 @@ async fn handler(
                 );
             } else {
                 // TODO: collect some metrics
-                tracing::debug!(message = "identified graph from graph description");
+                tracing::debug!(message = "merged identified graph successfully");
             }
         })
         .with_current_subscriber()

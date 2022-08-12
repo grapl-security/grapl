@@ -234,16 +234,16 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let request_id = request.request_id();
         let plugin_id = request.plugin_id();
 
-        tracing::debug!(
-            message = "publishing generator execution result",
-            tenant_id =% tenant_id,
-            trace_id =% trace_id,
-            event_source_id =% event_source_id,
-            plugin_id =% plugin_id,
-        );
-
         let status = match request.graph_description() {
             Some(graph_description) => {
+                tracing::debug!(
+                    message = "publishing generator execution result",
+                    tenant_id =% tenant_id,
+                    trace_id =% trace_id,
+                    event_source_id =% event_source_id,
+                    plugin_id =% plugin_id,
+                );
+
                 self.generator_producer
                     .send(Envelope::new(
                         tenant_id,
@@ -252,6 +252,7 @@ impl PluginWorkQueueApi for PluginWorkQueue {
                         graph_description,
                     ))
                     .await?;
+
                 psql_queue::Status::Processed
             }
             None => psql_queue::Status::Failed,
@@ -263,6 +264,7 @@ impl PluginWorkQueueApi for PluginWorkQueue {
             trace_id =% trace_id,
             event_source_id =% event_source_id,
             plugin_id =% plugin_id,
+            status =? status,
         );
 
         self.queue.ack_generator(request_id.into(), status).await?;
@@ -280,18 +282,20 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let event_source_id = request.event_source_id();
         let plugin_id = request.plugin_id();
 
+        let status = match request.success() {
+            true => psql_queue::Status::Processed,
+            false => psql_queue::Status::Failed,
+        };
+
         tracing::debug!(
             message = "acknowledging analyzer execution",
             tenant_id =% tenant_id,
             trace_id =% trace_id,
             event_source_id =% event_source_id,
             plugin_id =% plugin_id,
+            status =? status,
         );
 
-        let status = match request.success() {
-            true => psql_queue::Status::Processed,
-            false => psql_queue::Status::Failed,
-        };
         self.queue
             .ack_analyzer(request.request_id().into(), status)
             .await?;
