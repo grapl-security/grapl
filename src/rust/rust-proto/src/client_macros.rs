@@ -26,8 +26,8 @@ macro_rules! execute_client_rpc {
             // We can revisit this; potentially passing in a retry_condition
             // per-RPC and not globally applied.
             let retry_condition = |status: &tonic::Status| {
-                // Only retry if the status code is Internal Error.
-                status.code() == tonic::Code::Internal
+                // Retry if the status code is Internal Error or Unavailable.
+                status.code() == tonic::Code::Internal || status.code() == tonic::Code::Unavailable
             };
 
             let proto_response = $self
