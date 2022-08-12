@@ -178,7 +178,6 @@ mod tests {
             hax_docker_plugin_runtime_image: Default::default(),
             kernel_artifact_url: Default::default(),
             plugin_bootstrap_container_image: Default::default(),
-            plugin_execution_image: Default::default(),
             bucket_aws_account_id: Default::default(),
             bucket_name: Default::default(),
             rootfs_artifact_url: Default::default(),
