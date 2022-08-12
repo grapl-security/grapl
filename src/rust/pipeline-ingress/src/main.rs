@@ -49,7 +49,7 @@ enum IngressApiError {
 
 impl From<IngressApiError> for Status {
     fn from(e: IngressApiError) -> Self {
-        Status::internal(e.to_string())
+        Status::unknown(e.to_string())
     }
 }
 

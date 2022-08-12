@@ -10,6 +10,6 @@ pub enum EventSourceError {
 
 impl From<EventSourceError> for Status {
     fn from(e: EventSourceError) -> Self {
-        Status::internal(e.to_string())
+        Status::unknown(e.to_string())
     }
 }

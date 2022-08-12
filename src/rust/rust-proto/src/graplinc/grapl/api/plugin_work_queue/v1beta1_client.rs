@@ -7,6 +7,7 @@ use client_executor::{
 use proto::plugin_work_queue_service_client::PluginWorkQueueServiceClient as PluginWorkQueueServiceClientProto;
 
 use crate::{
+    client_macros::ExecuteClientRpcOptions,
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
@@ -63,6 +64,7 @@ impl PluginWorkQueueServiceClient {
             push_execute_generator,
             proto::PushExecuteGeneratorRequest,
             native::PushExecuteGeneratorResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -78,6 +80,7 @@ impl PluginWorkQueueServiceClient {
             push_execute_analyzer,
             proto::PushExecuteAnalyzerRequest,
             native::PushExecuteAnalyzerResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -93,6 +96,7 @@ impl PluginWorkQueueServiceClient {
             get_execute_generator,
             proto::GetExecuteGeneratorRequest,
             native::GetExecuteGeneratorResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -108,6 +112,7 @@ impl PluginWorkQueueServiceClient {
             get_execute_analyzer,
             proto::GetExecuteAnalyzerRequest,
             native::GetExecuteAnalyzerResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -123,6 +128,7 @@ impl PluginWorkQueueServiceClient {
             acknowledge_generator,
             proto::AcknowledgeGeneratorRequest,
             native::AcknowledgeGeneratorResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 
@@ -138,6 +144,7 @@ impl PluginWorkQueueServiceClient {
             acknowledge_analyzer,
             proto::AcknowledgeAnalyzerRequest,
             native::AcknowledgeAnalyzerResponse,
+            ExecuteClientRpcOptions::default(),
         )
     }
 }
