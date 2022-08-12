@@ -11,16 +11,20 @@ use kafka::{
     config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
 };
-use rust_proto::graplinc::grapl::api::{
-    graph::v1beta1::{
-        IdentifiedGraph,
-        IdentifiedNode,
-        ImmutableUintProp,
-        Property,
+use rust_proto::graplinc::grapl::{
+    api::{
+        graph::v1beta1::{
+            IdentifiedGraph,
+            IdentifiedNode,
+            ImmutableUintProp,
+            Property,
+        },
+        pipeline_ingress::v1beta1::PublishRawLogRequest,
     },
-    pipeline_ingress::v1beta1::PublishRawLogRequest,
+    pipeline::v1beta1::Envelope,
 };
 use test_context::test_context;
+use uuid::Uuid;
 
 static CONSUMER_TOPIC: &'static str = "identified-graphs";
 
@@ -51,6 +55,12 @@ async fn test_sysmon_event_produces_identified_graph(
     let kafka_scanner = KafkaTopicScanner::new(
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
         Duration::from_secs(60),
+        Envelope::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            IdentifiedGraph::new(),
+        ),
     );
 
     let handle = kafka_scanner
@@ -102,13 +112,18 @@ async fn test_sysmon_event_produces_identified_graph(
 </Event>
 "#.into();
 
-    tracing::info!("sending publish_raw_log request");
+    tracing::info!(
+        message = "sending publish_raw_log request",
+        event_source_id =% event_source_id,
+        tenant_id =% tenant_id,
+    );
+
     ctx.pipeline_ingress_client
-        .publish_raw_log(PublishRawLogRequest {
+        .publish_raw_log(PublishRawLogRequest::new(
             event_source_id,
             tenant_id,
             log_event,
-        })
+        ))
         .await
         .expect("received error response");
 
