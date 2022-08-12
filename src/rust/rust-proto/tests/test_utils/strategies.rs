@@ -529,11 +529,11 @@ pub mod pipeline_ingress {
             tenant_id in uuids(),
             log_event in bytes(256),
         ) -> PublishRawLogRequest {
-            PublishRawLogRequest {
+            PublishRawLogRequest::new(
                 event_source_id,
                 tenant_id,
                 log_event
-            }
+            )
         }
     }
 
@@ -545,9 +545,9 @@ pub mod pipeline_ingress {
         pub fn publish_raw_log_responses()(
             created_time in any::<SystemTime>(),
         ) -> PublishRawLogResponse {
-            PublishRawLogResponse {
+            PublishRawLogResponse::new(
                 created_time,
-            }
+            )
         }
     }
 }
@@ -908,12 +908,18 @@ pub mod plugin_work_queue {
             request_id in any::<i64>(),
             success in any::<bool>(),
             plugin_id in uuids(),
+            tenant_id in uuids(),
+            trace_id in uuids(),
+            event_source_id in uuids(),
         ) -> native::AcknowledgeAnalyzerRequest {
-            native::AcknowledgeAnalyzerRequest {
+            native::AcknowledgeAnalyzerRequest::new(
                 request_id,
                 success,
                 plugin_id,
-            }
+                tenant_id,
+                trace_id,
+                event_source_id,
+            )
         }
     }
 
@@ -941,10 +947,10 @@ pub mod plugin_work_queue {
             execution_job in maybe_jobs(),
             request_id in any::<i64>(),
         ) -> native::GetExecuteAnalyzerResponse {
-            native::GetExecuteAnalyzerResponse {
+            native::GetExecuteAnalyzerResponse::new(
                 execution_job,
                 request_id,
-            }
+            )
         }
     }
 
@@ -952,9 +958,9 @@ pub mod plugin_work_queue {
         pub fn get_execute_generator_requests()(
             plugin_id in uuids(),
         ) -> native::GetExecuteGeneratorRequest {
-            native::GetExecuteGeneratorRequest {
+            native::GetExecuteGeneratorRequest::new(
                 plugin_id,
-            }
+            )
         }
     }
 
@@ -963,10 +969,10 @@ pub mod plugin_work_queue {
             execution_job in maybe_jobs(),
             request_id in any::<i64>(),
         ) -> native::GetExecuteGeneratorResponse {
-            native::GetExecuteGeneratorResponse {
+            native::GetExecuteGeneratorResponse::new(
                 execution_job,
                 request_id,
-            }
+            )
         }
     }
 

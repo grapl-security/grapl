@@ -77,11 +77,11 @@ async fn test_dispatcher_inserts_job_into_plugin_work_queue(
 
     tracing::info!("sending publish_raw_log request");
     ctx.pipeline_ingress_client
-        .publish_raw_log(PublishRawLogRequest {
+        .publish_raw_log(PublishRawLogRequest::new(
             event_source_id,
             tenant_id,
             log_event,
-        })
+        ))
         .await?;
 
     let matching_job =

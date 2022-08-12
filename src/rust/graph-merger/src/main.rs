@@ -93,6 +93,9 @@ async fn handler(
             let tenant_id = envelope.tenant_id();
             let trace_id = envelope.trace_id();
             let event_source_id = envelope.event_source_id();
+
+            tracing::debug!("received kafka message");
+
             match graph_merger
                 .lock()
                 .await
@@ -158,7 +161,7 @@ async fn handler(
                 );
             } else {
                 // TODO: collect some metrics
-                tracing::debug!(message = "identified graph from graph description");
+                tracing::debug!(message = "merged identified graph successfully");
             }
         })
         .with_current_subscriber()
