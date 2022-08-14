@@ -255,6 +255,9 @@ where
 
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()
+            .max_concurrent_streams(100)
+            .concurrency_limit_per_connection(1)
+            .timeout(Duration::from_secs(60))
             .trace_fn(|request| {
                 tracing::info_span!(
                     "Plugin Registry",

@@ -32,10 +32,10 @@ macro_rules! execute_client_rpc {
         $opts: expr,
     ) => {{
         {
-            let backoff = client_executor::strategy::FibonacciBackoff::from_millis(100)
+            let backoff = client_executor::strategy::FibonacciBackoff::from_millis(10)
                 .max_delay(Duration::from_millis(5000))
                 .map(client_executor::strategy::jitter);
-            let num_retries = 10;
+            let num_retries = 1000;
 
             let proto_request = <$proto_request_type>::try_from($native_request)?;
 
@@ -52,7 +52,11 @@ macro_rules! execute_client_rpc {
                     || {
                         let mut proto_client = $self.proto_client.clone();
                         let proto_request = proto_request.clone();
-                        async move { proto_client.$rpc_name(proto_request).await }
+                        async move {
+                            let mut tonic_request = tonic::Request::new(proto_request);
+                            tonic_request.set_timeout(Duration::from_secs(60));
+                            proto_client.$rpc_name(tonic_request).await
+                        }
                     },
                     executor_retry_condition,
                 )

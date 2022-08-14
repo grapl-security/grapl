@@ -145,6 +145,9 @@ where
             )
             .await;
         Ok(Server::builder()
+            .max_concurrent_streams(100)
+            .concurrency_limit_per_connection(1)
+            .timeout(Duration::from_secs(60))
             .add_service(health_service)
             .add_service(PipelineIngressServiceServerProto::new(GrpcApi::new(
                 self.api_server,
