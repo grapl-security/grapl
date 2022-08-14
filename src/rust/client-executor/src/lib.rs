@@ -155,7 +155,7 @@ where
             let this = self.as_mut().project();
 
             this.recloser
-                .call(TryTimeout::new(this.timeout.clone(), this.action.run()))
+                .call(TryTimeout::new(*this.timeout, this.action.run()))
         };
         self.as_mut()
             .project()
@@ -227,7 +227,7 @@ where
     }
 }
 
-/// Based on https://resilience4j.readme.io/docs/circuitbreaker
+/// Based on [resilience4j](https://resilience4j.readme.io/docs/circuitbreaker)
 pub struct ExecutorConfig {
     builder: RecloserBuilder,
     timeout: Duration,
@@ -237,8 +237,9 @@ impl ExecutorConfig {
     /// Creates a new `ExecutorConfig` from a `timeout`. Note that the `timeout`
     /// is *not* a global timeout, but will be applied to each individual call
     /// of the underlying future.
-    /// The rest of the parameters - threshold, closed_len, etc, are initialized
+    /// The rest of the parameters - threshold, `closed_len`, etc, are initialized
     /// to defaults.
+    #[must_use]
     pub fn new(timeout: Duration) -> Self {
         let builder = Recloser::custom()
             .error_rate(0.5)
@@ -249,15 +250,17 @@ impl ExecutorConfig {
     }
 
     /// The timeout for the individual executions of the future
+    #[must_use]
     pub fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
     }
 
     /// The threshold for opening the circuit, expressed as a float between 0 and 1.0.
-    /// The state of the CircuitBreaker changes from CLOSED to OPEN when the failure rate
+    /// The state of the `CircuitBreaker` changes from `Closed` to `Open` when the failure rate
     /// is equal or greater than `threshold`.
     /// For example when more than 50% (`0.5f32`) of the recorded calls have failed.
+    #[must_use]
     pub fn threshold(mut self, threshold: f32) -> Self {
         self.builder = self.builder.error_rate(threshold);
         self
@@ -265,20 +268,23 @@ impl ExecutorConfig {
 
     /// How many calls will the circuit remain closed for before the failure
     /// rate is recalculated and the circuit may open
+    #[must_use]
     pub fn closed_len(mut self, closed_len: NonZeroUsize) -> Self {
         self.builder = self.builder.closed_len(closed_len.get());
         self
     }
 
-    /// How many calls will the circuit remain HalfOpen for before the failure
+    /// How many calls will the circuit remain `HalfOpen` for before the failure
     /// rate is recalculated and the circuit may either open or close
+    #[must_use]
     pub fn half_open_len(mut self, half_open_len: NonZeroUsize) -> Self {
         self.builder = self.builder.half_open_len(half_open_len.get());
         self
     }
 
-    /// The duration for which the circuit will remain Open, returning
-    /// with immediate Rejected errors, before transitioning to HalfOpen
+    /// The duration for which the circuit will remain `Open`, returning
+    /// with immediate Rejected errors, before transitioning to `HalfOpen`
+    #[must_use]
     pub fn open_wait(mut self, open_wait: Duration) -> Self {
         self.builder = self.builder.open_wait(open_wait);
         self
@@ -295,15 +301,15 @@ impl ExecutorConfig {
 /// `Executor` forces the caller to provide a timeout, and the circuit will open if too many
 /// calls exceed this timeout. This should help servers under heavy load to recover.
 ///
-/// When the circuit is OPEN, the future is rejected with `Error::Rejected`.
+/// When the circuit is `Open`, the future is rejected with `Error::Rejected`.
 ///
-/// After a wait time duration has elapsed, the CircuitBreaker state changes from OPEN to HALF_OPEN
+/// After a wait time duration has elapsed, the `CircuitBreaker` state changes from `Open` to `HalfOpen`
 /// and permits `half_open_len` calls to see if the backend is still unavailable or has
 /// become available again.
 ///
 /// If the failure rate or slow call rate is then equal or greater than the configured threshold,
-/// the state changes back to OPEN. If the failure rate and slow call rate is below the threshold,
-/// the state changes back to CLOSED.
+/// the state changes back to `Open`. If the failure rate and slow call rate is below the threshold,
+/// the state changes back to `Closed`.
 #[derive(Clone)]
 pub struct Executor {
     recloser: AsyncRecloser,
@@ -313,6 +319,7 @@ pub struct Executor {
 type ConcreteCondition<E> = fn(&E) -> bool;
 
 impl Executor {
+    #[must_use]
     pub fn new(config: ExecutorConfig) -> Self {
         let timeout = config.timeout;
         Executor {
@@ -321,8 +328,8 @@ impl Executor {
         }
     }
 
-    /// A wrapper around spawn_conditional where the condition is always true.
-    /// Compare with tokio-retry's Retry::spawn
+    /// A wrapper around `spawn_conditional` where the condition is always true.
+    /// Compare with tokio-retry's `Retry::spawn`
     pub fn spawn<A, I, T>(
         &self,
         strategy: T,
@@ -337,7 +344,7 @@ impl Executor {
         self.spawn_conditional(strategy, action, condition)
     }
 
-    /// Compare with tokio-retry's RetryIf::spawn
+    /// Compare with tokio-retry's `RetryIf::spawn`
     pub fn spawn_conditional<A, I, T, C>(
         &self,
         strategy: T,
@@ -354,9 +361,9 @@ impl Executor {
             strategy: strategy.into_iter(),
             state: ExecuteState::Running(
                 self.recloser
-                    .call(TryTimeout::new(self.timeout.clone(), action.run())),
+                    .call(TryTimeout::new(self.timeout, action.run())),
             ),
-            timeout: self.timeout.clone(),
+            timeout: self.timeout,
             recloser: &self.recloser,
             condition,
             action,
