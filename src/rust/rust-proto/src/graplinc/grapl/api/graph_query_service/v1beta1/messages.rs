@@ -56,9 +56,9 @@ pub enum IntegerProperty {
     Immutable(ImmutableIntProp),
 }
 
-impl TryFrom<proto::IntProperty> for IntegerProperty {
+impl TryFrom<proto::IntegerProperty> for IntegerProperty {
     type Error = SerDeError;
-    fn try_from(value_proto: proto::IntProperty) -> Result<Self, Self::Error> {
+    fn try_from(value_proto: proto::IntegerProperty) -> Result<Self, Self::Error> {
         match value_proto.property {
             Some(proto::integer_property::Property::IncrementOnly(p)) => {
                 Ok(IntegerProperty::IncrementOnly(p.try_into()?))
@@ -104,7 +104,9 @@ impl TryFrom<proto::int_filter::Operation> for IntOperation {
     type Error = SerDeError;
     fn try_from(value_proto: proto::int_filter::Operation) -> Result<Self, Self::Error> {
         match value_proto {
-            proto::int_filter::Operation::Unspecified => Err(SerDeError::UnknownVariant("IntOperation")),
+            proto::int_filter::Operation::Unspecified => {
+                Err(SerDeError::UnknownVariant("IntOperation"))
+            }
             proto::int_filter::Operation::Has => Ok(Self::Has),
             proto::int_filter::Operation::Equal => Ok(Self::Equal),
             proto::int_filter::Operation::LessThan => Ok(Self::LessThan),
@@ -313,7 +315,9 @@ impl TryFrom<proto::string_filter::Operation> for StringOperation {
     type Error = SerDeError;
     fn try_from(value_proto: proto::string_filter::Operation) -> Result<Self, Self::Error> {
         match value_proto {
-            proto::string_filter::Operation::Unspecified => Err(SerDeError::UnknownVariant("StringOperation")),
+            proto::string_filter::Operation::Unspecified => {
+                Err(SerDeError::UnknownVariant("StringOperation"))
+            }
             proto::string_filter::Operation::Has => Ok(Self::Has),
             proto::string_filter::Operation::Equal => Ok(Self::Equal),
             proto::string_filter::Operation::Contains => Ok(Self::Contains),
@@ -466,7 +470,9 @@ impl TryFrom<proto::uid_filter::Operation> for UidOperation {
     type Error = SerDeError;
     fn try_from(value_proto: proto::uid_filter::Operation) -> Result<Self, Self::Error> {
         match value_proto {
-            proto::uid_filter::Operation::Unspecified => Err(SerDeError::UnknownVariant("UidOperation")),
+            proto::uid_filter::Operation::Unspecified => {
+                Err(SerDeError::UnknownVariant("UidOperation"))
+            }
             proto::uid_filter::Operation::Equal => Ok(Self::Equal),
         }
     }
