@@ -98,8 +98,6 @@ pub struct PluginRegistryServiceConfig {
     pub plugin_registry_bind_address: SocketAddr,
     #[clap(long, env)]
     pub plugin_bootstrap_container_image: String,
-    #[clap(long, env)]
-    pub plugin_execution_image: String,
     #[clap(long, env = "PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL")]
     pub kernel_artifact_url: String,
     #[clap(long, env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]
@@ -120,6 +118,11 @@ pub struct PluginRegistryServiceConfig {
 pub struct PluginExecutionPassthroughVars {
     #[clap(long, env = "PLUGIN_EXECUTION_OBSERVABILITY_ENV_VARS")]
     pub observability_env_vars: String,
+    #[clap(long, env = "PLUGIN_EXECUTION_GENERATOR_SIDECAR_IMAGE")]
+    pub generator_sidecar_image: String,
+    #[clap(long, env = "PLUGIN_EXECUTION_ANALYZER_SIDECAR_IMAGE")]
+    pub analyzer_sidecar_image: String,
+
     // Pass through a couple env vars also used for the plugin-registry service
     // Since they're used in both ways - locally for this service, and the
     // spawned plugins - I decided against prefixing PLUGIN_EXECUTION_.
