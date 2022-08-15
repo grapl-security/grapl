@@ -41,14 +41,17 @@ use uuid::Uuid;
 #[tracing::instrument(skip(ctx))]
 #[test_context(E2eTestContext)]
 #[tokio::test]
-async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std::error::Error>> {
+async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
     let test_name = "test_sysmon_log_e2e";
 
     let SetupResult {
         tenant_id,
         plugin_id,
         event_source_id,
-    } = ctx.setup_sysmon_generator(test_name).await?;
+    } = ctx
+        .setup_sysmon_generator(test_name)
+        .await
+        .expect("failed to setup the sysmon-generator");
 
     tracing::info!(">> Setup complete. Now let's test milestones in the pipeline.");
 
@@ -106,7 +109,8 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
 
     tracing::info!(">> Inserting logs into pipeline-ingress!");
 
-    let input_log_lines = test_fixtures::get_36_eventlog_xml_separate_lines()?;
+    let input_log_lines = test_fixtures::get_36_eventlog_xml_separate_lines()
+        .expect("failed to read input log lines");
     for log_line in &input_log_lines {
         ctx.pipeline_ingress_client
             .publish_raw_log(PublishRawLogRequest::new(
@@ -114,12 +118,15 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
                 tenant_id,
                 Bytes::from(log_line.clone()),
             ))
-            .await?;
+            .await
+            .expect("failed to publish raw log to pipeline-ingress");
     }
 
     tracing::info!(">> Test: that input shows up in raw-logs");
 
-    let raw_logs = raw_logs_scanner_handle.await?;
+    let raw_logs = raw_logs_scanner_handle
+        .await
+        .expect("failed to configure raw_logs scanner");
     assert_eq!(raw_logs.len(), input_log_lines.len());
     assert!(raw_logs.iter().all(|envelope| {
         envelope.tenant_id() == tenant_id && envelope.event_source_id() == event_source_id
@@ -140,11 +147,15 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     // After the Generator is done, the generator-execution-sidecar will tell
     // Plugin Work Queue to write to the "generated-graphs" topic.
     tracing::info!(">> Testing that the generator eventually writes to `generated-graphs`");
-    let generated_graphs = generated_graphs_scanner_handle.await?;
+    let generated_graphs = generated_graphs_scanner_handle
+        .await
+        .expect("failed to configure generated_graphs scanner");
     assert_eq!(generated_graphs.len(), input_log_lines.len());
 
     tracing::info!(">> Test: node-identifier can identify nodes of the unidentified graph, then write to 'identified-graphs'");
-    let identified_graphs = node_identifier_scanner_handle.await?;
+    let identified_graphs = node_identifier_scanner_handle
+        .await
+        .expect("failed to configure identified_graphs scanner");
     assert_eq!(identified_graphs.len(), input_log_lines.len());
 
     let filtered_identified_graphs = identified_graphs
@@ -161,7 +172,9 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     assert_eq!(filtered_identified_graphs.len(), 1);
 
     tracing::info!(">> Test: graph-merger wrote these identified nodes to our graph database, then write to 'merged-graphs'");
-    let merged_graphs = graph_merger_scanner_handle.await?;
+    let merged_graphs = graph_merger_scanner_handle
+        .await
+        .expect("failed to configure merged_graphs scanner");
     assert_eq!(merged_graphs.len(), input_log_lines.len());
 
     let filtered_merged_graphs = merged_graphs
@@ -178,6 +191,4 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> Result<(), Box<dyn std
     assert_eq!(filtered_merged_graphs.len(), 1);
 
     // TODO: Perhaps add a test here that looks in dgraph/scylla for those identified nodes
-
-    Ok(())
 }
