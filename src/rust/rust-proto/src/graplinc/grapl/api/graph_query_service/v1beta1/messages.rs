@@ -19,46 +19,7 @@ use crate::{
             Uid,
         },
     },
-    protobufs::graplinc::grapl::api::graph_query_service::v1beta1::{
-        int_filter::Operation as IntOperationProto,
-        integer_property as integer_property_proto,
-        maybe_match_with_uid as maybe_match_with_uid_proto,
-        string_filter::Operation as StringOperationProto,
-        uid_filter::Operation as UidOperationProto,
-        AndIntFilters as AndIntFiltersProto,
-        AndStringFilters as AndStringFiltersProto,
-        EdgeNameEntry as EdgeNameEntryProto,
-        EdgeNameMap as EdgeNameMapProto,
-        EdgeQueryEntry as EdgeQueryEntryProto,
-        EdgeQueryMap as EdgeQueryMapProto,
-        EdgeViewEntry as EdgeViewEntryProto,
-        EdgeViewMap as EdgeViewMapProto,
-        GraphQuery as GraphQueryProto,
-        GraphView as GraphViewProto,
-        IntFilter as IntFilterProto,
-        IntegerProperty as IntegerPropertyProto,
-        MatchedGraphWithUid as MatchedGraphWithUidProto,
-        MaybeMatchWithUid as MaybeMatchWithUidProto,
-        NoMatchWithUid as NoMatchWithUidProto,
-        NodePropertiesView as NodePropertiesViewProto,
-        NodePropertiesViewEntry as NodePropertiesViewEntryProto,
-        NodePropertiesViewMap as NodePropertiesViewMapProto,
-        NodePropertyQuery as NodePropertyQueryProto,
-        NodePropertyQueryEntry as NodePropertyQueryEntryProto,
-        NodePropertyQueryMap as NodePropertyQueryMapProto,
-        OrIntFilters as OrIntFiltersProto,
-        OrStringFilters as OrStringFiltersProto,
-        QueryGraphFromUidRequest as QueryGraphFromUidRequestProto,
-        QueryGraphFromUidResponse as QueryGraphFromUidResponseProto,
-        QueryGraphWithUidRequest as QueryGraphWithUidRequestProto,
-        QueryGraphWithUidResponse as QueryGraphWithUidResponseProto,
-        QueryId as QueryIdProto,
-        StringFilter as StringFilterProto,
-        StringProperties as StringPropertiesProto,
-        StringProperty as StringPropertyProto,
-        UidFilter as UidFilterProto,
-        UidFilters as UidFiltersProto,
-    },
+    protobufs::graplinc::grapl::api::graph_query_service::v1beta1 as proto,
     SerDeError,
 };
 
@@ -75,14 +36,14 @@ impl Default for QueryId {
     }
 }
 
-impl TryFrom<QueryIdProto> for QueryId {
+impl TryFrom<proto::QueryId> for QueryId {
     type Error = SerDeError;
-    fn try_from(value: QueryIdProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::QueryId) -> Result<Self, Self::Error> {
         Ok(Self { value: value.value })
     }
 }
 
-impl From<QueryId> for QueryIdProto {
+impl From<QueryId> for proto::QueryId {
     fn from(value: QueryId) -> Self {
         Self { value: value.value }
     }
@@ -95,17 +56,17 @@ pub enum IntegerProperty {
     Immutable(ImmutableIntProp),
 }
 
-impl TryFrom<IntegerPropertyProto> for IntegerProperty {
+impl TryFrom<proto::IntProperty> for IntegerProperty {
     type Error = SerDeError;
-    fn try_from(value_proto: IntegerPropertyProto) -> Result<Self, Self::Error> {
+    fn try_from(value_proto: proto::IntProperty) -> Result<Self, Self::Error> {
         match value_proto.property {
-            Some(integer_property_proto::Property::IncrementOnly(p)) => {
+            Some(proto::integer_property::Property::IncrementOnly(p)) => {
                 Ok(IntegerProperty::IncrementOnly(p.try_into()?))
             }
-            Some(integer_property_proto::Property::DecrementOnly(p)) => {
+            Some(proto::integer_property::Property::DecrementOnly(p)) => {
                 Ok(IntegerProperty::DecrementOnly(p.try_into()?))
             }
-            Some(integer_property_proto::Property::Immutable(p)) => {
+            Some(proto::integer_property::Property::Immutable(p)) => {
                 Ok(IntegerProperty::Immutable(p.try_into()?))
             }
             None => Err(SerDeError::UnknownVariant("IntegerProperty")),
@@ -113,17 +74,17 @@ impl TryFrom<IntegerPropertyProto> for IntegerProperty {
     }
 }
 
-impl From<IntegerProperty> for IntegerPropertyProto {
+impl From<IntegerProperty> for proto::IntegerProperty {
     fn from(value: IntegerProperty) -> Self {
         match value {
-            IntegerProperty::IncrementOnly(p) => IntegerPropertyProto {
-                property: Some(integer_property_proto::Property::IncrementOnly(p.into())),
+            IntegerProperty::IncrementOnly(p) => proto::IntegerProperty {
+                property: Some(proto::integer_property::Property::IncrementOnly(p.into())),
             },
-            IntegerProperty::DecrementOnly(p) => IntegerPropertyProto {
-                property: Some(integer_property_proto::Property::DecrementOnly(p.into())),
+            IntegerProperty::DecrementOnly(p) => proto::IntegerProperty {
+                property: Some(proto::integer_property::Property::DecrementOnly(p.into())),
             },
-            IntegerProperty::Immutable(p) => IntegerPropertyProto {
-                property: Some(integer_property_proto::Property::Immutable(p.into())),
+            IntegerProperty::Immutable(p) => proto::IntegerProperty {
+                property: Some(proto::integer_property::Property::Immutable(p.into())),
             },
         }
     }
@@ -139,30 +100,30 @@ pub enum IntOperation {
     GreaterThanOrEqual,
 }
 
-impl TryFrom<IntOperationProto> for IntOperation {
+impl TryFrom<proto::int_filter::Operation> for IntOperation {
     type Error = SerDeError;
-    fn try_from(value_proto: IntOperationProto) -> Result<Self, Self::Error> {
+    fn try_from(value_proto: proto::int_filter::Operation) -> Result<Self, Self::Error> {
         match value_proto {
-            IntOperationProto::Unspecified => Err(SerDeError::UnknownVariant("IntOperation")),
-            IntOperationProto::Has => Ok(Self::Has),
-            IntOperationProto::Equal => Ok(Self::Equal),
-            IntOperationProto::LessThan => Ok(Self::LessThan),
-            IntOperationProto::LessThanOrEqual => Ok(Self::LessThanOrEqual),
-            IntOperationProto::GreaterThan => Ok(Self::GreaterThan),
-            IntOperationProto::GreaterThanOrEqual => Ok(Self::GreaterThanOrEqual),
+            proto::int_filter::Operation::Unspecified => Err(SerDeError::UnknownVariant("IntOperation")),
+            proto::int_filter::Operation::Has => Ok(Self::Has),
+            proto::int_filter::Operation::Equal => Ok(Self::Equal),
+            proto::int_filter::Operation::LessThan => Ok(Self::LessThan),
+            proto::int_filter::Operation::LessThanOrEqual => Ok(Self::LessThanOrEqual),
+            proto::int_filter::Operation::GreaterThan => Ok(Self::GreaterThan),
+            proto::int_filter::Operation::GreaterThanOrEqual => Ok(Self::GreaterThanOrEqual),
         }
     }
 }
 
-impl From<IntOperation> for IntOperationProto {
+impl From<IntOperation> for proto::int_filter::Operation {
     fn from(value: IntOperation) -> Self {
         match value {
-            IntOperation::Has => IntOperationProto::Has,
-            IntOperation::Equal => IntOperationProto::Equal,
-            IntOperation::LessThan => IntOperationProto::LessThan,
-            IntOperation::LessThanOrEqual => IntOperationProto::LessThanOrEqual,
-            IntOperation::GreaterThan => IntOperationProto::GreaterThan,
-            IntOperation::GreaterThanOrEqual => IntOperationProto::GreaterThanOrEqual,
+            IntOperation::Has => proto::int_filter::Operation::Has,
+            IntOperation::Equal => proto::int_filter::Operation::Equal,
+            IntOperation::LessThan => proto::int_filter::Operation::LessThan,
+            IntOperation::LessThanOrEqual => proto::int_filter::Operation::LessThanOrEqual,
+            IntOperation::GreaterThan => proto::int_filter::Operation::GreaterThan,
+            IntOperation::GreaterThanOrEqual => proto::int_filter::Operation::GreaterThanOrEqual,
         }
     }
 }
@@ -174,10 +135,10 @@ pub struct IntFilter {
     pub negated: bool,
 }
 
-impl TryFrom<IntFilterProto> for IntFilter {
+impl TryFrom<proto::IntFilter> for IntFilter {
     type Error = SerDeError;
 
-    fn try_from(value_proto: IntFilterProto) -> Result<Self, Self::Error> {
+    fn try_from(value_proto: proto::IntFilter) -> Result<Self, Self::Error> {
         let operation = value_proto.operation().try_into()?;
         let value = value_proto.value;
         let negated = value_proto.negated;
@@ -189,9 +150,9 @@ impl TryFrom<IntFilterProto> for IntFilter {
     }
 }
 
-impl From<IntFilter> for IntFilterProto {
-    fn from(value: IntFilter) -> IntFilterProto {
-        IntFilterProto {
+impl From<IntFilter> for proto::IntFilter {
+    fn from(value: IntFilter) -> proto::IntFilter {
+        proto::IntFilter {
             operation: value.operation as i32,
             value: value.value,
             negated: value.negated,
@@ -204,9 +165,9 @@ pub struct AndIntFilters {
     pub int_filters: Vec<IntFilter>,
 }
 
-impl TryFrom<AndIntFiltersProto> for AndIntFilters {
+impl TryFrom<proto::AndIntFilters> for AndIntFilters {
     type Error = SerDeError;
-    fn try_from(value: AndIntFiltersProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::AndIntFilters) -> Result<Self, Self::Error> {
         let int_filters = value
             .int_filters
             .into_iter()
@@ -216,13 +177,13 @@ impl TryFrom<AndIntFiltersProto> for AndIntFilters {
     }
 }
 
-impl From<AndIntFilters> for AndIntFiltersProto {
+impl From<AndIntFilters> for proto::AndIntFilters {
     fn from(value: AndIntFilters) -> Self {
         Self {
             int_filters: value
                 .int_filters
                 .into_iter()
-                .map(IntFilterProto::from)
+                .map(proto::IntFilter::from)
                 .collect(),
         }
     }
@@ -233,9 +194,9 @@ pub struct OrIntFilters {
     pub and_int_filters: Vec<AndIntFilters>,
 }
 
-impl TryFrom<OrIntFiltersProto> for OrIntFilters {
+impl TryFrom<proto::OrIntFilters> for OrIntFilters {
     type Error = SerDeError;
-    fn try_from(value: OrIntFiltersProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::OrIntFilters) -> Result<Self, Self::Error> {
         let and_int_filters = value
             .and_int_filters
             .into_iter()
@@ -245,12 +206,12 @@ impl TryFrom<OrIntFiltersProto> for OrIntFilters {
     }
 }
 
-impl From<OrIntFilters> for OrIntFiltersProto {
+impl From<OrIntFilters> for proto::OrIntFilters {
     fn from(value: OrIntFilters) -> Self {
         let and_int_filters = value
             .and_int_filters
             .into_iter()
-            .map(AndIntFiltersProto::from)
+            .map(proto::AndIntFilters::from)
             .collect();
         Self { and_int_filters }
     }
@@ -348,20 +309,20 @@ pub enum StringOperation {
     Regex,
 }
 
-impl TryFrom<StringOperationProto> for StringOperation {
+impl TryFrom<proto::string_filter::Operation> for StringOperation {
     type Error = SerDeError;
-    fn try_from(value_proto: StringOperationProto) -> Result<Self, Self::Error> {
+    fn try_from(value_proto: proto::string_filter::Operation) -> Result<Self, Self::Error> {
         match value_proto {
-            StringOperationProto::Unspecified => Err(SerDeError::UnknownVariant("StringOperation")),
-            StringOperationProto::Has => Ok(Self::Has),
-            StringOperationProto::Equal => Ok(Self::Equal),
-            StringOperationProto::Contains => Ok(Self::Contains),
-            StringOperationProto::Regex => Ok(Self::Regex),
+            proto::string_filter::Operation::Unspecified => Err(SerDeError::UnknownVariant("StringOperation")),
+            proto::string_filter::Operation::Has => Ok(Self::Has),
+            proto::string_filter::Operation::Equal => Ok(Self::Equal),
+            proto::string_filter::Operation::Contains => Ok(Self::Contains),
+            proto::string_filter::Operation::Regex => Ok(Self::Regex),
         }
     }
 }
 
-impl From<StringOperation> for StringOperationProto {
+impl From<StringOperation> for proto::string_filter::Operation {
     fn from(value: StringOperation) -> Self {
         match value {
             StringOperation::Has => Self::Has,
@@ -379,10 +340,10 @@ pub struct StringFilter {
     pub negated: bool,
 }
 
-impl TryFrom<StringFilterProto> for StringFilter {
+impl TryFrom<proto::StringFilter> for StringFilter {
     type Error = SerDeError;
 
-    fn try_from(value_proto: StringFilterProto) -> Result<Self, Self::Error> {
+    fn try_from(value_proto: proto::StringFilter) -> Result<Self, Self::Error> {
         let operation = value_proto.operation().try_into()?;
         let value = value_proto.value;
         let negated = value_proto.negated;
@@ -394,9 +355,9 @@ impl TryFrom<StringFilterProto> for StringFilter {
     }
 }
 
-impl From<StringFilter> for StringFilterProto {
-    fn from(value: StringFilter) -> StringFilterProto {
-        StringFilterProto {
+impl From<StringFilter> for proto::StringFilter {
+    fn from(value: StringFilter) -> proto::StringFilter {
+        proto::StringFilter {
             operation: value.operation as i32,
             value: value.value,
             negated: value.negated,
@@ -409,9 +370,9 @@ pub struct AndStringFilters {
     pub string_filters: Vec<StringFilter>,
 }
 
-impl TryFrom<AndStringFiltersProto> for AndStringFilters {
+impl TryFrom<proto::AndStringFilters> for AndStringFilters {
     type Error = SerDeError;
-    fn try_from(value: AndStringFiltersProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::AndStringFilters) -> Result<Self, Self::Error> {
         let string_filters = value
             .string_filters
             .into_iter()
@@ -421,13 +382,13 @@ impl TryFrom<AndStringFiltersProto> for AndStringFilters {
     }
 }
 
-impl From<AndStringFilters> for AndStringFiltersProto {
+impl From<AndStringFilters> for proto::AndStringFilters {
     fn from(value: AndStringFilters) -> Self {
         Self {
             string_filters: value
                 .string_filters
                 .into_iter()
-                .map(StringFilterProto::from)
+                .map(proto::StringFilter::from)
                 .collect(),
         }
     }
@@ -473,9 +434,9 @@ impl From<OrStringFilters> for Vec<Vec<StringCmp>> {
     }
 }
 
-impl TryFrom<OrStringFiltersProto> for OrStringFilters {
+impl TryFrom<proto::OrStringFilters> for OrStringFilters {
     type Error = SerDeError;
-    fn try_from(value: OrStringFiltersProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::OrStringFilters) -> Result<Self, Self::Error> {
         let and_string_filters = value
             .and_string_filters
             .into_iter()
@@ -485,12 +446,12 @@ impl TryFrom<OrStringFiltersProto> for OrStringFilters {
     }
 }
 
-impl From<OrStringFilters> for OrStringFiltersProto {
+impl From<OrStringFilters> for proto::OrStringFilters {
     fn from(value: OrStringFilters) -> Self {
         let and_string_filters = value
             .and_string_filters
             .into_iter()
-            .map(AndStringFiltersProto::from)
+            .map(proto::AndStringFilters::from)
             .collect();
         Self { and_string_filters }
     }
@@ -501,17 +462,17 @@ pub enum UidOperation {
     Equal,
 }
 
-impl TryFrom<UidOperationProto> for UidOperation {
+impl TryFrom<proto::uid_filter::Operation> for UidOperation {
     type Error = SerDeError;
-    fn try_from(value_proto: UidOperationProto) -> Result<Self, Self::Error> {
+    fn try_from(value_proto: proto::uid_filter::Operation) -> Result<Self, Self::Error> {
         match value_proto {
-            UidOperationProto::Unspecified => Err(SerDeError::UnknownVariant("UidOperation")),
-            UidOperationProto::Equal => Ok(Self::Equal),
+            proto::uid_filter::Operation::Unspecified => Err(SerDeError::UnknownVariant("UidOperation")),
+            proto::uid_filter::Operation::Equal => Ok(Self::Equal),
         }
     }
 }
 
-impl From<UidOperation> for UidOperationProto {
+impl From<UidOperation> for proto::uid_filter::Operation {
     fn from(value: UidOperation) -> Self {
         match value {
             UidOperation::Equal => Self::Equal,
@@ -525,10 +486,10 @@ pub struct UidFilter {
     pub value: Uid,
 }
 
-impl TryFrom<UidFilterProto> for UidFilter {
+impl TryFrom<proto::UidFilter> for UidFilter {
     type Error = SerDeError;
 
-    fn try_from(value_proto: UidFilterProto) -> Result<Self, Self::Error> {
+    fn try_from(value_proto: proto::UidFilter) -> Result<Self, Self::Error> {
         let operation = value_proto.operation().try_into()?;
         let value = value_proto
             .value
@@ -538,9 +499,9 @@ impl TryFrom<UidFilterProto> for UidFilter {
     }
 }
 
-impl From<UidFilter> for UidFilterProto {
-    fn from(value: UidFilter) -> UidFilterProto {
-        UidFilterProto {
+impl From<UidFilter> for proto::UidFilter {
+    fn from(value: UidFilter) -> proto::UidFilter {
+        proto::UidFilter {
             operation: value.operation as i32,
             value: Some(value.value.into()),
         }
@@ -552,9 +513,9 @@ pub struct UidFilters {
     pub uid_filters: Vec<UidFilter>,
 }
 
-impl TryFrom<UidFiltersProto> for UidFilters {
+impl TryFrom<proto::UidFilters> for UidFilters {
     type Error = SerDeError;
-    fn try_from(value: UidFiltersProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::UidFilters) -> Result<Self, Self::Error> {
         let uid_filters = value
             .uid_filters
             .into_iter()
@@ -564,13 +525,13 @@ impl TryFrom<UidFiltersProto> for UidFilters {
     }
 }
 
-impl From<UidFilters> for UidFiltersProto {
+impl From<UidFilters> for proto::UidFilters {
     fn from(value: UidFilters) -> Self {
         Self {
             uid_filters: value
                 .uid_filters
                 .into_iter()
-                .map(UidFilterProto::from)
+                .map(proto::UidFilter::from)
                 .collect(),
         }
     }
@@ -616,9 +577,9 @@ impl NodePropertyQuery {
     }
 }
 
-impl TryFrom<NodePropertyQueryProto> for NodePropertyQuery {
+impl TryFrom<proto::NodePropertyQuery> for NodePropertyQuery {
     type Error = SerDeError;
-    fn try_from(value: NodePropertyQueryProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::NodePropertyQuery) -> Result<Self, Self::Error> {
         let node_type = value
             .node_type
             .ok_or(SerDeError::MissingField("node_type"))?
@@ -671,7 +632,7 @@ impl TryFrom<NodePropertyQueryProto> for NodePropertyQuery {
     }
 }
 
-impl From<NodePropertyQuery> for NodePropertyQueryProto {
+impl From<NodePropertyQuery> for proto::NodePropertyQuery {
     fn from(value: NodePropertyQuery) -> Self {
         let query_id = Some(value.query_id.into());
         let node_type = Some(value.node_type.into());
@@ -733,9 +694,9 @@ impl GraphQuery {
     }
 }
 
-impl TryFrom<GraphQueryProto> for GraphQuery {
+impl TryFrom<proto::GraphQuery> for GraphQuery {
     type Error = SerDeError;
-    fn try_from(value: GraphQueryProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::GraphQuery) -> Result<Self, Self::Error> {
         let root_query_id: QueryId = value
             .root_query_id
             .ok_or_else(|| SerDeError::MissingField("root_query_id"))?
@@ -812,36 +773,36 @@ impl TryFrom<GraphQueryProto> for GraphQuery {
     }
 }
 
-impl From<GraphQuery> for GraphQueryProto {
+impl From<GraphQuery> for proto::GraphQuery {
     fn from(value: GraphQuery) -> Self {
         let root_query_id = Some(value.root_query_id.into());
-        let node_property_queries = Some(NodePropertyQueryMapProto {
+        let node_property_queries = Some(proto::NodePropertyQueryMap {
             entries: value
                 .node_property_queries
                 .into_iter()
-                .map(|(k, v)| NodePropertyQueryEntryProto {
+                .map(|(k, v)| proto::NodePropertyQueryEntry {
                     query_id: Some(k.into()),
                     node_property_query: Some(v.into()),
                 })
                 .collect(),
         });
-        let edge_filters = Some(EdgeQueryMapProto {
+        let edge_filters = Some(proto::EdgeQueryMap {
             entries: value
                 .edge_filters
                 .into_iter()
-                .map(|((k0, k1), v)| EdgeQueryEntryProto {
+                .map(|((k0, k1), v)| proto::EdgeQueryEntry {
                     query_id: Some(k0.into()),
                     edge_name: Some(k1.into()),
-                    neighbor_query_ids: v.into_iter().map(QueryIdProto::from).collect(),
+                    neighbor_query_ids: v.into_iter().map(proto::QueryId::from).collect(),
                 })
                 .collect(),
         });
 
-        let edge_map = Some(EdgeNameMapProto {
+        let edge_map = Some(proto::EdgeNameMap {
             entries: value
                 .edge_map
                 .into_iter()
-                .map(|(k, v)| EdgeNameEntryProto {
+                .map(|(k, v)| proto::EdgeNameEntry {
                     forward_edge_name: Some(k.into()),
                     reverse_edge_name: Some(v.into()),
                 })
@@ -887,9 +848,9 @@ impl NodePropertiesView {
     }
 }
 
-impl TryFrom<NodePropertiesViewProto> for NodePropertiesView {
+impl TryFrom<proto::NodePropertiesView> for NodePropertiesView {
     type Error = SerDeError;
-    fn try_from(value: NodePropertiesViewProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::NodePropertiesView) -> Result<Self, Self::Error> {
         let proto_string_properties = value
             .string_properties
             .ok_or_else(|| SerDeError::MissingField("string_properties"))?;
@@ -918,17 +879,17 @@ impl TryFrom<NodePropertiesViewProto> for NodePropertiesView {
     }
 }
 
-impl From<NodePropertiesView> for NodePropertiesViewProto {
+impl From<NodePropertiesView> for proto::NodePropertiesView {
     fn from(value: NodePropertiesView) -> Self {
-        let string_properties: Vec<StringPropertyProto> = value
+        let string_properties: Vec<proto::StringProperty> = value
             .string_properties
             .into_iter()
-            .map(|(k, v)| StringPropertyProto {
+            .map(|(k, v)| proto::StringProperty {
                 property_name: Some(k.into()),
                 property_value: v,
             })
             .collect();
-        let string_properties = Some(StringPropertiesProto {
+        let string_properties = Some(proto::StringProperties {
             properties: string_properties,
         });
 
@@ -946,9 +907,9 @@ pub struct NodePropertiesViewEntry {
     pub node_view: NodePropertiesView,
 }
 
-impl TryFrom<NodePropertiesViewEntryProto> for NodePropertiesViewEntry {
+impl TryFrom<proto::NodePropertiesViewEntry> for NodePropertiesViewEntry {
     type Error = SerDeError;
-    fn try_from(value: NodePropertiesViewEntryProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::NodePropertiesViewEntry) -> Result<Self, Self::Error> {
         Ok(Self {
             uid: value
                 .uid
@@ -962,9 +923,9 @@ impl TryFrom<NodePropertiesViewEntryProto> for NodePropertiesViewEntry {
     }
 }
 
-impl From<NodePropertiesViewEntry> for NodePropertiesViewEntryProto {
+impl From<NodePropertiesViewEntry> for proto::NodePropertiesViewEntry {
     fn from(value: NodePropertiesViewEntry) -> Self {
-        NodePropertiesViewEntryProto {
+        proto::NodePropertiesViewEntry {
             uid: Some(value.uid.into()),
             node_view: Some(value.node_view.into()),
         }
@@ -976,9 +937,9 @@ pub struct NodePropertiesViewMap {
     pub entries: FxHashMap<Uid, NodePropertiesView>,
 }
 
-impl TryFrom<NodePropertiesViewMapProto> for NodePropertiesViewMap {
+impl TryFrom<proto::NodePropertiesViewMap> for NodePropertiesViewMap {
     type Error = SerDeError;
-    fn try_from(value: NodePropertiesViewMapProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::NodePropertiesViewMap) -> Result<Self, Self::Error> {
         let mut entries = FxHashMap::default();
         entries.reserve(value.entries.len());
 
@@ -998,12 +959,12 @@ impl TryFrom<NodePropertiesViewMapProto> for NodePropertiesViewMap {
     }
 }
 
-impl From<NodePropertiesViewMap> for NodePropertiesViewMapProto {
+impl From<NodePropertiesViewMap> for proto::NodePropertiesViewMap {
     fn from(value: NodePropertiesViewMap) -> Self {
         let mut entries = Vec::with_capacity(value.entries.len());
 
         for (uid, node_view) in value.entries.into_iter() {
-            entries.push(NodePropertiesViewEntryProto {
+            entries.push(proto::NodePropertiesViewEntry {
                 uid: Some(uid.into()),
                 node_view: Some(node_view.into()),
             });
@@ -1020,9 +981,9 @@ pub struct EdgeViewEntry {
     pub neighbors: FxHashSet<Uid>,
 }
 
-impl TryFrom<EdgeViewEntryProto> for EdgeViewEntry {
+impl TryFrom<proto::EdgeViewEntry> for EdgeViewEntry {
     type Error = SerDeError;
-    fn try_from(value: EdgeViewEntryProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::EdgeViewEntry) -> Result<Self, Self::Error> {
         let mut neighbors = FxHashSet::default();
         neighbors.reserve(value.neighbors.len());
         for neighbor in value.neighbors.into_iter() {
@@ -1042,13 +1003,13 @@ impl TryFrom<EdgeViewEntryProto> for EdgeViewEntry {
     }
 }
 
-impl From<EdgeViewEntry> for EdgeViewEntryProto {
+impl From<EdgeViewEntry> for proto::EdgeViewEntry {
     fn from(value: EdgeViewEntry) -> Self {
         let mut neighbors = Vec::with_capacity(value.neighbors.len());
         for neighbor in value.neighbors.into_iter() {
             neighbors.push(neighbor.into());
         }
-        EdgeViewEntryProto {
+        proto::EdgeViewEntry {
             uid: Some(value.uid.into()),
             edge_name: Some(value.edge_name.into()),
             neighbors,
@@ -1061,9 +1022,9 @@ pub struct EdgeViewMap {
     pub entries: FxHashMap<(Uid, EdgeName), FxHashSet<Uid>>,
 }
 
-impl TryFrom<EdgeViewMapProto> for EdgeViewMap {
+impl TryFrom<proto::EdgeViewMap> for EdgeViewMap {
     type Error = SerDeError;
-    fn try_from(value: EdgeViewMapProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::EdgeViewMap) -> Result<Self, Self::Error> {
         let mut entries = FxHashMap::default();
         entries.reserve(value.entries.len());
 
@@ -1076,7 +1037,7 @@ impl TryFrom<EdgeViewMapProto> for EdgeViewMap {
     }
 }
 
-impl From<EdgeViewMap> for EdgeViewMapProto {
+impl From<EdgeViewMap> for proto::EdgeViewMap {
     fn from(value: EdgeViewMap) -> Self {
         let mut entries = Vec::with_capacity(value.entries.len());
 
@@ -1159,9 +1120,9 @@ impl GraphView {
     }
 }
 
-impl TryFrom<GraphViewProto> for GraphView {
+impl TryFrom<proto::GraphView> for GraphView {
     type Error = SerDeError;
-    fn try_from(value: GraphViewProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::GraphView) -> Result<Self, Self::Error> {
         let nodes: NodePropertiesViewMap = value
             .nodes
             .ok_or(SerDeError::MissingField("nodes"))?
@@ -1178,7 +1139,7 @@ impl TryFrom<GraphViewProto> for GraphView {
     }
 }
 
-impl From<GraphView> for GraphViewProto {
+impl From<GraphView> for proto::GraphView {
     fn from(value: GraphView) -> Self {
         let nodes = NodePropertiesViewMap {
             entries: value.nodes,
@@ -1202,10 +1163,10 @@ pub struct QueryGraphWithUidRequest {
     pub graph_query: GraphQuery,
 }
 
-impl TryFrom<QueryGraphWithUidRequestProto> for QueryGraphWithUidRequest {
+impl TryFrom<proto::QueryGraphWithUidRequest> for QueryGraphWithUidRequest {
     type Error = SerDeError;
 
-    fn try_from(value: QueryGraphWithUidRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::QueryGraphWithUidRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             tenant_id: value
                 .tenant_id
@@ -1223,7 +1184,7 @@ impl TryFrom<QueryGraphWithUidRequestProto> for QueryGraphWithUidRequest {
     }
 }
 
-impl From<QueryGraphWithUidRequest> for QueryGraphWithUidRequestProto {
+impl From<QueryGraphWithUidRequest> for proto::QueryGraphWithUidRequest {
     fn from(value: QueryGraphWithUidRequest) -> Self {
         Self {
             tenant_id: Some(value.tenant_id.into()),
@@ -1239,9 +1200,9 @@ pub struct MatchedGraphWithUid {
     pub root_uid: Uid,
 }
 
-impl TryFrom<MatchedGraphWithUidProto> for MatchedGraphWithUid {
+impl TryFrom<proto::MatchedGraphWithUid> for MatchedGraphWithUid {
     type Error = SerDeError;
-    fn try_from(value: MatchedGraphWithUidProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::MatchedGraphWithUid) -> Result<Self, Self::Error> {
         Ok(Self {
             matched_graph: value
                 .matched_graph
@@ -1256,7 +1217,7 @@ impl TryFrom<MatchedGraphWithUidProto> for MatchedGraphWithUid {
     }
 }
 
-impl From<MatchedGraphWithUid> for MatchedGraphWithUidProto {
+impl From<MatchedGraphWithUid> for proto::MatchedGraphWithUid {
     fn from(value: MatchedGraphWithUid) -> Self {
         Self {
             matched_graph: Some(value.matched_graph.into()),
@@ -1268,14 +1229,14 @@ impl From<MatchedGraphWithUid> for MatchedGraphWithUidProto {
 #[derive(Debug, Clone)]
 pub struct NoMatchWithUid {}
 
-impl From<NoMatchWithUidProto> for NoMatchWithUid {
-    fn from(value: NoMatchWithUidProto) -> Self {
-        let NoMatchWithUidProto {} = value;
+impl From<proto::NoMatchWithUid> for NoMatchWithUid {
+    fn from(value: proto::NoMatchWithUid) -> Self {
+        let proto::NoMatchWithUid {} = value;
         Self {}
     }
 }
 
-impl From<NoMatchWithUid> for NoMatchWithUidProto {
+impl From<NoMatchWithUid> for proto::NoMatchWithUid {
     fn from(value: NoMatchWithUid) -> Self {
         let NoMatchWithUid {} = value;
         Self {}
@@ -1288,14 +1249,14 @@ pub enum MaybeMatchWithUid {
     Missed(NoMatchWithUid),
 }
 
-impl TryFrom<MaybeMatchWithUidProto> for MaybeMatchWithUid {
+impl TryFrom<proto::MaybeMatchWithUid> for MaybeMatchWithUid {
     type Error = SerDeError;
-    fn try_from(value_proto: MaybeMatchWithUidProto) -> Result<Self, Self::Error> {
+    fn try_from(value_proto: proto::MaybeMatchWithUid) -> Result<Self, Self::Error> {
         match value_proto.inner {
-            Some(maybe_match_with_uid_proto::Inner::Matched(matched)) => {
+            Some(proto::maybe_match_with_uid::Inner::Matched(matched)) => {
                 Ok(MaybeMatchWithUid::Matched(matched.try_into()?))
             }
-            Some(maybe_match_with_uid_proto::Inner::Missed(missed)) => {
+            Some(proto::maybe_match_with_uid::Inner::Missed(missed)) => {
                 Ok(MaybeMatchWithUid::Missed(missed.into()))
             }
             None => Err(SerDeError::UnknownVariant("MaybeMatchWithUid")),
@@ -1303,14 +1264,14 @@ impl TryFrom<MaybeMatchWithUidProto> for MaybeMatchWithUid {
     }
 }
 
-impl From<MaybeMatchWithUid> for MaybeMatchWithUidProto {
+impl From<MaybeMatchWithUid> for proto::MaybeMatchWithUid {
     fn from(value: MaybeMatchWithUid) -> Self {
         match value {
-            MaybeMatchWithUid::Matched(matched) => MaybeMatchWithUidProto {
-                inner: Some(maybe_match_with_uid_proto::Inner::Matched(matched.into())),
+            MaybeMatchWithUid::Matched(matched) => proto::MaybeMatchWithUid {
+                inner: Some(proto::maybe_match_with_uid::Inner::Matched(matched.into())),
             },
-            MaybeMatchWithUid::Missed(p) => MaybeMatchWithUidProto {
-                inner: Some(maybe_match_with_uid_proto::Inner::Missed(p.into())),
+            MaybeMatchWithUid::Missed(p) => proto::MaybeMatchWithUid {
+                inner: Some(proto::maybe_match_with_uid::Inner::Missed(p.into())),
             },
         }
     }
@@ -1321,9 +1282,9 @@ pub struct QueryGraphWithUidResponse {
     pub maybe_match: MaybeMatchWithUid,
 }
 
-impl TryFrom<QueryGraphWithUidResponseProto> for QueryGraphWithUidResponse {
+impl TryFrom<proto::QueryGraphWithUidResponse> for QueryGraphWithUidResponse {
     type Error = SerDeError;
-    fn try_from(value: QueryGraphWithUidResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::QueryGraphWithUidResponse) -> Result<Self, Self::Error> {
         Ok(Self {
             maybe_match: value
                 .maybe_match
@@ -1333,7 +1294,7 @@ impl TryFrom<QueryGraphWithUidResponseProto> for QueryGraphWithUidResponse {
     }
 }
 
-impl From<QueryGraphWithUidResponse> for QueryGraphWithUidResponseProto {
+impl From<QueryGraphWithUidResponse> for proto::QueryGraphWithUidResponse {
     fn from(value: QueryGraphWithUidResponse) -> Self {
         Self {
             maybe_match: Some(value.maybe_match.into()),
@@ -1348,10 +1309,10 @@ pub struct QueryGraphFromUidRequest {
     pub graph_query: GraphQuery,
 }
 
-impl TryFrom<QueryGraphFromUidRequestProto> for QueryGraphFromUidRequest {
+impl TryFrom<proto::QueryGraphFromUidRequest> for QueryGraphFromUidRequest {
     type Error = SerDeError;
 
-    fn try_from(value: QueryGraphFromUidRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::QueryGraphFromUidRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             tenant_id: value
                 .tenant_id
@@ -1369,7 +1330,7 @@ impl TryFrom<QueryGraphFromUidRequestProto> for QueryGraphFromUidRequest {
     }
 }
 
-impl From<QueryGraphFromUidRequest> for QueryGraphFromUidRequestProto {
+impl From<QueryGraphFromUidRequest> for proto::QueryGraphFromUidRequest {
     fn from(value: QueryGraphFromUidRequest) -> Self {
         Self {
             tenant_id: Some(value.tenant_id.into()),
@@ -1384,9 +1345,9 @@ pub struct QueryGraphFromUidResponse {
     pub matched_graph: GraphView,
 }
 
-impl TryFrom<QueryGraphFromUidResponseProto> for QueryGraphFromUidResponse {
+impl TryFrom<proto::QueryGraphFromUidResponse> for QueryGraphFromUidResponse {
     type Error = SerDeError;
-    fn try_from(value: QueryGraphFromUidResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::QueryGraphFromUidResponse) -> Result<Self, Self::Error> {
         Ok(Self {
             matched_graph: value
                 .matched_graph
@@ -1396,7 +1357,7 @@ impl TryFrom<QueryGraphFromUidResponseProto> for QueryGraphFromUidResponse {
     }
 }
 
-impl From<QueryGraphFromUidResponse> for QueryGraphFromUidResponseProto {
+impl From<QueryGraphFromUidResponse> for proto::QueryGraphFromUidResponse {
     fn from(value: QueryGraphFromUidResponse) -> Self {
         Self {
             matched_graph: Some(value.matched_graph.into()),
