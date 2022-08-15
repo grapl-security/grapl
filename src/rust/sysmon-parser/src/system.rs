@@ -38,7 +38,7 @@ pub use time_created::TimeCreated;
 ///
 /// <https://docs.microsoft.com/en-us/windows/win32/wes/eventschema-systempropertiestype-complextype>
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, IntoOwned)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct System<'a> {
     /// Identifies the provider that logged the event.

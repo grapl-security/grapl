@@ -16,7 +16,7 @@ pub const UTC_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
 
 /// Event-specific data for the Sysmon event. This inludes the data found in the `<EventData>` element.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, IntoOwned)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum EventData<'a> {
     /// Event ID 11: FileCreate

@@ -16,7 +16,7 @@ use crate::{
 
 //////////////////// CreateEventSourceRequest ////////////////////
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreateEventSourceRequest {
     pub display_name: String,
     pub description: String,
@@ -69,7 +69,7 @@ impl From<CreateEventSourceRequest> for proto::CreateEventSourceRequest {
 
 //////////////////// CreateEventSourceResponse ////////////////////
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreateEventSourceResponse {
     pub event_source_id: Uuid,
     pub created_time: SystemTime,
@@ -116,7 +116,7 @@ impl TryFrom<CreateEventSourceResponse> for proto::CreateEventSourceResponse {
 
 //////////////////// UpdateEventSourceRequest ////////////////////
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UpdateEventSourceRequest {
     pub event_source_id: Uuid,
     pub display_name: String,
@@ -173,7 +173,7 @@ impl From<UpdateEventSourceRequest> for proto::UpdateEventSourceRequest {
 
 //////////////////// UpdateEventSourceResponse ////////////////////
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UpdateEventSourceResponse {
     pub event_source_id: Uuid,
     pub last_updated_time: SystemTime,
@@ -220,7 +220,7 @@ impl TryFrom<UpdateEventSourceResponse> for proto::UpdateEventSourceResponse {
 
 //////////////////// GetEventSourceRequest ////////////////////
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetEventSourceRequest {
     pub event_source_id: Uuid,
 }
@@ -257,7 +257,7 @@ impl From<GetEventSourceRequest> for proto::GetEventSourceRequest {
 
 //////////////////// EventSource ////////////////////
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EventSource {
     pub tenant_id: Uuid,
     pub event_source_id: Uuid,
@@ -342,7 +342,7 @@ impl TryFrom<EventSource> for proto::EventSource {
 
 //////////////////// GetEventSourceResponse ////////////////////
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetEventSourceResponse {
     pub event_source: EventSource,
 }

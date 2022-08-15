@@ -361,7 +361,7 @@ pub mod server {
         /// Run the gRPC server and serve the API on this server's socket
         /// address. Returns a ServeError if the gRPC server cannot run.
         pub async fn serve(self) -> Result<(), ServeError> {
-            let service_name = &(*self.service_name());
+            let service_name = self.service_name();
             let (healthcheck_handle, health_service) =
                 init_health_service::<PluginBootstrapServiceServerProto<GrpcApi<T>>, _, _>(
                     self.healthcheck,
