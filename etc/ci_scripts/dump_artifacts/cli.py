@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -99,6 +100,10 @@ def main() -> None:
     analysis_dir = artifacts_dir / "analysis"
     os.makedirs(analysis_dir, exist_ok=False)
     pipeline_message_flow.analyze_grapl_core(artifacts_dir, analysis_dir)
+
+    # Zip up everything
+    zip_filename = (artifacts_dir / "ALL_ARTIFACTS").resolve()
+    shutil.make_archive(base_name=zip_filename, format="zip", root_dir=artifacts_dir)
 
     LOGGER.info(f"--- Artifacts dumped to {artifacts_dir}")
 
