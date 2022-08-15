@@ -44,6 +44,7 @@ macro_rules! execute_client_rpc {
                 // specified by the ExecuteClientRpcOptions.
                 status.code() == tonic::Code::Unavailable || ($opts.retry_predicate)(status)
             };
+            let span = tracing::span::Span::current();
 
             let proto_response = $self
                 .executor
@@ -52,7 +53,14 @@ macro_rules! execute_client_rpc {
                     || {
                         let mut proto_client = $self.proto_client.clone();
                         let proto_request = proto_request.clone();
-                        async move { proto_client.$rpc_name(proto_request).await }
+                        tracing::Instrument::instrument(
+                            async move {
+                                let mut tonic_request = tonic::Request::new(proto_request);
+                                tonic_request.set_timeout(Duration::from_secs(60));
+                                proto_client.$rpc_name(tonic_request).await
+                            },
+                            span.clone(),
+                        )
                     },
                     executor_retry_condition,
                 )

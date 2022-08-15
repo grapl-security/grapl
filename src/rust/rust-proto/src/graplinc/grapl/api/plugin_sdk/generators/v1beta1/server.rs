@@ -62,6 +62,7 @@ impl<T> GeneratorService for GrpcApi<T>
 where
     T: GeneratorApi + Send + Sync + 'static,
 {
+    #[tracing::instrument(skip(self, request), err)]
     async fn run_generator(
         &self,
         request: Request<proto::RunGeneratorRequest>,
@@ -131,6 +132,7 @@ where
 
     /// Run the gRPC server and serve the API on this server's socket
     /// address. Returns a ServeError if the gRPC server cannot run.
+    #[tracing::instrument(skip(self), err)]
     pub async fn serve(self) -> Result<(), ServeError> {
         let (healthcheck_handle, health_service) =
             init_health_service::<GeneratorServiceProto<GrpcApi<T>>, _, _>(
