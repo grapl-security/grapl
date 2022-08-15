@@ -6,18 +6,11 @@ use rustc_hash::{
 };
 
 use crate::{
-    graplinc::grapl::{
-        api::graph::v1beta1::{
-            DecrementOnlyIntProp,
-            ImmutableIntProp,
-            IncrementOnlyIntProp,
-        },
-        common::v1beta1::types::{
-            EdgeName,
-            NodeType,
-            PropertyName,
-            Uid,
-        },
+    graplinc::grapl::common::v1beta1::types::{
+        EdgeName,
+        NodeType,
+        PropertyName,
+        Uid,
     },
     protobufs::graplinc::grapl::api::graph_query_service::v1beta1 as proto,
     SerDeError,
@@ -46,47 +39,6 @@ impl TryFrom<proto::QueryId> for QueryId {
 impl From<QueryId> for proto::QueryId {
     fn from(value: QueryId) -> Self {
         Self { value: value.value }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum IntegerProperty {
-    IncrementOnly(IncrementOnlyIntProp),
-    DecrementOnly(DecrementOnlyIntProp),
-    Immutable(ImmutableIntProp),
-}
-
-impl TryFrom<proto::IntegerProperty> for IntegerProperty {
-    type Error = SerDeError;
-    fn try_from(value_proto: proto::IntegerProperty) -> Result<Self, Self::Error> {
-        match value_proto.property {
-            Some(proto::integer_property::Property::IncrementOnly(p)) => {
-                Ok(IntegerProperty::IncrementOnly(p.try_into()?))
-            }
-            Some(proto::integer_property::Property::DecrementOnly(p)) => {
-                Ok(IntegerProperty::DecrementOnly(p.try_into()?))
-            }
-            Some(proto::integer_property::Property::Immutable(p)) => {
-                Ok(IntegerProperty::Immutable(p.try_into()?))
-            }
-            None => Err(SerDeError::UnknownVariant("IntegerProperty")),
-        }
-    }
-}
-
-impl From<IntegerProperty> for proto::IntegerProperty {
-    fn from(value: IntegerProperty) -> Self {
-        match value {
-            IntegerProperty::IncrementOnly(p) => proto::IntegerProperty {
-                property: Some(proto::integer_property::Property::IncrementOnly(p.into())),
-            },
-            IntegerProperty::DecrementOnly(p) => proto::IntegerProperty {
-                property: Some(proto::integer_property::Property::DecrementOnly(p.into())),
-            },
-            IntegerProperty::Immutable(p) => proto::IntegerProperty {
-                property: Some(proto::integer_property::Property::Immutable(p.into())),
-            },
-        }
     }
 }
 
@@ -824,18 +776,62 @@ impl From<GraphQuery> for proto::GraphQuery {
 }
 
 #[derive(Debug, Clone)]
+pub struct StringProperties {
+    pub prop_map: FxHashMap<PropertyName, String>,
+}
+
+impl StringProperties {
+    pub fn merge(&mut self, other: Self) {
+        self.prop_map.extend(other.prop_map);
+    }
+
+    pub fn add_string_property(&mut self, property_name: PropertyName, value: String) {
+        self.prop_map.insert(property_name, value);
+    }
+}
+
+impl TryFrom<proto::StringProperties> for StringProperties {
+    type Error = SerDeError;
+    fn try_from(value: proto::StringProperties) -> Result<Self, Self::Error> {
+        let mut prop_map = FxHashMap::default();
+        prop_map.reserve(value.properties.len());
+
+        for string_property in value.properties {
+            let property_name = string_property
+                .property_name
+                .ok_or_else(|| SerDeError::MissingField("property_name"))?;
+            prop_map.insert(property_name.try_into()?, string_property.property_value);
+        }
+
+        Ok(Self { prop_map })
+    }
+}
+
+impl From<StringProperties> for proto::StringProperties {
+    fn from(value: StringProperties) -> Self {
+        let props_as_vec: Vec<proto::StringProperty> = value
+            .prop_map
+            .into_iter()
+            .map(|(k, v)| proto::StringProperty {
+                property_name: Some(k.into()),
+                property_value: v,
+            })
+            .collect();
+        proto::StringProperties {
+            properties: props_as_vec,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct NodePropertiesView {
     pub uid: Uid,
     pub node_type: NodeType,
-    pub string_properties: FxHashMap<PropertyName, String>,
+    pub string_properties: StringProperties,
 }
 
 impl NodePropertiesView {
-    pub fn new(
-        uid: Uid,
-        node_type: NodeType,
-        string_properties: FxHashMap<PropertyName, String>,
-    ) -> Self {
+    pub fn new(uid: Uid, node_type: NodeType, string_properties: StringProperties) -> Self {
         Self {
             uid,
             node_type,
@@ -846,11 +842,12 @@ impl NodePropertiesView {
     pub fn merge(&mut self, other: Self) {
         debug_assert_eq!(self.uid, other.uid);
         debug_assert_eq!(self.node_type, other.node_type);
-        self.string_properties.extend(other.string_properties);
+        self.string_properties.merge(other.string_properties);
     }
 
     pub fn add_string_property(&mut self, property_name: PropertyName, value: String) {
-        self.string_properties.insert(property_name, value);
+        self.string_properties
+            .add_string_property(property_name, value);
     }
 }
 
@@ -861,15 +858,7 @@ impl TryFrom<proto::NodePropertiesView> for NodePropertiesView {
             .string_properties
             .ok_or_else(|| SerDeError::MissingField("string_properties"))?;
 
-        let mut string_properties = FxHashMap::default();
-        string_properties.reserve(proto_string_properties.properties.len());
-
-        for string_property in proto_string_properties.properties {
-            let property_name = string_property
-                .property_name
-                .ok_or_else(|| SerDeError::MissingField("property_name"))?;
-            string_properties.insert(property_name.try_into()?, string_property.property_value);
-        }
+        let string_properties = StringProperties::try_from(proto_string_properties)?;
 
         Ok(Self {
             uid: value
@@ -887,22 +876,12 @@ impl TryFrom<proto::NodePropertiesView> for NodePropertiesView {
 
 impl From<NodePropertiesView> for proto::NodePropertiesView {
     fn from(value: NodePropertiesView) -> Self {
-        let string_properties: Vec<proto::StringProperty> = value
-            .string_properties
-            .into_iter()
-            .map(|(k, v)| proto::StringProperty {
-                property_name: Some(k.into()),
-                property_value: v,
-            })
-            .collect();
-        let string_properties = Some(proto::StringProperties {
-            properties: string_properties,
-        });
+        let string_properties = proto::StringProperties::from(value.string_properties);
 
         Self {
             uid: Some(value.uid.into()),
             node_type: Some(value.node_type.into()),
-            string_properties,
+            string_properties: Some(string_properties),
         }
     }
 }

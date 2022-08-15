@@ -6,20 +6,6 @@ import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/api/graph/v1beta1/types.proto";
 import "graplinc/grapl/common/v1beta1/types.proto";
 
-// IntegerProperty wraps one of the underlying integer property
-// types
-message IntegerProperty {
-  // The inner property
-  oneof property {
-    // An integer that only grows
-    graph.v1beta1.IncrementOnlyIntProp increment_only = 1;
-    // An integer that only shrinks
-    graph.v1beta1.DecrementOnlyIntProp decrement_only = 2;
-    // An integer that never changes after its first write
-    graph.v1beta1.ImmutableIntProp immutable = 3;
-  }
-}
-
 // A filter for querying an integer
 message IntFilter {
   // The operation to filter with
@@ -230,20 +216,6 @@ message StringProperty {
 message StringProperties {
   // The underlying property entries
   repeated StringProperty properties = 1;
-}
-
-// IntProperty wraps a property name and its associated integer value
-message IntProperty {
-  // The name of this property
-  graplinc.grapl.common.v1beta1.PropertyName property_name = 1;
-  // The value
-  int64 property_value = 2;
-}
-
-// A map of integer property names to integer values
-message IntProperties {
-  // The underlying property entries
-  repeated IntProperty properties = 1;
 }
 
 // Represents the properties of a node in the graph
