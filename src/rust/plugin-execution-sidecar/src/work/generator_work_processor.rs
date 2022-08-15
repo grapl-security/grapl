@@ -29,10 +29,11 @@ use crate::{
 
 impl Workload for GetExecuteGeneratorResponse {
     fn request_id(&self) -> i64 {
-        self.request_id
+        self.request_id()
     }
+
     fn maybe_job(self) -> Option<ExecutionJob> {
-        self.execution_job
+        self.execution_job()
     }
 }
 
@@ -60,8 +61,34 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
         pwq_client: &mut PluginWorkQueueServiceClient,
     ) -> Result<Self::Work, PluginWorkProcessorError> {
         let plugin_id = config.plugin_id;
-        let get_request = GetExecuteGeneratorRequest { plugin_id };
-        Ok(pwq_client.get_execute_generator(get_request).await?)
+        let response = pwq_client
+            .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id))
+            .await?;
+        let request_id = response.request_id();
+
+        let response_retval = response.clone();
+
+        if let Some(execution_job) = response.execution_job() {
+            let tenant_id = execution_job.tenant_id();
+            let trace_id = execution_job.trace_id();
+            let event_source_id = execution_job.event_source_id();
+
+            tracing::debug!(
+                message = "retrieved execution job",
+                tenant_id =% tenant_id,
+                trace_id =% trace_id,
+                event_source_id =% event_source_id,
+                plugin_id =% plugin_id,
+                request_id =? request_id,
+            );
+        } else {
+            tracing::debug!(
+                message = "found no execution jobs",
+                plugin_id =% plugin_id,
+            );
+        }
+
+        Ok(response_retval)
     }
 
     async fn ack_work(
@@ -75,6 +102,16 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
         event_source_id: Uuid,
     ) -> Result<(), PluginWorkProcessorError> {
         let plugin_id = config.plugin_id;
+
+        tracing::debug!(
+            message = "acknowledging generator work",
+            tenant_id =% tenant_id,
+            trace_id =% trace_id,
+            event_source_id =% event_source_id,
+            plugin_id =% plugin_id,
+            request_id =? request_id,
+        );
+
         let graph_description = process_result.ok();
         let ack_request = AcknowledgeGeneratorRequest::new(
             request_id,

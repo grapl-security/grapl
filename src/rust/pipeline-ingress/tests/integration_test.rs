@@ -14,16 +14,18 @@ use kafka::{
 };
 use rust_proto::{
     client_factory::{
-        build_grpc_client_with_options,
+        build_grpc_client,
         services::PipelineIngressClientConfig,
-        BuildGrpcClientOptions,
     },
     graplinc::grapl::{
         api::pipeline_ingress::v1beta1::{
             client::PipelineIngressClient,
             PublishRawLogRequest,
         },
-        pipeline::v1beta1::RawLog,
+        pipeline::v1beta1::{
+            Envelope,
+            RawLog,
+        },
     },
 };
 use test_context::{
@@ -45,15 +47,9 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let _guard = setup_tracing("pipeline-ingress-integration-tests").expect("setup_tracing");
 
         let client_config = PipelineIngressClientConfig::parse();
-        let pipeline_ingress_client = build_grpc_client_with_options(
-            client_config,
-            BuildGrpcClientOptions {
-                perform_healthcheck: true,
-                ..Default::default()
-            },
-        )
-        .await
-        .expect("pipeline_ingress_client");
+        let pipeline_ingress_client = build_grpc_client(client_config)
+            .await
+            .expect("pipeline_ingress_client");
 
         PipelineIngressTestContext {
             grpc_client: pipeline_ingress_client,
@@ -118,6 +114,12 @@ async fn test_publish_raw_log_sends_message_to_kafka(
     let kafka_scanner = KafkaTopicScanner::new(
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
         Duration::from_secs(30),
+        Envelope::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            RawLog::new(log_event.clone()),
+        ),
     );
 
     let handle = kafka_scanner
@@ -131,11 +133,11 @@ async fn test_publish_raw_log_sends_message_to_kafka(
     );
 
     ctx.grpc_client
-        .publish_raw_log(PublishRawLogRequest {
+        .publish_raw_log(PublishRawLogRequest::new(
             event_source_id,
             tenant_id,
-            log_event: log_event.clone(),
-        })
+            log_event.clone(),
+        ))
         .await
         .expect("received error response");
 

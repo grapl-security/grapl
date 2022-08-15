@@ -68,27 +68,30 @@ impl From<PluginRegistryServiceError> for Status {
         type Error = PluginRegistryServiceError;
         match err {
             Error::SqlxError(sqlx::Error::Configuration(_)) => {
-                Status::internal("Invalid SQL configuration")
+                Status::unknown("Invalid SQL configuration")
             }
-            Error::SqlxError(_) => Status::internal("Failed to operate on postgres"),
-            Error::S3PutObjectError(_) => Status::internal("Failed to put s3 object"),
-            Error::S3GetObjectError(_) => Status::internal("Failed to get s3 object"),
-            Error::EmptyObject => Status::internal("S3 Object was unexpectedly empty"),
-            Error::IoError(_) => Status::internal("IoError"),
+            Error::SqlxError(rnf_error @ sqlx::Error::RowNotFound) => {
+                Status::not_found(rnf_error.to_string())
+            }
+            Error::SqlxError(_) => Status::unknown("Failed to operate on postgres"),
+            Error::S3PutObjectError(_) => Status::unknown("Failed to put s3 object"),
+            Error::S3GetObjectError(_) => Status::unknown("Failed to get s3 object"),
+            Error::EmptyObject => Status::unknown("S3 Object was unexpectedly empty"),
+            Error::IoError(_) => Status::unknown("IoError"),
             Error::SerDeError(_) => Status::invalid_argument("Unable to deserialize message"),
             Error::DatabaseSerDeError(_) => {
                 Status::invalid_argument("Unable to deserialize message from database")
             }
-            Error::NomadClientError(_) => Status::internal("Failed RPC with Nomad"),
-            Error::NomadCliError(_) => Status::internal("Failed using Nomad CLI"),
+            Error::NomadClientError(_) => Status::unknown("Failed RPC with Nomad"),
+            Error::NomadCliError(_) => Status::unknown("Failed using Nomad CLI"),
             Error::NomadJobAllocationError => {
-                Status::internal("Unable to allocate Nomad job - it may be out of resources.")
+                Status::unknown("Unable to allocate Nomad job - it may be out of resources.")
             }
             Error::StreamInputError(e) => {
                 // Since it's regarding user input, we can de-anonymize this message
                 Status::invalid_argument(format!("Unexpected input to Stream RPC: {e}"))
             }
-            Error::DeploymentStateError(_) => Status::internal("Deployment state error."),
+            Error::DeploymentStateError(_) => Status::unknown("Deployment state error."),
             Error::NotFound => Status::not_found("not found"),
         }
     }

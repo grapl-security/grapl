@@ -822,6 +822,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "client-executor"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "pin-project",
+ "recloser",
+ "thiserror",
+ "tokio",
+ "tokio-retry",
+ "tracing",
+]
+
+[[package]]
 name = "cmake"
 version = "0.1.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1019,6 +1032,20 @@ checksum = "2673cc8207403546f45f5fd319a974b1e6983ad1a3ee7e6041650013be041876"
 dependencies = [
  "cast",
  "itertools 0.10.3",
+]
+
+[[package]]
+name = "crossbeam"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2801af0d36612ae591caa9568261fddce32ce6e08a7275ea334a06a4ad021a2c"
+dependencies = [
+ "cfg-if 1.0.0",
+ "crossbeam-channel",
+ "crossbeam-deque",
+ "crossbeam-epoch 0.9.9",
+ "crossbeam-queue",
+ "crossbeam-utils 0.8.10",
 ]
 
 [[package]]
@@ -1861,13 +1888,10 @@ dependencies = [
  "color-eyre",
  "eyre",
  "grapl-utils",
- "log",
- "rusoto_cloudwatch",
  "rusoto_core",
  "rusoto_credential",
  "rusoto_dynamodb",
  "rusoto_s3",
- "rusoto_sqs",
  "secrecy",
  "sqlx",
  "thiserror",
@@ -3762,6 +3786,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "recloser"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a33de4aab243767d610c4619ea8156202a59b27fb7c94a140f486c96d41d6ef"
+dependencies = [
+ "crossbeam",
+ "pin-project",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3905,20 +3939,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusoto_cloudwatch"
-version = "0.47.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b42eaedbdf15b452446aa00aee94230c41443673985807f1c12fb1fb1cc5799"
-dependencies = [
- "async-trait",
- "bytes",
- "futures",
- "rusoto_core",
- "serde_urlencoded",
- "xml-rs",
-]
-
-[[package]]
 name = "rusoto_core"
 version = "0.47.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4015,26 +4035,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusoto_sqs"
-version = "0.47.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ae091bb560b2aa3b6ec2ab8224516b63f6b6f7c495ae4e41f0566089b156e5f"
-dependencies = [
- "async-trait",
- "bytes",
- "futures",
- "rusoto_core",
- "serde_urlencoded",
- "xml-rs",
-]
-
-[[package]]
 name = "rust-proto"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
  "clap 3.2.13",
+ "client-executor",
  "futures",
  "grapl-utils",
  "proptest",
@@ -4865,6 +4872,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "tokio-retry"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f57eb36ecbe0fc510036adff84824dd3c24bb781e21bfa67b69d556aa85214f"
+dependencies = [
+ "pin-project",
+ "rand 0.8.5",
+ "tokio",
 ]
 
 [[package]]

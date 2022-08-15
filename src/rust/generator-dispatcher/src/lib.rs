@@ -74,7 +74,7 @@ pub struct GeneratorDispatcher {
 }
 
 impl GeneratorDispatcher {
-    #[tracing::instrument(err)]
+    #[tracing::instrument(skip(plugin_work_queue_client), err)]
     pub async fn new(
         config: GeneratorDispatcherConfig,
         plugin_work_queue_client: PluginWorkQueueServiceClient,

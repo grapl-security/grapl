@@ -49,7 +49,7 @@ enum IngressApiError {
 
 impl From<IngressApiError> for Status {
     fn from(e: IngressApiError) -> Self {
-        Status::internal(e.to_string())
+        Status::unknown(e.to_string())
     }
 }
 
@@ -72,8 +72,8 @@ impl PipelineIngressApi for IngressApi {
         &self,
         request: PublishRawLogRequest,
     ) -> Result<PublishRawLogResponse, Self::Error> {
-        let tenant_id = request.tenant_id;
-        let event_source_id = request.event_source_id;
+        let tenant_id = request.tenant_id();
+        let event_source_id = request.event_source_id();
         // TODO: trace_id should be generated at the edge. This service is
         // currently "the edge" but that won't be true forever. When there is an
         // actual edge service, that service should be responsible for
@@ -92,7 +92,7 @@ impl PipelineIngressApi for IngressApi {
                 tenant_id,
                 trace_id,
                 event_source_id,
-                RawLog::new(request.log_event),
+                RawLog::new(request.log_event()),
             ))
             .await?;
 

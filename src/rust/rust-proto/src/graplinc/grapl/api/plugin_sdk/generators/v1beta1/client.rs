@@ -1,32 +1,31 @@
-use std::fmt::Debug;
+use std::time::Duration;
 
+use client_executor::{
+    Executor,
+    ExecutorConfig,
+};
 use generator_service_client::GeneratorServiceClient as GeneratorServiceClientProto;
 
 pub use crate::protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1::generator_service_client;
 use crate::{
+    client_macros::ExecuteClientRpcOptions,
+    create_proto_client,
+    execute_client_rpc,
     graplinc::grapl::api::plugin_sdk::generators::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as proto,
     protocol::{
         endpoint::Endpoint,
+        error::GrpcClientError,
         service_client::{
             ConnectError,
             Connectable,
         },
-        status::Status,
     },
-    SerDeError,
 };
-
-#[derive(Debug, thiserror::Error)]
-pub enum GeneratorServiceClientError {
-    #[error("ErrorStatus")]
-    ErrorStatus(#[from] Status),
-    #[error("PluginRegistryDeserializationError")]
-    GeneratorDeserializationError(#[from] SerDeError),
-}
 
 #[derive(Clone)]
 pub struct GeneratorServiceClient {
+    executor: Executor,
     proto_client: GeneratorServiceClientProto<tonic::transport::Channel>,
 }
 #[async_trait::async_trait]
@@ -36,8 +35,15 @@ impl Connectable for GeneratorServiceClient {
 
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
+        let proto_client = create_proto_client!(
+            executor,
+            GeneratorServiceClientProto<tonic::transport::Channel>,
+            endpoint,
+        );
         Ok(GeneratorServiceClient {
-            proto_client: GeneratorServiceClientProto::connect(endpoint).await?,
+            executor,
+            proto_client,
         })
     }
 }
@@ -46,13 +52,14 @@ impl GeneratorServiceClient {
     pub async fn run_generator(
         &mut self,
         request: native::RunGeneratorRequest,
-    ) -> Result<native::RunGeneratorResponse, GeneratorServiceClientError> {
-        let response = self
-            .proto_client
-            .run_generator(proto::RunGeneratorRequest::from(request))
-            .await
-            .map_err(Status::from)?;
-        let response = native::RunGeneratorResponse::try_from(response.into_inner())?;
-        Ok(response)
+    ) -> Result<native::RunGeneratorResponse, GrpcClientError> {
+        execute_client_rpc!(
+            self,
+            request,
+            run_generator,
+            proto::RunGeneratorRequest,
+            native::RunGeneratorResponse,
+            ExecuteClientRpcOptions::default(),
+        )
     }
 }

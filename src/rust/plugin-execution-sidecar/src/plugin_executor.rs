@@ -54,6 +54,17 @@ where
                 let tenant_id = job.tenant_id();
                 let trace_id = job.trace_id();
                 let event_source_id = job.event_source_id();
+                let plugin_id = self.config.plugin_id;
+
+                tracing::debug!(
+                    message = "retrieved execution job",
+                    tenant_id =% tenant_id,
+                    trace_id =% trace_id,
+                    event_source_id =% event_source_id,
+                    plugin_id =% plugin_id,
+                    request_id =? request_id,
+                );
+
                 // Process the job
                 let process_result = self
                     .plugin_work_processor
@@ -62,12 +73,22 @@ where
 
                 if let Err(e) = process_result.as_ref() {
                     tracing::error!(
-                        message = "Error processing job",
+                        message = "error processing execution job",
                         request_id = ?request_id,
                         error = ?e,
                         tenant_id = %tenant_id,
                         trace_id = %trace_id,
                         event_source_id = %event_source_id,
+                        plugin_id =% plugin_id,
+                    );
+                } else {
+                    tracing::debug!(
+                        message = "processed execution job successfully",
+                        tenant_id =% tenant_id,
+                        trace_id =% trace_id,
+                        event_source_id =% event_source_id,
+                        plugin_id =% plugin_id,
+                        request_id =? request_id,
                     );
                 }
 
@@ -85,7 +106,13 @@ where
                     )
                     .await?;
             } else {
-                tokio::time::sleep(Duration::from_secs(1)).await;
+                let delay = Duration::from_secs(1);
+                tracing::warn!(
+                    message = "found no execution job",
+                    request_id =% request_id,
+                    delay =? delay,
+                );
+                tokio::time::sleep(delay).await; // FIXME: backoff?
                 continue;
             }
         }

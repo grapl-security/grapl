@@ -23,6 +23,25 @@ pub enum ConnectError {
     #[error("Healthcheck failed for {0}: {1}")]
     HealthcheckFailed(String, HealthcheckError),
 
-    #[error("Timeout elapsed {0}")]
-    TimeoutElapsed(#[from] Elapsed),
+    #[error("Timeout elapsed")]
+    TimeoutElapsed,
+
+    #[error("CircuitBreaker Open")]
+    CircuitBreakerOpen,
+}
+
+impl From<Elapsed> for ConnectError {
+    fn from(_e: Elapsed) -> Self {
+        Self::TimeoutElapsed
+    }
+}
+
+impl From<client_executor::Error<ConnectError>> for ConnectError {
+    fn from(e: client_executor::Error<ConnectError>) -> Self {
+        match e {
+            client_executor::Error::Inner(e) => e,
+            client_executor::Error::Rejected => Self::CircuitBreakerOpen,
+            client_executor::Error::Elapsed => Self::TimeoutElapsed,
+        }
+    }
 }

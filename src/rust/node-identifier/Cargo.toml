@@ -25,19 +25,19 @@ clap = { version = "3.0", default_features = false, features = [
 ] }
 failure = "0.1"
 futures = "0.3"
-grapl-utils = { path = "../grapl-utils" }
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
+grapl-utils = { path = "../grapl-utils" }
 hex = "0.4"
 hmap = "0.1"
 kafka = { path = "../kafka" }
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
+rusoto_credential = "0.47"
 rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-rusoto_credential = "0.47"
 rust-proto = { path = "../rust-proto", version = "*" }
 serde = "1.0"
 serde_dynamodb = { version = "0.9", default_features = false, features = [
