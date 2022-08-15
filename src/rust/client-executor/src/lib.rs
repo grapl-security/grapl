@@ -63,12 +63,15 @@ impl<A: Action> ExecuteState<A> {
             ExecuteStateProj::Running(future) => match future.poll(cx) {
                 Poll::Ready(Ok(p)) => ExecuteFuturePoll::Running(Poll::Ready(Ok(p))),
                 Poll::Ready(Err(recloser::Error::Rejected)) => {
+                    tracing::debug!("Rejected call");
                     ExecuteFuturePoll::Running(Poll::Ready(Err(Error::Rejected)))
                 }
                 Poll::Ready(Err(recloser::Error::Inner(e))) => {
                     ExecuteFuturePoll::Running(Poll::Ready(Err(e)))
                 }
-                Poll::Pending => ExecuteFuturePoll::Running(Poll::Pending),
+                Poll::Pending => {
+                    ExecuteFuturePoll::Running(Poll::Pending)
+                },
             },
             ExecuteStateProj::Sleeping(future) => ExecuteFuturePoll::Sleeping(future.poll(cx)),
         }
@@ -153,7 +156,7 @@ where
     fn attempt(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<ActionResult<A>> {
         let future = {
             let this = self.as_mut().project();
-
+            tracing::trace!("attempting execution");
             this.recloser
                 .call(TryTimeout::new(*this.timeout, this.action.run()))
         };
@@ -386,7 +389,7 @@ mod tests {
         OhNo(i32),
     }
 
-    #[tokio::test]
+    #[test_log::test(tokio::test)]
     async fn test_retries() -> Result<(), Box<dyn std::error::Error>> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(10)));
 
@@ -428,7 +431,7 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
+    #[test_log::test(tokio::test)]
     async fn test_circuit_open() -> Result<(), Box<dyn std::error::Error>> {
         let circuit_breaker = ExecutorConfig::new(Duration::from_secs(3))
             .threshold(0.5)
@@ -468,7 +471,7 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
+    #[test_log::test(tokio::test)]
     async fn test_conditional_retries() -> Result<(), Box<dyn std::error::Error>> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(10)));
 
