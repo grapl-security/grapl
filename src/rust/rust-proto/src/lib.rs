@@ -29,6 +29,15 @@ pub(crate) mod protobufs {
         }
 
         pub(crate) mod grapl {
+            pub(crate) mod common {
+                pub(crate) mod v1beta1 {
+                    include!(concat!(
+                        env!("OUT_DIR"),
+                        "/graplinc.grapl.common.v1beta1.rs"
+                    ));
+                }
+            }
+
             pub(crate) mod api {
                 pub(crate) mod event_source {
                     pub(crate) mod v1beta1 {
@@ -104,6 +113,15 @@ pub(crate) mod protobufs {
                     }
                 }
 
+                pub(crate) mod schema_manager {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.schema_manager.v1beta1.rs"
+                        ));
+                    }
+                }
+
                 #[cfg(feature = "uid-allocator")]
                 pub(crate) mod uid_allocator {
                     pub(crate) mod v1beta1 {
@@ -143,6 +161,12 @@ pub mod graplinc {
     }
 
     pub mod grapl {
+        pub mod common {
+            pub mod v1beta1 {
+                pub mod types;
+            }
+        }
+
         pub mod api {
             pub mod event_source {
                 pub mod v1beta1;
@@ -184,6 +208,10 @@ pub mod graplinc {
                 pub mod v1beta1;
                 mod v1beta1_client;
                 mod v1beta1_server;
+            }
+
+            pub mod schema_manager {
+                pub mod v1beta1;
             }
 
             #[cfg(feature = "uid-allocator")]

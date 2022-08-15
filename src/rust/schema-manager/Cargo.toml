@@ -1,0 +1,26 @@
+[package]
+name = "schema-manager"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
+rust-proto = { path = "../rust-proto" }
+grapl-graphql-codegen = { path = "../grapl-graphql-codegen" }
+sqlx = { version = "0.6", features = [
+  "runtime-tokio-rustls",
+  "postgres",
+  "time",
+  "offline",
+  "uuid",
+  "migrate",
+] }
+thiserror = "1.0.31"
+uuid = { version = "1.0", default-features = false, features = ["v4"] }
+tokio = { version = "1.19.2", features = ["full"] }
+async-trait = "0.1.56"
+dashmap = "5.3.4"
