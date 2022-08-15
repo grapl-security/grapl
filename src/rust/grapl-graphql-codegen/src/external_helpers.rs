@@ -27,7 +27,7 @@ pub fn execute_python(code: &[u8]) -> Result<Output> {
 
 /// Helpers for the CLI, allowing it to typehceck the generated code
 pub fn execute_mypy(code: &str) -> Result<Output> {
-    let code = code.replace("'", "\\'");
+    let code = code.replace("'", "\'");
     let py_interpreter = Command::new("mypy")
         .arg("-c")
         .arg(&code)
