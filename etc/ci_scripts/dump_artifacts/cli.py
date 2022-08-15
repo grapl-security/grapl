@@ -101,9 +101,11 @@ def main() -> None:
     os.makedirs(analysis_dir, exist_ok=False)
     pipeline_message_flow.analyze_grapl_core(artifacts_dir, analysis_dir)
 
-    # Zip up everything
-    zip_filename = str((artifacts_dir / "ALL_ARTIFACTS").resolve())
+    # Zip up everything. We can't zip up directly into artifacts_dir or you
+    # get a recursive zip - that is to say, eating up all the space on disk.
+    zip_filename = "/tmp/ALL_ARTIFACTS"
     shutil.make_archive(base_name=zip_filename, format="zip", root_dir=artifacts_dir)
+    shutil.move(src="/tmp/ALL_ARTIFACTS.zip", dst=artifacts_dir)
 
     LOGGER.info(f"--- Artifacts dumped to {artifacts_dir}")
 
