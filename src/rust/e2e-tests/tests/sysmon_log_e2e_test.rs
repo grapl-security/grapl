@@ -111,7 +111,14 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
 
     let input_log_lines = test_fixtures::get_36_eventlog_xml_separate_lines()
         .expect("failed to read input log lines");
-    for log_line in &input_log_lines {
+    for (idx, log_line) in input_log_lines.iter().enumerate() {
+        tracing::debug!(
+            message = "sending raw log to pipeline-ingress",
+            tenant_id =% tenant_id,
+            event_source_id =% event_source_id,
+            idx =% idx,
+        );
+
         ctx.pipeline_ingress_client
             .publish_raw_log(PublishRawLogRequest::new(
                 event_source_id,
@@ -120,6 +127,13 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
             ))
             .await
             .expect("failed to publish raw log to pipeline-ingress");
+
+        tracing::debug!(
+            message = "sent raw log to pipeline-ingress",
+            tenant_id =% tenant_id,
+            event_source_id =% event_source_id,
+            idx =% idx,
+        );
     }
 
     tracing::info!(">> Test: that input shows up in raw-logs");
