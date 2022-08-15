@@ -17,7 +17,7 @@ use crate::{
 // CreateOrganizationRequest
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CreateOrganizationRequest {
     pub organization_display_name: String,
     pub admin_username: String,
@@ -63,7 +63,7 @@ impl serde_impl::ProtobufSerializable for CreateOrganizationRequest {
 // CreateOrganizationResponse
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CreateOrganizationResponse {
     pub organization_id: Uuid,
 }
@@ -104,7 +104,7 @@ impl serde_impl::ProtobufSerializable for CreateOrganizationResponse {
 // CreateUserRequest
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CreateUserRequest {
     pub organization_id: Uuid,
     pub name: String,
@@ -152,7 +152,7 @@ impl serde_impl::ProtobufSerializable for CreateUserRequest {
 // CreateUserResponse
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CreateUserResponse {
     pub user_id: Uuid,
 }
@@ -450,7 +450,7 @@ pub mod server {
         /// Run the gRPC server and serve the API on this server's socket
         /// address. Returns a ServeError if the gRPC server cannot run.
         pub async fn serve(self) -> Result<(), ServeError> {
-            let service_name = &(*self.service_name());
+            let service_name = self.service_name();
             let (healthcheck_handle, health_service) =
                 init_health_service::<OrganizationManagementServiceServerProto<GrpcApi<T>>, _, _>(
                     self.healthcheck,

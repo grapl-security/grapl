@@ -16,7 +16,7 @@ use crate::{
 ///
 /// `<https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon>`
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, IntoOwned)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SysmonEvent<'a> {
     /// Defines the information that identifies the provider and how it was enabled, the event, the

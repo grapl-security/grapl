@@ -76,7 +76,7 @@ impl From<PluginType> for proto::PluginType {
 // PluginMetadata
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PluginMetadata {
     /// The platform tenant this plugin belongs to
     tenant_id: uuid::Uuid,
@@ -193,7 +193,7 @@ impl ProtobufSerializable for PluginMetadata {
 // CreatePluginRequest
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CreatePluginRequest {
     Metadata(PluginMetadata),
     Chunk(Bytes),
@@ -239,7 +239,7 @@ impl ProtobufSerializable for CreatePluginRequest {
 // CreatePluginResponse
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreatePluginResponse {
     /// The identity of the plugin that was created
     plugin_id: uuid::Uuid,
@@ -289,7 +289,7 @@ impl ProtobufSerializable for CreatePluginResponse {
 // DeployPluginRequest
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeployPluginRequest {
     plugin_id: uuid::Uuid,
 }
@@ -338,7 +338,7 @@ impl ProtobufSerializable for DeployPluginRequest {
 // DeployPluginResponse
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeployPluginResponse {}
 
 impl type_url::TypeUrl for DeployPluginResponse {
@@ -368,7 +368,7 @@ impl ProtobufSerializable for DeployPluginResponse {
 // GetAnalyzersForTenantRequest
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetAnalyzersForTenantRequest {
     /// The tenant id for the tenant whose analyzers we wish to fetch
     tenant_id: uuid::Uuid,
@@ -420,7 +420,7 @@ impl ProtobufSerializable for GetAnalyzersForTenantRequest {
 // GetAnalyzersForTenantResponse
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetAnalyzersForTenantResponse {
     /// The plugin ids for the analyzers belonging to a tenant
     plugin_ids: Vec<uuid::Uuid>,
@@ -472,7 +472,7 @@ impl ProtobufSerializable for GetAnalyzersForTenantResponse {
 // GetGeneratorsForEventSourceRequest
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetGeneratorsForEventSourceRequest {
     /// The event source id
     event_source_id: uuid::Uuid,
@@ -524,7 +524,7 @@ impl ProtobufSerializable for GetGeneratorsForEventSourceRequest {
 // GetGeneratorsForEventSourceResponse
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetGeneratorsForEventSourceResponse {
     plugin_ids: Vec<uuid::Uuid>,
 }
@@ -568,7 +568,7 @@ impl ProtobufSerializable for GetGeneratorsForEventSourceResponse {
 // GetPluginRequest
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetPluginRequest {
     /// The identity of the plugin
     plugin_id: uuid::Uuid,
@@ -638,7 +638,7 @@ impl ProtobufSerializable for GetPluginRequest {
 // GetPluginResponse
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetPluginResponse {
     plugin_id: uuid::Uuid,
     plugin_metadata: PluginMetadata,
@@ -706,7 +706,7 @@ impl ProtobufSerializable for GetPluginResponse {
 // TearDownPluginRequest
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TearDownPluginRequest {
     plugin_id: uuid::Uuid,
 }
@@ -755,7 +755,7 @@ impl ProtobufSerializable for TearDownPluginRequest {
 // TearDownPluginResponse
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TearDownPluginResponse {}
 
 impl type_url::TypeUrl for TearDownPluginResponse {
@@ -785,7 +785,7 @@ impl ProtobufSerializable for TearDownPluginResponse {
 // GetPluginHealthRequest
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetPluginHealthRequest {
     plugin_id: uuid::Uuid,
 }
@@ -873,7 +873,7 @@ impl From<PluginHealthStatus> for PluginHealthStatusProto {
 // GetPluginHealthResponse
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetPluginHealthResponse {
     health_status: PluginHealthStatus,
 }
