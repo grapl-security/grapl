@@ -27,7 +27,7 @@ use crate::{
     SerDeError,
 };
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct ExecutionJob {
     data: Bytes,
     tenant_id: Uuid,
@@ -115,7 +115,7 @@ impl type_url::TypeUrl for ExecutionJob {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.ExecutionJob";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AcknowledgeGeneratorRequest {
     request_id: i64,
     graph_description: Option<GraphDescription>,
@@ -225,7 +225,7 @@ impl type_url::TypeUrl for AcknowledgeGeneratorRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeGeneratorRequest";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AcknowledgeGeneratorResponse {}
 
 impl TryFrom<proto::AcknowledgeGeneratorResponse> for AcknowledgeGeneratorResponse {
@@ -251,7 +251,7 @@ impl type_url::TypeUrl for AcknowledgeGeneratorResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeGeneratorResponse";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AcknowledgeAnalyzerRequest {
     pub request_id: i64,
     pub success: bool,
@@ -295,7 +295,7 @@ impl type_url::TypeUrl for AcknowledgeAnalyzerRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeAnalyzerRequest";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AcknowledgeAnalyzerResponse {}
 
 impl TryFrom<proto::AcknowledgeAnalyzerResponse> for AcknowledgeAnalyzerResponse {
@@ -321,7 +321,7 @@ impl type_url::TypeUrl for AcknowledgeAnalyzerResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeAnalyzerResponse";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetExecuteAnalyzerRequest {
     pub plugin_id: Uuid,
 }
@@ -355,7 +355,7 @@ impl type_url::TypeUrl for GetExecuteAnalyzerRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteAnalyzerRequest";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetExecuteAnalyzerResponse {
     pub execution_job: Option<ExecutionJob>,
     pub request_id: i64,
@@ -398,7 +398,7 @@ impl type_url::TypeUrl for GetExecuteAnalyzerResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteAnalyzerResponse";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetExecuteGeneratorRequest {
     pub plugin_id: Uuid,
 }
@@ -432,7 +432,7 @@ impl type_url::TypeUrl for GetExecuteGeneratorRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteGeneratorRequest";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetExecuteGeneratorResponse {
     pub execution_job: Option<ExecutionJob>,
     pub request_id: i64,
@@ -475,7 +475,7 @@ impl type_url::TypeUrl for GetExecuteGeneratorResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteGeneratorResponse";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PushExecuteAnalyzerRequest {
     execution_job: ExecutionJob,
     plugin_id: Uuid,
@@ -537,7 +537,7 @@ impl type_url::TypeUrl for PushExecuteAnalyzerRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PushExecuteAnalyzerRequest";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PushExecuteAnalyzerResponse {}
 
 impl TryFrom<proto::PushExecuteAnalyzerResponse> for PushExecuteAnalyzerResponse {
@@ -563,7 +563,7 @@ impl type_url::TypeUrl for PushExecuteAnalyzerResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PushExecuteAnalyzerResponse";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PushExecuteGeneratorRequest {
     execution_job: ExecutionJob,
     plugin_id: Uuid,
@@ -625,7 +625,7 @@ impl type_url::TypeUrl for PushExecuteGeneratorRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PushExecuteGeneratorRequest";
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PushExecuteGeneratorResponse {}
 
 impl TryFrom<proto::PushExecuteGeneratorResponse> for PushExecuteGeneratorResponse {

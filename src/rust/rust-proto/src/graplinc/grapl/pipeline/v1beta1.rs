@@ -22,7 +22,7 @@ use crate::{
 // Envelope
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Envelope<T>
 where
     T: SerDe,
@@ -170,7 +170,7 @@ where
 // RawLog
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct RawLog {
     log_event: Bytes,
 }

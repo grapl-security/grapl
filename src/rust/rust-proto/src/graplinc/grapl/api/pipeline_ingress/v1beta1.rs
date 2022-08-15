@@ -21,7 +21,7 @@ use crate::{
 // PublishRawLogRequest
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PublishRawLogRequest {
     pub event_source_id: Uuid,
     pub tenant_id: Uuid,
@@ -71,7 +71,7 @@ impl serde_impl::ProtobufSerializable for PublishRawLogRequest {
 // PublishRawLogResponse
 //
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PublishRawLogResponse {
     pub created_time: SystemTime,
 }
