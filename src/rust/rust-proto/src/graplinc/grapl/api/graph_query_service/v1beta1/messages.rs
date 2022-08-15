@@ -775,7 +775,7 @@ impl From<GraphQuery> for proto::GraphQuery {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct StringProperties {
     pub prop_map: FxHashMap<PropertyName, String>,
 }
