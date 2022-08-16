@@ -283,6 +283,7 @@ message QueryGraphWithUidRequest {
   GraphQuery graph_query = 3;
 }
 
+// Represents a 'hit' for a QueryGraphWithUidRequest
 message MatchedGraphWithUid {
   // A view of the graph that matched our query
   GraphView matched_graph = 1;
@@ -296,6 +297,8 @@ message NoMatchWithUid {
   // empty
 }
 
+// If we get a match for the root Uid in QueryGraphWithUidRequest,
+// contains a MatchedGraphWithUid. Otherwise, contains a NoMatchWithUid
 message MaybeMatchWithUid {
   // The inner representation
   oneof inner {
@@ -307,6 +310,8 @@ message MaybeMatchWithUid {
 // The Response associated with a QueryGraphWithUidRequest
 // containing a matched graph and the associated uid
 message QueryGraphWithUidResponse {
+  // If we get a match for the root Uid in QueryGraphWithUidRequest,
+  // contains a MatchedGraphWithUid. Otherwise, contains a NoMatchWithUid
   MaybeMatchWithUid maybe_match = 1;
 }
 
