@@ -14,6 +14,7 @@ steps:
           command: preview
           project_dir: pulumi/grapl
           stack: grapl/testing
+          refresh: false
     agents:
       queue: "pulumi-staging"
 
@@ -45,6 +46,7 @@ steps:
           command: update
           project_dir: pulumi/grapl
           stack: grapl/testing
+          refresh: false
     agents:
       queue: "pulumi-staging"
     artifact_paths:
@@ -62,6 +64,7 @@ steps:
           command: preview
           project_dir: pulumi/rust_integration_tests
           stack: grapl/testing
+          refresh: false
     agents:
       queue: "pulumi-staging"
 
@@ -77,6 +80,7 @@ steps:
           command: update
           project_dir: pulumi/rust_integration_tests
           stack: grapl/testing
+          refresh: false
     agents:
       queue: "pulumi-staging"
 
