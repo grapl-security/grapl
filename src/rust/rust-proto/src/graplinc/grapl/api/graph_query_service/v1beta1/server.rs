@@ -1,14 +1,23 @@
-use std::net::SocketAddr;
-
-use futures::FutureExt;
-use tokio::{
-    net::TcpListener,
-    sync::oneshot::Receiver,
+use std::{
+    marker::PhantomData,
+    time::Duration,
 };
+
+use futures::{
+    channel::oneshot::{
+        self,
+        Receiver,
+        Sender,
+    },
+    Future,
+    FutureExt,
+};
+use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::Server;
 
 use crate::{
+    execute_rpc,
     graplinc::grapl::api::graph_query_service::v1beta1::messages::{
         QueryGraphFromUidRequest,
         QueryGraphFromUidResponse,
@@ -26,12 +35,15 @@ use crate::{
         QueryGraphWithUidResponse as QueryGraphWithUidResponseProto,
     },
     protocol::{
+        error::ServeError,
         healthcheck::{
             server::init_health_service,
+            HealthcheckError,
             HealthcheckStatus,
         },
         status::Status,
     },
+    server_internals::GrpcApi,
     SerDeError,
 };
 
@@ -57,134 +69,119 @@ pub trait GraphQueryApi {
 }
 
 #[tonic::async_trait]
-impl<T, E> GraphQueryServiceProto for T
+impl<T> GraphQueryServiceProto for GrpcApi<T>
 where
-    T: GraphQueryApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
+    T: GraphQueryApi + Send + Sync + 'static,
 {
     async fn query_graph_with_uid(
         &self,
         request: tonic::Request<QueryGraphWithUidRequestProto>,
     ) -> Result<tonic::Response<QueryGraphWithUidResponseProto>, tonic::Status> {
-        let request = request.into_inner();
-        let request = request
-            .try_into()
-            .map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
-        let response = GraphQueryApi::query_graph_with_uid(self, request)
-            .await
-            .map_err(|e| e.into())?;
-
-        Ok(tonic::Response::new(response.into()))
+        execute_rpc!(self, request, query_graph_with_uid)
     }
 
     async fn query_graph_from_uid(
         &self,
         request: tonic::Request<QueryGraphFromUidRequestProto>,
     ) -> Result<tonic::Response<QueryGraphFromUidResponseProto>, tonic::Status> {
-        let request = request.into_inner();
-        let request = request
-            .try_into()
-            .map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
-        let response = GraphQueryApi::query_graph_from_uid(self, request)
-            .await
-            .map_err(|e| e.into())?;
-        Ok(tonic::Response::new(response.into()))
+        execute_rpc!(self, request, query_graph_from_uid)
     }
 }
 
+/**
+ * !!!!! IMPORTANT !!!!!
+ * This is almost entirely cargo-culted from previous Server impls.
+ * Lots of opportunities to deduplicate and simplify.
+ */
 /// A server construct that drives the GraphQueryApi implementation.
-pub struct GraphQueryServiceServer<T, E>
+pub struct GraphQueryServiceServer<T, H, F>
 where
-    T: GraphQueryApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
+    T: GraphQueryApi + Send + Sync + 'static,
+    H: Fn() -> F + Send + Sync + 'static,
+    F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
 {
-    server: GraphQueryServiceServerProto<T>,
-    addr: SocketAddr,
+    api_server: T,
+    healthcheck: H,
+    healthcheck_polling_interval: Duration,
+    tcp_listener: TcpListener,
     shutdown_rx: Receiver<()>,
+    service_name: &'static str,
+    f_: PhantomData<F>,
 }
 
-impl<T, E> GraphQueryServiceServer<T, E>
+impl<T, H, F> GraphQueryServiceServer<T, H, F>
 where
-    T: GraphQueryApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
+    T: GraphQueryApi + Send + Sync + 'static,
+    H: Fn() -> F + Send + Sync + 'static,
+    F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
-    pub fn builder(
-        service: T,
-        addr: SocketAddr,
-        shutdown_rx: Receiver<()>,
-    ) -> GraphQueryServiceServerBuilder<T, E> {
-        GraphQueryServiceServerBuilder::new(service, addr, shutdown_rx)
+    /// Construct a new gRPC server which will serve the given API
+    /// implementation on the given socket address. Server is constructed in
+    /// a non-running state. Call the serve() method to run the server. This
+    /// method also returns a channel you can use to trigger server
+    /// shutdown.
+    pub fn new(
+        api_server: T,
+        tcp_listener: TcpListener,
+        healthcheck: H,
+        healthcheck_polling_interval: Duration,
+    ) -> (Self, Sender<()>) {
+        let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+        (
+            Self {
+                api_server,
+                healthcheck,
+                healthcheck_polling_interval,
+                tcp_listener,
+                shutdown_rx,
+                service_name: GraphQueryServiceServerProto::<GrpcApi<T>>::NAME,
+                f_: PhantomData,
+            },
+            shutdown_tx,
+        )
     }
 
-    pub async fn serve(self) -> Result<(), GraphQueryServiceServerError> {
+    /// returns the service name associated with this service. You will need
+    /// this value to construct a HealthcheckClient with which to query this
+    /// service's healthcheck.
+    pub fn service_name(&self) -> &'static str {
+        self.service_name
+    }
+
+    /// Run the gRPC server and serve the API on this server's socket
+    /// address. Returns a ServeError if the gRPC server cannot run.
+    pub async fn serve(self) -> Result<(), ServeError> {
         let (healthcheck_handle, health_service) =
-            init_health_service::<GraphQueryServiceServerProto<T>, _, _>(
-                || async { Ok(HealthcheckStatus::Serving) },
-                std::time::Duration::from_millis(500),
+            init_health_service::<GraphQueryServiceServerProto<GrpcApi<T>>, _, _>(
+                self.healthcheck,
+                self.healthcheck_polling_interval,
             )
             .await;
 
-        let listener = TcpListener::bind(self.addr)
-            .await
-            .map_err(GraphQueryServiceServerError::BindError)?;
+        // TODO: add tower tracing, concurrency limits
+        let mut server_builder = Server::builder().trace_fn(|request| {
+            tracing::info_span!(
+                "exec_service",
+                headers = ?request.headers(),
+                method = ?request.method(),
+                uri = %request.uri(),
+                extensions = ?request.extensions(),
+            )
+        });
 
-        Server::builder()
-            .trace_fn(|request| {
-                tracing::trace_span!(
-                    "GraphQuery",
-                    headers = ?request.headers(),
-                    method = ?request.method(),
-                    uri = %request.uri(),
-                    extensions = ?request.extensions(),
-                )
-            })
+        Ok(server_builder
             .add_service(health_service)
-            .add_service(self.server)
+            .add_service(GraphQueryServiceServerProto::new(GrpcApi::new(
+                self.api_server,
+            )))
             .serve_with_incoming_shutdown(
-                TcpListenerStream::new(listener),
+                TcpListenerStream::new(self.tcp_listener),
                 self.shutdown_rx.map(|_| ()),
             )
             .then(|result| async move {
                 healthcheck_handle.abort();
                 result
             })
-            .await?;
-        Ok(())
-    }
-}
-
-pub struct GraphQueryServiceServerBuilder<T, E>
-where
-    T: GraphQueryApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
-{
-    server: GraphQueryServiceServerProto<T>,
-    addr: SocketAddr,
-    shutdown_rx: Receiver<()>,
-}
-
-impl<T, E> GraphQueryServiceServerBuilder<T, E>
-where
-    T: GraphQueryApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
-{
-    /// Create a new builder for a GraphQueryServiceServer,
-    /// taking the required arguments upfront.
-    pub fn new(service: T, addr: SocketAddr, shutdown_rx: Receiver<()>) -> Self {
-        Self {
-            server: GraphQueryServiceServerProto::new(service),
-            addr,
-            shutdown_rx,
-        }
-    }
-
-    /// Consumes the builder and returns a new `GraphQueryServiceServer`.
-    /// Note: Panics on invalid build state
-    pub fn build(self) -> GraphQueryServiceServer<T, E> {
-        GraphQueryServiceServer {
-            server: self.server,
-            addr: self.addr,
-            shutdown_rx: self.shutdown_rx,
-        }
+            .await?)
     }
 }
