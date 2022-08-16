@@ -3,8 +3,6 @@ config:
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:env_vars:
-    engagement-creator:
-      GRAPL_LOG_LEVEL: DEBUG
     graph-merger:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
