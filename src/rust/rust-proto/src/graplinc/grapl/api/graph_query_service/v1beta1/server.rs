@@ -14,7 +14,10 @@ use futures::{
 };
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
-use tonic::transport::Server;
+use tonic::transport::{
+    NamedService,
+    Server,
+};
 
 use crate::{
     execute_rpc,
