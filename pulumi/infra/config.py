@@ -76,9 +76,6 @@ AWS_ACCOUNT_ID: Final[str] = (
     "000000000000" if LOCAL_GRAPL else aws.get_caller_identity().account_id
 )
 
-SERVICE_LOG_RETENTION_DAYS: Final[int] = 30
-
-DGRAPH_LOG_RETENTION_DAYS: Final[int] = 7
 
 DEFAULT_ENVVARS: Final[Mapping[str, str]] = {
     "GRAPL_LOG_LEVEL": "DEBUG",
