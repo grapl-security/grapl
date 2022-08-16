@@ -76,7 +76,6 @@ def main() -> None:
             "container_images": _python_integration_container_images(artifacts),
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
-            "redis_endpoint": grapl_stack.redis_endpoint,
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
             "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
@@ -103,7 +102,6 @@ class GraplStack:
             return cast(str, ref.require_output(key))
 
         self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
-        self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")
         self.test_user_name = require_str("test-user-name")

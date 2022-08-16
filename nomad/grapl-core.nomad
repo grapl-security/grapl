@@ -60,11 +60,6 @@ variable "kafka_bootstrap_servers" {
   description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
 }
 
-variable "redis_endpoint" {
-  type        = string
-  description = "Where can services find Redis?"
-}
-
 variable "schema_table_name" {
   type        = string
   description = "What is the name of the schema table?"
@@ -234,11 +229,6 @@ locals {
     target = "/dgraph"
     source = "grapl-data-dgraph"
   }
-
-  _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
-  _redis         = split(":", local._redis_trimmed)
-  redis_host     = local._redis[0]
-  redis_port     = local._redis[1]
 
   # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
   # added for network.dns as of 1.3.0
@@ -697,7 +687,6 @@ job "grapl-core" {
         AWS_REGION         = var.aws_region
         RUST_LOG           = var.rust_log
         RUST_BACKTRACE     = local.rust_backtrace
-        REDIS_ENDPOINT     = var.redis_endpoint
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
 

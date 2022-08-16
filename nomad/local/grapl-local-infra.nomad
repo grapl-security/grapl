@@ -85,50 +85,11 @@ locals {
 #   local-infra services via Consul Connect; use bridge+static.
 #   This is because these services won't exist in prod.
 
-# This job is to spin up infrastructure needed to run Grapl locally (e.g. Redis) that we don't necessarily want to deploy in production (because AWS will manage it)
+# This job is to spin up infrastructure needed to run Grapl locally that we don't necessarily want to deploy in production (because AWS will manage it)
 job "grapl-local-infra" {
   datacenters = ["dc1"]
 
   type = "service"
-
-  group "redis" {
-    # Redis will be available to Nomad Jobs (sans Consul Connect)
-    # and the Host OS at localhost:6379
-    network {
-      mode = "bridge"
-      port "redis" {
-        static = 6379
-      }
-    }
-
-    task "redis" {
-      driver = "docker"
-
-      config {
-        image = "redis:latest"
-        ports = ["redis"]
-      }
-
-      service {
-        name = "redis"
-
-        check {
-          type     = "script"
-          name     = "check_redis"
-          command  = "redis-cli"
-          args     = ["ping"]
-          interval = "20s"
-          timeout  = "10s"
-
-          check_restart {
-            limit           = 2
-            grace           = "30s"
-            ignore_warnings = false
-          }
-        }
-      }
-    }
-  }
 
   group "localstack" {
     # Localstack will be available to Nomad Jobs (sans Consul Connect)
