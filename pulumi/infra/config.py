@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -138,14 +138,6 @@ def configurable_envvar(service_name: str, var: str) -> str:
         )
     else:
         return value
-
-
-def configurable_envvars(service_name: str, vars: Sequence[str]) -> Mapping[str, str]:
-    """Return a map of environment variable values for the named service,
-    pulled from Pulumi configuration or default values, suitable for
-    splicing into other environment maps for configuring services.
-    """
-    return {v: configurable_envvar(service_name, v) for v in vars}
 
 
 # TODO: The verbiage "version" here is a bit restrictive.
