@@ -18,10 +18,6 @@ STACK_CONFIG_FILENAME: Final[str] = f"Pulumi.{STACK_NAME}.yaml"
 # This must be the same as the value defined in local-grapl.env
 GRAPL_TEST_USER_NAME: Final[str] = f"{STACK_NAME}-grapl-test-user"
 
-# Sometimes we need to refer to other code or artifacts relative to
-# the repository root.
-REPOSITORY_ROOT: Final[str] = os.path.join(os.path.dirname(__file__), "../..")
-
 # note: this ${} is interpolated inside Nomad
 HOST_IP_IN_NOMAD: Final[str] = "${attr.unique.network.ip-address}"
 
@@ -49,7 +45,8 @@ def repository_path(relative_path: str) -> Path:
     """
     Resolve `relative_path` relative to the root of the repository.
     """
-    return Path(os.path.join(REPOSITORY_ROOT), relative_path).resolve()
+    repository_root = os.path.join(os.path.dirname(__file__), "../..")
+    return Path(os.path.join(repository_root), relative_path).resolve()
 
 
 def _validate_stack_name() -> None:
