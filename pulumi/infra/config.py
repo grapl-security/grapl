@@ -84,10 +84,6 @@ DEFAULT_ENVVARS: Final[Mapping[str, str]] = {
 }
 
 
-class ArtifactException(Exception):
-    pass
-
-
 def _require_env_var(key: str) -> str:
     """
     Grab a key from env variables, or fallback to Pulumi.xyz.yaml
