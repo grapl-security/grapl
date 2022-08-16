@@ -40,7 +40,7 @@ use uuid::Uuid;
 
 #[tracing::instrument(skip(ctx))]
 #[test_context(E2eTestContext)]
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
     let test_name = "test_sysmon_log_e2e";
 

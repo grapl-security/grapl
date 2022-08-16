@@ -136,6 +136,7 @@ where
 
     /// Run the gRPC server and serve the API on this server's socket
     /// address. Returns a ServeError if the gRPC server cannot run.
+    #[tracing::instrument(skip(self), err)]
     pub async fn serve(self) -> Result<(), ServeError> {
         // TODO: add tower tracing, tls_config, concurrency limits
         let (healthcheck_handle, health_service) =

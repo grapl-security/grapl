@@ -69,9 +69,7 @@ impl<A: Action> ExecuteState<A> {
                 Poll::Ready(Err(recloser::Error::Inner(e))) => {
                     ExecuteFuturePoll::Running(Poll::Ready(Err(e)))
                 }
-                Poll::Pending => {
-                    ExecuteFuturePoll::Running(Poll::Pending)
-                },
+                Poll::Pending => ExecuteFuturePoll::Running(Poll::Pending),
             },
             ExecuteStateProj::Sleeping(future) => ExecuteFuturePoll::Sleeping(future.poll(cx)),
         }
@@ -248,7 +246,7 @@ impl ExecutorConfig {
             .error_rate(0.5)
             .closed_len(100)
             .half_open_len(10)
-            .open_wait(Duration::from_secs(5));
+            .open_wait(Duration::from_millis(5000));
         ExecutorConfig { builder, timeout }
     }
 
