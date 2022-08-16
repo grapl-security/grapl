@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    time::Duration,
+};
 
 use clap::Parser;
 use graph_query_service::{
@@ -6,10 +9,14 @@ use graph_query_service::{
     server,
 };
 use grapl_tracing::setup_tracing;
-use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::server::GraphQueryServiceServer;
+use rust_proto::{
+    graplinc::grapl::api::graph_query_service::v1beta1::server::GraphQueryServiceServer,
+    protocol::healthcheck::HealthcheckStatus,
+};
 use scylla::CachingSession;
 use secrecy::ExposeSecret;
 use server::GraphQueryService;
+use tokio::net::TcpListener;
 
 use crate::config::GraphQueryServiceConfig;
 
@@ -36,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ));
     let graph_query_service = GraphQueryService::new(scylla_client);
 
-    Ok(())
+    exec_service(config, graph_query_service).await
 }
 
 pub async fn exec_service(

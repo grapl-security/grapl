@@ -1,10 +1,13 @@
 use std::sync::Arc;
 
-use rust_proto::graplinc::grapl::common::v1beta1::types::{
-    EdgeName,
-    NodeType,
-    PropertyName,
-    Uid,
+use rust_proto::{
+    graplinc::grapl::common::v1beta1::types::{
+        EdgeName,
+        NodeType,
+        PropertyName,
+        Uid,
+    },
+    SerDeError,
 };
 use scylla::{
     cql_to_rust::FromRowError,
@@ -26,7 +29,7 @@ pub enum PropertyQueryError {
     #[error("InvalidUid: {0} reason: {1}")]
     InvalidUidInDb(i64, String),
     #[error("Invalid stored edge name {0}")]
-    InvalidStoredEdgeName(&'static str),
+    InvalidStoredEdgeName(#[from] SerDeError),
 }
 
 #[derive(Debug, Clone)]
