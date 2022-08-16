@@ -140,37 +140,6 @@ def configurable_envvar(service_name: str, var: str) -> str:
         return value
 
 
-# TODO: The verbiage "version" here is a bit restrictive.
-def configured_version_for(artifact_name: str) -> str | None:
-    """Given the name of an artifact, retrieves the version of that
-    artifact from the current stack configuration. Returns `None` if
-    no version has been specified for that artifact.
-
-    In general, we will have versions specified for all artifacts when
-    doing deploys of release candidates to automated testing and
-    production infrastructure. However, individual developers working
-    on features _may_ wish to specify concrete versions for some
-    artifacts, while leaving others unspecified. In the latter case,
-    artifacts built locally from the current code checkout will be
-    used instead. This allows developers to deploy the code they are
-    currently iterating on to their own sandbox environments.
-
-    """
-    artifacts = pulumi.Config().get_object("artifacts") or {}
-    version = artifacts.get(artifact_name)
-
-    if (not version) and REAL_DEPLOYMENT:
-        raise Exception(
-            f"""
-        Tried to deploy the {STACK_NAME} stack, but no version for {artifact_name} was found!
-
-        This stack must have a version configured for ALL artifacts that it uses.
-        """
-        )
-
-    return version
-
-
 # This should be (x: str, y: Type[T]) -> T, but: https://github.com/python/mypy/issues/9773
 def require_artifact(artifact_name: str) -> Any:
     """
