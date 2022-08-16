@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Mapping
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -138,25 +138,6 @@ def configurable_envvar(service_name: str, var: str) -> str:
         )
     else:
         return value
-
-
-# This should be (x: str, y: Type[T]) -> T, but: https://github.com/python/mypy/issues/9773
-def require_artifact(artifact_name: str) -> Any:
-    """
-    Given the name of an artifact, retrieves the value of that
-    artifact from the current stack configuration.
-    Raise a helpful exception if no entry is found for that artifact.
-    """
-    artifacts = pulumi.Config().get_object("artifacts") or {}
-    artifact = artifacts.get(artifact_name)
-    if artifact is None:
-        raise ArtifactException(
-            f"We couldn't find an artifact named {artifact_name} in your stack."
-            "\nYou likely want to run `pulumi/bin/copy_artifacts_from_rc.sh`, which"
-            " will grab concrete artifact values from our latest `origin/rc` branch."
-            "\nDon't forget to remove artifacts you don't need after running it!"
-        )
-    return artifact
 
 
 def cloudsmith_repository_name() -> str | None:
