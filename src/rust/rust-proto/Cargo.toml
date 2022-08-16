@@ -18,6 +18,8 @@ client-executor = { path = "../client-executor" }
 futures = "0.3"
 grapl-utils = { path = "../grapl-utils" }
 prost = "0.10"
+rand = "0.8.5"
+rustc-hash = "1.1.0"
 thiserror = "1.0"
 tokio = { version = "1.17", features = ["rt", "time"] }
 tokio-stream = { version = "0.1", features = ["net"] }
