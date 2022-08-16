@@ -9,12 +9,12 @@ import pulumi_aws as aws
 from infra import config
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
+from infra.config import repository_path
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Kafka
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
-from infra.path import path_from_root
 
 import pulumi
 
@@ -83,9 +83,7 @@ def main() -> None:
 
         python_integration_tests = NomadJob(
             "python-integration-tests",
-            jobspec=path_from_root(
-                "nomad/local/python-integration-tests.nomad"
-            ).resolve(),
+            jobspec=repository_path("nomad/local/python-integration-tests.nomad"),
             vars=python_integration_test_job_vars,
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )

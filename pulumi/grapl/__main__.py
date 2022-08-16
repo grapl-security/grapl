@@ -11,6 +11,7 @@ from infra.api_gateway import ApiGateway
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
+from infra.config import repository_path
 from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
 from infra.consul_service_default import ConsulServiceDefault
@@ -30,7 +31,6 @@ from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
 from infra.observability_env_vars import observability_env_vars_for_local
-from infra.path import path_from_root
 from infra.postgres import Postgres
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -266,7 +266,7 @@ def main() -> None:
         "consul-intentions",
         # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
         # when they update nomad configs
-        intention_directory=path_from_root("nomad/consul-intentions").resolve(),
+        intention_directory=repository_path("nomad/consul-intentions"),
         opts=pulumi.ResourceOptions(provider=consul_provider),
     )
 
@@ -287,7 +287,7 @@ def main() -> None:
 
     nomad_grapl_ingress = NomadJob(
         "grapl-ingress",
-        jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
+        jobspec=repository_path("nomad/grapl-ingress.nomad"),
         vars={"dns_server": config.CONSUL_DNS_IP},
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
@@ -362,7 +362,7 @@ def main() -> None:
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
-            jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-core.nomad"),
             vars=local_grapl_core_vars,
             opts=ResourceOptions(
                 custom_timeouts=CustomTimeouts(
@@ -373,7 +373,7 @@ def main() -> None:
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
-            jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-provision.nomad"),
             vars=provision_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
         )
@@ -457,7 +457,7 @@ def main() -> None:
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
-            jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-core.nomad"),
             vars=prod_grapl_core_vars,
             opts=pulumi.ResourceOptions(
                 provider=nomad_provider,
@@ -469,7 +469,7 @@ def main() -> None:
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
-            jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-provision.nomad"),
             vars=provision_vars,
             opts=pulumi.ResourceOptions(
                 depends_on=[

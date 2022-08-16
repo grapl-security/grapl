@@ -4,7 +4,7 @@ import pulumi_aws as aws
 from infra import config
 from infra.artifacts import ArtifactGetter
 from infra.bucket import Bucket
-from infra.path import path_from_root
+from infra.config import repository_path
 from infra.s3_url import get_s3_url
 from typing_extensions import Protocol
 
@@ -33,14 +33,14 @@ class FirecrackerAssets(pulumi.ComponentResource):
         super().__init__("grapl:FirecrackerAssets", name, None, opts)
 
         self.kernel_asset = local_or_remote_asset(
-            local_path=path_from_root("dist/firecracker_kernel.tar.gz"),
+            local_path=repository_path("dist/firecracker_kernel.tar.gz"),
             artifacts=artifacts,
             artifact_key=FIRECRACKER_KERNEL_FILENAME,
             repository_name=repository_name,
         )
 
         self.rootfs_asset = local_or_remote_asset(
-            local_path=path_from_root("dist/firecracker_rootfs.tar.gz"),
+            local_path=repository_path("dist/firecracker_rootfs.tar.gz"),
             artifacts=artifacts,
             artifact_key=FIRECRACKER_ROOTFS_FILENAME,
             repository_name=repository_name,
