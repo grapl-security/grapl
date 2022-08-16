@@ -14,6 +14,7 @@ use rust_proto::graplinc::grapl::{
         OrStringFilters,
         QueryId,
         StrCmp,
+        StringProperties,
     },
     common::v1beta1::types::{
         EdgeName,
@@ -153,7 +154,7 @@ pub async fn fetch_node_with_edges(
     let mut node = NodePropertiesView::new(
         uid,
         node_properties_query.node_type.clone(),
-        FxHashMap::default(),
+        StringProperties::default(),
     );
 
     let node_properties = fetch_node_properties(
