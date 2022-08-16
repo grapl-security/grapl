@@ -22,7 +22,7 @@ class Bucket(aws.s3.Bucket):
         opts: `pulumi.ResourceOptions` for this resource.
 
         """
-        sse_config = sse_configuration() if sse else None
+        sse_config = _sse_configuration() if sse else None
 
         super().__init__(
             name,
@@ -88,7 +88,7 @@ class Bucket(aws.s3.Bucket):
         )
 
 
-def sse_configuration() -> aws.s3.BucketServerSideEncryptionConfigurationArgs:
+def _sse_configuration() -> aws.s3.BucketServerSideEncryptionConfigurationArgs:
     """Applies SSE to a bucket using AWS KMS."""
     return aws.s3.BucketServerSideEncryptionConfigurationArgs(
         rule=aws.s3.BucketServerSideEncryptionConfigurationRuleArgs(
