@@ -36,15 +36,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ));
     let graph_query_service = GraphQueryService::new(scylla_client);
 
-    let (_tx, rx) = tokio::sync::oneshot::channel();
-    GraphQueryServiceServer::builder(
-        graph_query_service,
-        config.graph_query_service_bind_address,
-        rx,
-    )
-    .build()
-    .serve()
-    .await?;
-
     Ok(())
+}
+
+pub async fn exec_service(
+    config: GraphQueryServiceConfig,
+    api_server: GraphQueryService,
+) -> Result<(), Box<dyn std::error::Error>> {
+    tracing::info!(message = "Binding service",);
+    let addr = config.graph_query_service_bind_address;
+    let healthcheck_polling_interval_ms = 5000;
+
+    let (server, _shutdown_tx) = GraphQueryServiceServer::new(
+        api_server,
+        TcpListener::bind(addr.clone()).await?,
+        || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
+        Duration::from_millis(healthcheck_polling_interval_ms),
+    );
+
+    tracing::info!(
+        message = "starting gRPC server",
+        socket_address = %addr,
+    );
+
+    Ok(server.serve().await?)
 }
