@@ -550,7 +550,7 @@ impl TryFrom<proto::NodePropertyQuery> for NodePropertyQuery {
                 Ok((
                     PropertyName::try_from(k).map_err(|e| SerDeError::InvalidField {
                         field_name: "string_filters",
-                        assertion: e.to_owned(),
+                        assertion: e.to_string(),
                     })?,
                     v.try_into()?,
                 ))
@@ -564,7 +564,7 @@ impl TryFrom<proto::NodePropertyQuery> for NodePropertyQuery {
                 Ok((
                     PropertyName::try_from(k).map_err(|e| SerDeError::InvalidField {
                         field_name: "int_filters",
-                        assertion: e.to_owned(),
+                        assertion: e.to_string(),
                     })?,
                     v.try_into()?,
                 ))
