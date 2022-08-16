@@ -37,5 +37,8 @@ secrecy = "0.8.0"
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }
 
+[dev-dependencies]
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
+
 [features]
 integration_tests = []

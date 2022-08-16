@@ -87,7 +87,7 @@ pub async fn fetch_node_properties(
 
         for prop_name in node_properties_query.string_filters.keys() {
             let property = property_query_executor
-                .get_immutable_string(tenant_id, uid, &node_properties_query.node_type, prop_name)
+                .get_immutable_string(tenant_id, uid, prop_name)
                 .await?;
             match property {
                 Some(p) => fields.push(p),

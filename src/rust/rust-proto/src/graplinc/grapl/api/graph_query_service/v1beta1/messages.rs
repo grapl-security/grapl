@@ -350,6 +350,14 @@ impl From<AndStringFilters> for proto::AndStringFilters {
     }
 }
 
+impl From<Vec<StringCmp>> for AndStringFilters {
+    fn from(cmps: Vec<StringCmp>) -> AndStringFilters{
+        AndStringFilters{
+            string_filters: cmps.into_iter().map(StringFilter::from).collect(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct OrStringFilters {
     pub and_string_filters: Vec<AndStringFilters>,

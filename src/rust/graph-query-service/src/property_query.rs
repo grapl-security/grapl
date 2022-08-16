@@ -3,7 +3,6 @@ use std::sync::Arc;
 use rust_proto::{
     graplinc::grapl::common::v1beta1::types::{
         EdgeName,
-        NodeType,
         PropertyName,
         Uid,
     },
@@ -64,7 +63,6 @@ impl PropertyQueryExecutor {
         &self,
         tenant_id: uuid::Uuid,
         uid: Uid,
-        node_type: &NodeType,
         property_name: &PropertyName,
     ) -> Result<Option<StringField>, PropertyQueryError> {
         let tenant_urn = tenant_id.simple();
@@ -72,10 +70,9 @@ impl PropertyQueryExecutor {
         let mut query = scylla::query::Query::from(format!(
             r"
             SELECT value
-            FROM tenant_keyspace_{tenant_urn}.immutable_string_index
+            FROM tenant_keyspace_{tenant_urn}.immutable_strings
             WHERE
                 uid = ? AND
-                node_type = ? AND
                 populated_field = ?
             LIMIT 1
             ALLOW FILTERING;
@@ -88,7 +85,7 @@ impl PropertyQueryExecutor {
             .scylla_client
             .execute(
                 query,
-                &(uid.as_i64(), &node_type.value, &property_name.value),
+                &(uid.as_i64(), &property_name.value),
             )
             .await?;
 
