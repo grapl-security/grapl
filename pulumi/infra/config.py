@@ -28,19 +28,6 @@ HOST_IP_IN_NOMAD: Final[str] = "${attr.unique.network.ip-address}"
 CONSUL_DNS_IP: Final[str] = os.getenv("CONSUL_DNS_IP", "8.8.8.8")
 
 
-def to_bool(input: str | bool | None) -> bool | None:
-    if isinstance(input, bool):
-        return input
-    elif input is None:
-        return None
-    elif input in ("True", "true"):
-        return True
-    elif input in ("False", "false"):
-        return False
-    else:
-        raise ValueError(f"Invalid bool value: {repr(input)}")
-
-
 def repository_path(relative_path: str) -> Path:
     """
     Resolve `relative_path` relative to the root of the repository.
