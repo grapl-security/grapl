@@ -51,9 +51,10 @@ impl TryFrom<&'static str> for PropertyName {
 }
 
 impl TryFrom<String> for PropertyName {
-    type Error = &'static str;
+    type Error = SerDeError;
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        // todo: Validate this thing
+        // While this is currently infallible, we may add validation later,
+        // hence the TryFrom.
         Ok(PropertyName { value })
     }
 }
@@ -61,6 +62,8 @@ impl TryFrom<String> for PropertyName {
 impl TryFrom<PropertyNameProto> for PropertyName {
     type Error = SerDeError;
     fn try_from(proto: PropertyNameProto) -> Result<Self, Self::Error> {
+        // While this is currently infallible, we may add validation later,
+        // hence the TryFrom.
         Ok(Self { value: proto.value })
     }
 }
@@ -91,32 +94,29 @@ impl std::fmt::Display for EdgeName {
 }
 
 impl TryFrom<String> for EdgeName {
-    type Error = &'static str;
-    fn try_from(raw: String) -> Result<Self, Self::Error> {
-        if raw.is_empty() {
-            return Err("EdgeName can not be empty");
+    type Error = SerDeError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if value.is_empty() {
+            return Err(SerDeError::MissingField("EdgeName"));
         }
-        if raw.len() > 32 {
-            return Err("EdgeName can not be more than 32 characters");
+        if value.len() > 32 {
+            return Err(SerDeError::InvalidField {
+                field_name: "EdgeName",
+                assertion: format!(
+                    "can not be more than 32 characters but was {len}",
+                    len = value.len()
+                ),
+            });
         }
 
-        Ok(Self { value: raw })
+        Ok(Self { value })
     }
 }
 
-impl TryFrom<&'static str> for EdgeName {
-    type Error = &'static str;
-    fn try_from(raw: &'static str) -> Result<Self, Self::Error> {
-        if raw.is_empty() {
-            return Err("EdgeName can not be empty");
-        }
-        if raw.len() > 32 {
-            return Err("EdgeName can not be more than 32 characters");
-        }
-
-        Ok(Self {
-            value: raw.to_owned(),
-        })
+impl TryFrom<&str> for EdgeName {
+    type Error = SerDeError;
+    fn try_from(raw: &str) -> Result<Self, Self::Error> {
+        EdgeName::try_from(raw.to_owned())
     }
 }
 
