@@ -138,11 +138,11 @@ impl Edge {
     }
 }
 
-impl<'a> TryFrom<(String, &Field<'a, &'a str>)> for Edge {
-    type Error = CodeGenError<'a>;
+impl TryFrom<(String, &Field<'static, String>)> for Edge {
+    type Error = CodeGenError;
 
     fn try_from(
-        (source_type_name, field): (String, &Field<'a, &'a str>),
+        (source_type_name, field): (String, &Field<'static, String>),
     ) -> Result<Self, Self::Error> {
         let edge_name = field.name.to_string();
         let reverse_edge_name = field
@@ -175,7 +175,7 @@ impl<'a> TryFrom<(String, &Field<'a, &'a str>)> for Edge {
     }
 }
 
-pub fn get_type_name<'a>(ty: &Type<'a, &'a str>) -> String {
+pub fn get_type_name(ty: &Type<'static, String>) -> String {
     match ty {
         Type::NamedType(t) => t.to_string(),
         Type::ListType(t) => get_type_name(t),
