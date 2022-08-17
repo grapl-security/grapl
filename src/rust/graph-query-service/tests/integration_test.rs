@@ -1,6 +1,4 @@
 #![cfg(feature = "integration_tests")]
-#![allow(warnings)]
-
 use std::sync::Arc;
 
 use clap::Parser;
@@ -12,7 +10,6 @@ use rust_proto::graplinc::grapl::{
     api::graph_query_service::v1beta1::{
         client::GraphQueryClient,
         messages::{
-            GraphQuery,
             MatchedGraphWithUid,
             MaybeMatchWithUid,
             QueryGraphWithUidRequest,
@@ -21,13 +18,11 @@ use rust_proto::graplinc::grapl::{
     },
     common::v1beta1::types::{
         NodeType,
-        PropertyName,
         Uid,
     },
 };
 use scylla::{
     CachingSession,
-    Session,
 };
 use secrecy::ExposeSecret;
 
@@ -59,11 +54,11 @@ async fn provision_keyspace(
             .query(
                 format!(
                     r"CREATE TABLE IF NOT EXISTS {tenant_ks}.{table_name} (
-                    uid bigint,
-                    populated_field text,
-                    value {value_type},
-                    PRIMARY KEY (uid, populated_field)
-                )"
+                        uid bigint,
+                        populated_field text,
+                        value {value_type},
+                        PRIMARY KEY (uid, populated_field)
+                    )"
                 ),
                 &(),
             )
@@ -139,8 +134,8 @@ async fn create_node(
     let keyspace = keyspace.as_ref();
     let insert = format!(
         r"INSERT INTO {keyspace}.node_type
-                           (uid, node_type)
-                           VALUES (?, ?)"
+       (uid, node_type)
+       VALUES (?, ?)"
     );
 
     session
@@ -160,8 +155,8 @@ async fn insert_string(
     let keyspace = keyspace.as_ref();
     let insert = format!(
         r"INSERT INTO {keyspace}.immutable_strings
-                           (uid, populated_field, value)
-                           VALUES (?, ?, ?)"
+        (uid, populated_field, value)
+        VALUES (?, ?, ?)"
     );
 
     session
