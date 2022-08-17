@@ -73,7 +73,7 @@ impl SchemaManagerApi for SchemaManager {
                     request.tenant_id,
                     &schema,
                     request.schema_version,
-                    &self.db_client.pool,
+                    &self.db_client,
                 )
                 .await?;
                 Ok(DeployModelResponse {})

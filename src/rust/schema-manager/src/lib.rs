@@ -2,9 +2,13 @@ pub mod config;
 pub mod db;
 pub mod server;
 
+use db::client::{
+    SchemaDbClient,
+    Txn,
+};
 use grapl_graphql_codegen::{
     conflict_resolution::ConflictResolution,
-    edge::Edge as EdgeSchema,
+    edge::Edge,
     identification_algorithm::IdentificationAlgorithm,
     identity_predicate_type::IdentityPredicateType,
     node_predicate::NodePredicate,
@@ -16,12 +20,14 @@ use grapl_graphql_codegen::{
     ParseError,
 };
 use sqlx::{
-    PgPool,
     Postgres,
     Transaction,
 };
 
-use crate::db::models::{StoredEdgeCardinality, StoredPropertyType};
+use crate::db::models::{
+    StoredEdgeCardinality,
+    StoredPropertyType,
+};
 
 const SCHEMA_TYPE: &str = "Graphql_V0";
 
@@ -41,7 +47,7 @@ pub async fn deploy_graphql_plugin(
     tenant_id: uuid::Uuid,
     raw_schema: &str,
     schema_version: u32,
-    pool: &PgPool,
+    db_client: &SchemaDbClient,
 ) -> Result<(), DeployGraphqlError> {
     let document: Document<String> = parse_schema(raw_schema)?;
     let document = document.into_static();
@@ -49,19 +55,43 @@ pub async fn deploy_graphql_plugin(
     let node_types = node_type::parse_into_node_types(document)
         .map_err(|e| DeployGraphqlError::ParseError(e.to_string()))?;
 
-    let mut txn = pool.begin().await?;
+    let mut txn = db_client.begin_txn().await?;
 
     for node_type in node_types.iter() {
         deploy_identity_algorithm(tenant_id, node_type, schema_version, &mut txn).await?;
 
-        deploy_node_type(tenant_id, node_type, schema_version, raw_schema, &mut txn).await?;
+        deploy_node_type(
+            &mut txn,
+            db_client,
+            tenant_id,
+            node_type,
+            schema_version,
+            raw_schema,
+        )
+        .await?;
 
         for property in node_type.predicates.iter() {
-            deploy_node_property(tenant_id, node_type, property, schema_version, &mut txn).await?;
+            deploy_node_property(
+                &mut txn,
+                db_client,
+                tenant_id,
+                node_type,
+                property,
+                schema_version,
+            )
+            .await?;
         }
 
         for edge in node_type.edges.iter() {
-            deploy_edge(tenant_id, node_type, edge, schema_version, &mut txn).await?;
+            deploy_edge(
+                &mut txn,
+                db_client,
+                tenant_id,
+                node_type,
+                edge,
+                schema_version,
+            )
+            .await?;
         }
     }
 
@@ -71,11 +101,12 @@ pub async fn deploy_graphql_plugin(
 }
 
 async fn deploy_node_type(
+    txn: &mut Txn<'_>,
+    db_client: &SchemaDbClient,
     tenant_id: uuid::Uuid,
     node_type: &NodeType,
     schema_version: u32,
     raw_schema: &str,
-    txn: &mut Transaction<'_, Postgres>,
 ) -> Result<(), DeployGraphqlError> {
     let identity_algorithm = match node_type.identification_algorithm {
         IdentificationAlgorithm::Session => "session",
@@ -83,27 +114,17 @@ async fn deploy_node_type(
     };
     let node_type_name = &node_type.type_name;
 
-    sqlx::query!(
-        r#"
-        INSERT INTO schema_manager.node_schemas (
+    db_client
+        .insert_node_schema(
+            txn,
             tenant_id,
             identity_algorithm,
-            node_type,
+            node_type_name,
             schema_version,
             raw_schema,
-            schema_type
+            SCHEMA_TYPE,
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
-        "#,
-        tenant_id,
-        identity_algorithm,
-        node_type_name,
-        schema_version as i16,
-        raw_schema.as_bytes(),
-        SCHEMA_TYPE,
-    )
-    .execute(&mut *txn)
-    .await?;
+        .await?;
 
     Ok(())
 }
@@ -301,46 +322,37 @@ async fn deploy_static_identity(
 }
 
 async fn deploy_node_property(
+    txn: &mut Transaction<'_, Postgres>,
+    db_client: &SchemaDbClient,
     tenant_id: uuid::Uuid,
     node_type: &NodeType,
     property: &NodePredicate,
     schema_version: u32,
-    txn: &mut Transaction<'_, Postgres>,
 ) -> Result<(), DeployGraphqlError> {
     let node_type_name = &node_type.type_name;
     let predicate_type_name =
         get_predicate_type_name(property.predicate_type, property.conflict_resolution)?;
-    sqlx::query!(
-        r#"
-        INSERT INTO schema_manager.property_schemas (
+    db_client
+        .insert_node_property(
+            txn,
             tenant_id,
-            node_type,
+            node_type_name,
             schema_version,
-            property_name,
-            property_type,
-            identity_only
+            &property.predicate_name,
+            predicate_type_name,
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
-        "#,
-        tenant_id,
-        node_type_name,
-        schema_version as i16,
-        property.predicate_name,
-        predicate_type_name as StoredPropertyType,
-        false, // todo: implement identification only properties
-    )
-    .execute(&mut *txn)
-    .await?;
+        .await?;
 
     Ok(())
 }
 
 async fn deploy_edge(
+    txn: &mut Txn<'_>,
+    db_client: &SchemaDbClient,
     tenant_id: uuid::Uuid,
     node_type: &NodeType,
-    edge: &EdgeSchema,
+    edge: &Edge,
     schema_version: u32,
-    txn: &mut Transaction<'_, Postgres>,
 ) -> Result<(), DeployGraphqlError> {
     let forward_edge_cardinality = if edge.relationship.to_one() {
         StoredEdgeCardinality::ToOne
@@ -354,54 +366,18 @@ async fn deploy_edge(
         StoredEdgeCardinality::ToMany
     };
 
-    sqlx::query!(
-        r#"
-        INSERT INTO schema_manager.edge_schemas (
+    db_client
+        .insert_edge_schema(
+            txn,
             tenant_id,
-            node_type,
-            schema_version,
-            forward_edge_name,
-            reverse_edge_name,
+            &node_type.type_name,
+            &edge.edge_name,
             forward_edge_cardinality,
-            reverse_edge_cardinality
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        "#,
-        tenant_id,
-        &node_type.type_name,
-        schema_version as i16,
-        edge.edge_name,
-        edge.reverse_edge_name,
-        forward_edge_cardinality as StoredEdgeCardinality,
-        reverse_edge_cardinality as StoredEdgeCardinality,
-    )
-    .execute(&mut *txn)
-    .await?;
-
-    sqlx::query!(
-        r#"
-        INSERT INTO schema_manager.edge_schemas (
-            tenant_id,
-            node_type,
+            &edge.reverse_edge_name,
+            reverse_edge_cardinality,
             schema_version,
-            forward_edge_name,
-            reverse_edge_name,
-            forward_edge_cardinality,
-            reverse_edge_cardinality
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        "#,
-        tenant_id,
-        &node_type.type_name,
-        schema_version as i16,
-        edge.reverse_edge_name,
-        edge.edge_name,
-        reverse_edge_cardinality as StoredEdgeCardinality,
-        forward_edge_cardinality as StoredEdgeCardinality,
-    )
-    .execute(&mut *txn)
-    .await?;
-
+        .await?;
     Ok(())
 }
 

@@ -1,20 +1,20 @@
 use grapl_config::PostgresClient;
 use rust_proto::graplinc::grapl::common::v1beta1::types::{
-    EdgeName, NodeType,
+    EdgeName,
+    NodeType,
 };
-use sqlx::{Transaction, Postgres};
+use sqlx::{
+    Postgres,
+    Transaction,
+};
 
+use super::models::StoredPropertyType;
 use crate::{
     config::SchemaDbConfig,
     db::models::{
         GetEdgeSchemaRequestRow,
         StoredEdgeCardinality,
     },
-};
-
-use grapl_graphql_codegen::{
-    edge::Edge as CodegenEdge, 
-    node_type::NodeType as CodegenNodeType,
 };
 
 pub struct SchemaDbClient {
@@ -38,7 +38,13 @@ impl PostgresClient for SchemaDbClient {
     }
 }
 
+pub type Txn<'a> = Transaction<'a, Postgres>;
+
 impl SchemaDbClient {
+    pub async fn begin_txn(&self) -> Result<Txn<'_>, sqlx::Error> {
+        self.pool.begin().await
+    }
+
     pub async fn get_edge_schema(
         &self,
         tenant_id: uuid::Uuid,
@@ -67,26 +73,85 @@ impl SchemaDbClient {
         .await
     }
 
+    pub async fn insert_node_property(
+        &self,
+        txn: &mut Transaction<'_, Postgres>,
+        tenant_id: uuid::Uuid,
+        node_type_name: &str,
+        schema_version: u32,
+        property_predicate_name: &str,
+        predicate_type_name: StoredPropertyType,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            r#"
+            INSERT INTO schema_manager.property_schemas (
+                tenant_id,
+                node_type,
+                schema_version,
+                property_name,
+                property_type,
+                identity_only
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            "#,
+            tenant_id,
+            node_type_name,
+            schema_version as i16,
+            property_predicate_name,
+            predicate_type_name as StoredPropertyType,
+            false, // todo: implement identification only properties
+        )
+        .execute(&mut *txn)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn insert_node_schema(
+        &self,
+        txn: &mut Transaction<'_, Postgres>,
+        tenant_id: uuid::Uuid,
+        identity_algorithm: &str,
+        node_type_name: &str,
+        schema_version: u32,
+        raw_schema: &str,
+        schema_type: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            r#"
+            INSERT INTO schema_manager.node_schemas (
+                tenant_id,
+                identity_algorithm,
+                node_type,
+                schema_version,
+                raw_schema,
+                schema_type
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            "#,
+            tenant_id,
+            identity_algorithm,
+            node_type_name,
+            schema_version as i16,
+            raw_schema.as_bytes(),
+            schema_type,
+        )
+        .execute(&mut *txn)
+        .await?;
+        Ok(())
+    }
+
     pub async fn insert_edge_schema(
         &self,
+        txn: &mut Txn<'_>,
         tenant_id: uuid::Uuid,
-        node_type: &CodegenNodeType,
-        edge: &CodegenEdge,
+        node_type_name: &str,
+        forward_edge_name: &str,
+        forward_edge_cardinality: StoredEdgeCardinality,
+        reverse_edge_name: &str,
+        reverse_edge_cardinality: StoredEdgeCardinality,
         schema_version: u32,
-        txn: &mut Transaction<'_, Postgres>,
     ) -> Result<(), sqlx::Error> {
-        let forward_edge_cardinality = if edge.relationship.to_one() {
-            StoredEdgeCardinality::ToOne
-        } else {
-            StoredEdgeCardinality::ToMany
-        };
-
-        let reverse_edge_cardinality = if edge.relationship.reverse().to_one() {
-            StoredEdgeCardinality::ToOne
-        } else {
-            StoredEdgeCardinality::ToMany
-        };
-
         sqlx::query!(
             r#"
             INSERT INTO schema_manager.edge_schemas (
@@ -101,10 +166,10 @@ impl SchemaDbClient {
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             "#,
             tenant_id,
-            &node_type.type_name,
+            node_type_name,
             schema_version as i16,
-            edge.edge_name,
-            edge.reverse_edge_name,
+            forward_edge_name,
+            reverse_edge_name,
             forward_edge_cardinality as StoredEdgeCardinality,
             reverse_edge_cardinality as StoredEdgeCardinality,
         )
@@ -125,10 +190,10 @@ impl SchemaDbClient {
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             "#,
             tenant_id,
-            &node_type.type_name,
+            node_type_name,
             schema_version as i16,
-            edge.reverse_edge_name,
-            edge.edge_name,
+            reverse_edge_name,
+            forward_edge_name,
             reverse_edge_cardinality as StoredEdgeCardinality,
             forward_edge_cardinality as StoredEdgeCardinality,
         )

@@ -16,24 +16,7 @@
     },
     "query": "\n        INSERT INTO schema_manager.static_identity_arguments (\n            tenant_id,\n            identity_algorithm,\n            node_type,\n            schema_version,\n            static_key_properties\n        )\n        VALUES ($1, $2, $3, $4, $5)\n        "
   },
-  "2dd9f418721b7c25626dcbc85180b31fe1588dadd5ba4641f17265f36fd39d87": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          "Int2",
-          "Bytea",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        INSERT INTO schema_manager.node_schemas (\n            tenant_id,\n            identity_algorithm,\n            node_type,\n            schema_version,\n            raw_schema,\n            schema_type\n        )\n        VALUES ($1, $2, $3, $4, $5, $6)\n        "
-  },
-  "3b1e42bee880a6a1eecae4be6b7913001eeee96926040f0b24105cd775c92104": {
+  "58d734f4d75c6d699b7afc3a26ced2ecbb02f2c568feecaa30f3642c512b2f3a": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -42,34 +25,28 @@
           "Uuid",
           "Text",
           "Int2",
-          "Text",
           "Text",
           {
             "Custom": {
               "kind": {
                 "Enum": [
-                  "ToMany",
-                  "ToOne"
+                  "ImmutableString",
+                  "ImmutableI64",
+                  "MaxI64",
+                  "MinI64",
+                  "ImmutableU64",
+                  "MaxU64",
+                  "MinU64"
                 ]
               },
-              "name": "edge_cardinality"
+              "name": "property_type"
             }
           },
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "ToMany",
-                  "ToOne"
-                ]
-              },
-              "name": "edge_cardinality"
-            }
-          }
+          "Bool"
         ]
       }
     },
-    "query": "\n        INSERT INTO schema_manager.edge_schemas (\n            tenant_id,\n            node_type,\n            schema_version,\n            forward_edge_name,\n            reverse_edge_name,\n            forward_edge_cardinality,\n            reverse_edge_cardinality\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7)\n        "
+    "query": "\n            INSERT INTO schema_manager.property_schemas (\n                tenant_id,\n                node_type,\n                schema_version,\n                property_name,\n                property_type,\n                identity_only\n            )\n            VALUES ($1, $2, $3, $4, $5, $6)\n            "
   },
   "5a44ff9c4357103782a27a5b180481b5ebc9b17ddfb79b0eb405e25d19eda37c": {
     "describe": {
@@ -124,7 +101,7 @@
     },
     "query": "\n            INSERT INTO schema_manager.edge_schemas (\n                tenant_id,\n                node_type,\n                schema_version,\n                forward_edge_name,\n                reverse_edge_name,\n                forward_edge_cardinality,\n                reverse_edge_cardinality\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7)\n            "
   },
-  "937ccbad72f81d2ddd5d5c2f5872a25fb0fc6fb7d7ec6672bfc9b73f4a2008d4": {
+  "b50595aec19d95c15426ae182ee4db481a835911f928c18d9966191cd01ed7a8": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -132,29 +109,14 @@
         "Left": [
           "Uuid",
           "Text",
-          "Int2",
           "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "ImmutableString",
-                  "ImmutableI64",
-                  "MaxI64",
-                  "MinI64",
-                  "ImmutableU64",
-                  "MaxU64",
-                  "MinU64"
-                ]
-              },
-              "name": "property_type"
-            }
-          },
-          "Bool"
+          "Int2",
+          "Bytea",
+          "Text"
         ]
       }
     },
-    "query": "\n        INSERT INTO schema_manager.property_schemas (\n            tenant_id,\n            node_type,\n            schema_version,\n            property_name,\n            property_type,\n            identity_only\n        )\n        VALUES ($1, $2, $3, $4, $5, $6)\n        "
+    "query": "\n            INSERT INTO schema_manager.node_schemas (\n                tenant_id,\n                identity_algorithm,\n                node_type,\n                schema_version,\n                raw_schema,\n                schema_type\n            )\n            VALUES ($1, $2, $3, $4, $5, $6)\n            "
   },
   "de50335dce477b67ba5c0e73f4c8c5421509efbcf499c7641531d9946294c1f6": {
     "describe": {
