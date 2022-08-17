@@ -1,37 +1,47 @@
-use std::net::SocketAddr;
+use std::{
+    marker::PhantomData,
+    time::Duration,
+};
 
-use futures::FutureExt;
+use futures::{
+    Future,
+    FutureExt,
+};
 use tokio::{
     net::TcpListener,
-    sync::oneshot::Receiver,
+    sync::oneshot,
 };
 use tokio_stream::wrappers::TcpListenerStream;
-use tonic::transport::Server;
+use tonic::transport::{
+    NamedService,
+    Server,
+};
 
 use crate::{
+    execute_rpc,
     graplinc::grapl::api::schema_manager::v1beta1::messages::{
         DeployModelRequest,
         DeployModelResponse,
         GetEdgeSchemaRequest,
         GetEdgeSchemaResponse,
     },
-    protobufs::graplinc::grapl::api::schema_manager::v1beta1::{
-        schema_manager_service_server::{
+    protobufs::graplinc::grapl::api::schema_manager::{
+        v1beta1 as proto,
+        v1beta1::schema_manager_service_server::{
             SchemaManagerService as SchemaManagerServiceProto,
             SchemaManagerServiceServer as SchemaManagerServiceServerProto,
         },
-        DeployModelRequest as DeployModelRequestProto,
-        DeployModelResponse as DeployModelResponseProto,
-        GetEdgeSchemaRequest as GetEdgeSchemaRequestProto,
-        GetEdgeSchemaResponse as GetEdgeSchemaResponseProto,
     },
     protocol::{
+        error::ServeError,
         healthcheck::{
             server::init_health_service,
+            HealthcheckError,
             HealthcheckStatus,
         },
         status::Status,
     },
+    server_internals::GrpcApi,
     SerDeError,
 };
 
@@ -58,136 +68,118 @@ pub trait SchemaManagerApi {
 }
 
 #[tonic::async_trait]
-impl<T, E> SchemaManagerServiceProto for T
+impl<T> SchemaManagerServiceProto for GrpcApi<T>
 where
-    T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
+    T: SchemaManagerApi + Send + Sync + 'static,
 {
-    /// Create Node allocates a new node in the graph, returning the uid of the new node.
     async fn deploy_model(
         &self,
-        request: tonic::Request<DeployModelRequestProto>,
-    ) -> Result<tonic::Response<DeployModelResponseProto>, tonic::Status> {
-        let request = request.into_inner();
-        let request = request
-            .try_into()
-            .map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
-        let response = SchemaManagerApi::deploy_model(self, request)
-            .await
-            .map_err(|e| e.into())?;
-
-        Ok(tonic::Response::new(response.into()))
+        request: tonic::Request<proto::DeployModelRequest>,
+    ) -> Result<tonic::Response<proto::DeployModelResponse>, tonic::Status> {
+        execute_rpc!(self, request, deploy_model)
     }
 
     async fn get_edge_schema(
         &self,
-        request: tonic::Request<GetEdgeSchemaRequestProto>,
-    ) -> Result<tonic::Response<GetEdgeSchemaResponseProto>, tonic::Status> {
-        let request = request.into_inner();
-        let request = request
-            .try_into()
-            .map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
-        let response = SchemaManagerApi::get_edge_schema(self, request)
-            .await
-            .map_err(|e| e.into())?;
-
-        Ok(tonic::Response::new(response.into()))
+        request: tonic::Request<proto::GetEdgeSchemaRequest>,
+    ) -> Result<tonic::Response<proto::GetEdgeSchemaResponse>, tonic::Status> {
+        execute_rpc!(self, request, get_edge_schema)
     }
 }
 
-/// A server construct that drives the SchemaManagerApi implementation.
-pub struct SchemaManagerServiceServer<T, E>
+/**
+ * !!!!! IMPORTANT !!!!!
+ * This is almost entirely cargo-culted from previous Server impls.
+ * Lots of opportunities to deduplicate and simplify.
+ */
+pub struct SchemaManagerServer<T, H, F>
 where
-    T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
+    T: SchemaManagerApi + Send + Sync + 'static,
+    H: Fn() -> F + Send + Sync + 'static,
+    F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
 {
-    server: SchemaManagerServiceServerProto<T>,
-    addr: SocketAddr,
-    shutdown_rx: Receiver<()>,
+    api_server: T,
+    healthcheck: H,
+    healthcheck_polling_interval: Duration,
+    tcp_listener: TcpListener,
+    shutdown_rx: oneshot::Receiver<()>,
+    service_name: &'static str,
+    f_: PhantomData<F>,
 }
 
-impl<T, E> SchemaManagerServiceServer<T, E>
+impl<T, H, F> SchemaManagerServer<T, H, F>
 where
-    T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
+    T: SchemaManagerApi + Send + Sync + 'static,
+    H: Fn() -> F + Send + Sync + 'static,
+    F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
-    pub fn builder(
-        service: T,
-        addr: SocketAddr,
-        shutdown_rx: Receiver<()>,
-    ) -> SchemaManagerServiceServerBuilder<T, E> {
-        SchemaManagerServiceServerBuilder::new(service, addr, shutdown_rx)
+    /// Construct a new gRPC server which will serve the given API
+    /// implementation on the given socket address. Server is constructed in
+    /// a non-running state. Call the serve() method to run the server. This
+    /// method also returns a channel you can use to trigger server
+    /// shutdown.
+    pub fn new(
+        api_server: T,
+        tcp_listener: TcpListener,
+        healthcheck: H,
+        healthcheck_polling_interval: Duration,
+    ) -> (Self, oneshot::Sender<()>) {
+        let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+        (
+            Self {
+                api_server,
+                healthcheck,
+                healthcheck_polling_interval,
+                tcp_listener,
+                shutdown_rx,
+                service_name: SchemaManagerServiceServerProto::<GrpcApi<T>>::NAME,
+                f_: PhantomData,
+            },
+            shutdown_tx,
+        )
     }
 
-    pub async fn serve(self) -> Result<(), SchemaManagerServiceServerError> {
+    /// returns the service name associated with this service. You will need
+    /// this value to construct a HealthcheckClient with which to query this
+    /// service's healthcheck.
+    pub fn service_name(&self) -> &'static str {
+        self.service_name
+    }
+
+    /// Run the gRPC server and serve the API on this server's socket
+    /// address. Returns a ServeError if the gRPC server cannot run.
+    pub async fn serve(self) -> Result<(), ServeError> {
         let (healthcheck_handle, health_service) =
-            init_health_service::<SchemaManagerServiceServerProto<T>, _, _>(
-                || async { Ok(HealthcheckStatus::Serving) },
-                std::time::Duration::from_millis(500),
+            init_health_service::<SchemaManagerServiceServerProto<GrpcApi<T>>, _, _>(
+                self.healthcheck,
+                self.healthcheck_polling_interval,
             )
             .await;
 
-        let listener = TcpListener::bind(self.addr)
-            .await
-            .map_err(SchemaManagerServiceServerError::BindError)?;
+        // TODO: add tower tracing, concurrency limits
+        let mut server_builder = Server::builder().trace_fn(|request| {
+            tracing::info_span!(
+                "exec_service",
+                headers = ?request.headers(),
+                method = ?request.method(),
+                uri = %request.uri(),
+                extensions = ?request.extensions(),
+            )
+        });
 
-        Server::builder()
-            .trace_fn(|request| {
-                tracing::trace_span!(
-                    "SchemaManager",
-                    headers = ?request.headers(),
-                    method = ?request.method(),
-                    uri = %request.uri(),
-                    extensions = ?request.extensions(),
-                )
-            })
+        Ok(server_builder
             .add_service(health_service)
-            .add_service(self.server)
+            .add_service(SchemaManagerServiceServerProto::new(GrpcApi::new(
+                self.api_server,
+            )))
             .serve_with_incoming_shutdown(
-                TcpListenerStream::new(listener),
+                TcpListenerStream::new(self.tcp_listener),
                 self.shutdown_rx.map(|_| ()),
             )
             .then(|result| async move {
                 healthcheck_handle.abort();
                 result
             })
-            .await?;
-        Ok(())
-    }
-}
-
-pub struct SchemaManagerServiceServerBuilder<T, E>
-where
-    T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
-{
-    server: SchemaManagerServiceServerProto<T>,
-    addr: SocketAddr,
-    shutdown_rx: Receiver<()>,
-}
-
-impl<T, E> SchemaManagerServiceServerBuilder<T, E>
-where
-    T: SchemaManagerApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
-{
-    /// Create a new builder for a SchemaManagerServiceServer,
-    /// taking the required arguments upfront.
-    pub fn new(service: T, addr: SocketAddr, shutdown_rx: Receiver<()>) -> Self {
-        Self {
-            server: SchemaManagerServiceServerProto::new(service),
-            addr,
-            shutdown_rx,
-        }
-    }
-
-    /// Consumes the builder and returns a new `SchemaManagerServiceServer`.
-    /// Note: Panics on invalid build state
-    pub fn build(self) -> SchemaManagerServiceServer<T, E> {
-        SchemaManagerServiceServer {
-            server: self.server,
-            addr: self.addr,
-            shutdown_rx: self.shutdown_rx,
-        }
+            .await?)
     }
 }
