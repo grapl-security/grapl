@@ -73,9 +73,37 @@ impl SchemaDbClient {
         .await
     }
 
+    pub async fn insert_node_identity_algorithm(
+        &self,
+        txn: &mut Txn<'_>,
+        tenant_id: uuid::Uuid,
+        identity_algorithm: &str,
+        node_type_name: &str,
+        schema_version: u32,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            r#"
+            INSERT INTO schema_manager.node_identity_algorithm (
+                tenant_id,
+                identity_algorithm,
+                node_type,
+                schema_version
+            )
+            VALUES ($1, $2, $3, $4)
+            "#,
+            tenant_id,
+            identity_algorithm,
+            node_type_name,
+            schema_version as i16,
+        )
+        .execute(&mut *txn)
+        .await?;
+        Ok(())
+    }
+
     pub async fn insert_node_property(
         &self,
-        txn: &mut Transaction<'_, Postgres>,
+        txn: &mut Txn<'_>,
         tenant_id: uuid::Uuid,
         node_type_name: &str,
         schema_version: u32,
@@ -109,7 +137,7 @@ impl SchemaDbClient {
 
     pub async fn insert_node_schema(
         &self,
-        txn: &mut Transaction<'_, Postgres>,
+        txn: &mut Txn<'_>,
         tenant_id: uuid::Uuid,
         identity_algorithm: &str,
         node_type_name: &str,

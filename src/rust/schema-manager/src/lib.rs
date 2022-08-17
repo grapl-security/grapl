@@ -58,7 +58,7 @@ pub async fn deploy_graphql_plugin(
     let mut txn = db_client.begin_txn().await?;
 
     for node_type in node_types.iter() {
-        deploy_identity_algorithm(tenant_id, node_type, schema_version, &mut txn).await?;
+        deploy_identity_algorithm(&mut txn, db_client, tenant_id, node_type, schema_version).await?;
 
         deploy_node_type(
             &mut txn,
@@ -130,33 +130,26 @@ async fn deploy_node_type(
 }
 
 async fn deploy_identity_algorithm(
+    txn: &mut Transaction<'_, Postgres>,
+    db_client: &SchemaDbClient,
     tenant_id: uuid::Uuid,
     node_type: &NodeType,
     schema_version: u32,
-    txn: &mut Transaction<'_, Postgres>,
 ) -> Result<(), DeployGraphqlError> {
     let identity_algorithm = match node_type.identification_algorithm {
         IdentificationAlgorithm::Session => "session",
         IdentificationAlgorithm::Static => "static",
     };
     let node_type_name = &node_type.type_name;
-    sqlx::query!(
-        r#"
-        INSERT INTO schema_manager.node_identity_algorithm (
+    db_client
+        .insert_node_identity_algorithm(
+            txn,
             tenant_id,
             identity_algorithm,
-            node_type,
-            schema_version
+            node_type_name,
+            schema_version,
         )
-        VALUES ($1, $2, $3, $4)
-        "#,
-        tenant_id,
-        identity_algorithm,
-        node_type_name,
-        schema_version as i16,
-    )
-    .execute(&mut *txn)
-    .await?;
+        .await?;
 
     match node_type.identification_algorithm {
         IdentificationAlgorithm::Session => {
