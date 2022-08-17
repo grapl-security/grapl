@@ -141,9 +141,11 @@ FROM base AS build-test-integration
 # hadolint ignore=SC3054
 RUN <<EOF
 INTEGRATION_TEST_FEATURES=(
-generator-dispatcher/integration_tests
 e2e-tests/integration_tests
+generator-dispatcher/integration_tests
 graph-merger/integration_tests
+graph-query-service/integration_tests
+graph-schema-manager/integration_tests
 grapl-web-ui/integration_tests
 node-identifier/integration_tests
 organization-management/integration_tests
@@ -151,7 +153,6 @@ pipeline-ingress/integration_tests
 plugin-registry/integration_tests
 plugin-work-queue/integration_tests
 sysmon-generator/integration_tests
-graph-schema-manager/integration_tests
 )
 
 # cargo --features expects a comma-separated feature1,feature2,feature3

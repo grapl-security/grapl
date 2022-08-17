@@ -94,7 +94,7 @@ macro_rules! create_proto_client {
                     async move {
                         <$proto_client_type>::connect(endpoint)
                             .await
-                            .map_err(crate::protocol::service_client::ConnectError::from)
+                            .map_err($crate::protocol::service_client::ConnectError::from)
                     }
                 })
                 .await?;
