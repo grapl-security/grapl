@@ -14,6 +14,7 @@ use rust_proto::{
         common::v1beta1::types::EdgeName,
     },
     protocol::status::Status,
+    SerDeError,
 };
 use sqlx::PgPool;
 
@@ -28,7 +29,7 @@ pub enum SchemaManagerServiceError {
     #[error("GetEdgeSchema sqlx error {0}")]
     GetEdgeSchemaSqlxError(sqlx::Error),
     #[error("Invalid ReverseEdgeName: {0}")]
-    InvalidReverseEdgeName(&'static str),
+    InvalidReverseEdgeName(SerDeError),
 }
 
 impl From<SchemaManagerServiceError> for Status {
