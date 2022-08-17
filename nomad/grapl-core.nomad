@@ -1379,7 +1379,8 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        SCHEMA_MANAGER_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_schema-manager-port}"
+        SCHEMA_MANAGER_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_schema-manager-port}"
+        SCHEMA_MANAGER_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
         SCHEMA_DB_ADDRESS  = "${var.schema_manager_db.hostname}:${var.schema_manager_db.port}"
         SCHEMA_DB_PASSWORD = var.schema_manager_db.password
@@ -1393,6 +1394,13 @@ job "grapl-core" {
       connect {
         sidecar_service {
         }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "schema-manager-port"
+        interval = "10s"
+        timeout  = "3s"
       }
     }
   }
