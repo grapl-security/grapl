@@ -16,9 +16,8 @@ use rust_proto::{
     protocol::status::Status,
     SerDeError,
 };
-use sqlx::PgPool;
 
-use crate::StoredEdgeCardinality;
+use crate::{StoredEdgeCardinality, db::client::SchemaDbClient};
 
 #[derive(thiserror::Error, Debug)]
 pub enum SchemaManagerServiceError {
@@ -55,7 +54,7 @@ impl From<SchemaManagerServiceError> for Status {
 }
 
 pub struct SchemaManager {
-    pub pool: PgPool,
+    pub db_client: SchemaDbClient,
 }
 
 #[async_trait::async_trait]

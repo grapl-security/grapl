@@ -1,5 +1,5 @@
 pub mod config;
-mod db;
+pub mod db;
 pub mod server;
 
 use grapl_graphql_codegen::{
