@@ -1,24 +1,24 @@
 config:
   aws:region: us-east-1
   rust-integration-tests:artifacts:
-    engagement-creator: 20220816224204-0de01e1
-    event-source: 20220816224204-0de01e1
+    engagement-creator: 20220817005849-99d4817
+    event-source: 20220817005849-99d4817
     firecracker_rootfs.tar.gz: 20220801204214-06bb008
-    generator-dispatcher: 20220816224204-0de01e1
-    generator-execution-sidecar: 20220816224204-0de01e1
-    graph-merger: 20220816224204-0de01e1
-    graphql-endpoint: 20220816224204-0de01e1
-    grapl-web-ui: 20220816224204-0de01e1
-    kafka-retry: 20220816224204-0de01e1
-    node-identifier: 20220816224204-0de01e1
-    organization-management: 20220816224204-0de01e1
-    pipeline-ingress: 20220816224204-0de01e1
-    plugin-bootstrap: 20220816224204-0de01e1
-    plugin-registry: 20220816224204-0de01e1
-    plugin-work-queue: 20220816224204-0de01e1
-    provisioner: 20220816224204-0de01e1
-    rust-integration-tests: 20220816224204-0de01e1
+    generator-dispatcher: 20220817005849-99d4817
+    generator-execution-sidecar: 20220817005849-99d4817
+    graph-merger: 20220817005849-99d4817
+    graphql-endpoint: 20220817005849-99d4817
+    grapl-web-ui: 20220817005849-99d4817
+    kafka-retry: 20220817005849-99d4817
+    node-identifier: 20220817005849-99d4817
+    organization-management: 20220817005849-99d4817
+    pipeline-ingress: 20220817005849-99d4817
+    plugin-bootstrap: 20220817005849-99d4817
+    plugin-registry: 20220817005849-99d4817
+    plugin-work-queue: 20220817005849-99d4817
+    provisioner: 20220817005849-99d4817
+    rust-integration-tests: 20220817005849-99d4817
     sysmon-generator: 20220809152144-3c3caf3
-    uid-allocator: 20220816224204-0de01e1
+    uid-allocator: 20220817005849-99d4817
   rust-integration-tests:cloudsmith-repository-name: grapl/testing
   rust-integration-tests:confluent-environment-name: testing
