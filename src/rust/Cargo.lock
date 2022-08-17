@@ -4210,11 +4210,14 @@ dependencies = [
  "async-trait",
  "clap 3.2.13",
  "dashmap",
+ "grapl-config",
  "grapl-graphql-codegen",
+ "grapl-tracing",
  "rust-proto",
  "sqlx",
  "thiserror",
  "tokio",
+ "tracing",
  "uuid",
 ]
 

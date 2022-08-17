@@ -2,33 +2,21 @@ use std::net::SocketAddr;
 
 #[derive(clap::Parser, Debug, Clone)]
 pub struct SchemaDbConfig {
-    #[clap(env)]
-    /// The hostname of the counter database
-    schema_db_hostname: String,
-
-    #[clap(env)]
-    /// The username to use when connecting to the counter database
+    #[clap(long, env)]
+    schema_db_address: String,
+    #[clap(long, env)]
     schema_db_username: String,
-
-    #[clap(env)]
-    /// The password to use when connecting to the counter database
-    schema_db_password: String,
-
-    #[clap(env)]
-    /// The port to use when connecting to the counter database
-    schema_db_port: u16,
+    #[clap(long, env)]
+    schema_db_password: grapl_config::SecretString,
 }
 
-impl SchemaDbConfig {
-    /// Returns the postgres connection url
-    pub fn to_postgres_url(&self) -> String {
-        format!(
-            "postgres://{}:{}@{}:{}",
-            self.schema_db_username,
-            self.schema_db_password,
-            self.schema_db_hostname,
-            self.schema_db_port,
-        )
+impl grapl_config::ToPostgresUrl for SchemaDbConfig {
+    fn to_postgres_url(self) -> grapl_config::PostgresUrl {
+        grapl_config::PostgresUrl {
+            address: self.schema_db_address,
+            username: self.schema_db_username,
+            password: self.schema_db_password,
+        }
     }
 }
 

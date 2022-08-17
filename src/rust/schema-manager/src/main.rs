@@ -5,8 +5,11 @@ use schema_manager::{
     server::SchemaManager,
 };
 
+const SERVICE_NAME: &'static str = "schema-manager";
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _guard = grapl_tracing::setup_tracing(SERVICE_NAME)?;
     let config = SchemaServiceConfig::parse();
     let pool = sqlx::PgPool::connect(&config.schema_db_config.to_postgres_url()).await?;
 
