@@ -12,3 +12,10 @@ thiserror = "1.0.31"
 tokio = { version = "1.20.0", features = ["full"] }
 tokio-retry = "0.3.0"
 tracing = "0.1.35"
+
+[dev-dependencies]
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }

@@ -136,6 +136,7 @@ where
 
     /// Run the gRPC server and serve the API on this server's socket
     /// address. Returns a ServeError if the gRPC server cannot run.
+    #[tracing::instrument(skip(self), err)]
     pub async fn serve(self) -> Result<(), ServeError> {
         // TODO: add tower tracing, tls_config, concurrency limits
         let (healthcheck_handle, health_service) =
@@ -145,6 +146,7 @@ where
             )
             .await;
         Ok(Server::builder()
+            .trace_fn(|_request| tracing::info_span!("pipeline-ingress"))
             .add_service(health_service)
             .add_service(PipelineIngressServiceServerProto::new(GrpcApi::new(
                 self.api_server,
