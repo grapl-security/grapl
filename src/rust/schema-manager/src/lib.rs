@@ -58,7 +58,8 @@ pub async fn deploy_graphql_plugin(
     let mut txn = db_client.begin_txn().await?;
 
     for node_type in node_types.iter() {
-        deploy_identity_algorithm(&mut txn, db_client, tenant_id, node_type, schema_version).await?;
+        deploy_identity_algorithm(&mut txn, db_client, tenant_id, node_type, schema_version)
+            .await?;
 
         deploy_node_type(
             &mut txn,
@@ -153,10 +154,10 @@ async fn deploy_identity_algorithm(
 
     match node_type.identification_algorithm {
         IdentificationAlgorithm::Session => {
-            deploy_session_identity(tenant_id, node_type, schema_version, txn).await?;
+            deploy_session_identity(txn, db_client, tenant_id, node_type, schema_version).await?;
         }
         IdentificationAlgorithm::Static => {
-            deploy_static_identity(tenant_id, node_type, schema_version, txn).await?;
+            deploy_static_identity(txn, db_client, tenant_id, node_type, schema_version).await?;
         }
     }
 
@@ -164,10 +165,11 @@ async fn deploy_identity_algorithm(
 }
 
 async fn deploy_session_identity(
+    txn: &mut Transaction<'_, Postgres>,
+    db_client: &SchemaDbClient,
     tenant_id: uuid::Uuid,
     node_type: &NodeType,
     schema_version: u32,
-    txn: &mut Transaction<'_, Postgres>,
 ) -> Result<(), DeployGraphqlError> {
     let node_type_name = &node_type.type_name;
 
@@ -216,42 +218,28 @@ async fn deploy_session_identity(
         DeployGraphqlError::InvalidSchema("termination_timestamp_property must be present")
     })?;
 
-    sqlx::query!(
-        r#"
-        INSERT INTO schema_manager.session_identity_arguments (
+    db_client
+        .insert_session_identity_args(
+            txn,
             tenant_id,
-            identity_algorithm,
-            node_type,
+            node_type_name,
             schema_version,
-            pseudo_key_properties,
-            negation_key_properties,
-            creation_timestamp_property,
-            last_seen_timestamp_property,
-            termination_timestamp_property
+            pseudo_keys,
+            &creation_timestamp_property,
+            &last_seen_timestamp_property,
+            &termination_timestamp_property,
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        "#,
-        tenant_id,
-        "session",
-        node_type_name,
-        schema_version as i16,
-        &pseudo_keys[..],
-        &[][..], // todo: negation keys are not supported in the parser
-        creation_timestamp_property,
-        last_seen_timestamp_property,
-        termination_timestamp_property
-    )
-    .execute(&mut *txn)
-    .await?;
+        .await?;
 
     Ok(())
 }
 
 async fn deploy_static_identity(
+    txn: &mut Transaction<'_, Postgres>,
+    db_client: &SchemaDbClient,
     tenant_id: uuid::Uuid,
     node_type: &NodeType,
     schema_version: u32,
-    txn: &mut Transaction<'_, Postgres>,
 ) -> Result<(), DeployGraphqlError> {
     let node_type_name = &node_type.type_name;
 
@@ -291,25 +279,9 @@ async fn deploy_static_identity(
         ));
     }
 
-    sqlx::query!(
-        r#"
-        INSERT INTO schema_manager.static_identity_arguments (
-            tenant_id,
-            identity_algorithm,
-            node_type,
-            schema_version,
-            static_key_properties
-        )
-        VALUES ($1, $2, $3, $4, $5)
-        "#,
-        tenant_id,
-        "static",
-        node_type_name,
-        schema_version as i16,
-        &static_keys[..],
-    )
-    .execute(&mut *txn)
-    .await?;
+    db_client
+        .insert_static_identity_args(txn, tenant_id, node_type_name, schema_version, static_keys)
+        .await?;
 
     Ok(())
 }

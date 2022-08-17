@@ -1,21 +1,5 @@
 {
   "db": "PostgreSQL",
-  "0f4c29f9c1336b805bc9a7364b01f28928cbb17f7497381e3cb48f831357c6ab": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          "Int2",
-          "TextArray"
-        ]
-      }
-    },
-    "query": "\n        INSERT INTO schema_manager.static_identity_arguments (\n            tenant_id,\n            identity_algorithm,\n            node_type,\n            schema_version,\n            static_key_properties\n        )\n        VALUES ($1, $2, $3, $4, $5)\n        "
-  },
   "1bce0da1f30eae5ab8e5b727874325cc29590c6cc0e612eaa83f573ba91062b9": {
     "describe": {
       "columns": [],
@@ -30,6 +14,42 @@
       }
     },
     "query": "\n            INSERT INTO schema_manager.node_identity_algorithm (\n                tenant_id,\n                identity_algorithm,\n                node_type,\n                schema_version\n            )\n            VALUES ($1, $2, $3, $4)\n            "
+  },
+  "444c0570e0825f330e9525c158b7f2516439856989f344fe9c723d94c894cacd": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Int2",
+          "TextArray"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO schema_manager.static_identity_arguments (\n                tenant_id,\n                identity_algorithm,\n                node_type,\n                schema_version,\n                static_key_properties\n            )\n            VALUES ($1, $2, $3, $4, $5)\n            "
+  },
+  "4a917e59daff3f34be8f1fe22d06defa9ede32f47fa22d9aa26e2d8311325536": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Int2",
+          "TextArray",
+          "TextArray",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO schema_manager.session_identity_arguments (\n                tenant_id,\n                identity_algorithm,\n                node_type,\n                schema_version,\n                pseudo_key_properties,\n                negation_key_properties,\n                creation_timestamp_property,\n                last_seen_timestamp_property,\n                termination_timestamp_property\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n            "
   },
   "58d734f4d75c6d699b7afc3a26ced2ecbb02f2c568feecaa30f3642c512b2f3a": {
     "describe": {
@@ -171,25 +191,5 @@
       }
     },
     "query": "select\n                reverse_edge_name,\n                forward_edge_cardinality as \"forward_edge_cardinality: StoredEdgeCardinality\",\n                reverse_edge_cardinality as \"reverse_edge_cardinality: StoredEdgeCardinality\"\n             FROM schema_manager.edge_schemas\n             WHERE\n                 tenant_id = $1 AND\n                 node_type = $2 AND\n                 forward_edge_name = $3\n             ORDER BY schema_version DESC\n             LIMIT 1;\n                 "
-  },
-  "f76d98b5b811990ebb7144c0770bd2e5617b175d1d9c6a97ef6926e0f44658fa": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          "Int2",
-          "TextArray",
-          "TextArray",
-          "Text",
-          "Text",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        INSERT INTO schema_manager.session_identity_arguments (\n            tenant_id,\n            identity_algorithm,\n            node_type,\n            schema_version,\n            pseudo_key_properties,\n            negation_key_properties,\n            creation_timestamp_property,\n            last_seen_timestamp_property,\n            termination_timestamp_property\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n        "
   }
 }

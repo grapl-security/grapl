@@ -101,6 +101,78 @@ impl SchemaDbClient {
         Ok(())
     }
 
+    pub async fn insert_static_identity_args(
+        &self,
+        txn: &mut Txn<'_>,
+        tenant_id: uuid::Uuid,
+        node_type_name: &str,
+        schema_version: u32,
+        static_keys: Vec<String>,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            r#"
+            INSERT INTO schema_manager.static_identity_arguments (
+                tenant_id,
+                identity_algorithm,
+                node_type,
+                schema_version,
+                static_key_properties
+            )
+            VALUES ($1, $2, $3, $4, $5)
+            "#,
+            tenant_id,
+            "static",
+            node_type_name,
+            schema_version as i16,
+            &static_keys[..],
+        )
+        .execute(&mut *txn)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn insert_session_identity_args(
+        &self,
+        txn: &mut Txn<'_>,
+        tenant_id: uuid::Uuid,
+        node_type_name: &str,
+        schema_version: u32,
+        pseudo_keys: Vec<String>,
+        creation_timestamp_property: &str,
+        last_seen_timestamp_property: &str,
+        termination_timestamp_property: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            r#"
+            INSERT INTO schema_manager.session_identity_arguments (
+                tenant_id,
+                identity_algorithm,
+                node_type,
+                schema_version,
+                pseudo_key_properties,
+                negation_key_properties,
+                creation_timestamp_property,
+                last_seen_timestamp_property,
+                termination_timestamp_property
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            "#,
+            tenant_id,
+            "session",
+            node_type_name,
+            schema_version as i16,
+            &pseudo_keys[..],
+            &[][..], // todo: negation keys are not supported in the parser
+            creation_timestamp_property,
+            last_seen_timestamp_property,
+            termination_timestamp_property
+        )
+        .execute(&mut *txn)
+        .await?;
+
+        Ok(())
+    }
+
     pub async fn insert_node_property(
         &self,
         txn: &mut Txn<'_>,
