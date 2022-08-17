@@ -2,25 +2,45 @@
 #![allow(warnings)]
 
 use std::sync::Arc;
-use secrecy::ExposeSecret;
+
 use clap::Parser;
-use scylla::{CachingSession, Session};
-use graph_query_service::config::GraphDbConfig;
-use graph_query_service::node_query::NodeQuery;
-use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::client::GraphQueryClient;
-use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::messages::{GraphQuery, QueryGraphWithUidRequest, StringCmp};
-use rust_proto::graplinc::grapl::common::v1beta1::types::{NodeType, PropertyName, Uid};
-use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::messages::{MatchedGraphWithUid, MaybeMatchWithUid};
+use graph_query_service::{
+    config::GraphDbConfig,
+    node_query::NodeQuery,
+};
+use rust_proto::graplinc::grapl::{
+    api::graph_query_service::v1beta1::{
+        client::GraphQueryClient,
+        messages::{
+            GraphQuery,
+            MatchedGraphWithUid,
+            MaybeMatchWithUid,
+            QueryGraphWithUidRequest,
+            StringCmp,
+        },
+    },
+    common::v1beta1::types::{
+        NodeType,
+        PropertyName,
+        Uid,
+    },
+};
+use scylla::{
+    CachingSession,
+    Session,
+};
+use secrecy::ExposeSecret;
 
 type DynError = Box<dyn std::error::Error + Send + Sync>;
 
 // NOTE: temporary code to set up the keyspace before we have a service
 // to set it up for us
+#[tracing::instrument(skip(session), err)]
 async fn provision_keyspace(
     session: &CachingSession,
     tenant_id: uuid::Uuid,
 ) -> Result<String, DynError> {
-    let tenant_ks = format!("tenant_keyspace_{}", tenant_id.urn());
+    let tenant_ks = format!("tenant_keyspace_{}", tenant_id.simple());
 
     session
         .session
@@ -31,9 +51,7 @@ async fn provision_keyspace(
         &[],
     ).await?;
 
-    let property_table_names = [
-        ("immutable_strings", "text"),
-    ];
+    let property_table_names = [("immutable_strings", "text")];
 
     for (table_name, value_type) in property_table_names.into_iter() {
         session
@@ -75,7 +93,7 @@ async fn provision_keyspace(
                     destination_uid bigint,
                     f_edge_name text,
                     r_edge_name text,
-                    PRIMARY KEY ((source_uid, f_edge_name), destionation_uid)
+                    PRIMARY KEY ((source_uid, f_edge_name), destination_uid)
                 )"
             ),
             &(),
@@ -107,6 +125,11 @@ async fn get_scylla_client() -> Result<Arc<CachingSession>, DynError> {
     Ok(scylla_client)
 }
 
+#[tracing::instrument(skip(session), fields(
+    keyspace = %keyspace.as_ref(),
+    uid=%uid.as_i64(),
+    node_type=node_type.value.as_str(),
+) err)]
 async fn create_node(
     session: &CachingSession,
     keyspace: impl AsRef<str>,
@@ -114,14 +137,15 @@ async fn create_node(
     node_type: &NodeType,
 ) -> Result<(), DynError> {
     let keyspace = keyspace.as_ref();
-    let insert = format!(r"INSERT INTO {keyspace}.node_type
+    let insert = format!(
+        r"INSERT INTO {keyspace}.node_type
                            (uid, node_type)
-                           VALUES (?, ?)");
+                           VALUES (?, ?)"
+    );
 
-    session.execute(
-        insert,
-        &(uid.as_i64(), &node_type.value),
-    ).await?;
+    session
+        .execute(insert, &(uid.as_i64(), &node_type.value))
+        .await?;
 
     Ok(())
 }
@@ -134,27 +158,39 @@ async fn insert_string(
     value: impl AsRef<str>,
 ) -> Result<(), DynError> {
     let keyspace = keyspace.as_ref();
-    let insert = format!(r"INSERT INTO {keyspace}.immutable_strings
+    let insert = format!(
+        r"INSERT INTO {keyspace}.immutable_strings
                            (uid, populated_field, value)
-                           VALUES (?, ?, ?)");
+                           VALUES (?, ?, ?)"
+    );
 
-    session.execute(
-        insert,
-        &(uid.as_i64(), populated_field.as_ref(), value.as_ref()),
-    ).await?;
+    session
+        .execute(
+            insert,
+            &(uid.as_i64(), populated_field.as_ref(), value.as_ref()),
+        )
+        .await?;
 
     Ok(())
 }
 
-
 #[test_log::test(tokio::test)]
 async fn test_query_single_node() -> Result<(), DynError> {
-
-    let graph_query_service_endpoint = std::env::var("GRAPH_QUERY_SERVICE_ENDPOINT")
-        .expect("GRAPH_QUERY_SERVICE_ENDPOINT");
+    let _span = tracing::info_span!(
+        "tenant_id", tenant_id=?tracing::field::Empty,
+    );
+    tracing::info!("starting test_query_single_node");
+    let graph_query_service_endpoint = std::env::var("GRAPH_QUERY_SERVICE_ENDPOINT_ADDRESS")
+        .expect("GRAPH_QUERY_SERVICE_ENDPOINT_ADDRESS");
+    tracing::info!(
+        graph_query_service_endpoint=%graph_query_service_endpoint,
+        message="connecting to graph query service"
+    );
     let mut graph_query_client = GraphQueryClient::connect(graph_query_service_endpoint).await?;
-
+    tracing::info!("connected to graph query service");
     let tenant_id = uuid::Uuid::new_v4();
+    _span.record("tenant_id", &format!("{tenant_id}"));
+
     let session = get_scylla_client().await?;
 
     let keyspace_name = provision_keyspace(session.as_ref(), tenant_id).await?;
@@ -163,27 +199,35 @@ async fn test_query_single_node() -> Result<(), DynError> {
     let node_type = NodeType::try_from("Process").unwrap();
 
     create_node(session.as_ref(), &keyspace_name, uid, &node_type).await?;
-    insert_string(session.as_ref(), &keyspace_name, uid, "process_name", "chrome.exe").await?;
+    insert_string(
+        session.as_ref(),
+        &keyspace_name,
+        uid,
+        "process_name",
+        "chrome.exe",
+    )
+    .await?;
 
     let graph_query = NodeQuery::root(node_type.clone())
         .with_string_comparisons(
             "process_name".try_into()?,
-            vec![
-                StringCmp::Eq("chrome.exe".to_owned(), false),
-            ],
+            vec![StringCmp::Eq("chrome.exe".to_owned(), false)],
         )
         .build();
 
-    let response = graph_query_client.query_graph_with_uid(QueryGraphWithUidRequest {
-        tenant_id: tenant_id.into(),
-        node_uid: uid,
-        graph_query
-    }).await?;
+    let response = graph_query_client
+        .query_graph_with_uid(QueryGraphWithUidRequest {
+            tenant_id: tenant_id.into(),
+            node_uid: uid,
+            graph_query,
+        })
+        .await?;
 
     let (matched_graph, root_uid) = match response.maybe_match {
-        MaybeMatchWithUid::Matched(MatchedGraphWithUid {matched_graph, root_uid}) => (
-            matched_graph, root_uid
-        ),
+        MaybeMatchWithUid::Matched(MatchedGraphWithUid {
+            matched_graph,
+            root_uid,
+        }) => (matched_graph, root_uid),
         MaybeMatchWithUid::Missed(_) => panic!("Expected a match"),
     };
 
@@ -206,6 +250,6 @@ async fn test_query_single_node() -> Result<(), DynError> {
 
     assert_eq!(returned_property_name, "process_name".try_into()?);
     assert_eq!(&returned_property, "chrome.exe");
-
+    drop(_span);
     Ok(())
 }

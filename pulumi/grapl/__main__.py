@@ -361,6 +361,7 @@ def main() -> None:
             name="graph-db",
             port=9042,
         )
+        pulumi.export("graph-db", graph_db.to_nomad_service_db_args())
 
         local_grapl_core_vars: Final[NomadVars] = dict(
             graph_db=graph_db.to_nomad_service_db_args(),

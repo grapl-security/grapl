@@ -83,10 +83,7 @@ impl PropertyQueryExecutor {
 
         let query_result = self
             .scylla_client
-            .execute(
-                query,
-                &(uid.as_i64(), &property_name.value),
-            )
+            .execute(query, &(uid.as_i64(), &property_name.value))
             .await?;
 
         let row = match query_result.maybe_first_row_typed::<(String,)>()? {

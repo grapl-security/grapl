@@ -160,8 +160,6 @@ variable "graph_db" {
   description = "Vars for graph (scylla) database"
 }
 
-
-
 variable "uid_allocator_db" {
   type = object({
     hostname = string
@@ -768,7 +766,6 @@ job "grapl-core" {
       connect {
         sidecar_service {}
       }
-
 
       check {
         type     = "grpc"
