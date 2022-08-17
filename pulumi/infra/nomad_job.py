@@ -109,9 +109,6 @@ class NomadJob(pulumi.ComponentResource):
         """
         if pulumi.runtime.is_dry_run():
 
-            # special rule since we string-split the redis endpoint
-            redis_endpoint = "redis://some-fake-host-for-preview-only:1111"
-
             hcl2_parser = HCL2TypeParser().parser
             with open(jobspec) as file:
                 hcl2_dict = hcl2.load(file)
@@ -126,14 +123,10 @@ class NomadJob(pulumi.ComponentResource):
             for key, value in vars.items():
 
                 if isinstance(value, pulumi.Output):
-                    # special cases
-                    if key == "redis_endpoint":
-                        value = redis_endpoint
-                    else:
-                        raw_type = hcl2_type_dict[key]["type"]
-                        parsed_type = hcl2_parser.parse(raw_type)
-                        # now we replace the strings
-                        value = mock_hcl2_type(parsed_type)
+                    raw_type = hcl2_type_dict[key]["type"]
+                    parsed_type = hcl2_parser.parse(raw_type)
+                    # now we replace the strings
+                    value = mock_hcl2_type(parsed_type)
 
                 nomad_vars[key] = value
             return nomad_vars

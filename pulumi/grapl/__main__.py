@@ -11,7 +11,6 @@ from infra.api_gateway import ApiGateway
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
-from infra.cache import Cache
 from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
 from infra.consul_service_default import ConsulServiceDefault
@@ -344,10 +343,6 @@ def main() -> None:
             port=5436,
         )
 
-        redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
-
-        pulumi.export("redis-endpoint", redis_endpoint)
-
         # Since we're using an IP for Jaeger, this should only be created for local grapl.
         # Once we're using dns addresses we can create it for everything
         ConsulConfig(
@@ -362,7 +357,6 @@ def main() -> None:
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
-            redis_endpoint=redis_endpoint,
             **nomad_inputs,
         )
 
@@ -423,13 +417,6 @@ def main() -> None:
             bucket.grant_put_permission_to(nomad_agent_role)
             bucket.grant_get_and_list_to(nomad_agent_role)
 
-        cache = Cache(
-            "main-cache",
-            subnet_ids=subnet_ids,
-            vpc_id=vpc_id,
-            nomad_agent_security_group_id=nomad_agent_security_group_id,
-        )
-
         (
             organization_management_db,
             plugin_registry_db,
@@ -453,8 +440,6 @@ def main() -> None:
             )
         )
 
-        pulumi.export("redis-endpoint", cache.endpoint)
-
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
@@ -463,7 +448,6 @@ def main() -> None:
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
-            redis_endpoint=cache.endpoint,
             **nomad_inputs,
         )
 

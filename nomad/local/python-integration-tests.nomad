@@ -27,11 +27,6 @@ weird nomad state parse error.
 EOF
 }
 
-variable "redis_endpoint" {
-  type        = string
-  description = "Where can services find Redis?"
-}
-
 variable "schema_properties_table_name" {
   type        = string
   description = "What is the name of the schema properties table?"
@@ -59,11 +54,6 @@ variable "grapl_root" {
 
 locals {
   log_level = "DEBUG"
-
-  _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
-  _redis         = split(":", local._redis_trimmed)
-  redis_host     = local._redis[0]
-  redis_port     = local._redis[1]
 }
 
 job "python-integration-tests" {
@@ -163,11 +153,7 @@ job "python-integration-tests" {
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
         GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
 
-        HITCACHE_ADDR     = "${local.redis_host}"
-        HITCACHE_PORT     = "${local.redis_port}"
-        MESSAGECACHE_ADDR = "${local.redis_host}"
-        MESSAGECACHE_PORT = "${local.redis_port}"
-        IS_RETRY          = "False"
+        IS_RETRY = "False"
 
         GRAPL_LOG_LEVEL = local.log_level
         MG_ALPHAS       = "localhost:9080"
