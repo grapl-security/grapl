@@ -4,7 +4,6 @@ use rust_proto::{
             messages::{
                 DeployModelRequest,
                 DeployModelResponse,
-                EdgeCardinality,
                 GetEdgeSchemaRequest,
                 GetEdgeSchemaResponse,
                 SchemaType,
@@ -17,7 +16,7 @@ use rust_proto::{
     SerDeError,
 };
 
-use crate::{StoredEdgeCardinality, db::client::SchemaDbClient};
+use crate::db::client::SchemaDbClient;
 
 #[derive(thiserror::Error, Debug)]
 pub enum SchemaManagerServiceError {
@@ -74,7 +73,7 @@ impl SchemaManagerApi for SchemaManager {
                     request.tenant_id,
                     &schema,
                     request.schema_version,
-                    &self.pool,
+                    &self.db_client.pool,
                 )
                 .await?;
                 Ok(DeployModelResponse {})
@@ -92,27 +91,10 @@ impl SchemaManagerApi for SchemaManager {
             edge_name,
         } = request;
 
-        let response = sqlx::query_as!(
-            GetEdgeSchemaRequestRow,
-            r#"select
-                reverse_edge_name,
-                forward_edge_cardinality as "forward_edge_cardinality: StoredEdgeCardinality",
-                reverse_edge_cardinality as "reverse_edge_cardinality: StoredEdgeCardinality"
-             FROM schema_manager.edge_schemas
-             WHERE
-                 tenant_id = $1 AND
-                 node_type = $2 AND
-                 forward_edge_name = $3
-             ORDER BY schema_version DESC
-             LIMIT 1;
-                 "#,
-            tenant_id,
-            node_type.value,
-            edge_name.value,
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(SchemaManagerServiceError::GetEdgeSchemaSqlxError)?;
+        let response = self
+            .db_client
+            .get_edge_schema(tenant_id, node_type, edge_name)
+            .await?;
 
         Ok(GetEdgeSchemaResponse {
             reverse_edge_name: EdgeName::try_from(response.reverse_edge_name)
@@ -120,21 +102,5 @@ impl SchemaManagerApi for SchemaManager {
             cardinality: response.forward_edge_cardinality.into(),
             reverse_cardinality: response.reverse_edge_cardinality.into(),
         })
-    }
-}
-
-#[derive(sqlx::Type, Clone, Debug)]
-struct GetEdgeSchemaRequestRow {
-    reverse_edge_name: String,
-    forward_edge_cardinality: StoredEdgeCardinality,
-    reverse_edge_cardinality: StoredEdgeCardinality,
-}
-
-impl From<StoredEdgeCardinality> for EdgeCardinality {
-    fn from(c: StoredEdgeCardinality) -> Self {
-        match c {
-            StoredEdgeCardinality::ToOne => EdgeCardinality::ToOne,
-            StoredEdgeCardinality::ToMany => EdgeCardinality::ToMany,
-        }
     }
 }

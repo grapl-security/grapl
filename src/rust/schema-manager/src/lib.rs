@@ -21,6 +21,8 @@ use sqlx::{
     Transaction,
 };
 
+use crate::db::models::StoredEdgeCardinality;
+
 const SCHEMA_TYPE: &str = "Graphql_V0";
 
 #[derive(thiserror::Error, Debug)]
@@ -442,13 +444,6 @@ enum StoredPropertyType {
     ImmutableU64,
     MaxU64,
     MinU64,
-}
-
-#[derive(sqlx::Type, Copy, Clone, Debug)]
-#[sqlx(type_name = "edge_cardinality")]
-enum StoredEdgeCardinality {
-    ToOne,
-    ToMany,
 }
 
 #[derive(sqlx::Type, Clone, Debug)]
