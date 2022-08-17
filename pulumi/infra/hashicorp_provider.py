@@ -8,7 +8,7 @@ import pulumi
 
 # We're using the Any typehint here since mypy doesn't YET support modules being subtypes of protocols per
 # https://github.com/python/mypy/issues/5018 :(
-def get_hashicorp_provider_address(
+def _get_hashicorp_provider_address(
     pulumi_class: Any,
     provider_type: str,
     stack: pulumi.StackReference,
@@ -33,7 +33,7 @@ def get_nomad_provider_address(
 ) -> nomad.Provider:
     return cast(
         nomad.Provider,
-        get_hashicorp_provider_address(
+        _get_hashicorp_provider_address(
             pulumi_class=nomad,
             provider_type="nomad",
             stack=stack,
@@ -48,7 +48,7 @@ def get_consul_provider_address(
 ) -> consul.Provider:
     return cast(
         consul.Provider,
-        get_hashicorp_provider_address(
+        _get_hashicorp_provider_address(
             pulumi_class=consul,
             provider_type="consul",
             stack=stack,
