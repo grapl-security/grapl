@@ -1,74 +1,84 @@
+use std::time::Duration;
+
+use client_executor::{
+    Executor,
+    ExecutorConfig,
+};
+use tonic::transport::Endpoint;
+
 use crate::{
-    graplinc::grapl::api::schema_manager::v1beta1::messages::{
-        DeployModelRequest,
-        DeployModelResponse,
-        GetEdgeSchemaRequest,
-        GetEdgeSchemaResponse,
+    client_macros::ExecuteClientRpcOptions,
+    create_proto_client,
+    execute_client_rpc,
+    graplinc::grapl::api::schema_manager::v1beta1::messages as native,
+    protobufs::graplinc::grapl::api::schema_manager::{
+        v1beta1 as proto,
+        v1beta1::schema_manager_service_client::SchemaManagerServiceClient as SchemaManagerServiceClientProto,
     },
-    protobufs::graplinc::grapl::api::schema_manager::v1beta1::{
-        schema_manager_service_client::SchemaManagerServiceClient as SchemaManagerServiceClientProto,
-        DeployModelRequest as DeployModelRequestProto,
-        GetEdgeSchemaRequest as GetEdgeSchemaRequestProto,
+    protocol::{
+        error::GrpcClientError,
+        service_client::{
+            ConnectError,
+            Connectable,
+        },
     },
-    protocol::status::Status,
-    SerDeError,
 };
 
-#[derive(thiserror::Error, Debug)]
-pub enum SchemaManagerClientError {
-    #[error("Failed to deserialize response {0}")]
-    SerDeError(#[from] SerDeError),
-    #[error("Status {0}")]
-    Status(Status),
-    #[error("ConnectError")]
-    ConnectError(tonic::transport::Error),
-}
+pub type SchemaManagerClientError = GrpcClientError;
 
 #[derive(Clone)]
 pub struct SchemaManagerClient {
-    inner: SchemaManagerServiceClientProto<tonic::transport::Channel>,
+    proto_client: SchemaManagerServiceClientProto<tonic::transport::Channel>,
+    executor: Executor,
+}
+
+#[async_trait::async_trait]
+impl Connectable for SchemaManagerClient {
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.schema_manager.v1beta1.SchemaManagerService";
+
+    #[tracing::instrument(err)]
+    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
+        let proto_client = create_proto_client!(
+            executor,
+            SchemaManagerServiceClientProto<tonic::transport::Channel>,
+            endpoint,
+        );
+
+        Ok(Self {
+            proto_client,
+            executor,
+        })
+    }
 }
 
 impl SchemaManagerClient {
-    pub async fn connect<T>(endpoint: T) -> Result<Self, SchemaManagerClientError>
-    where
-        T: TryInto<tonic::transport::Endpoint>,
-        T::Error: std::error::Error + Send + Sync + 'static,
-    {
-        Ok(SchemaManagerClient {
-            inner: SchemaManagerServiceClientProto::connect(endpoint)
-                .await
-                .map_err(SchemaManagerClientError::ConnectError)?,
-        })
-    }
-
     pub async fn deploy_model(
         &mut self,
-        request: DeployModelRequest,
-    ) -> Result<DeployModelResponse, SchemaManagerClientError> {
-        let raw_request: DeployModelRequestProto = request.into();
-        let raw_response = self
-            .inner
-            .deploy_model(raw_request)
-            .await
-            .map_err(|s| SchemaManagerClientError::Status(s.into()))?;
-        let proto_response = raw_response.into_inner();
-        let response = proto_response.try_into()?;
-        Ok(response)
+        request: native::DeployModelRequest,
+    ) -> Result<native::DeployModelResponse, SchemaManagerClientError> {
+        execute_client_rpc!(
+            self,
+            request,
+            deploy_model,
+            proto::DeployModelRequest,
+            native::DeployModelResponse,
+            ExecuteClientRpcOptions::default(),
+        )
     }
 
     pub async fn get_edge_schema(
         &mut self,
-        request: GetEdgeSchemaRequest,
-    ) -> Result<GetEdgeSchemaResponse, SchemaManagerClientError> {
-        let raw_request: GetEdgeSchemaRequestProto = request.into();
-        let raw_response = self
-            .inner
-            .get_edge_schema(raw_request)
-            .await
-            .map_err(|s| SchemaManagerClientError::Status(s.into()))?;
-        let proto_response = raw_response.into_inner();
-        let response = proto_response.try_into()?;
-        Ok(response)
+        request: native::GetEdgeSchemaRequest,
+    ) -> Result<native::GetEdgeSchemaResponse, SchemaManagerClientError> {
+        execute_client_rpc!(
+            self,
+            request,
+            get_edge_schema,
+            proto::GetEdgeSchemaRequest,
+            native::GetEdgeSchemaResponse,
+            ExecuteClientRpcOptions::default(),
+        )
     }
 }
