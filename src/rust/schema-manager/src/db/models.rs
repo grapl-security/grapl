@@ -25,7 +25,7 @@ impl From<StoredEdgeCardinality> for EdgeCardinality {
 
 #[derive(sqlx::Type, Copy, Clone, Debug)]
 #[sqlx(type_name = "property_type")]
-enum StoredPropertyType {
+pub enum StoredPropertyType {
     ImmutableString,
     ImmutableI64,
     MaxI64,

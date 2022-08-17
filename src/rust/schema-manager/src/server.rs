@@ -94,7 +94,8 @@ impl SchemaManagerApi for SchemaManager {
         let response = self
             .db_client
             .get_edge_schema(tenant_id, node_type, edge_name)
-            .await?;
+            .await
+            .map_err(SchemaManagerServiceError::GetEdgeSchemaSqlxError)?;
 
         Ok(GetEdgeSchemaResponse {
             reverse_edge_name: EdgeName::try_from(response.reverse_edge_name)

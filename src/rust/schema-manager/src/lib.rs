@@ -21,7 +21,7 @@ use sqlx::{
     Transaction,
 };
 
-use crate::db::models::StoredEdgeCardinality;
+use crate::db::models::{StoredEdgeCardinality, StoredPropertyType};
 
 const SCHEMA_TYPE: &str = "Graphql_V0";
 

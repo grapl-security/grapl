@@ -1,8 +1,8 @@
 use grapl_config::PostgresClient;
 use rust_proto::graplinc::grapl::common::v1beta1::types::{
-    EdgeName,
-    NodeType,
+    EdgeName, NodeType,
 };
+use sqlx::{Transaction, Postgres};
 
 use crate::{
     config::SchemaDbConfig,
@@ -10,7 +10,11 @@ use crate::{
         GetEdgeSchemaRequestRow,
         StoredEdgeCardinality,
     },
-    server::SchemaManagerServiceError,
+};
+
+use grapl_graphql_codegen::{
+    edge::Edge as CodegenEdge, 
+    node_type::NodeType as CodegenNodeType,
 };
 
 pub struct SchemaDbClient {
@@ -40,7 +44,7 @@ impl SchemaDbClient {
         tenant_id: uuid::Uuid,
         node_type: NodeType,
         edge_name: EdgeName,
-    ) -> Result<GetEdgeSchemaRequestRow, SchemaManagerServiceError> {
+    ) -> Result<GetEdgeSchemaRequestRow, sqlx::Error> {
         sqlx::query_as!(
             GetEdgeSchemaRequestRow,
             r#"select
@@ -61,6 +65,76 @@ impl SchemaDbClient {
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(SchemaManagerServiceError::GetEdgeSchemaSqlxError)
+    }
+
+    pub async fn insert_edge_schema(
+        &self,
+        tenant_id: uuid::Uuid,
+        node_type: &CodegenNodeType,
+        edge: &CodegenEdge,
+        schema_version: u32,
+        txn: &mut Transaction<'_, Postgres>,
+    ) -> Result<(), sqlx::Error> {
+        let forward_edge_cardinality = if edge.relationship.to_one() {
+            StoredEdgeCardinality::ToOne
+        } else {
+            StoredEdgeCardinality::ToMany
+        };
+
+        let reverse_edge_cardinality = if edge.relationship.reverse().to_one() {
+            StoredEdgeCardinality::ToOne
+        } else {
+            StoredEdgeCardinality::ToMany
+        };
+
+        sqlx::query!(
+            r#"
+            INSERT INTO schema_manager.edge_schemas (
+                tenant_id,
+                node_type,
+                schema_version,
+                forward_edge_name,
+                reverse_edge_name,
+                forward_edge_cardinality,
+                reverse_edge_cardinality
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "#,
+            tenant_id,
+            &node_type.type_name,
+            schema_version as i16,
+            edge.edge_name,
+            edge.reverse_edge_name,
+            forward_edge_cardinality as StoredEdgeCardinality,
+            reverse_edge_cardinality as StoredEdgeCardinality,
+        )
+        .execute(&mut *txn)
+        .await?;
+
+        sqlx::query!(
+            r#"
+            INSERT INTO schema_manager.edge_schemas (
+                tenant_id,
+                node_type,
+                schema_version,
+                forward_edge_name,
+                reverse_edge_name,
+                forward_edge_cardinality,
+                reverse_edge_cardinality
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "#,
+            tenant_id,
+            &node_type.type_name,
+            schema_version as i16,
+            edge.reverse_edge_name,
+            edge.edge_name,
+            reverse_edge_cardinality as StoredEdgeCardinality,
+            forward_edge_cardinality as StoredEdgeCardinality,
+        )
+        .execute(&mut *txn)
+        .await?;
+
+        Ok(())
     }
 }
