@@ -106,6 +106,16 @@ variable "organization_management_db" {
   description = "Vars for organization-management database"
 }
 
+variable "schema_manager_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for schema-manager database"
+}
+
 variable "organization_management_healthcheck_polling_interval_ms" {
   type        = string
   description = "The amount of time to wait between each healthcheck execution."
@@ -1329,6 +1339,60 @@ job "grapl-core" {
         port     = "event-source-port"
         interval = "10s"
         timeout  = "3s"
+      }
+    }
+  }
+
+  group "schema-manager" {
+    count = 2
+
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "schema-manager-port" {
+      }
+    }
+
+    task "schema-manager" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["schema-manager"]
+        ports = ["schema-manager-port"]
+      }
+
+      template {
+        data        = var.aws_env_vars_for_local
+        destination = "aws_vars.env"
+        env         = true
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
+      env {
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
+
+        SCHEMA_MANAGER_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_schema-manager-port}"
+
+        SCHEMA_DB_ADDRESS  = "${var.schema_manager_db.hostname}:${var.schema_manager_db.port}"
+        SCHEMA_DB_PASSWORD = var.schema_manager_db.password
+        SCHEMA_DB_USERNAME = var.schema_manager_db.username
+      }
+    }
+
+    service {
+      name = "schema-manager"
+      port = "schema-manager-port"
+      connect {
+        sidecar_service {
+        }
       }
     }
   }

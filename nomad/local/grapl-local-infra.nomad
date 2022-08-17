@@ -46,6 +46,10 @@ locals {
       name = "event-source-db",
       port = 5436
     },
+    {
+      name = "schema-manager-db",
+      port = 5437
+    },
   ]
 
   kafka_broker_descriptors = [

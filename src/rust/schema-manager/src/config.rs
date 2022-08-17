@@ -21,10 +21,10 @@ impl grapl_config::ToPostgresUrl for SchemaDbConfig {
 }
 
 #[derive(clap::Parser, Debug, Clone)]
-pub struct SchemaServiceConfig {
+pub struct SchemaManagerConfig {
     #[clap(env)]
     /// The address to bind the schema manager service to
-    pub schema_service_bind_address: SocketAddr,
+    pub schema_manager_bind_address: SocketAddr,
 
     #[clap(flatten)]
     /// Configuration for the Postgres database where we store our tenant-specific schemas

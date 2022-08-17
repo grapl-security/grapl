@@ -331,3 +331,9 @@ ENTRYPOINT ["/event-source"]
 FROM rust-dist as kafka-retry-deploy
 COPY --from=build /outputs/kafka-retry /
 ENTRYPOINT ["/kafka-retry"]
+
+##### schema-manager
+FROM rust-dist AS schema-manager-deploy
+
+COPY --from=build /outputs/schema-manager /
+ENTRYPOINT ["/schema-manager"]
