@@ -1335,17 +1335,14 @@ impl From<QueryGraphFromUidRequest> for proto::QueryGraphFromUidRequest {
 
 #[derive(Debug, Clone)]
 pub struct QueryGraphFromUidResponse {
-    pub matched_graph: GraphView,
+    pub matched_graph: Option<GraphView>,
 }
 
 impl TryFrom<proto::QueryGraphFromUidResponse> for QueryGraphFromUidResponse {
     type Error = SerDeError;
     fn try_from(value: proto::QueryGraphFromUidResponse) -> Result<Self, Self::Error> {
         Ok(Self {
-            matched_graph: value
-                .matched_graph
-                .ok_or(SerDeError::MissingField("matched_graph"))?
-                .try_into()?,
+            matched_graph: value.matched_graph.map(|g| g.try_into()).transpose()?,
         })
     }
 }
@@ -1353,7 +1350,7 @@ impl TryFrom<proto::QueryGraphFromUidResponse> for QueryGraphFromUidResponse {
 impl From<QueryGraphFromUidResponse> for proto::QueryGraphFromUidResponse {
     fn from(value: QueryGraphFromUidResponse) -> Self {
         Self {
-            matched_graph: Some(value.matched_graph.into()),
+            matched_graph: value.matched_graph.map(Into::into),
         }
     }
 }

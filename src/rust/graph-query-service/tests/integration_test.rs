@@ -21,9 +21,7 @@ use rust_proto::graplinc::grapl::{
         Uid,
     },
 };
-use scylla::{
-    CachingSession,
-};
+use scylla::CachingSession;
 use secrecy::ExposeSecret;
 
 type DynError = Box<dyn std::error::Error + Send + Sync>;

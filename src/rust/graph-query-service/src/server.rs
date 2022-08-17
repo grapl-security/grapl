@@ -123,15 +123,8 @@ impl GraphQueryApi for GraphQueryService {
         )
         .await?;
 
-        // let matched_graph = match graph {
-        //     Some(matched_graph)
-        // };
-        //
-        // let graph_view = GraphView::from(graph);
-        //
-        // Ok(QueryGraphFromUidResponse {
-        //     matched_graph: graph_view,
-        // })
-        todo!()
+        Ok(QueryGraphFromUidResponse {
+            matched_graph: graph,
+        })
     }
 }
