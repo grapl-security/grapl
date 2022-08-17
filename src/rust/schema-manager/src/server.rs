@@ -16,14 +16,20 @@ use rust_proto::{
     SerDeError,
 };
 
-use crate::db::client::SchemaDbClient;
+use crate::{
+    db::client::SchemaDbClient,
+    deploy_graphql_schema::{
+        deploy_graphql_schema,
+        DeployGraphqlError,
+    },
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum SchemaManagerServiceError {
     #[error("NonUtf8 GraphQL Schema {0}")]
     NonUtf8GraphQLSchema(std::string::FromUtf8Error),
     #[error("DeployGraphqlError {0}")]
-    DeployGraphqlError(#[from] crate::DeployGraphqlError),
+    DeployGraphqlError(#[from] DeployGraphqlError),
     #[error("GetEdgeSchema sqlx error {0}")]
     GetEdgeSchemaSqlxError(sqlx::Error),
     #[error("Invalid ReverseEdgeName: {0}")]
@@ -36,9 +42,9 @@ impl From<SchemaManagerServiceError> for Status {
             SchemaManagerServiceError::NonUtf8GraphQLSchema(e) => {
                 Status::invalid_argument(format!("NonUtf8GraphQLSchema - {}", e))
             }
-            SchemaManagerServiceError::DeployGraphqlError(
-                crate::DeployGraphqlError::SqlxError(e),
-            ) => Status::internal(format!("SqlError during deployment - {}", e)),
+            SchemaManagerServiceError::DeployGraphqlError(DeployGraphqlError::SqlxError(e)) => {
+                Status::internal(format!("SqlError during deployment - {}", e))
+            }
             SchemaManagerServiceError::DeployGraphqlError(e) => {
                 Status::invalid_argument(format!("DeployGraphqlError - {}", e))
             }
@@ -69,7 +75,7 @@ impl SchemaManagerApi for SchemaManager {
                 let schema = String::from_utf8(request.schema.to_vec())
                     .map_err(SchemaManagerServiceError::NonUtf8GraphQLSchema)?;
 
-                crate::deploy_graphql_plugin(
+                deploy_graphql_schema(
                     request.tenant_id,
                     &schema,
                     request.schema_version,
