@@ -6,6 +6,10 @@ use std::sync::{
     Arc,
 };
 
+/// ShortCircuit provides an API for signaling between threads (or tasks)
+/// when they should stop working. For example, if a given query is processed
+/// concurrently by N tasks, and one task finds a matching graph, it can communicate
+/// to the other tasks that they should stop working.
 #[derive(Clone)]
 pub struct ShortCircuit {
     short_circuit: Arc<AtomicBool>,
