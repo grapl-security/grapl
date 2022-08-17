@@ -181,7 +181,6 @@ group "rust-services" {
 group "python-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "engagement-creator",
     "provisioner"
   ]
 }
@@ -419,14 +418,6 @@ target "_python-base" {
   args = {
     PYTHON_VERSION = "${PYTHON_VERSION}"
   }
-}
-
-target "engagement-creator" {
-  inherits = ["_python-base"]
-  target   = "engagement-creator-deploy"
-  tags = [
-    upstream_aware_tag("engagement-creator")
-  ]
 }
 
 target "provisioner" {

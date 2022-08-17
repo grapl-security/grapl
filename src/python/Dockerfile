@@ -25,14 +25,6 @@ USER grapl
 WORKDIR /home/grapl
 ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 
-# engagement-creator
-################################################################################
-FROM grapl-python-base AS engagement-creator-deploy
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --from=dist-ctx engagement-creator.pex .
-CMD ["./engagement-creator.pex"]
-
 # Provisioner
 ################################################################################
 FROM grapl-python-base AS provisioner-deploy

@@ -772,66 +772,6 @@ job "grapl-core" {
     }
   }
 
-  group "engagement-creator" {
-    count = 1
-
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-    }
-
-    task "engagement-creator" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["engagement-creator"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
-      }
-
-      env {
-        AWS_DEFAULT_REGION = var.aws_region
-
-        GRAPL_LOG_LEVEL = var.py_log_level
-
-        MG_ALPHAS = local.alpha_grpc_connect_str
-
-        SOURCE_QUEUE_URL = "fake"
-      }
-    }
-
-    service {
-      name = "engagement-creator"
-      connect {
-        sidecar_service {
-          proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
   group "graphql-endpoint" {
     count = 2
 

@@ -66,7 +66,6 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
     return {
         "analyzer-execution-sidecar": DockerImageId("TODO implement analzyer executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
-        "engagement-creator": builder.build_with_tag("engagement-creator"),
         "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
         "generator-execution-sidecar": builder.build_with_tag(
