@@ -449,7 +449,7 @@ def main() -> None:
             **nomad_inputs,
         )
 
-        # make it easy to debug nomad var unset issues
+        # make it easy to debug nomad var issues
         if pulumi.runtime.is_dry_run():
             pulumi.export("prod-grapl-core-vars", prod_grapl_core_vars)
 
@@ -473,6 +473,15 @@ def main() -> None:
                 depends_on=[
                     nomad_grapl_core.job,
                 ],
+                provider=nomad_provider,
+            ),
+        )
+
+        NomadJob(
+            "grapl-observability",
+            jobspec=repository_path("nomad/observability.nomad"),
+            vars={},
+            opts=pulumi.ResourceOptions(
                 provider=nomad_provider,
             ),
         )

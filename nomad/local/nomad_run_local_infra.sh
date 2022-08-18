@@ -4,7 +4,7 @@ set -euo pipefail
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 LOCAL_INFRA_NOMAD_FILE="${GRAPL_ROOT}/nomad/local/grapl-local-infra.nomad"
-OBSERVABILITY_NOMAD_FILE="${GRAPL_ROOT}/nomad/local/observability.nomad"
+OBSERVABILITY_NOMAD_FILE="${GRAPL_ROOT}/nomad/observability.nomad"
 
 declare -a NOMAD_VARS=(
     -var "image_tag=${IMAGE_TAG}"
