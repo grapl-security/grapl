@@ -214,11 +214,13 @@ impl TryFrom<GetEdgeSchemaResponseProto> for GetEdgeSchemaResponse {
 }
 
 impl From<GetEdgeSchemaResponse> for GetEdgeSchemaResponseProto {
-    fn from(response: GetEdgeSchemaResponse) -> Self {
+    fn from(value: GetEdgeSchemaResponse) -> Self {
+        let cardinality: EdgeCardinalityProto = value.cardinality.into();
+        let reverse_cardinality: EdgeCardinalityProto = value.reverse_cardinality.into();
         GetEdgeSchemaResponseProto {
-            reverse_edge_name: Some(response.reverse_edge_name.into()),
-            cardinality: response.cardinality as i32,
-            reverse_cardinality: response.reverse_cardinality as i32,
+            reverse_edge_name: Some(value.reverse_edge_name.into()),
+            cardinality: cardinality as i32,
+            reverse_cardinality: reverse_cardinality as i32,
         }
     }
 }

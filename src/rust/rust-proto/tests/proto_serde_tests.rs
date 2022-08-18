@@ -488,11 +488,17 @@ mod plugin_work_queue {
 
 mod schema_manager {
     use strategies::schema_manager as sm_strats;
+
     use super::*;
 
-    proptest!{
+    proptest! {
         #[test]
         fn test_deploy_model_requests(value in sm_strats::deploy_model_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_get_edge_schema_responses(value in sm_strats::get_edge_schema_responses()) {
             check_encode_decode_invariant(value)
         }
     }

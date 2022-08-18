@@ -75,6 +75,22 @@ pub mod pipeline {
     }
 }
 
+pub mod common {
+
+    use rust_proto::graplinc::grapl::common::v1beta1::types::{self as native,};
+
+    use super::*;
+    prop_compose! {
+        pub fn edge_names()(
+            name in string_not_empty()
+        ) -> native::EdgeName {
+            native::EdgeName{
+                value: name
+            }
+        }
+    }
+}
+
 pub mod graph {
     use proptest::collection;
     use rust_proto::graplinc::grapl::api::graph::v1beta1::{
@@ -1012,7 +1028,8 @@ pub mod plugin_work_queue {
 }
 
 pub mod schema_manager {
-    use rust_proto::graplinc::grapl::api::schema_manager::v1beta1::messages::{self as native};
+    use rust_proto::graplinc::grapl::api::schema_manager::v1beta1::messages::{self as native,};
+
     use super::*;
 
     pub fn schema_types() -> BoxedStrategy<native::SchemaType> {
@@ -1021,6 +1038,29 @@ pub mod schema_manager {
             Just(native::SchemaType::GraphqlV0),
         ]
         .boxed()
+    }
+
+    pub fn edge_cardinalities() -> BoxedStrategy<native::EdgeCardinality> {
+        prop_oneof![
+            // For cases without data, `Just` is all you need
+            Just(native::EdgeCardinality::ToOne),
+            Just(native::EdgeCardinality::ToMany),
+        ]
+        .boxed()
+    }
+
+    prop_compose! {
+        pub fn get_edge_schema_responses()(
+            edge_name in common::edge_names(),
+            cardinality in edge_cardinalities(),
+            reverse_cardinality in edge_cardinalities(),
+        ) -> native::GetEdgeSchemaResponse {
+            native::GetEdgeSchemaResponse {
+                reverse_edge_name: edge_name,
+                cardinality,
+                reverse_cardinality,
+            }
+        }
     }
 
     prop_compose! {
