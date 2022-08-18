@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 #[derive(clap::Parser, Clone, Debug)]
-#[clap(name = "lens-creator", about = "Lens Creator Service")]
+#[clap(name = "graph-generator", about = "Graph Generator Service")]
 pub struct GraphDbConfig {
     #[clap(long, env)]
     /// The address of the graph database
