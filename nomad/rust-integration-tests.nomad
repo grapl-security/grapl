@@ -162,13 +162,8 @@ job "rust-integration-tests" {
             }
 
             upstreams {
-              destination_name = "scylla"
-              local_bind_port  = 1007
-            }
-
-            upstreams {
               destination_name = "graph-query-service"
-              local_bind_port  = 1008
+              local_bind_port  = 1007
             }
 
             upstreams {

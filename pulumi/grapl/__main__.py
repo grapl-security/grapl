@@ -28,7 +28,7 @@ from infra.hashicorp_provider import (
 )
 from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
-from infra.local.scylla import LocalScyllaInstance
+from infra.local.scylla import LocalScyllaInstance, NomadServiceScyllaResource
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
 from infra.observability_env_vars import observability_env_vars_for_local
@@ -304,6 +304,7 @@ def main() -> None:
     uid_allocator_db: NomadServicePostgresResource
     event_source_db: NomadServicePostgresResource
     graph_schema_manager_db: NomadServicePostgresResource
+    graph_db: NomadServiceScyllaResource
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -361,7 +362,6 @@ def main() -> None:
             name="graph-db",
             port=9042,
         )
-        pulumi.export("graph-db", graph_db.to_nomad_service_db_args())
 
         local_grapl_core_vars: Final[NomadVars] = dict(
             graph_db=graph_db.to_nomad_service_db_args(),
@@ -540,6 +540,8 @@ def main() -> None:
 
     pulumi.export("user-auth-table", dynamodb_tables.user_auth_table.name)
     pulumi.export("user-session-table", dynamodb_tables.user_session_table.name)
+
+    pulumi.export("graph-db", graph_db.to_nomad_service_db_args())
 
     # Not currently imported in integration tests:
     # - uid-allocator-db
