@@ -151,6 +151,7 @@ pipeline-ingress/integration_tests
 plugin-registry/integration_tests
 plugin-work-queue/integration_tests
 sysmon-generator/integration_tests
+schema-manager/integration_tests
 )
 
 # cargo --features expects a comma-separated feature1,feature2,feature3
@@ -209,17 +210,24 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
 # Put the Nomad binary on PATH
 # so that it's available to integration test consumers of NomadCli
 COPY --from=build /nomad/nomad /bin
-
-# Grab the example generator so we can deploy it in test_deploy_plugin
 RUN mkdir -p /test-fixtures
-COPY --from=build /outputs/example-generator /test-fixtures
-COPY --from=build /outputs/sysmon-generator /test-fixtures
-# Named context support https://github.com/hadolint/hadolint/issues/830
+
+# Copy in the Example Schemas, which we use in Schema Manager integration tests
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=etc-ctx example_schemas /test-fixtures
+
+# Copy in the 36-line sysmon event-log, which we use in E2E tests.
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
 # hadolint ignore=DL3022
 COPY --from=etc-ctx sample_data/36_eventlog.xml /test-fixtures
 
+# Copy in the example generator so we can deploy it in test_deploy_plugin
+COPY --from=build /outputs/example-generator /test-fixtures
+COPY --from=build /outputs/sysmon-generator /test-fixtures
+
 COPY --from=build-test-integration /grapl/tests /tests
-# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
 # hadolint ignore=DL3022
 COPY --from=test-ctx ./run/rust-integration-tests.sh /
 ENTRYPOINT [ "/rust-integration-tests.sh" ]

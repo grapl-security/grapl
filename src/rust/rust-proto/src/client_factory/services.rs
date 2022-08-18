@@ -18,3 +18,6 @@ pub use plugin_registry::PluginRegistryClientConfig;
 
 mod plugin_work_queue;
 pub use plugin_work_queue::PluginWorkQueueClientConfig;
+
+mod schema_manager;
+pub use schema_manager::SchemaManagerClientConfig;
