@@ -60,11 +60,6 @@ variable "kafka_bootstrap_servers" {
   description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
 }
 
-variable "redis_endpoint" {
-  type        = string
-  description = "Where can services find Redis?"
-}
-
 variable "schema_table_name" {
   type        = string
   description = "What is the name of the schema table?"
@@ -228,11 +223,6 @@ locals {
     target = "/dgraph"
     source = "grapl-data-dgraph"
   }
-
-  _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
-  _redis         = split(":", local._redis_trimmed)
-  redis_host     = local._redis[0]
-  redis_port     = local._redis[1]
 
   dns_servers = [attr.unique.network.ip-address]
 
@@ -689,7 +679,6 @@ job "grapl-core" {
         AWS_REGION         = var.aws_region
         RUST_LOG           = var.rust_log
         RUST_BACKTRACE     = local.rust_backtrace
-        REDIS_ENDPOINT     = var.redis_endpoint
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
 
@@ -771,66 +760,6 @@ job "grapl-core" {
 
       service {
         name = "node-identifier"
-      }
-    }
-  }
-
-  group "engagement-creator" {
-    count = 1
-
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-    }
-
-    task "engagement-creator" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["engagement-creator"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
-      }
-
-      env {
-        AWS_DEFAULT_REGION = var.aws_region
-
-        GRAPL_LOG_LEVEL = var.py_log_level
-
-        MG_ALPHAS = local.alpha_grpc_connect_str
-
-        SOURCE_QUEUE_URL = "fake"
-      }
-    }
-
-    service {
-      name = "engagement-creator"
-      connect {
-        sidecar_service {
-          proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
-            }
-          }
-        }
       }
     }
   }
@@ -1187,10 +1116,11 @@ job "grapl-core" {
         PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL             = var.plugin_registry_kernel_artifact_url
         PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL             = var.plugin_registry_rootfs_artifact_url
         PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE = var.container_images["hax-docker-plugin-runtime"]
-        PLUGIN_EXECUTION_IMAGE                          = var.container_images["generator-execution-sidecar"] # TODO: add support for analyzer too
         PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID           = var.plugin_registry_bucket_aws_account_id
         PLUGIN_REGISTRY_BUCKET_NAME                     = var.plugin_registry_bucket_name
         PLUGIN_EXECUTION_OBSERVABILITY_ENV_VARS         = var.observability_env_vars
+        PLUGIN_EXECUTION_GENERATOR_SIDECAR_IMAGE        = var.container_images["generator-execution-sidecar"]
+        PLUGIN_EXECUTION_ANALYZER_SIDECAR_IMAGE         = var.container_images["analyzer-execution-sidecar"]
 
         # common Rust env vars
         RUST_BACKTRACE = local.rust_backtrace

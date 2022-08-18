@@ -11,7 +11,7 @@ from infra.api_gateway import ApiGateway
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
-from infra.cache import Cache
+from infra.config import repository_path
 from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
 from infra.consul_service_default import ConsulServiceDefault
@@ -31,7 +31,6 @@ from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
 from infra.observability_env_vars import observability_env_vars_for_local
-from infra.path import path_from_root
 from infra.postgres import Postgres
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -65,8 +64,8 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
     )
 
     return {
+        "analyzer-execution-sidecar": DockerImageId("TODO implement analzyer executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
-        "engagement-creator": builder.build_with_tag("engagement-creator"),
         "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
         "generator-execution-sidecar": builder.build_with_tag(
@@ -265,7 +264,7 @@ def main() -> None:
         "consul-intentions",
         # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
         # when they update nomad configs
-        intention_directory=path_from_root("nomad/consul-intentions").resolve(),
+        intention_directory=repository_path("nomad/consul-intentions"),
         opts=pulumi.ResourceOptions(provider=consul_provider),
     )
 
@@ -286,7 +285,7 @@ def main() -> None:
 
     nomad_grapl_ingress = NomadJob(
         "grapl-ingress",
-        jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
+        jobspec=repository_path("nomad/grapl-ingress.nomad"),
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
             # This dependson ensures we've switched the web-ui protocol to http instead of tcp prior. Otherwise there's
@@ -341,10 +340,6 @@ def main() -> None:
             port=5436,
         )
 
-        redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
-
-        pulumi.export("redis-endpoint", redis_endpoint)
-
         # Since we're using an IP for Jaeger, this should only be created for local grapl.
         # Once we're using dns addresses we can create it for everything
         ConsulConfig(
@@ -359,13 +354,12 @@ def main() -> None:
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
-            redis_endpoint=redis_endpoint,
             **nomad_inputs,
         )
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
-            jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-core.nomad"),
             vars=local_grapl_core_vars,
             opts=ResourceOptions(
                 custom_timeouts=CustomTimeouts(
@@ -376,7 +370,7 @@ def main() -> None:
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
-            jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-provision.nomad"),
             vars=provision_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
         )
@@ -420,13 +414,6 @@ def main() -> None:
             bucket.grant_put_permission_to(nomad_agent_role)
             bucket.grant_get_and_list_to(nomad_agent_role)
 
-        cache = Cache(
-            "main-cache",
-            subnet_ids=subnet_ids,
-            vpc_id=vpc_id,
-            nomad_agent_security_group_id=nomad_agent_security_group_id,
-        )
-
         (
             organization_management_db,
             plugin_registry_db,
@@ -450,8 +437,6 @@ def main() -> None:
             )
         )
 
-        pulumi.export("redis-endpoint", cache.endpoint)
-
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
@@ -460,7 +445,6 @@ def main() -> None:
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
-            redis_endpoint=cache.endpoint,
             **nomad_inputs,
         )
 
@@ -470,7 +454,7 @@ def main() -> None:
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
-            jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-core.nomad"),
             vars=prod_grapl_core_vars,
             opts=pulumi.ResourceOptions(
                 provider=nomad_provider,
@@ -482,7 +466,7 @@ def main() -> None:
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
-            jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-provision.nomad"),
             vars=provision_vars,
             opts=pulumi.ResourceOptions(
                 depends_on=[

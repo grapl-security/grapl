@@ -7,6 +7,8 @@ RUST_LOG_LEVELS = ",".join(
         "hyper=WARN",
         "rusoto_core=WARN",
         "rustls=WARN",
+        # noisy, only for debugging
+        "client_executor=trace",
     ]
 )
 PY_LOG_LEVEL = "DEBUG"

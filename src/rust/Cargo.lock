@@ -828,10 +828,12 @@ dependencies = [
  "futures",
  "pin-project",
  "recloser",
+ "test-log",
  "thiserror",
  "tokio",
  "tokio-retry",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -4049,6 +4051,8 @@ dependencies = [
  "prost-build 0.10.4",
  "quickcheck",
  "quickcheck_macros",
+ "rand 0.8.5",
+ "rustc-hash",
  "test-context",
  "thiserror",
  "tokio",
@@ -4066,6 +4070,12 @@ name = "rustc-demangle"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ef03e0a2b150c7a90d01faf6254c9c48a41e95fb2a8c2ac1c6f0d2b9aefc342"
+
+[[package]]
+name = "rustc-hash"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustc_version"
@@ -4704,9 +4714,9 @@ dependencies = [
 
 [[package]]
 name = "test-log"
-version = "0.2.10"
+version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4235dbf7ea878b3ef12dea20a59c134b405a66aafc4fc2c7b9935916e289e735"
+checksum = "38f0c854faeb68a048f0f2dc410c5ddae3bf83854ef0e4977d58306a5edef50e"
 dependencies = [
  "proc-macro2",
  "quote",

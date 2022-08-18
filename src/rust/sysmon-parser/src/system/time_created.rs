@@ -9,7 +9,7 @@ use chrono::{
 ///
 /// <https://docs.microsoft.com/en-us/windows/win32/wes/eventschema-timecreated-systempropertiestype-element>
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TimeCreated {
     /// The system time of when the event was logged.

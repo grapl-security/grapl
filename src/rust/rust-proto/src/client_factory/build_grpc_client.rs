@@ -51,7 +51,7 @@ async fn build_grpc_client_with_options<C: GrpcClientConfig>(
     // TODO: Add a `rust-proto` wrapper around tonic Endpoint
     let endpoint = Endpoint::from_shared(address)?
         .timeout(Duration::from_secs(10))
-        .concurrency_limit(30);
+        .concurrency_limit(300);
 
     if options.perform_healthcheck {
         HealthcheckClient::wait_until_healthy(

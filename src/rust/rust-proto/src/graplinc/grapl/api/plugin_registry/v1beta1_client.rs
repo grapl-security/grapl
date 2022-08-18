@@ -10,6 +10,7 @@ use futures::{
     StreamExt,
 };
 use proto::plugin_registry_service_client::PluginRegistryServiceClient as PluginRegistryServiceClientProto;
+use tracing::instrument;
 
 use crate::{
     client_macros::ExecuteClientRpcOptions,
@@ -59,6 +60,7 @@ impl PluginRegistryServiceClient {
     /// create a new plugin.
     /// NOTE: Most consumers will want `create_plugin`, not `create_plugin_raw`.
     /// NOTE: streaming RPCs aren't hooked up to client-executor just yet.
+    #[instrument(skip(self, request), err)]
     pub async fn create_plugin_raw<S>(
         &mut self,
         request: S,
@@ -77,6 +79,7 @@ impl PluginRegistryServiceClient {
 
     /// Create a new plugin
     ///
+    #[instrument(skip(self, metadata, plugin_artifact), err)]
     pub async fn create_plugin<S>(
         &mut self,
         metadata: native::PluginMetadata,
@@ -95,6 +98,7 @@ impl PluginRegistryServiceClient {
     }
 
     /// retrieve the plugin corresponding to the given plugin_id
+    #[instrument(skip(self, request), err)]
     pub async fn get_plugin(
         &mut self,
         request: native::GetPluginRequest,
@@ -110,6 +114,7 @@ impl PluginRegistryServiceClient {
     }
 
     /// turn on a particular plugin's code
+    #[instrument(skip(self, request), err)]
     pub async fn deploy_plugin(
         &mut self,
         request: native::DeployPluginRequest,
@@ -125,6 +130,7 @@ impl PluginRegistryServiceClient {
     }
 
     /// turn off a particular plugin's code
+    #[instrument(skip(self, request), err)]
     pub async fn tear_down_plugin(
         &mut self,
         request: native::TearDownPluginRequest,
@@ -139,6 +145,7 @@ impl PluginRegistryServiceClient {
         )
     }
 
+    #[instrument(skip(self, request), err)]
     pub async fn get_plugin_health(
         &mut self,
         request: native::GetPluginHealthRequest,
@@ -170,6 +177,7 @@ impl PluginRegistryServiceClient {
     }
 
     /// Given information about a tenant, return all analyzers for that tenant
+    #[instrument(skip(self, request), err)]
     pub async fn get_analyzers_for_tenant(
         &mut self,
         request: native::GetAnalyzersForTenantRequest,

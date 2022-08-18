@@ -11,13 +11,13 @@ pub enum ServeError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum GrpcClientError {
-    #[error("ErrorStatus")]
+    #[error("encountered protocol error {0}")]
     ErrorStatus(#[from] crate::protocol::status::Status),
-    #[error("SerDeError")]
+    #[error("encountered SerDeError {0}")]
     SerDeError(#[from] crate::SerDeError),
-    #[error("CircuitOpen")]
+    #[error("circuit breaker is open")]
     CircuitOpen,
-    #[error("Timeout")]
+    #[error("timed out")]
     Elapsed,
 }
 

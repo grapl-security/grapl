@@ -52,7 +52,7 @@ macro_rules ! impl_from_for_unit {
 // Session
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Session {
     pub primary_key_properties: Vec<String>,
     pub primary_key_requires_asset_id: bool,
@@ -97,7 +97,7 @@ impl serde_impl::ProtobufSerializable for Session {
 // Static
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Static {
     pub primary_key_properties: Vec<String>,
     pub primary_key_requires_asset_id: bool,
@@ -133,13 +133,13 @@ impl serde_impl::ProtobufSerializable for Static {
 // IdStrategy
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Strategy {
     Session(Session),
     Static(Static),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct IdStrategy {
     pub strategy: Strategy,
 }
@@ -223,7 +223,7 @@ impl From<Session> for IdStrategy {
 // IncrementOnlyUintProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct IncrementOnlyUintProp {
     pub prop: u64,
 }
@@ -287,7 +287,7 @@ impl_from_for_unit!(
 // ImmutableUintProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct ImmutableUintProp {
     pub prop: u64,
 }
@@ -350,7 +350,7 @@ impl_from_for_unit!(
 // DecrementOnlyUintProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct DecrementOnlyUintProp {
     pub prop: u64,
 }
@@ -413,7 +413,7 @@ impl_from_for_unit!(
 // IncrementOnlyIntProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct IncrementOnlyIntProp {
     pub prop: i64,
 }
@@ -477,7 +477,7 @@ impl_from_for_unit!(
 // DecrementOnlyIntProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct DecrementOnlyIntProp {
     pub prop: i64,
 }
@@ -540,7 +540,7 @@ impl_from_for_unit!(
 // ImmutableIntProp
 //
 
-#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
+#[derive(Copy, Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Hash)]
 pub struct ImmutableIntProp {
     pub prop: i64,
 }
@@ -603,7 +603,7 @@ impl_from_for_unit!(
 // ImmutableStrProp
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct ImmutableStrProp {
     pub prop: String,
 }
@@ -662,7 +662,7 @@ impl_from_for_unit!(
 // NodeProperty
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Property {
     IncrementOnlyUintProp(IncrementOnlyUintProp),
     DecrementOnlyUintProp(DecrementOnlyUintProp),
@@ -782,7 +782,7 @@ impl std::string::ToString for Property {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct NodeProperty {
     pub property: Property,
 }
@@ -1015,7 +1015,7 @@ where
 // NodeDescription
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct NodeDescription {
     pub properties: HashMap<String, NodeProperty>,
     pub node_key: String,
@@ -1117,7 +1117,7 @@ impl serde_impl::ProtobufSerializable for NodeDescription {
 // IdentifiedNode
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct IdentifiedNode {
     pub properties: HashMap<String, NodeProperty>,
     pub node_key: String,
@@ -1211,7 +1211,7 @@ impl From<NodeDescription> for IdentifiedNode {
 // MergedNode
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MergedNode {
     pub properties: HashMap<String, NodeProperty>,
     pub uid: u64,
@@ -1337,7 +1337,7 @@ impl serde_impl::ProtobufSerializable for Edge {
 // Lens
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Lens {
     pub lens_type: String,
     pub lens_name: String,
@@ -1379,7 +1379,7 @@ impl serde_impl::ProtobufSerializable for Lens {
 // MergedEdge
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MergedEdge {
     pub from_uid: String,
     pub from_node_key: String,
@@ -1424,7 +1424,7 @@ impl serde_impl::ProtobufSerializable for MergedEdge {
 // EdgeList
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct EdgeList {
     pub edges: Vec<Edge>,
 }
@@ -1463,7 +1463,7 @@ impl serde_impl::ProtobufSerializable for EdgeList {
 // ExecutionHit
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ExecutionHit {
     pub nodes: HashMap<String, MergedNode>,
     pub edges: HashMap<String, MergedEdgeList>,
@@ -1544,7 +1544,7 @@ impl serde_impl::ProtobufSerializable for ExecutionHit {
 // MergedEdgeList
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MergedEdgeList {
     pub edges: Vec<MergedEdge>,
 }
@@ -1584,7 +1584,7 @@ impl serde_impl::ProtobufSerializable for MergedEdgeList {
 // GraphDescription
 //
 
-#[derive(Debug, Default, PartialEq, Clone)]
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct GraphDescription {
     pub nodes: HashMap<String, NodeDescription>,
     pub edges: HashMap<String, EdgeList>,
@@ -1709,7 +1709,7 @@ impl serde_impl::ProtobufSerializable for GraphDescription {
 // IdentifiedGraph
 //
 
-#[derive(Debug, Default, PartialEq, Clone)]
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct IdentifiedGraph {
     pub nodes: HashMap<String, IdentifiedNode>,
     pub edges: HashMap<String, EdgeList>,
@@ -1832,7 +1832,7 @@ impl serde_impl::ProtobufSerializable for IdentifiedGraph {
 // MergedGraph
 //
 
-#[derive(Debug, Default, PartialEq, Clone)]
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct MergedGraph {
     pub nodes: HashMap<String, MergedNode>,
     pub edges: HashMap<String, MergedEdgeList>,

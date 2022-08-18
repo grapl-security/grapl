@@ -8,12 +8,12 @@ import pulumi_aws as aws
 from infra import config, log_levels
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
+from infra.config import repository_path
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Credential, Kafka
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
-from infra.path import path_from_root
 
 import pulumi
 
@@ -81,7 +81,7 @@ def main() -> None:
 
     rust_integration_tests = NomadJob(
         "rust-integration-tests",
-        jobspec=path_from_root("nomad/rust-integration-tests.nomad").resolve(),
+        jobspec=repository_path("nomad/rust-integration-tests.nomad"),
         vars=rust_integration_tests_job_vars,
         opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
@@ -99,7 +99,6 @@ class GraplStack:
 
         # FIXME: audit these, they're not all required for rust integration tests
         self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
-        self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")
         self.test_user_name = require_str("test-user-name")

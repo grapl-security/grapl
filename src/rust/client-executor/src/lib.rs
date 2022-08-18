@@ -63,6 +63,7 @@ impl<A: Action> ExecuteState<A> {
             ExecuteStateProj::Running(future) => match future.poll(cx) {
                 Poll::Ready(Ok(p)) => ExecuteFuturePoll::Running(Poll::Ready(Ok(p))),
                 Poll::Ready(Err(recloser::Error::Rejected)) => {
+                    tracing::debug!("Rejected call");
                     ExecuteFuturePoll::Running(Poll::Ready(Err(Error::Rejected)))
                 }
                 Poll::Ready(Err(recloser::Error::Inner(e))) => {
@@ -153,7 +154,7 @@ where
     fn attempt(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<ActionResult<A>> {
         let future = {
             let this = self.as_mut().project();
-
+            tracing::trace!("attempting execution");
             this.recloser
                 .call(TryTimeout::new(*this.timeout, this.action.run()))
         };
@@ -245,7 +246,7 @@ impl ExecutorConfig {
             .error_rate(0.5)
             .closed_len(100)
             .half_open_len(10)
-            .open_wait(Duration::from_secs(5));
+            .open_wait(Duration::from_millis(5000));
         ExecutorConfig { builder, timeout }
     }
 
@@ -386,7 +387,7 @@ mod tests {
         OhNo(i32),
     }
 
-    #[tokio::test]
+    #[test_log::test(tokio::test)]
     async fn test_retries() -> Result<(), Box<dyn std::error::Error>> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(10)));
 
@@ -428,7 +429,7 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
+    #[test_log::test(tokio::test)]
     async fn test_circuit_open() -> Result<(), Box<dyn std::error::Error>> {
         let circuit_breaker = ExecutorConfig::new(Duration::from_secs(3))
             .threshold(0.5)
@@ -468,7 +469,7 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
+    #[test_log::test(tokio::test)]
     async fn test_conditional_retries() -> Result<(), Box<dyn std::error::Error>> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(10)));
 
