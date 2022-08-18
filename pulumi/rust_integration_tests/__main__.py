@@ -69,7 +69,6 @@ def main() -> None:
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _rust_integration_container_images(artifacts),
-        "dns_server": config.CONSUL_DNS_IP,
         "kafka_bootstrap_servers": kafka.bootstrap_servers(),
         "kafka_consumer_group": kafka.consumer_group("integration-tests"),
         "kafka_credentials": kafka_credentials,

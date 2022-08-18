@@ -196,12 +196,6 @@ variable "google_client_id" {
   description = "Google client ID used for authenticating web users via Sign In With Google"
 }
 
-variable "dns_server" {
-  type        = string
-  description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
-  default     = ""
-}
-
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
   dgraph_zero_http_private_port_base  = 6080
@@ -240,9 +234,7 @@ locals {
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
 
-  # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
-  # added for network.dns as of 1.3.0
-  dns_servers = [var.dns_server]
+  dns_servers = [attr.unique.network.ip-address]
 
   # Grapl services
   graphql_endpoint_port = 5000
