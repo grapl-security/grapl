@@ -284,6 +284,12 @@ def main() -> None:
         opts=pulumi.ResourceOptions(provider=consul_provider),
     )
 
+    ConsulConfig(
+        "grapl-core",
+        tracing_endpoint="jaeger-zipkin.service.consul",
+        opts=pulumi.ResourceOptions(provider=consul_provider),
+    )
+
     nomad_grapl_ingress = NomadJob(
         "grapl-ingress",
         jobspec=repository_path("nomad/grapl-ingress.nomad"),
@@ -340,14 +346,6 @@ def main() -> None:
         event_source_db = LocalPostgresInstance(
             name="event-source-db",
             port=5436,
-        )
-
-        # Since we're using an IP for Jaeger, this should only be created for local grapl.
-        # Once we're using dns addresses we can create it for everything
-        ConsulConfig(
-            "grapl-core",
-            tracing_endpoint="jaeger-zipkin.service.consul",
-            opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 
         local_grapl_core_vars: Final[NomadVars] = dict(
