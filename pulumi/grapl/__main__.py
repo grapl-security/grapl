@@ -219,7 +219,6 @@ def main() -> None:
         aws_env_vars_for_local=aws_env_vars_for_local,
         aws_region=aws.get_region().name,
         container_images=_container_images(artifacts),
-        dns_server=config.CONSUL_DNS_IP,
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
         kafka_credentials=kafka_service_credentials,
         kafka_consumer_groups=kafka_consumer_groups,
@@ -287,7 +286,7 @@ def main() -> None:
     nomad_grapl_ingress = NomadJob(
         "grapl-ingress",
         jobspec=repository_path("nomad/grapl-ingress.nomad"),
-        vars={"dns_server": config.CONSUL_DNS_IP},
+        vars={},
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
             # This dependson ensures we've switched the web-ui protocol to http instead of tcp prior. Otherwise there's

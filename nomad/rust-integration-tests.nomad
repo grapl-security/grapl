@@ -61,12 +61,6 @@ variable "user_session_table" {
   description = "The name of the DynamoDB user session table"
 }
 
-variable "dns_server" {
-  type        = string
-  description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
-  default     = ""
-}
-
 variable "organization_management_db" {
   type = object({
     hostname = string
@@ -88,9 +82,7 @@ variable "plugin_work_queue_db" {
 }
 
 locals {
-  # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
-  # added for network.dns as of 1.3.0
-  dns_servers = [var.dns_server]
+  dns_servers = [attr.unique.network.ip-address]
 }
 
 job "rust-integration-tests" {
