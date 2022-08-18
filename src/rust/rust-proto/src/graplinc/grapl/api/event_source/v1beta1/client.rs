@@ -53,6 +53,7 @@ impl Connectable for EventSourceServiceClient {
 }
 
 impl EventSourceServiceClient {
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn create_event_source(
         &mut self,
         request: native::CreateEventSourceRequest,
@@ -67,6 +68,7 @@ impl EventSourceServiceClient {
         )
     }
 
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn update_event_source(
         &mut self,
         request: native::UpdateEventSourceRequest,
@@ -81,6 +83,7 @@ impl EventSourceServiceClient {
         )
     }
 
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn get_event_source(
         &mut self,
         request: native::GetEventSourceRequest,

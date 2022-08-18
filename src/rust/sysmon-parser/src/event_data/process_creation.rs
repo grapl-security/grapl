@@ -27,7 +27,7 @@ use crate::{
 ///
 /// <https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon#event-id-1-process-creation>
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, IntoOwned)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProcessCreateEventData<'a> {
     /// <data name="RuleName" inType="win:UnicodeString" outType="xs:string" />

@@ -111,7 +111,7 @@ class Confluent:
         # other from_json implementations in this file take just a bare
         # Mapping[str, Any]. The reason for this is that this class represents
         # the outermost layer of a nested object which is the stack output of
-        # the "ccloud-bootstrap" stack. All the other from_json methods are
+        # the "grapl/confluent-cloud/production" stack. All the other from_json methods are
         # called recursively in the apply(..) call below.
         return data.apply(
             lambda j: Confluent(
@@ -135,7 +135,7 @@ class Kafka(pulumi.ComponentResource):
         if confluent_environment_name == "local-grapl":
             self.confluent_environment = None
             # This list must match the set of all topics specified in
-            # confluent-cloud-infrastructure/pulumi/ccloud_bootstrap/index.ts
+            # grapl-infrastructure/pulumi/confluent_cloud/index.ts
             topics = [
                 "raw-logs",
                 "raw-logs-retry",
@@ -169,7 +169,7 @@ class Kafka(pulumi.ComponentResource):
                     )
         else:
             confluent_stack_output = StackReference(
-                "grapl/ccloud-bootstrap/ccloud-bootstrap"
+                "grapl/confluent-cloud/production"
             ).require_output("confluent")
             self.confluent_environment = Confluent.from_json(
                 cast(pulumi.Output[Mapping[str, Any]], confluent_stack_output)

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use nomad_client_gen::models;
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginType;
 
 use super::{
     plugin_nomad_job,
@@ -56,6 +57,12 @@ pub fn get_job(
         get_s3_url(bucket, key)
     };
     let passthru = service_config.passthrough_vars;
+    let plugin_type = PluginType::try_from(plugin.plugin_type.as_str())
+        .expect("Unknown plugin-type in DB is bad news");
+    let plugin_execution_sidecar_image = match plugin_type {
+        PluginType::Generator => passthru.generator_sidecar_image,
+        PluginType::Analyzer => passthru.analyzer_sidecar_image,
+    };
     match plugin_runtime {
         PluginRuntime::HaxDocker => {
             let job_file_hcl = static_files::HAX_DOCKER_PLUGIN_JOB;
@@ -67,8 +74,8 @@ pub fn get_job(
                     service_config.hax_docker_plugin_runtime_image,
                 ),
                 (
-                    "plugin_execution_image",
-                    service_config.plugin_execution_image,
+                    "plugin_execution_sidecar_image",
+                    plugin_execution_sidecar_image,
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("tenant_id", plugin.tenant_id.to_string()),
@@ -91,8 +98,8 @@ pub fn get_job(
                     service_config.plugin_bootstrap_container_image,
                 ),
                 (
-                    "plugin_execution_image",
-                    service_config.plugin_execution_image,
+                    "plugin_execution_sidecar_image",
+                    plugin_execution_sidecar_image,
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("rootfs_artifact_url", service_config.rootfs_artifact_url),
@@ -170,7 +177,6 @@ mod tests {
             hax_docker_plugin_runtime_image: Default::default(),
             kernel_artifact_url: Default::default(),
             plugin_bootstrap_container_image: Default::default(),
-            plugin_execution_image: Default::default(),
             bucket_aws_account_id: Default::default(),
             bucket_name: Default::default(),
             rootfs_artifact_url: Default::default(),

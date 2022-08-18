@@ -9,12 +9,12 @@ import pulumi_aws as aws
 from infra import config
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
+from infra.config import repository_path
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Kafka
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
-from infra.path import path_from_root
 
 import pulumi
 
@@ -76,7 +76,6 @@ def main() -> None:
             "container_images": _python_integration_container_images(artifacts),
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
-            "redis_endpoint": grapl_stack.redis_endpoint,
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
             "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
@@ -84,9 +83,7 @@ def main() -> None:
 
         python_integration_tests = NomadJob(
             "python-integration-tests",
-            jobspec=path_from_root(
-                "nomad/local/python-integration-tests.nomad"
-            ).resolve(),
+            jobspec=repository_path("nomad/local/python-integration-tests.nomad"),
             vars=python_integration_test_job_vars,
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
@@ -103,7 +100,6 @@ class GraplStack:
             return cast(str, ref.require_output(key))
 
         self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
-        self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")
         self.test_user_name = require_str("test-user-name")

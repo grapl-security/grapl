@@ -98,19 +98,18 @@ class NomadJob(pulumi.ComponentResource):
     ) -> NomadVars:
         """
         This is a hack to deal with issues around pulumi preview.
-        The Problem: Specifically, during pulumi preview, pulumi Output objects never resolve into strings or other types. This means that if a PR creates a new resource and then tries to use that resource's attributes in a Nomad variable, there's a type error because Pulumi object != string. Frustratingly, this manifests as a variable unset error for ALL Nomad variables in the file. This can also happen if a project is being pulumi'd up with no existing resources.
+        The Problem: Specifically, during pulumi preview, pulumi Output objects never resolve into strings or other
+        types. This means that if a PR creates a new resource and then tries to use that resource's attributes in a
+        Nomad variable, there's a type error because Pulumi object != string. Frustratingly, this manifests as a
+        variable unset error for ALL Nomad variables in the file. This can also happen if a project is being pulumi'd up
+        with no existing resources.
 
         The Solution:
-        We're using reflection to parse the Nomad file's input variable types. We're then mocking the primitives types (str, bool, number) with fake value
-
-
-
-
+        We're using reflection to parse the Nomad file's input variable types. We're then mocking the primitives types
+        (str, bool, number) with fake values
         """
-        if pulumi.runtime.is_dry_run():
-
-            # special rule since we string-split the redis endpoint
-            redis_endpoint = "redis://some-fake-host-for-preview-only:1111"
+        # short circuit if there are no variables to parse
+        if pulumi.runtime.is_dry_run() and len(vars) >= 1:
 
             hcl2_parser = HCL2TypeParser().parser
             with open(jobspec) as file:
@@ -126,14 +125,10 @@ class NomadJob(pulumi.ComponentResource):
             for key, value in vars.items():
 
                 if isinstance(value, pulumi.Output):
-                    # special cases
-                    if key == "redis_endpoint":
-                        value = redis_endpoint
-                    else:
-                        raw_type = hcl2_type_dict[key]["type"]
-                        parsed_type = hcl2_parser.parse(raw_type)
-                        # now we replace the strings
-                        value = mock_hcl2_type(parsed_type)
+                    raw_type = hcl2_type_dict[key]["type"]
+                    parsed_type = hcl2_parser.parse(raw_type)
+                    # now we replace the strings
+                    value = mock_hcl2_type(parsed_type)
 
                 nomad_vars[key] = value
             return nomad_vars

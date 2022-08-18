@@ -17,7 +17,7 @@ use crate::{
 // CreateOrganizationRequest
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CreateOrganizationRequest {
     pub organization_display_name: String,
     pub admin_username: String,
@@ -63,7 +63,7 @@ impl serde_impl::ProtobufSerializable for CreateOrganizationRequest {
 // CreateOrganizationResponse
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CreateOrganizationResponse {
     pub organization_id: Uuid,
 }
@@ -104,7 +104,7 @@ impl serde_impl::ProtobufSerializable for CreateOrganizationResponse {
 // CreateUserRequest
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CreateUserRequest {
     pub organization_id: Uuid,
     pub name: String,
@@ -152,7 +152,7 @@ impl serde_impl::ProtobufSerializable for CreateUserRequest {
 // CreateUserResponse
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CreateUserResponse {
     pub user_id: Uuid,
 }
@@ -230,6 +230,7 @@ pub mod client {
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.organization_management.v1beta1.OrganizationManagementService";
 
+        #[tracing::instrument(err)]
         async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
             let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
             let proto_client = create_proto_client!(
@@ -246,6 +247,7 @@ pub mod client {
     }
 
     impl OrganizationManagementClient {
+        #[tracing::instrument(skip(self, request), err)]
         pub async fn create_organization(
             &mut self,
             request: native::CreateOrganizationRequest,
@@ -260,6 +262,7 @@ pub mod client {
             )
         }
 
+        #[tracing::instrument(skip(self, request), err)]
         pub async fn create_user(
             &mut self,
             request: native::CreateUserRequest,
@@ -296,6 +299,10 @@ pub mod server {
     use tonic::transport::{
         NamedService,
         Server,
+    };
+    use tracing::{
+        Instrument,
+        Span,
     };
 
     use super::{
@@ -337,6 +344,7 @@ pub mod server {
     where
         T: OrganizationManagementApi + Send + Sync + 'static,
     {
+        #[tracing::instrument(skip(self, request), err)]
         async fn create_organization(
             &self,
             request: tonic::Request<CreateOrganizationRequestProto>,
@@ -354,6 +362,7 @@ pub mod server {
             Ok(tonic::Response::new(proto_response))
         }
 
+        #[tracing::instrument(skip(self, request), err)]
         async fn create_user(
             &self,
             request: tonic::Request<CreateUserRequestProto>,
@@ -449,8 +458,9 @@ pub mod server {
 
         /// Run the gRPC server and serve the API on this server's socket
         /// address. Returns a ServeError if the gRPC server cannot run.
+        #[tracing::instrument(skip(self), err)]
         pub async fn serve(self) -> Result<(), ServeError> {
-            let service_name = &(*self.service_name());
+            let service_name = self.service_name();
             let (healthcheck_handle, health_service) =
                 init_health_service::<OrganizationManagementServiceServerProto<GrpcApi<T>>, _, _>(
                     self.healthcheck,
@@ -477,9 +487,12 @@ pub mod server {
                     TcpListenerStream::new(self.tcp_listener),
                     self.shutdown_rx.map(|_| ()),
                 )
-                .then(|result| async move {
-                    healthcheck_handle.abort();
-                    result
+                .then(|result| {
+                    async move {
+                        healthcheck_handle.abort();
+                        result
+                    }
+                    .instrument(Span::current())
                 })
                 .await?)
         }

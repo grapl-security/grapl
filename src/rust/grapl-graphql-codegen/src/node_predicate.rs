@@ -142,10 +142,10 @@ impl NodePredicate {
     }
 }
 
-impl<'a> TryFrom<&Field<'a, &'a str>> for NodePredicate {
-    type Error = CodeGenError<'a>;
+impl TryFrom<&Field<'static, String>> for NodePredicate {
+    type Error = CodeGenError;
 
-    fn try_from(value: &Field<'a, &'a str>) -> Result<Self, Self::Error> {
+    fn try_from(value: &Field<'static, String>) -> Result<Self, Self::Error> {
         let predicate_name = value.name.to_string();
         let description = value.description.to_owned();
         let field_type: &graphql_parser::schema::Type<_> = &value.field_type;
@@ -168,7 +168,7 @@ impl<'a> TryFrom<&Field<'a, &'a str>> for NodePredicate {
     }
 }
 
-pub fn is_nullable<'a>(field_type: &Type<'a, &'a str>) -> bool {
+pub fn is_nullable(field_type: &Type<'static, String>) -> bool {
     match field_type {
         Type::NonNullType(_) => false,
         Type::NamedType(_) => true,

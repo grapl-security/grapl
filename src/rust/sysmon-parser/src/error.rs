@@ -4,7 +4,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// Represents all possible errors that can occur when parsing Sysmon XML events.
 #[non_exhaustive]
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum Error {
     #[error("starting Sysmon event XML element not found")]
     SysmonEventNotFound,

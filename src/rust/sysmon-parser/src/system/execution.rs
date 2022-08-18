@@ -2,7 +2,7 @@
 ///
 /// <https://docs.microsoft.com/en-us/windows/win32/wes/eventschema-execution-systempropertiestype-element>
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Execution {
     /// Identifies the process that generated the event.

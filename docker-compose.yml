@@ -59,7 +59,6 @@ services:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
       DOCKER_USER: "${UID}:${GID}"
       GRAPL_ROOT: "${GRAPL_ROOT}"
-      CONSUL_DNS_IP: "${CONSUL_DNS_IP}"
       WITH_PULUMI_TRACING: "${WITH_PULUMI_TRACING}"
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml

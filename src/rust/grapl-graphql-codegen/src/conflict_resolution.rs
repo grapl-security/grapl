@@ -38,8 +38,8 @@ impl ConflictResolution {
         }
     }
 
-    pub fn from_directive<'a>(directive: &Directive<'a, &'a str>) -> Option<Self> {
-        match directive.name {
+    pub fn from_directive(directive: &Directive<'static, String>) -> Option<Self> {
+        match directive.name.as_str() {
             PSEUDO_KEY => Some(ConflictResolution::Immutable),
             STATIC_ID => Some(ConflictResolution::Immutable),
             CREATE_TIME => Some(ConflictResolution::Immutable),
@@ -65,10 +65,10 @@ mod tests {
     }
 }
 
-impl<'a> TryFrom<&[Directive<'a, &'a str>]> for ConflictResolution {
-    type Error = CodeGenError<'a>;
+impl TryFrom<&[Directive<'static, String>]> for ConflictResolution {
+    type Error = CodeGenError;
 
-    fn try_from(directives: &[Directive<'a, &'a str>]) -> Result<Self, Self::Error> {
+    fn try_from(directives: &[Directive<'static, String>]) -> Result<Self, Self::Error> {
         directives
             .iter()
             .find_map(ConflictResolution::from_directive)

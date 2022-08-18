@@ -31,7 +31,6 @@ pyjwt
 pytest
 python-hcl2
 python-nomad==1.4.1
-redis
 requests
 setuptools
 toml==0.10.2

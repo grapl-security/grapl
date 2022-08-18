@@ -49,6 +49,7 @@ impl Connectable for GeneratorServiceClient {
 }
 
 impl GeneratorServiceClient {
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn run_generator(
         &mut self,
         request: native::RunGeneratorRequest,
