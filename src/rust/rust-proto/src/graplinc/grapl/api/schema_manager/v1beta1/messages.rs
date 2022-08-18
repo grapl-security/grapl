@@ -58,9 +58,9 @@ pub struct DeployModelRequest {
 impl TryFrom<DeployModelRequestProto> for DeployModelRequest {
     type Error = SerDeError;
 
-    fn try_from(response_proto: DeployModelRequestProto) -> Result<Self, Self::Error> {
-        let schema_type = response_proto.schema_type().try_into()?;
-        let schema = response_proto.schema;
+    fn try_from(value: DeployModelRequestProto) -> Result<Self, Self::Error> {
+        let schema_type = value.schema_type().try_into()?;
+        let schema = value.schema;
         if schema.is_empty() {
             return Err(SerDeError::InvalidField {
                 field_name: "schema",
@@ -68,7 +68,7 @@ impl TryFrom<DeployModelRequestProto> for DeployModelRequest {
             });
         }
 
-        let tenant_id = response_proto
+        let tenant_id = value
             .tenant_id
             .ok_or(SerDeError::MissingField("DeployModelRequest.tenant_id"))?
             .into();
@@ -77,18 +77,18 @@ impl TryFrom<DeployModelRequestProto> for DeployModelRequest {
             tenant_id,
             schema,
             schema_type,
-            schema_version: response_proto.schema_version,
+            schema_version: value.schema_version,
         })
     }
 }
 
 impl From<DeployModelRequest> for DeployModelRequestProto {
-    fn from(response: DeployModelRequest) -> Self {
+    fn from(value: DeployModelRequest) -> Self {
         DeployModelRequestProto {
-            tenant_id: Some(response.tenant_id.into()),
-            schema_type: response.schema_type as i32,
-            schema: response.schema,
-            schema_version: response.schema_version,
+            tenant_id: Some(value.tenant_id.into()),
+            schema_type: value.schema_type as i32,
+            schema: value.schema,
+            schema_version: value.schema_version,
         }
     }
 }

@@ -215,7 +215,7 @@ RUN mkdir -p /test-fixtures
 # Copy in the Example Schemas, which we use in Schema Manager integration tests
 # hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
 # hadolint ignore=DL3022
-COPY --from=etc-ctx example_schemas /test-fixtures
+COPY --from=etc-ctx example_schemas /test-fixtures/example_schemas
 
 # Copy in the 36-line sysmon event-log, which we use in E2E tests.
 # hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
