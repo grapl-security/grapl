@@ -18,7 +18,7 @@ use crate::{
 };
 
 pub struct SchemaDbClient {
-    pub pool: sqlx::PgPool, // TODO depublicize
+    pool: sqlx::PgPool,
 }
 
 #[async_trait::async_trait]

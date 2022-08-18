@@ -4,14 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.56"
+async-trait = "0.1"
 bytes = "1.1"
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",
   "derive"
 ] }
-dashmap = "5.3.4"
+dashmap = "5.3"
 grapl-config = { path = "../grapl-config" }
 grapl-graphql-codegen = { path = "../grapl-graphql-codegen" }
 grapl-tracing = { path = "../grapl-tracing" }
@@ -24,8 +24,8 @@ sqlx = { version = "0.6", features = [
   "uuid",
   "migrate",
 ] }
-thiserror = "1.0.31"
-tokio = { version = "1.19.2", features = ["full"] }
+thiserror = "1.0"
+tokio = { version = "1.19", features = ["full"] }
 tracing = "0.1"
 uuid = { version = "1.0", default-features = false, features = ["v4"] }
 
