@@ -84,9 +84,10 @@ impl TryFrom<DeployModelRequestProto> for DeployModelRequest {
 
 impl From<DeployModelRequest> for DeployModelRequestProto {
     fn from(value: DeployModelRequest) -> Self {
+        let schema_type: SchemaTypeProto = value.schema_type.into();
         DeployModelRequestProto {
             tenant_id: Some(value.tenant_id.into()),
-            schema_type: value.schema_type as i32,
+            schema_type: schema_type as i32,
             schema: value.schema,
             schema_version: value.schema_version,
         }
