@@ -1010,3 +1010,32 @@ pub mod plugin_work_queue {
         Just(native::PushExecuteGeneratorResponse {})
     }
 }
+
+pub mod schema_manager {
+    use rust_proto::graplinc::grapl::api::schema_manager::v1beta1::messages::{self as native};
+    use super::*;
+
+    pub fn schema_types() -> BoxedStrategy<native::SchemaType> {
+        prop_oneof![
+            // For cases without data, `Just` is all you need
+            Just(native::SchemaType::GraphqlV0),
+        ]
+        .boxed()
+    }
+
+    prop_compose! {
+        pub fn deploy_model_requests()(
+            tenant_id in uuids(),
+            schema in bytes(32),
+            schema_type in schema_types(),
+            schema_version in any::<u32>(),
+        ) -> native::DeployModelRequest {
+            native::DeployModelRequest{
+                tenant_id,
+                schema,
+                schema_type,
+                schema_version
+            }
+        }
+    }
+}

@@ -485,3 +485,15 @@ mod plugin_work_queue {
         }
     }
 }
+
+mod schema_manager {
+    use strategies::schema_manager as sm_strats;
+    use super::*;
+
+    proptest!{
+        #[test]
+        fn test_deploy_model_requests(value in sm_strats::deploy_model_requests()) {
+            check_encode_decode_invariant(value)
+        }
+    }
+}
