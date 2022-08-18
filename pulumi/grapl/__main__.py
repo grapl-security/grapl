@@ -286,6 +286,7 @@ def main() -> None:
     nomad_grapl_ingress = NomadJob(
         "grapl-ingress",
         jobspec=repository_path("nomad/grapl-ingress.nomad"),
+        vars={},
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
             # This dependson ensures we've switched the web-ui protocol to http instead of tcp prior. Otherwise there's
