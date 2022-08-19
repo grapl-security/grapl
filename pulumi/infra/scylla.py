@@ -17,9 +17,9 @@ class NomadServiceScyllaDbArgs(TypedDict):
 
 @dataclass
 class ScyllaConfigValues:
-    username: pulumi.Output[str]
-    password: pulumi.Output[str]
-    addresses: list[str]  # yes, for some reason this one is not an Output
+    username: str
+    password: str
+    addresses: list[str]
 
     def __post_init__(self) -> None:
         for addr in self.addresses:
