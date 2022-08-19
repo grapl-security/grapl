@@ -18,7 +18,7 @@ class NomadServiceScyllaDbArgs(TypedDict):
 @dataclass
 class ScyllaConfigValues:
     username: str
-    password: str
+    password: pulumi.Output[str]
     addresses: list[str]
 
     def __post_init__(self) -> None:
@@ -51,11 +51,9 @@ class ScyllaInstance(pulumi.ComponentResource):
 
     def to_nomad_scylla_args(self) -> pulumi.Output[NomadServiceScyllaDbArgs]:
         return pulumi.Output.from_input(
-            NomadServiceScyllaDbArgs(
-                {
-                    "addresses": self.addresses,
-                    "username": self.username,
-                    "password": self.password,
-                }
-            )
-        )
+            {
+                "addresses": self.addresses,
+                "username": self.username,
+                "password": self.password,
+            }
+        ).apply(lambda args: NomadServiceScyllaDbArgs(args))
