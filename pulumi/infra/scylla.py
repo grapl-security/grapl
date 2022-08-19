@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 from typing_extensions import TypedDict
+from infra import config
 
 import pulumi
 
@@ -14,6 +15,8 @@ class NomadServiceScyllaDbArgs(TypedDict):
 
 @dataclass
 class ScyllaConfigValues:
+    username: str
+    password: str
     addresses: list[str]
 
     def __post_init__(self) -> None:
@@ -24,6 +27,8 @@ class ScyllaConfigValues:
     @classmethod
     def from_config(cls) -> ScyllaConfigValues:
         return cls(
+            username=pulumi.Config().require("scylla-username"),
+            password=pulumi.Config().require_secret("scylla-password"),
             addresses=pulumi.Config().require_object("scylla-addresses"),
         )
 

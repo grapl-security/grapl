@@ -29,11 +29,11 @@ config:
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-c595a79
     firecracker_rootfs.tar.gz: 20220405165304-c595a79
   grapl:confluent-environment-name: "local-grapl"
+  grapl:scylla-username: "cassandra"
+  grapl:scylla-password: "cassandra"  # In prod this is a secret!
   grapl:scylla-addresses:
     # note: this ${} is interpolated inside Nomad
-    - "54.153.52.239:9042"
-    - "54.193.175.245:9042"
-    - "13.52.29.102:9042"
+    - "${attr.unique.network.ip-address}:9042"
   # Host OS's Nomad instance
   nomad:address: http://host.docker.internal:4646
   postgresql:host: host.docker.internal
