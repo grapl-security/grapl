@@ -12,9 +12,9 @@ from infra.config import repository_path
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Credential, Kafka
-from infra.scylla import NomadServiceScyllaDbArgs
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
+from infra.scylla import NomadServiceScyllaDbArgs
 
 import pulumi
 

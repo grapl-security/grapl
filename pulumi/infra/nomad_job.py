@@ -10,8 +10,8 @@ from hcl2_type_reflection.hcl2_type_reflection.hcl2_type_reflection import (
 )
 from infra.config import STACK_NAME
 from infra.kafka import NomadServiceKafkaCredentials
-from infra.scylla import NomadServiceScyllaDbArgs
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
+from infra.scylla import NomadServiceScyllaDbArgs
 
 import pulumi
 
