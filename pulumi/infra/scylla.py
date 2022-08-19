@@ -19,7 +19,7 @@ class NomadServiceScyllaDbArgs(TypedDict):
 class ScyllaConfigValues:
     username: pulumi.Output[str]
     password: pulumi.Output[str]
-    addresses: pulumi.Output[list[str]]
+    addresses: list[str]  # yes, for some reason this one is not an Output
 
     def __post_init__(self) -> None:
         for addr in self.addresses:
@@ -47,7 +47,7 @@ class ScyllaInstance(pulumi.ComponentResource):
 
         self.username = config_values.username
         self.password = config_values.password
-        self.addresses = config_values.addresses.apply(lambda a: ",".join(a))
+        self.addresses = ",".join(config_values.addresses)
 
     def to_nomad_scylla_args(self) -> pulumi.Output[NomadServiceScyllaDbArgs]:
         return pulumi.Output.from_input(
