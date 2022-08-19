@@ -12,6 +12,9 @@ config:
     sysmon-generator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
+    db-schema-manager:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: DEBUG
   grapl:postgres-instance-type: db.t4g.small
   grapl:postgres-version: "13.4"
   grapl:confluent-environment-name: "testing"

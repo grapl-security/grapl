@@ -2,6 +2,7 @@
 members = [
   "./client-executor",
   "./consul-connect",
+  "./db-schema-manager",
   "./derive-dynamic-node",
   "./e2e-tests",
   "./endpoint-plugin",
