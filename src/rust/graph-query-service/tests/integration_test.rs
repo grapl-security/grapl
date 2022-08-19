@@ -6,19 +6,22 @@ use graph_query_service::{
     config::GraphDbConfig,
     node_query::NodeQuery,
 };
-use rust_proto::graplinc::grapl::{
-    api::graph_query_service::v1beta1::{
-        client::GraphQueryClient,
-        messages::{
+use rust_proto::{
+    client_factory::{
+        build_grpc_client,
+        services::GraphQueryClientConfig,
+    },
+    graplinc::grapl::{
+        api::graph_query_service::v1beta1::messages::{
             MatchedGraphWithUid,
             MaybeMatchWithUid,
             QueryGraphWithUidRequest,
             StringCmp,
         },
-    },
-    common::v1beta1::types::{
-        NodeType,
-        Uid,
+        common::v1beta1::types::{
+            NodeType,
+            Uid,
+        },
     },
 };
 use scylla::CachingSession;
@@ -173,14 +176,11 @@ async fn test_query_single_node() -> Result<(), DynError> {
         "tenant_id", tenant_id=?tracing::field::Empty,
     );
     tracing::info!("starting test_query_single_node");
-    let graph_query_service_endpoint = std::env::var("GRAPH_QUERY_SERVICE_ENDPOINT_ADDRESS")
-        .expect("GRAPH_QUERY_SERVICE_ENDPOINT_ADDRESS");
-    tracing::info!(
-        graph_query_service_endpoint=%graph_query_service_endpoint,
-        message="connecting to graph query service"
-    );
-    let mut graph_query_client = GraphQueryClient::connect(graph_query_service_endpoint).await?;
+
+    let client_config = GraphQueryClientConfig::parse();
+    let mut graph_query_client = build_grpc_client(client_config).await?;
     tracing::info!("connected to graph query service");
+
     let tenant_id = uuid::Uuid::new_v4();
     _span.record("tenant_id", &format!("{tenant_id}"));
 

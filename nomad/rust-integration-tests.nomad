@@ -228,15 +228,12 @@ job "rust-integration-tests" {
         PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue_db.username
         PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue_db.password
 
-<<<<<<< HEAD
         GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
-=======
-        GRAPH_QUERY_SERVICE_ENDPOINT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-query-service}"
+        GRAPH_QUERY_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-query-service}"
 
         GRAPH_DB_ADDRESSES     = var.graph_db.addresses
         GRAPH_DB_AUTH_PASSWORD = var.graph_db.password
         GRAPH_DB_AUTH_USERNAME = var.graph_db.username
->>>>>>> 5717fa85e (Get test working for graph-query-service)
       }
 
       resources {
