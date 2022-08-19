@@ -20,7 +20,7 @@ class ProdScyllaConfigValues:
     @classmethod
     def from_config(cls) -> ProdScyllaConfigValues:
         return cls(
-            addresses=pulumi.Config().require("scylla-addresses"),
+            addresses=pulumi.Config().require_object("scylla-addresses"),
         )
 
 
@@ -32,9 +32,11 @@ class ProdScyllaInstance(pulumi.ComponentResource):
     ) -> None:
         super().__init__("grapl:ProdScyllaInstance", name, None, opts)
 
+        addresses = ProdScyllaConfigValues.from_config().addresses
+
         self.username = "cassandra"
         self.password = "cassandra"
-        self.addresses = ProdScyllaConfigValues.from_config().join(",")
+        self.addresses = ",".join(addresses)
 
     def to_nomad_scylla_args(self) -> pulumi.Output[NomadServiceScyllaDbArgs]:
         return pulumi.Output.from_input(
