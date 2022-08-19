@@ -29,6 +29,15 @@ weird nomad state parse error.
 EOF
 }
 
+variable "graph_db" {
+  type = object({
+    addresses = string
+    username  = string
+    password  = string
+  })
+  description = "Vars for graph (scylla) database"
+}
+
 variable "observability_env_vars" {
   type        = string
   description = <<EOF
@@ -575,6 +584,50 @@ job "grapl-core" {
   #######################################
   ## Begin actual Grapl core services ##
   #######################################
+
+  group "db-schema-manager" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "db-schema-manager-port" {
+      }
+    }
+
+    task "db-schema-manager" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["db-schema-manager"]
+        ports = ["db-schema-manager-port"]
+      }
+
+      env {
+        DB_SCHEMA_MANAGER_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_db-schema-manager-port}"
+        RUST_BACKTRACE                   = local.rust_backtrace
+        RUST_LOG                         = var.rust_log
+        GRAPH_DB_ADDRESSES               = var.graph_db.addresses
+        GRAPH_DB_AUTH_PASSWORD           = var.graph_db.password
+        GRAPH_DB_AUTH_USERNAME           = var.graph_db.username
+      }
+    }
+
+    service {
+      name = "db-schema-manager"
+      port = "db-schema-manager-port"
+      connect {
+        sidecar_service {}
+      }
+
+      check {
+        type     = "grpc"
+        port     = "db-schema-manager-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
+    }
+  }
 
   group "generator-dispatcher" {
     count = 2

@@ -1,0 +1,30 @@
+[package]
+name = "db-schema-manager"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+grapl-tracing = { path = "../grapl-tracing" }
+
+async-trait = "0.1.56"
+clap = { version = "3.0", default_features = false, features = ["std", "env"] }
+rust-proto = { path = "../rust-proto" }
+scylla = "0.4.7"
+secrecy = "0.8.0"
+thiserror = "1.0.31"
+tokio = { version = "1.20.0", features = ["full"] }
+tracing = "0.1.36"
+
+[dev-dependencies]
+uuid = { version = "1.1.2", features = ["v4"] }
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }
+
+[features]
+integration_tests = []
+
+

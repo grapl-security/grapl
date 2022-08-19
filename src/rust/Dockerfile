@@ -150,6 +150,7 @@ organization-management/integration_tests
 pipeline-ingress/integration_tests
 plugin-registry/integration_tests
 plugin-work-queue/integration_tests
+db-schema-manager/integration_tests
 sysmon-generator/integration_tests
 )
 
@@ -309,6 +310,12 @@ FROM rust-dist AS pipeline-ingress-deploy
 
 COPY --from=build /outputs/pipeline-ingress /
 ENTRYPOINT ["/pipeline-ingress"]
+
+##### db-schema-manager
+FROM rust-dist AS db-schema-manager-deploy
+
+COPY --from=build /outputs/db-schema-manager /
+ENTRYPOINT ["/db-schema-manager"]
 
 ##### uid-allocator
 FROM rust-dist AS uid-allocator-deploy
