@@ -28,12 +28,11 @@ from infra.hashicorp_provider import (
 )
 from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
-from infra.local.scylla import LocalScyllaInstance, NomadServiceScyllaResource
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
 from infra.observability_env_vars import observability_env_vars_for_local
 from infra.postgres import Postgres
-from infra.scylla import ProdScyllaInstance
+from infra.scylla import ScyllaInstance
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -306,14 +305,7 @@ def main() -> None:
     event_source_db: NomadServicePostgresResource
     graph_schema_manager_db: NomadServicePostgresResource
 
-    graph_db: NomadServiceScyllaResource = (
-        LocalScyllaInstance(
-            name="graph-db",
-            port=9042,
-        )
-        if config.LOCAL_GRAPL
-        else ProdScyllaInstance("graph-db")
-    )
+    graph_db = ScyllaInstance("graph-db")
 
     if config.LOCAL_GRAPL:
         ###################################

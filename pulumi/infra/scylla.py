@@ -2,14 +2,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
-
-from infra.local.scylla import NomadServiceScyllaDbArgs
+from typing_extensions import TypedDict
 
 import pulumi
 
+class NomadServiceScyllaDbArgs(TypedDict):
+    # space delimited string host:port
+    addresses: str
+    username: str
+    password: str
 
 @dataclass
-class ProdScyllaConfigValues:
+class ScyllaConfigValues:
     addresses: list[str]
 
     def __post_init__(self) -> None:
@@ -18,13 +22,13 @@ class ProdScyllaConfigValues:
             pass
 
     @classmethod
-    def from_config(cls) -> ProdScyllaConfigValues:
+    def from_config(cls) -> ScyllaConfigValues:
         return cls(
             addresses=pulumi.Config().require_object("scylla-addresses"),
         )
 
 
-class ProdScyllaInstance(pulumi.ComponentResource):
+class ScyllaInstance(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
@@ -32,7 +36,7 @@ class ProdScyllaInstance(pulumi.ComponentResource):
     ) -> None:
         super().__init__("grapl:ProdScyllaInstance", name, None, opts)
 
-        addresses = ProdScyllaConfigValues.from_config().addresses
+        addresses = ScyllaConfigValues.from_config().addresses
 
         self.username = "cassandra"
         self.password = "cassandra"
