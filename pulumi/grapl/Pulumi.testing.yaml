@@ -15,3 +15,9 @@ config:
   grapl:postgres-instance-type: db.t4g.small
   grapl:postgres-version: "13.4"
   grapl:confluent-environment-name: "testing"
+  grapl:scylla-addresses:
+    # @twunderlich has whitelisted our grapl/testing agents's IPs on these 3
+    # Scylla instances can only be connected to by grapl/testing.
+    - "54.153.52.239:9042"
+    - "54.193.175.245:9042"
+    - "13.52.29.102:9042"

@@ -33,6 +33,7 @@ from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
 from infra.observability_env_vars import observability_env_vars_for_local
 from infra.postgres import Postgres
+from infra.scylla import ProdScyllaInstance
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -304,7 +305,15 @@ def main() -> None:
     uid_allocator_db: NomadServicePostgresResource
     event_source_db: NomadServicePostgresResource
     graph_schema_manager_db: NomadServicePostgresResource
-    graph_db: NomadServiceScyllaResource
+
+    graph_db: NomadServiceScyllaResource = (
+        LocalScyllaInstance(
+            name="graph-db",
+            port=9042,
+        )
+        if config.LOCAL_GRAPL
+        else ProdScyllaInstance("graph-db")
+    )
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -358,13 +367,8 @@ def main() -> None:
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 
-        graph_db = LocalScyllaInstance(
-            name="graph-db",
-            port=9042,
-        )
-
         local_grapl_core_vars: Final[NomadVars] = dict(
-            graph_db=graph_db.to_nomad_service_db_args(),
+            graph_db=graph_db.to_nomad_scylla_args(),
             event_source_db=event_source_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
@@ -457,8 +461,7 @@ def main() -> None:
         )
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
-            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
-            # instead of the var version.
+            graph_db=graph_db.to_nomad_scylla_args(),
             event_source_db=event_source_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
@@ -541,7 +544,7 @@ def main() -> None:
     pulumi.export("user-auth-table", dynamodb_tables.user_auth_table.name)
     pulumi.export("user-session-table", dynamodb_tables.user_session_table.name)
 
-    pulumi.export("graph-db", graph_db.to_nomad_service_db_args())
+    pulumi.export("graph-db", graph_db.to_nomad_scylla_args())
 
     # Not currently imported in integration tests:
     # - uid-allocator-db

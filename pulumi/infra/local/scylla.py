@@ -15,7 +15,7 @@ class NomadServiceScyllaDbArgs(TypedDict):
 
 # a Pulumi resource that provides the above.
 class NomadServiceScyllaResource(Protocol):
-    def to_nomad_service_db_args(self) -> pulumi.Output[NomadServiceScyllaDbArgs]:
+    def to_nomad_scylla_args(self) -> pulumi.Output[NomadServiceScyllaDbArgs]:
         pass
 
 
@@ -32,7 +32,7 @@ class LocalScyllaInstance(pulumi.ComponentResource):
         self.password = "cassandra"
         self.addresses = f"{config.HOST_IP_IN_NOMAD}:{port}"
 
-    def to_nomad_service_db_args(self) -> pulumi.Output[NomadServiceScyllaDbArgs]:
+    def to_nomad_scylla_args(self) -> pulumi.Output[NomadServiceScyllaDbArgs]:
         return pulumi.Output.from_input(
             NomadServiceScyllaDbArgs(
                 {
