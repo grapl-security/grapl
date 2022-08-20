@@ -16,10 +16,10 @@ config:
   grapl:postgres-instance-type: db.t4g.small
   grapl:postgres-version: "13.4"
   grapl:scylla-addresses:
-  # These 3 Scylla instances have the Nomad Agent whitelisted.
-  - 54.153.52.239:9042
-  - 54.193.175.245:9042
-  - 13.52.29.102:9042
+    # These 3 Scylla instances have the Nomad Agent whitelisted.
+    - 54.153.52.239:9042
+    - 54.193.175.245:9042
+    - 13.52.29.102:9042
   grapl:scylla-password:
     secure: AAABAK2/I2aoHMbzoFCnPcJyolF1CEJGutj/3W95Y0ri11U7U03+AXymjxPc2eo=
   grapl:scylla-username: scylla
