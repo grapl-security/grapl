@@ -1,5 +1,7 @@
-use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    sync::Arc,
+    time::Duration,
+};
 
 use async_trait::async_trait;
 use rust_proto::{
@@ -8,17 +10,22 @@ use rust_proto::{
             DeployGraphSchemasRequest,
             DeployGraphSchemasResponse,
         },
-        server::DbSchemaManagerApi,
+        server::{
+            DbSchemaManagerApi,
+            DbSchemaManagerServer,
+        },
     },
-    protocol::status::Status,
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        status::Status,
+    },
 };
 use scylla::{
     transport::errors::QueryError,
     Session,
 };
 use tokio::net::TcpListener;
-use rust_proto::graplinc::grapl::api::db_schema_manager::v1beta1::server::DbSchemaManagerServer;
-use rust_proto::protocol::healthcheck::HealthcheckStatus;
+
 use crate::config::DbSchemaManagerServiceConfig;
 
 #[derive(thiserror::Error, Debug)]
@@ -62,9 +69,7 @@ impl DbSchemaManagerApi for DbSchemaManager {
             &[]
         ).await?;
 
-        let property_table_names = [
-            ("immutable_strings", "text"),
-        ];
+        let property_table_names = [("immutable_strings", "text")];
 
         for (table_name, value_type) in property_table_names.into_iter() {
             session
@@ -116,7 +121,9 @@ impl DbSchemaManagerApi for DbSchemaManager {
 }
 
 #[tracing::instrument(skip(config), err)]
-pub async fn exec_service(config: DbSchemaManagerServiceConfig) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn exec_service(
+    config: DbSchemaManagerServiceConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
     let graph_db_config = config.graph_db_config;
 
     let addr = config.db_schema_manager_bind_address;

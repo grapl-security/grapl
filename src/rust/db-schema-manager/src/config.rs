@@ -1,15 +1,16 @@
 use std::net::SocketAddr;
+
 use secrecy::ExposeSecret;
 
 #[derive(clap::Parser, Clone, Debug)]
 pub struct GraphDbConfig {
-    #[clap(env)]
+    #[clap(long, env)]
     /// The address of the graph database
     pub graph_db_addresses: Vec<SocketAddr>,
-    #[clap(env)]
+    #[clap(long, env)]
     /// The username for the graph database
     pub graph_db_auth_username: String,
-    #[clap(env)]
+    #[clap(long, env)]
     /// The password for the graph database
     pub graph_db_auth_password: secrecy::SecretString,
 }
@@ -19,11 +20,7 @@ impl GraphDbConfig {
         let mut scylla_config = scylla::SessionConfig::new();
         scylla_config.add_known_nodes_addr(&self.graph_db_addresses[..]);
         scylla_config.auth_username = Some(self.graph_db_auth_username.to_owned());
-        scylla_config.auth_password = Some(
-            self.graph_db_auth_password
-                .expose_secret()
-                .to_owned(),
-        );
+        scylla_config.auth_password = Some(self.graph_db_auth_password.expose_secret().to_owned());
 
         Ok(scylla::Session::connect(scylla_config).await?)
     }

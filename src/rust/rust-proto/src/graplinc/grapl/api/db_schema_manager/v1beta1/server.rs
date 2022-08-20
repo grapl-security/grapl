@@ -61,8 +61,8 @@ pub trait DbSchemaManagerApi {
 
 #[tonic::async_trait]
 impl<T> DbSchemaManagerService for GrpcApi<T>
-    where
-        T: DbSchemaManagerApi + Send + Sync + 'static,
+where
+    T: DbSchemaManagerApi + Send + Sync + 'static,
 {
     #[tracing::instrument(skip(self, request), err)]
     async fn deploy_graph_schemas(
@@ -91,10 +91,10 @@ impl<T> DbSchemaManagerService for GrpcApi<T>
  * Lots of opportunities to deduplicate and simplify.
  */
 pub struct DbSchemaManagerServer<T, H, F>
-    where
-        T: DbSchemaManagerApi + Send + Sync + 'static,
-        H: Fn() -> F + Send + Sync + 'static,
-        F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
+where
+    T: DbSchemaManagerApi + Send + Sync + 'static,
+    H: Fn() -> F + Send + Sync + 'static,
+    F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
 {
     api_server: T,
     healthcheck: H,
@@ -105,10 +105,10 @@ pub struct DbSchemaManagerServer<T, H, F>
 }
 
 impl<T, H, F> DbSchemaManagerServer<T, H, F>
-    where
-        T: DbSchemaManagerApi + Send + Sync + 'static,
-        H: Fn() -> F + Send + Sync + 'static,
-        F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
+where
+    T: DbSchemaManagerApi + Send + Sync + 'static,
+    H: Fn() -> F + Send + Sync + 'static,
+    F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
     /// Construct a new gRPC server which will serve the given API
     /// implementation on the given socket address. Server is constructed in
@@ -150,7 +150,7 @@ impl<T, H, F> DbSchemaManagerServer<T, H, F>
                 self.healthcheck,
                 self.healthcheck_polling_interval,
             )
-                .await;
+            .await;
 
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()

@@ -28,11 +28,11 @@ from infra.hashicorp_provider import (
 )
 from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
-from infra.local.scylla import LocalScyllaInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
 from infra.observability_env_vars import observability_env_vars_for_local
 from infra.postgres import Postgres
+from infra.scylla import ScyllaInstance
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -351,14 +351,13 @@ def main() -> None:
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 
-        graph_db = LocalScyllaInstance(
+        graph_db = ScyllaInstance(
             name="graph-db",
-            port=9042,
         )
-        pulumi.export("graph-db", graph_db.to_nomad_service_db_args())
+        pulumi.export("graph-db", graph_db.to_nomad_scylla_args())
 
         local_grapl_core_vars: Final[NomadVars] = dict(
-            graph_db=graph_db.to_nomad_service_db_args(),
+            graph_db=graph_db.to_nomad_scylla_args(),
             event_source_db=event_source_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),

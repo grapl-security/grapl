@@ -1,10 +1,10 @@
-use tracing::info;
 use clap::Parser;
-use grapl_tracing::setup_tracing;
-use db_schema_manager::server::{
-    exec_service,
+use db_schema_manager::{
+    config::DbSchemaManagerServiceConfig,
+    server::exec_service,
 };
-use db_schema_manager::config::DbSchemaManagerServiceConfig;
+use grapl_tracing::setup_tracing;
+use tracing::info;
 
 const SERVICE_NAME: &'static str = "db-schema-manager";
 
@@ -17,5 +17,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     exec_service(config).await?;
     Ok(())
 }
-
-
