@@ -6,8 +6,8 @@ use crate::{
         NodeType,
     },
     protobufs::graplinc::grapl::api::schema_manager::v1beta1::{
-        DeployModelRequest as DeployModelRequestProto,
-        DeployModelResponse as DeployModelResponseProto,
+        DeploySchemaRequest as DeploySchemaRequestProto,
+        DeploySchemaResponse as DeploySchemaResponseProto,
         EdgeCardinality as EdgeCardinalityProto,
         GetEdgeSchemaRequest as GetEdgeSchemaRequestProto,
         GetEdgeSchemaResponse as GetEdgeSchemaResponseProto,
@@ -48,17 +48,17 @@ impl type_url::TypeUrl for SchemaType {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct DeployModelRequest {
+pub struct DeploySchemaRequest {
     pub tenant_id: uuid::Uuid,
     pub schema: Bytes,
     pub schema_type: SchemaType,
     pub schema_version: u32,
 }
 
-impl TryFrom<DeployModelRequestProto> for DeployModelRequest {
+impl TryFrom<DeploySchemaRequestProto> for DeploySchemaRequest {
     type Error = SerDeError;
 
-    fn try_from(value: DeployModelRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(value: DeploySchemaRequestProto) -> Result<Self, Self::Error> {
         let schema_type = value.schema_type().try_into()?;
         let schema = value.schema;
         if schema.is_empty() {
@@ -70,10 +70,10 @@ impl TryFrom<DeployModelRequestProto> for DeployModelRequest {
 
         let tenant_id = value
             .tenant_id
-            .ok_or(SerDeError::MissingField("DeployModelRequest.tenant_id"))?
+            .ok_or(SerDeError::MissingField("DeploySchemaRequest.tenant_id"))?
             .into();
 
-        Ok(DeployModelRequest {
+        Ok(DeploySchemaRequest {
             tenant_id,
             schema,
             schema_type,
@@ -82,10 +82,10 @@ impl TryFrom<DeployModelRequestProto> for DeployModelRequest {
     }
 }
 
-impl From<DeployModelRequest> for DeployModelRequestProto {
-    fn from(value: DeployModelRequest) -> Self {
+impl From<DeploySchemaRequest> for DeploySchemaRequestProto {
+    fn from(value: DeploySchemaRequest) -> Self {
         let schema_type: SchemaTypeProto = value.schema_type.into();
-        DeployModelRequestProto {
+        DeploySchemaRequestProto {
             tenant_id: Some(value.tenant_id.into()),
             schema_type: schema_type as i32,
             schema: value.schema,
@@ -94,41 +94,41 @@ impl From<DeployModelRequest> for DeployModelRequestProto {
     }
 }
 
-impl type_url::TypeUrl for DeployModelRequest {
+impl type_url::TypeUrl for DeploySchemaRequest {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.DeployModelRequest";
+        "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.DeploySchemaRequest";
 }
 
-impl serde_impl::ProtobufSerializable for DeployModelRequest {
-    type ProtobufMessage = DeployModelRequestProto;
+impl serde_impl::ProtobufSerializable for DeploySchemaRequest {
+    type ProtobufMessage = DeploySchemaRequestProto;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct DeployModelResponse {}
+pub struct DeploySchemaResponse {}
 
-impl TryFrom<DeployModelResponseProto> for DeployModelResponse {
+impl TryFrom<DeploySchemaResponseProto> for DeploySchemaResponse {
     type Error = SerDeError;
 
-    fn try_from(response_proto: DeployModelResponseProto) -> Result<Self, Self::Error> {
-        let DeployModelResponseProto {} = response_proto;
-        Ok(DeployModelResponse {})
+    fn try_from(response_proto: DeploySchemaResponseProto) -> Result<Self, Self::Error> {
+        let DeploySchemaResponseProto {} = response_proto;
+        Ok(DeploySchemaResponse {})
     }
 }
 
-impl From<DeployModelResponse> for DeployModelResponseProto {
-    fn from(response: DeployModelResponse) -> Self {
-        let DeployModelResponse {} = response;
-        DeployModelResponseProto {}
+impl From<DeploySchemaResponse> for DeploySchemaResponseProto {
+    fn from(response: DeploySchemaResponse) -> Self {
+        let DeploySchemaResponse {} = response;
+        DeploySchemaResponseProto {}
     }
 }
 
-impl type_url::TypeUrl for DeployModelResponse {
+impl type_url::TypeUrl for DeploySchemaResponse {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.DeployModelResponse";
+        "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.DeploySchemaResponse";
 }
 
-impl serde_impl::ProtobufSerializable for DeployModelResponse {
-    type ProtobufMessage = DeployModelResponseProto;
+impl serde_impl::ProtobufSerializable for DeploySchemaResponse {
+    type ProtobufMessage = DeploySchemaResponseProto;
 }
 
 #[derive(Debug, Clone, PartialEq)]

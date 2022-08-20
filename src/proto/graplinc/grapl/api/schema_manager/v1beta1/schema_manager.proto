@@ -5,7 +5,7 @@ package graplinc.grapl.api.schema_manager.v1beta1;
 import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/common/v1beta1/types.proto";
 
-// Which format of schema are we sending to Model Plugin Deployer?
+// Which format of schema are we sending to Graph Schema Manager?
 enum SchemaType {
   // Undefined
   SCHEMA_TYPE_UNSPECIFIED = 0;
@@ -14,7 +14,7 @@ enum SchemaType {
 }
 
 // Describes the model to deploy
-message DeployModelRequest {
+message DeploySchemaRequest {
   // The tenant to deploy the model to.
   graplinc.common.v1beta1.Uuid tenant_id = 1;
   // The actual schema, in whichever format specified by schema_type
@@ -26,8 +26,8 @@ message DeployModelRequest {
   uint32 schema_version = 4;
 }
 
-// Output for DeployModel
-message DeployModelResponse {
+// Output for DeploySchema
+message DeploySchemaResponse {
   // Intentionally empty
 }
 
@@ -67,7 +67,7 @@ message GetEdgeSchemaResponse {
 // Graph Schema.
 service SchemaManagerService {
   // Deploy a new model to Grapl.
-  rpc DeployModel(DeployModelRequest) returns (DeployModelResponse) {
+  rpc DeploySchema(DeploySchemaRequest) returns (DeploySchemaResponse) {
     option idempotency_level = IDEMPOTENT;
   }
   // GetEdgeSchema returns the schema for a given edge, including cardinality

@@ -2,8 +2,8 @@ use rust_proto::{
     graplinc::grapl::{
         api::schema_manager::v1beta1::{
             messages::{
-                DeployModelRequest,
-                DeployModelResponse,
+                DeploySchemaRequest,
+                DeploySchemaResponse,
                 GetEdgeSchemaRequest,
                 GetEdgeSchemaResponse,
                 SchemaType,
@@ -66,10 +66,10 @@ pub struct SchemaManager {
 impl SchemaManagerApi for SchemaManager {
     type Error = SchemaManagerServiceError;
 
-    async fn deploy_model(
+    async fn deploy_schema(
         &self,
-        request: DeployModelRequest,
-    ) -> Result<DeployModelResponse, Self::Error> {
+        request: DeploySchemaRequest,
+    ) -> Result<DeploySchemaResponse, Self::Error> {
         match request.schema_type {
             SchemaType::GraphqlV0 => {
                 let schema = String::from_utf8(request.schema.to_vec())
@@ -82,7 +82,7 @@ impl SchemaManagerApi for SchemaManager {
                     &self.db_client,
                 )
                 .await?;
-                Ok(DeployModelResponse {})
+                Ok(DeploySchemaResponse {})
             }
         }
     }

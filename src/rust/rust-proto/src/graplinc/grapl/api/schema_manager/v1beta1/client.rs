@@ -54,16 +54,16 @@ impl Connectable for SchemaManagerClient {
 }
 
 impl SchemaManagerClient {
-    pub async fn deploy_model(
+    pub async fn deploy_schema(
         &mut self,
-        request: native::DeployModelRequest,
-    ) -> Result<native::DeployModelResponse, SchemaManagerClientError> {
+        request: native::DeploySchemaRequest,
+    ) -> Result<native::DeploySchemaResponse, SchemaManagerClientError> {
         execute_client_rpc!(
             self,
             request,
-            deploy_model,
-            proto::DeployModelRequest,
-            native::DeployModelResponse,
+            deploy_schema,
+            proto::DeploySchemaRequest,
+            native::DeploySchemaResponse,
             ExecuteClientRpcOptions::default(),
         )
     }

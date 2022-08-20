@@ -493,7 +493,7 @@ mod schema_manager {
 
     proptest! {
         #[test]
-        fn test_deploy_model_requests(value in sm_strats::deploy_model_requests()) {
+        fn test_deploy_schema_requests(value in sm_strats::deploy_schema_requests()) {
             check_encode_decode_invariant(value)
         }
 

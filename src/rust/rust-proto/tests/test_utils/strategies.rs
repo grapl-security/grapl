@@ -1064,13 +1064,13 @@ pub mod schema_manager {
     }
 
     prop_compose! {
-        pub fn deploy_model_requests()(
+        pub fn deploy_schema_requests()(
             tenant_id in uuids(),
             schema in bytes(32),
             schema_type in schema_types(),
             schema_version in any::<u32>(),
-        ) -> native::DeployModelRequest {
-            native::DeployModelRequest{
+        ) -> native::DeploySchemaRequest {
+            native::DeploySchemaRequest{
                 tenant_id,
                 schema,
                 schema_type,

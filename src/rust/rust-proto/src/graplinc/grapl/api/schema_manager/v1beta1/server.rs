@@ -20,8 +20,8 @@ use tonic::transport::{
 use crate::{
     execute_rpc,
     graplinc::grapl::api::schema_manager::v1beta1::messages::{
-        DeployModelRequest,
-        DeployModelResponse,
+        DeploySchemaRequest,
+        DeploySchemaResponse,
         GetEdgeSchemaRequest,
         GetEdgeSchemaResponse,
     },
@@ -56,10 +56,10 @@ pub enum SchemaManagerServiceServerError {
 #[tonic::async_trait]
 pub trait SchemaManagerApi {
     type Error: Into<Status>;
-    async fn deploy_model(
+    async fn deploy_schema(
         &self,
-        request: DeployModelRequest,
-    ) -> Result<DeployModelResponse, Self::Error>;
+        request: DeploySchemaRequest,
+    ) -> Result<DeploySchemaResponse, Self::Error>;
 
     async fn get_edge_schema(
         &self,
@@ -72,11 +72,11 @@ impl<T> SchemaManagerServiceProto for GrpcApi<T>
 where
     T: SchemaManagerApi + Send + Sync + 'static,
 {
-    async fn deploy_model(
+    async fn deploy_schema(
         &self,
-        request: tonic::Request<proto::DeployModelRequest>,
-    ) -> Result<tonic::Response<proto::DeployModelResponse>, tonic::Status> {
-        execute_rpc!(self, request, deploy_model)
+        request: tonic::Request<proto::DeploySchemaRequest>,
+    ) -> Result<tonic::Response<proto::DeploySchemaResponse>, tonic::Status> {
+        execute_rpc!(self, request, deploy_schema)
     }
 
     async fn get_edge_schema(
