@@ -156,6 +156,11 @@ job "rust-integration-tests" {
               destination_name = "graph-schema-manager"
               local_bind_port  = 1009
             }
+
+            upstreams {
+              destination_name = "db-schema-manager"
+              local_bind_port  = 1007
+            }
           }
         }
       }
@@ -184,10 +189,10 @@ job "rust-integration-tests" {
         MG_ALPHAS = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-grpc-public}"
 
         # web-ui
-        GRAPL_USER_AUTH_TABLE         = var.user_auth_table
-        GRAPL_USER_SESSION_TABLE      = var.user_session_table
-        GRAPL_WEB_UI_ENDPOINT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_web-ui}"
-
+        GRAPL_USER_AUTH_TABLE                  = var.user_auth_table
+        GRAPL_USER_SESSION_TABLE               = var.user_session_table
+        GRAPL_WEB_UI_ENDPOINT_ADDRESS          = "http://${NOMAD_UPSTREAM_ADDR_web-ui}"
+        DB_SCHEMA_MANAGER_ENDPOINT_ADDRESS     = "http://${NOMAD_UPSTREAM_ADDR_db-schema-manager}"
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS   = "0.0.0.0:1004" # not used but required due to clap
         ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
         ORGANIZATION_MANAGEMENT_DB_ADDRESS     = "${var.organization_management_db.hostname}:${var.organization_management_db.port}"
