@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, cast
 
 from typing_extensions import TypedDict
 
@@ -18,7 +18,7 @@ class NomadServiceScyllaDbArgs(TypedDict):
 @dataclass
 class ScyllaConfigValues:
     username: str
-    password: pulumi.Output[str]
+    password: pulumi.Output[str]  # yep, secrets are outputs
     addresses: list[str]
 
     def __post_init__(self) -> None:
@@ -41,7 +41,7 @@ class ScyllaInstance(pulumi.ComponentResource):
         name: str,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
-        super().__init__("grapl:ProdScyllaInstance", name, None, opts)
+        super().__init__("grapl:ScyllaInstance", name, None, opts)
 
         config_values = ScyllaConfigValues.from_config()
 
@@ -56,4 +56,4 @@ class ScyllaInstance(pulumi.ComponentResource):
                 "username": self.username,
                 "password": self.password,
             }
-        ).apply(lambda args: NomadServiceScyllaDbArgs(args))
+        ).apply(lambda args: cast(NomadServiceScyllaDbArgs, args))
