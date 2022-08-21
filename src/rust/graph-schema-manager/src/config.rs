@@ -3,19 +3,19 @@ use std::net::SocketAddr;
 #[derive(clap::Parser, Debug, Clone)]
 pub struct SchemaDbConfig {
     #[clap(long, env)]
-    schema_db_address: String,
+    graph_schema_db_address: String,
     #[clap(long, env)]
-    schema_db_username: String,
+    graph_schema_db_username: String,
     #[clap(long, env)]
-    schema_db_password: grapl_config::SecretString,
+    graph_schema_db_password: grapl_config::SecretString,
 }
 
 impl grapl_config::ToPostgresUrl for SchemaDbConfig {
     fn to_postgres_url(self) -> grapl_config::PostgresUrl {
         grapl_config::PostgresUrl {
-            address: self.schema_db_address,
-            username: self.schema_db_username,
-            password: self.schema_db_password,
+            address: self.graph_schema_db_address,
+            username: self.graph_schema_db_username,
+            password: self.graph_schema_db_password,
         }
     }
 }

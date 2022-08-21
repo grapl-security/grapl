@@ -106,7 +106,7 @@ variable "organization_management_db" {
   description = "Vars for organization-management database"
 }
 
-variable "schema_manager_db" {
+variable "graph_schema_manager_db" {
   type = object({
     hostname = string
     port     = number
@@ -1382,9 +1382,9 @@ job "grapl-core" {
         SCHEMA_MANAGER_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_graph-schema-manager-port}"
         SCHEMA_MANAGER_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
-        SCHEMA_DB_ADDRESS  = "${var.schema_manager_db.hostname}:${var.schema_manager_db.port}"
-        SCHEMA_DB_PASSWORD = var.schema_manager_db.password
-        SCHEMA_DB_USERNAME = var.schema_manager_db.username
+        GRAPH_SCHEMA_DB_ADDRESS  = "${var.graph_schema_manager_db.hostname}:${var.graph_schema_manager_db.port}"
+        GRAPH_SCHEMA_DB_PASSWORD = var.graph_schema_manager_db.password
+        GRAPH_SCHEMA_DB_USERNAME = var.graph_schema_manager_db.username
       }
     }
 
