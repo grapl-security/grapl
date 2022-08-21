@@ -1379,8 +1379,8 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        SCHEMA_MANAGER_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_graph-schema-manager-port}"
-        SCHEMA_MANAGER_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
+        GRAPH_SCHEMA_MANAGER_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_graph-schema-manager-port}"
+        GRAPH_SCHEMA_MANAGER_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
         GRAPH_SCHEMA_DB_ADDRESS  = "${var.graph_schema_manager_db.hostname}:${var.graph_schema_manager_db.port}"
         GRAPH_SCHEMA_DB_PASSWORD = var.graph_schema_manager_db.password
