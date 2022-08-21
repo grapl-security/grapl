@@ -151,6 +151,11 @@ job "rust-integration-tests" {
               destination_name = "web-ui"
               local_bind_port  = 1006
             }
+
+            upstreams {
+              destination_name = "graph-schema-manager"
+              local_bind_port  = 1009
+            }
           }
         }
       }
@@ -207,6 +212,8 @@ job "rust-integration-tests" {
         PLUGIN_WORK_QUEUE_DB_ADDRESS  = "${var.plugin_work_queue_db.hostname}:${var.plugin_work_queue_db.port}"
         PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue_db.username
         PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue_db.password
+
+        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
       }
 
       resources {
