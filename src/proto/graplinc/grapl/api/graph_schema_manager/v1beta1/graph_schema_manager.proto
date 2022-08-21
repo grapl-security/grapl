@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package graplinc.grapl.api.schema_manager.v1beta1;
+package graplinc.grapl.api.graph_schema_manager.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/common/v1beta1/types.proto";
@@ -63,9 +63,9 @@ message GetEdgeSchemaResponse {
   EdgeCardinality reverse_cardinality = 3;
 }
 
-// The SchemaManagerService manages the deployment and querying of a tenant's
+// The GraphSchemaManagerService manages the deployment and querying of a tenant's
 // Graph Schema.
-service SchemaManagerService {
+service GraphSchemaManagerService {
   // Deploy a new model to Grapl.
   rpc DeploySchema(DeploySchemaRequest) returns (DeploySchemaResponse) {
     option idempotency_level = IDEMPOTENT;

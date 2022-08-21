@@ -153,7 +153,7 @@ job "rust-integration-tests" {
             }
 
             upstreams {
-              destination_name = "schema-manager"
+              destination_name = "graph-schema-manager"
               local_bind_port  = 1009
             }
           }
@@ -213,7 +213,7 @@ job "rust-integration-tests" {
         PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue_db.username
         PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue_db.password
 
-        SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_schema-manager}"
+        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
       }
 
       resources {

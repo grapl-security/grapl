@@ -151,7 +151,7 @@ pipeline-ingress/integration_tests
 plugin-registry/integration_tests
 plugin-work-queue/integration_tests
 sysmon-generator/integration_tests
-schema-manager/integration_tests
+graph-schema-manager/integration_tests
 )
 
 # cargo --features expects a comma-separated feature1,feature2,feature3
@@ -340,8 +340,8 @@ FROM rust-dist as kafka-retry-deploy
 COPY --from=build /outputs/kafka-retry /
 ENTRYPOINT ["/kafka-retry"]
 
-##### schema-manager
-FROM rust-dist AS schema-manager-deploy
+##### graph-schema-manager
+FROM rust-dist AS graph-schema-manager-deploy
 
-COPY --from=build /outputs/schema-manager /
-ENTRYPOINT ["/schema-manager"]
+COPY --from=build /outputs/graph-schema-manager /
+ENTRYPOINT ["/graph-schema-manager"]

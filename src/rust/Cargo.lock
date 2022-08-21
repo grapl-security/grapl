@@ -1884,6 +1884,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "graph-schema-manager"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "clap 3.2.13",
+ "dashmap",
+ "grapl-config",
+ "grapl-graphql-codegen",
+ "grapl-tracing",
+ "rust-proto",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "graphql-parser"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4201,25 +4220,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "977a7519bff143a44f842fd07e80ad1329295bd71686457f18e496736f4bf9bf"
 dependencies = [
  "parking_lot 0.12.1",
-]
-
-[[package]]
-name = "schema-manager"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bytes",
- "clap 3.2.13",
- "dashmap",
- "grapl-config",
- "grapl-graphql-codegen",
- "grapl-tracing",
- "rust-proto",
- "sqlx",
- "thiserror",
- "tokio",
- "tracing",
- "uuid",
 ]
 
 [[package]]

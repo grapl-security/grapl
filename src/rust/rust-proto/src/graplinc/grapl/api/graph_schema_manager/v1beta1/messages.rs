@@ -5,7 +5,7 @@ use crate::{
         EdgeName,
         NodeType,
     },
-    protobufs::graplinc::grapl::api::schema_manager::v1beta1::{
+    protobufs::graplinc::grapl::api::graph_schema_manager::v1beta1::{
         DeploySchemaRequest as DeploySchemaRequestProto,
         DeploySchemaResponse as DeploySchemaResponseProto,
         EdgeCardinality as EdgeCardinalityProto,
@@ -44,7 +44,7 @@ impl From<SchemaType> for SchemaTypeProto {
 
 impl type_url::TypeUrl for SchemaType {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.SchemaType";
+        "graplsecurity.com/graplinc.grapl.api.graph_schema_manager.v1beta1.SchemaType";
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -96,7 +96,7 @@ impl From<DeploySchemaRequest> for DeploySchemaRequestProto {
 
 impl type_url::TypeUrl for DeploySchemaRequest {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.DeploySchemaRequest";
+        "graplsecurity.com/graplinc.grapl.api.graph_schema_manager.v1beta1.DeploySchemaRequest";
 }
 
 impl serde_impl::ProtobufSerializable for DeploySchemaRequest {
@@ -124,7 +124,7 @@ impl From<DeploySchemaResponse> for DeploySchemaResponseProto {
 
 impl type_url::TypeUrl for DeploySchemaResponse {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.DeploySchemaResponse";
+        "graplsecurity.com/graplinc.grapl.api.graph_schema_manager.v1beta1.DeploySchemaResponse";
 }
 
 impl serde_impl::ProtobufSerializable for DeploySchemaResponse {
@@ -177,7 +177,7 @@ impl From<GetEdgeSchemaRequest> for GetEdgeSchemaRequestProto {
 
 impl type_url::TypeUrl for GetEdgeSchemaRequest {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.GetEdgeSchemaRequest";
+        "graplsecurity.com/graplinc.grapl.api.graph_schema_manager.v1beta1.GetEdgeSchemaRequest";
 }
 
 impl serde_impl::ProtobufSerializable for GetEdgeSchemaRequest {
@@ -227,7 +227,7 @@ impl From<GetEdgeSchemaResponse> for GetEdgeSchemaResponseProto {
 
 impl type_url::TypeUrl for GetEdgeSchemaResponse {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.GetEdgeSchemaResponse";
+        "graplsecurity.com/graplinc.grapl.api.graph_schema_manager.v1beta1.GetEdgeSchemaResponse";
 }
 
 impl serde_impl::ProtobufSerializable for GetEdgeSchemaResponse {
@@ -263,5 +263,5 @@ impl From<EdgeCardinality> for EdgeCardinalityProto {
 
 impl type_url::TypeUrl for EdgeCardinality {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.schema_manager.v1beta1.EdgeCardinality";
+        "graplsecurity.com/graplinc.grapl.api.graph_schema_manager.v1beta1.EdgeCardinality";
 }

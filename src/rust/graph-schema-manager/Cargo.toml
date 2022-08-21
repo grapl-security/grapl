@@ -1,5 +1,5 @@
 [package]
-name = "schema-manager"
+name = "graph-schema-manager"
 version = "0.1.0"
 edition = "2021"
 

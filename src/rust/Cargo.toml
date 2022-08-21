@@ -27,7 +27,7 @@ members = [
   "./plugin-sdk/generator-sdk/",
   "./plugin-work-queue",
   "./rust-proto",
-  "./schema-manager",
+  "./graph-schema-manager",
   "./sysmon-parser",
   "./uid-allocator",
 ]

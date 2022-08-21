@@ -1027,8 +1027,10 @@ pub mod plugin_work_queue {
     }
 }
 
-pub mod schema_manager {
-    use rust_proto::graplinc::grapl::api::schema_manager::v1beta1::messages::{self as native,};
+pub mod graph_schema_manager {
+    use rust_proto::graplinc::grapl::api::graph_schema_manager::v1beta1::messages::{
+        self as native,
+    };
 
     use super::*;
 

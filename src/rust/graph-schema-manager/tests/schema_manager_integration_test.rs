@@ -5,10 +5,10 @@ use clap::Parser;
 use rust_proto::{
     client_factory::{
         build_grpc_client,
-        services::SchemaManagerClientConfig,
+        services::GraphSchemaManagerClientConfig,
     },
     graplinc::grapl::{
-        api::schema_manager::v1beta1::messages as sm_api,
+        api::graph_schema_manager::v1beta1::messages as sm_api,
         common::v1beta1::types as common_api,
     },
 };
@@ -21,7 +21,7 @@ pub fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
 
 #[tokio::test]
 async fn test_deploy_schema() -> Result<(), Box<dyn std::error::Error>> {
-    let client_config = SchemaManagerClientConfig::parse();
+    let client_config = GraphSchemaManagerClientConfig::parse();
     let mut client = build_grpc_client(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();

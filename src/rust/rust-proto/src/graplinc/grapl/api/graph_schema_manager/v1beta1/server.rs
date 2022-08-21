@@ -19,17 +19,17 @@ use tonic::transport::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::schema_manager::v1beta1::messages::{
+    graplinc::grapl::api::graph_schema_manager::v1beta1::messages::{
         DeploySchemaRequest,
         DeploySchemaResponse,
         GetEdgeSchemaRequest,
         GetEdgeSchemaResponse,
     },
-    protobufs::graplinc::grapl::api::schema_manager::{
+    protobufs::graplinc::grapl::api::graph_schema_manager::{
         v1beta1 as proto,
-        v1beta1::schema_manager_service_server::{
-            SchemaManagerService as SchemaManagerServiceProto,
-            SchemaManagerServiceServer as SchemaManagerServiceServerProto,
+        v1beta1::graph_schema_manager_service_server::{
+            GraphSchemaManagerService as GraphSchemaManagerServiceProto,
+            GraphSchemaManagerServiceServer as GraphSchemaManagerServiceServerProto,
         },
     },
     protocol::{
@@ -46,7 +46,7 @@ use crate::{
 };
 
 #[derive(thiserror::Error, Debug)]
-pub enum SchemaManagerServiceServerError {
+pub enum GraphSchemaManagerServiceServerError {
     #[error("grpc transport error: {0}")]
     GrpcTransportError(#[from] tonic::transport::Error),
     #[error("Bind error: {0}")]
@@ -54,7 +54,7 @@ pub enum SchemaManagerServiceServerError {
 }
 
 #[tonic::async_trait]
-pub trait SchemaManagerApi {
+pub trait GraphSchemaManagerApi {
     type Error: Into<Status>;
     async fn deploy_schema(
         &self,
@@ -68,9 +68,9 @@ pub trait SchemaManagerApi {
 }
 
 #[tonic::async_trait]
-impl<T> SchemaManagerServiceProto for GrpcApi<T>
+impl<T> GraphSchemaManagerServiceProto for GrpcApi<T>
 where
-    T: SchemaManagerApi + Send + Sync + 'static,
+    T: GraphSchemaManagerApi + Send + Sync + 'static,
 {
     async fn deploy_schema(
         &self,
@@ -92,9 +92,9 @@ where
  * This is almost entirely cargo-culted from previous Server impls.
  * Lots of opportunities to deduplicate and simplify.
  */
-pub struct SchemaManagerServer<T, H, F>
+pub struct GraphSchemaManagerServer<T, H, F>
 where
-    T: SchemaManagerApi + Send + Sync + 'static,
+    T: GraphSchemaManagerApi + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
 {
@@ -107,9 +107,9 @@ where
     f_: PhantomData<F>,
 }
 
-impl<T, H, F> SchemaManagerServer<T, H, F>
+impl<T, H, F> GraphSchemaManagerServer<T, H, F>
 where
-    T: SchemaManagerApi + Send + Sync + 'static,
+    T: GraphSchemaManagerApi + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
@@ -132,7 +132,7 @@ where
                 healthcheck_polling_interval,
                 tcp_listener,
                 shutdown_rx,
-                service_name: SchemaManagerServiceServerProto::<GrpcApi<T>>::NAME,
+                service_name: GraphSchemaManagerServiceServerProto::<GrpcApi<T>>::NAME,
                 f_: PhantomData,
             },
             shutdown_tx,
@@ -150,7 +150,7 @@ where
     /// address. Returns a ServeError if the gRPC server cannot run.
     pub async fn serve(self) -> Result<(), ServeError> {
         let (healthcheck_handle, health_service) =
-            init_health_service::<SchemaManagerServiceServerProto<GrpcApi<T>>, _, _>(
+            init_health_service::<GraphSchemaManagerServiceServerProto<GrpcApi<T>>, _, _>(
                 self.healthcheck,
                 self.healthcheck_polling_interval,
             )
@@ -169,7 +169,7 @@ where
 
         Ok(server_builder
             .add_service(health_service)
-            .add_service(SchemaManagerServiceServerProto::new(GrpcApi::new(
+            .add_service(GraphSchemaManagerServiceServerProto::new(GrpcApi::new(
                 self.api_server,
             )))
             .serve_with_incoming_shutdown(

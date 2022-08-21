@@ -113,7 +113,7 @@ variable "schema_manager_db" {
     username = string
     password = string
   })
-  description = "Vars for schema-manager database"
+  description = "Vars for graph-schema-manager database"
 }
 
 variable "organization_management_healthcheck_polling_interval_ms" {
@@ -1343,7 +1343,7 @@ job "grapl-core" {
     }
   }
 
-  group "schema-manager" {
+  group "graph-schema-manager" {
     count = 2
 
     network {
@@ -1351,16 +1351,16 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
-      port "schema-manager-port" {
+      port "graph-schema-manager-port" {
       }
     }
 
-    task "schema-manager" {
+    task "graph-schema-manager" {
       driver = "docker"
 
       config {
-        image = var.container_images["schema-manager"]
-        ports = ["schema-manager-port"]
+        image = var.container_images["graph-schema-manager"]
+        ports = ["graph-schema-manager-port"]
       }
 
       template {
@@ -1379,7 +1379,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        SCHEMA_MANAGER_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_schema-manager-port}"
+        SCHEMA_MANAGER_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_graph-schema-manager-port}"
         SCHEMA_MANAGER_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
         SCHEMA_DB_ADDRESS  = "${var.schema_manager_db.hostname}:${var.schema_manager_db.port}"
@@ -1389,8 +1389,8 @@ job "grapl-core" {
     }
 
     service {
-      name = "schema-manager"
-      port = "schema-manager-port"
+      name = "graph-schema-manager"
+      port = "graph-schema-manager-port"
       connect {
         sidecar_service {
         }
@@ -1398,7 +1398,7 @@ job "grapl-core" {
 
       check {
         type     = "grpc"
-        port     = "schema-manager-port"
+        port     = "graph-schema-manager-port"
         interval = "10s"
         timeout  = "3s"
       }

@@ -174,7 +174,7 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
-    "schema-manager",
+    "graph-schema-manager",
     "uid-allocator",
   ]
 }
@@ -395,11 +395,11 @@ target "plugin-work-queue" {
   ]
 }
 
-target "schema-manager" {
+target "graph-schema-manager" {
   inherits = ["_rust-base"]
-  target   = "schema-manager-deploy"
+  target   = "graph-schema-manager-deploy"
   tags = [
-    upstream_aware_tag("schema-manager")
+    upstream_aware_tag("graph-schema-manager")
   ]
 }
 

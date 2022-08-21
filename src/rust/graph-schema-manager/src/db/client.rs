@@ -57,7 +57,7 @@ impl SchemaDbClient {
                 reverse_edge_name,
                 forward_edge_cardinality as "forward_edge_cardinality: StoredEdgeCardinality",
                 reverse_edge_cardinality as "reverse_edge_cardinality: StoredEdgeCardinality"
-             FROM schema_manager.edge_schemas
+             FROM graph_schema_manager.edge_schemas
              WHERE
                  tenant_id = $1 AND
                  node_type = $2 AND
@@ -83,7 +83,7 @@ impl SchemaDbClient {
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
-            INSERT INTO schema_manager.node_identity_algorithm (
+            INSERT INTO graph_schema_manager.node_identity_algorithm (
                 tenant_id,
                 identity_algorithm,
                 node_type,
@@ -111,7 +111,7 @@ impl SchemaDbClient {
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
-            INSERT INTO schema_manager.static_identity_arguments (
+            INSERT INTO graph_schema_manager.static_identity_arguments (
                 tenant_id,
                 identity_algorithm,
                 node_type,
@@ -144,7 +144,7 @@ impl SchemaDbClient {
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
-            INSERT INTO schema_manager.session_identity_arguments (
+            INSERT INTO graph_schema_manager.session_identity_arguments (
                 tenant_id,
                 identity_algorithm,
                 node_type,
@@ -184,7 +184,7 @@ impl SchemaDbClient {
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
-            INSERT INTO schema_manager.property_schemas (
+            INSERT INTO graph_schema_manager.property_schemas (
                 tenant_id,
                 node_type,
                 schema_version,
@@ -219,7 +219,7 @@ impl SchemaDbClient {
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
-            INSERT INTO schema_manager.node_schemas (
+            INSERT INTO graph_schema_manager.node_schemas (
                 tenant_id,
                 identity_algorithm,
                 node_type,
@@ -254,7 +254,7 @@ impl SchemaDbClient {
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
-            INSERT INTO schema_manager.edge_schemas (
+            INSERT INTO graph_schema_manager.edge_schemas (
                 tenant_id,
                 node_type,
                 schema_version,
@@ -278,7 +278,7 @@ impl SchemaDbClient {
 
         sqlx::query!(
             r#"
-            INSERT INTO schema_manager.edge_schemas (
+            INSERT INTO graph_schema_manager.edge_schemas (
                 tenant_id,
                 node_type,
                 schema_version,

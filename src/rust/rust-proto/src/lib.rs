@@ -122,11 +122,11 @@ pub(crate) mod protobufs {
                     }
                 }
 
-                pub(crate) mod schema_manager {
+                pub(crate) mod graph_schema_manager {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
                             env!("OUT_DIR"),
-                            "/graplinc.grapl.api.schema_manager.v1beta1.rs"
+                            "/graplinc.grapl.api.graph_schema_manager.v1beta1.rs"
                         ));
                     }
                 }
@@ -223,7 +223,7 @@ pub mod graplinc {
                 mod v1beta1_server;
             }
 
-            pub mod schema_manager {
+            pub mod graph_schema_manager {
                 pub mod v1beta1;
             }
 

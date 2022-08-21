@@ -47,7 +47,7 @@ locals {
       port = 5436
     },
     {
-      name = "schema-manager-db",
+      name = "graph-schema-manager-db",
       port = 5437
     },
   ]

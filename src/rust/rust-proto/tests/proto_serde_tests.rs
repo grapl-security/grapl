@@ -486,8 +486,8 @@ mod plugin_work_queue {
     }
 }
 
-mod schema_manager {
-    use strategies::schema_manager as sm_strats;
+mod graph_schema_manager {
+    use strategies::graph_schema_manager as sm_strats;
 
     use super::*;
 

@@ -1,4 +1,4 @@
-use rust_proto::graplinc::grapl::api::schema_manager::v1beta1::messages::EdgeCardinality;
+use rust_proto::graplinc::grapl::api::graph_schema_manager::v1beta1::messages::EdgeCardinality;
 
 #[derive(sqlx::Type, Copy, Clone, Debug)]
 #[sqlx(type_name = "edge_cardinality")]

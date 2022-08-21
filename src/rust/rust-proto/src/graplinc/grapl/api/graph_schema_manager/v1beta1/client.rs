@@ -10,10 +10,10 @@ use crate::{
     client_macros::ExecuteClientRpcOptions,
     create_proto_client,
     execute_client_rpc,
-    graplinc::grapl::api::schema_manager::v1beta1::messages as native,
-    protobufs::graplinc::grapl::api::schema_manager::{
+    graplinc::grapl::api::graph_schema_manager::v1beta1::messages as native,
+    protobufs::graplinc::grapl::api::graph_schema_manager::{
         v1beta1 as proto,
-        v1beta1::schema_manager_service_client::SchemaManagerServiceClient as SchemaManagerServiceClientProto,
+        v1beta1::graph_schema_manager_service_client::GraphSchemaManagerServiceClient as GraphSchemaManagerServiceClientProto,
     },
     protocol::{
         error::GrpcClientError,
@@ -24,25 +24,25 @@ use crate::{
     },
 };
 
-pub type SchemaManagerClientError = GrpcClientError;
+pub type GraphSchemaManagerClientError = GrpcClientError;
 
 #[derive(Clone)]
-pub struct SchemaManagerClient {
-    proto_client: SchemaManagerServiceClientProto<tonic::transport::Channel>,
+pub struct GraphSchemaManagerClient {
+    proto_client: GraphSchemaManagerServiceClientProto<tonic::transport::Channel>,
     executor: Executor,
 }
 
 #[async_trait::async_trait]
-impl Connectable for SchemaManagerClient {
+impl Connectable for GraphSchemaManagerClient {
     const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.schema_manager.v1beta1.SchemaManagerService";
+        "graplinc.grapl.api.graph_schema_manager.v1beta1.GraphSchemaManagerService";
 
     #[tracing::instrument(err)]
     async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = create_proto_client!(
             executor,
-            SchemaManagerServiceClientProto<tonic::transport::Channel>,
+            GraphSchemaManagerServiceClientProto<tonic::transport::Channel>,
             endpoint,
         );
 
@@ -53,11 +53,11 @@ impl Connectable for SchemaManagerClient {
     }
 }
 
-impl SchemaManagerClient {
+impl GraphSchemaManagerClient {
     pub async fn deploy_schema(
         &mut self,
         request: native::DeploySchemaRequest,
-    ) -> Result<native::DeploySchemaResponse, SchemaManagerClientError> {
+    ) -> Result<native::DeploySchemaResponse, GraphSchemaManagerClientError> {
         execute_client_rpc!(
             self,
             request,
@@ -71,7 +71,7 @@ impl SchemaManagerClient {
     pub async fn get_edge_schema(
         &mut self,
         request: native::GetEdgeSchemaRequest,
-    ) -> Result<native::GetEdgeSchemaResponse, SchemaManagerClientError> {
+    ) -> Result<native::GetEdgeSchemaResponse, GraphSchemaManagerClientError> {
         execute_client_rpc!(
             self,
             request,

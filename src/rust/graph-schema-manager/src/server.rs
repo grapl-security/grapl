@@ -1,6 +1,6 @@
 use rust_proto::{
     graplinc::grapl::{
-        api::schema_manager::v1beta1::{
+        api::graph_schema_manager::v1beta1::{
             messages::{
                 DeploySchemaRequest,
                 DeploySchemaResponse,
@@ -8,7 +8,7 @@ use rust_proto::{
                 GetEdgeSchemaResponse,
                 SchemaType,
             },
-            server::SchemaManagerApi,
+            server::GraphSchemaManagerApi,
         },
         common::v1beta1::types::EdgeName,
     },
@@ -25,7 +25,7 @@ use crate::{
 };
 
 #[derive(thiserror::Error, Debug)]
-pub enum SchemaManagerServiceError {
+pub enum GraphSchemaManagerServiceError {
     #[error("NonUtf8 GraphQL Schema {0}")]
     NonUtf8GraphQLSchema(std::string::FromUtf8Error),
     #[error("DeployGraphqlError {0}")]
@@ -36,35 +36,35 @@ pub enum SchemaManagerServiceError {
     InvalidReverseEdgeName(SerDeError),
 }
 
-impl From<SchemaManagerServiceError> for Status {
-    fn from(error: SchemaManagerServiceError) -> Self {
+impl From<GraphSchemaManagerServiceError> for Status {
+    fn from(error: GraphSchemaManagerServiceError) -> Self {
         match error {
-            SchemaManagerServiceError::NonUtf8GraphQLSchema(e) => {
+            GraphSchemaManagerServiceError::NonUtf8GraphQLSchema(e) => {
                 Status::invalid_argument(format!("NonUtf8GraphQLSchema - {}", e))
             }
-            SchemaManagerServiceError::DeployGraphqlError(DeployGraphqlError::SqlxError(e)) => {
-                Status::internal(format!("SqlError during deployment - {}", e))
-            }
-            SchemaManagerServiceError::DeployGraphqlError(e) => {
+            GraphSchemaManagerServiceError::DeployGraphqlError(DeployGraphqlError::SqlxError(
+                e,
+            )) => Status::internal(format!("SqlError during deployment - {}", e)),
+            GraphSchemaManagerServiceError::DeployGraphqlError(e) => {
                 Status::invalid_argument(format!("DeployGraphqlError - {}", e))
             }
-            SchemaManagerServiceError::GetEdgeSchemaSqlxError(e) => {
+            GraphSchemaManagerServiceError::GetEdgeSchemaSqlxError(e) => {
                 Status::internal(format!("SqlError during deployment - {}", e))
             }
-            SchemaManagerServiceError::InvalidReverseEdgeName(name) => {
+            GraphSchemaManagerServiceError::InvalidReverseEdgeName(name) => {
                 Status::internal(format!("InvalidReverseEdgeName - {}", name))
             }
         }
     }
 }
 
-pub struct SchemaManager {
+pub struct GraphSchemaManager {
     pub db_client: SchemaDbClient,
 }
 
 #[async_trait::async_trait]
-impl SchemaManagerApi for SchemaManager {
-    type Error = SchemaManagerServiceError;
+impl GraphSchemaManagerApi for GraphSchemaManager {
+    type Error = GraphSchemaManagerServiceError;
 
     async fn deploy_schema(
         &self,
@@ -73,7 +73,7 @@ impl SchemaManagerApi for SchemaManager {
         match request.schema_type {
             SchemaType::GraphqlV0 => {
                 let schema = String::from_utf8(request.schema.to_vec())
-                    .map_err(SchemaManagerServiceError::NonUtf8GraphQLSchema)?;
+                    .map_err(GraphSchemaManagerServiceError::NonUtf8GraphQLSchema)?;
 
                 deploy_graphql_schema(
                     request.tenant_id,
@@ -101,11 +101,11 @@ impl SchemaManagerApi for SchemaManager {
             .db_client
             .get_edge_schema(tenant_id, node_type, edge_name)
             .await
-            .map_err(SchemaManagerServiceError::GetEdgeSchemaSqlxError)?;
+            .map_err(GraphSchemaManagerServiceError::GetEdgeSchemaSqlxError)?;
 
         Ok(GetEdgeSchemaResponse {
             reverse_edge_name: EdgeName::try_from(response.reverse_edge_name)
-                .map_err(SchemaManagerServiceError::InvalidReverseEdgeName)?,
+                .map_err(GraphSchemaManagerServiceError::InvalidReverseEdgeName)?,
             cardinality: response.forward_edge_cardinality.into(),
             reverse_cardinality: response.reverse_edge_cardinality.into(),
         })
