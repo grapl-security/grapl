@@ -149,8 +149,8 @@ impl NomadClient {
         jobs_api::delete_job(
             &self.internal_config,
             jobs_api::DeleteJobParams {
-                namespace: namespace.clone(),
-                job_name: job_name.to_owned(),
+                job_name,
+                namespace,
                 ..Default::default()
             },
         )
