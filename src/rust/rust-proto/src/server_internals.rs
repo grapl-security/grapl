@@ -49,7 +49,9 @@ macro_rules! execute_rpc {
                 .await
                 .map_err(Into::into)?;
 
-            let proto_response = native_response.try_into().map_err(SerDeError::from)?;
+            let proto_response = native_response
+                .try_into()
+                .map_err(crate::SerDeError::from)?;
 
             Ok(tonic::Response::new(proto_response))
         }

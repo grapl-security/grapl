@@ -47,7 +47,6 @@ use crate::{
         status::Status,
     },
     server_internals::GrpcApi,
-    SerDeError,
 };
 
 //
