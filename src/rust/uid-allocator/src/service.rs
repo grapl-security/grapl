@@ -1,0 +1,73 @@
+use rust_proto::{
+    graplinc::grapl::api::uid_allocator::v1beta1::{
+        messages::{
+            AllocateIdsRequest,
+            AllocateIdsResponse,
+            CreateTenantKeyspaceRequest,
+            CreateTenantKeyspaceResponse,
+        },
+        server::UidAllocatorApi,
+    },
+    protocol::status::Status,
+};
+
+use crate::allocator::UidAllocator;
+
+pub struct UidAllocatorService {
+    pub allocator: UidAllocator,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum UidAllocatorServiceError {
+    #[error("Database error {0}")]
+    SqlxError(#[from] sqlx::Error),
+    #[error("Unknown Tenant: {0}")]
+    UnknownTenant(uuid::Uuid),
+}
+
+impl From<UidAllocatorServiceError> for Status {
+    fn from(err: UidAllocatorServiceError) -> Self {
+        match err {
+            UidAllocatorServiceError::SqlxError(err) => {
+                Status::internal(format!("Internal database error: {}", err))
+            }
+            UidAllocatorServiceError::UnknownTenant(tenant_id) => {
+                Status::not_found(format!("Unknown Tenant: {}", tenant_id))
+            }
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl UidAllocatorApi for UidAllocatorService {
+    type Error = UidAllocatorServiceError;
+
+    async fn allocate_ids(
+        &self,
+        request: AllocateIdsRequest,
+    ) -> Result<AllocateIdsResponse, Self::Error> {
+        let AllocateIdsRequest { count, tenant_id } = request;
+        // `0` is a sentinel for "let the server decide on the allocation size"
+        let count = if count == 0 { 1_000 } else { count };
+        let allocation = self.allocator.allocate(tenant_id, count).await?;
+        Ok(AllocateIdsResponse { allocation })
+    }
+
+    async fn create_tenant_keyspace(
+        &self,
+        request: CreateTenantKeyspaceRequest,
+    ) -> Result<CreateTenantKeyspaceResponse, Self::Error> {
+        let tenant_id = request.tenant_id;
+        sqlx::query!(
+            "INSERT INTO counters (tenant_id, counter) VALUES ($1, 1)\
+            ON CONFLICT DO NOTHING;",
+            tenant_id
+        )
+        .execute(&self.allocator.db.pool)
+        .await?;
+
+        // Create the entry
+
+        Ok(CreateTenantKeyspaceResponse {})
+    }
+}
