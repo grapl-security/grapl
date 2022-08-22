@@ -17,6 +17,19 @@
     },
     "query": "\n                INSERT INTO plugins (\n                    plugin_id,\n                    plugin_type,\n                    display_name,\n                    tenant_id,\n                    artifact_s3_key,\n                    event_source_id\n                )\n                VALUES ($1::uuid, $2, $3, $4::uuid, $5, $6::uuid)\n                ON CONFLICT DO NOTHING;\n                "
   },
+  "11ef66cca4e579a2c2ae76eb19e5e519aae80a031915eb6b4f23e03b4fc66695": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            UPDATE plugin_deployment\n                SET deployed = false\n            WHERE\n                id = $1\n                AND plugin_id = $2::uuid;\n            "
+  },
   "28c021bb5a0f5ccde835369e727619efb41b97cf81ddda62ed368af95a6dcc06": {
     "describe": {
       "columns": [
@@ -76,54 +89,6 @@
       }
     },
     "query": "\n            INSERT INTO plugin_deployment (\n                plugin_id,\n                status\n            )\n            VALUES ($1::uuid, $2);\n            "
-  },
-  "5a1b633a47279ec559e797b2d76abb94d85ebf1853cb7b7e9fa4d3b6f633d5f8": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int8"
-        },
-        {
-          "name": "plugin_id",
-          "ordinal": 1,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "deploy_time",
-          "ordinal": 2,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "status: PluginDeploymentStatus",
-          "ordinal": 3,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "fail",
-                  "success"
-                ]
-              },
-              "name": "plugin_deployment_status"
-            }
-          }
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n            SELECT\n                id,\n                plugin_id,\n                deploy_time,\n                status AS \"status: PluginDeploymentStatus\"\n            FROM plugin_deployment\n            WHERE plugin_id = $1\n            ORDER BY id desc limit 1;\n            "
   },
   "cd302b0299a3919aa7fcd34ec60877e8a3189560b9485dc9f75b3ca0368afcc8": {
     "describe": {
@@ -195,5 +160,59 @@
       }
     },
     "query": "\n            SELECT\n            plugin_id\n            FROM plugins\n            WHERE tenant_id = $1 AND plugin_type = $2;\n            "
+  },
+  "fe55d277c425ee339b8c19088de942698e64b2b76c284a32b961f7bc162348e9": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "plugin_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "deploy_time",
+          "ordinal": 2,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "status: PluginDeploymentStatus",
+          "ordinal": 3,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "fail",
+                  "success"
+                ]
+              },
+              "name": "plugin_deployment_status"
+            }
+          }
+        },
+        {
+          "name": "deployed",
+          "ordinal": 4,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            SELECT\n                id,\n                plugin_id,\n                deploy_time,\n                status AS \"status: PluginDeploymentStatus\",\n                deployed\n            FROM plugin_deployment\n            WHERE plugin_id = $1\n            ORDER BY id desc limit 1;\n            "
   }
 }

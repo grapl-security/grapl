@@ -18,6 +18,7 @@ use rust_proto::{
         PluginMetadata,
         PluginRegistryServiceClient,
         PluginType,
+        TearDownPluginRequest,
     },
     protocol::{
         error::GrpcClientError,
@@ -174,4 +175,57 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn s
         _ => panic!("Expected an error"),
     };
     Ok(())
+}
+
+#[test_log::test(tokio::test)]
+async fn test_teardown_plugin() {
+    let client_config = PluginRegistryClientConfig::parse();
+    let mut client = build_grpc_client(client_config)
+        .await
+        .expect("failed to build grpc client");
+
+    let tenant_id = uuid::Uuid::new_v4();
+    let event_source_id = uuid::Uuid::new_v4();
+
+    let create_response = {
+        let display_name = "sysmon-generator";
+        let artifact = get_sysmon_generator().expect("failed to get sysmon generator");
+        let metadata = PluginMetadata::new(
+            tenant_id,
+            display_name.to_owned(),
+            PluginType::Generator,
+            Some(event_source_id.clone()),
+        );
+
+        client
+            .create_plugin(
+                metadata,
+                futures::stream::once(async move { artifact.clone() }),
+            )
+            .timeout(std::time::Duration::from_secs(5))
+            .await
+            .expect("timeout elapsed")
+            .expect("failed to create plugin")
+    };
+
+    let plugin_id = create_response.plugin_id();
+
+    // Ensure that an un-deployed plugin is NotDeployed
+    assert_health(&mut client, plugin_id, PluginHealthStatus::NotDeployed)
+        .await
+        .expect("failed to assert health");
+
+    client
+        .deploy_plugin(DeployPluginRequest::new(plugin_id))
+        .timeout(std::time::Duration::from_secs(5))
+        .await
+        .expect("timeout elapsed")
+        .expect("failed to deploy plugin");
+
+    client
+        .tear_down_plugin(TearDownPluginRequest::new(plugin_id))
+        .timeout(std::time::Duration::from_secs(5))
+        .await
+        .expect("timeout elapsed")
+        .expect("failed to tear down plugin");
 }

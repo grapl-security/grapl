@@ -42,4 +42,5 @@ pub struct PluginDeploymentRow {
     pub plugin_id: uuid::Uuid,
     pub deploy_time: DateTime<Utc>,
     pub status: PluginDeploymentStatus,
+    pub deployed: bool,
 }

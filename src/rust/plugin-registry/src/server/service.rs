@@ -253,12 +253,24 @@ impl PluginRegistryApi for PluginRegistry {
     }
 
     #[allow(dead_code)]
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn tear_down_plugin(
         &self,
-        _request: TearDownPluginRequest,
+        request: TearDownPluginRequest,
     ) -> Result<TearDownPluginResponse, Self::Error> {
-        todo!()
+        let plugin_id = request.plugin_id();
+        let plugin_row = self.db_client.get_plugin(&plugin_id).await?;
+
+        deploy_plugin::teardown_plugin(
+            &self.nomad_client,
+            &self.db_client,
+            plugin_row,
+            &self.config,
+        )
+        .await
+        .map_err(PluginRegistryServiceError::from)?;
+
+        Ok(TearDownPluginResponse {})
     }
 
     #[tracing::instrument(skip(self, request), err)]

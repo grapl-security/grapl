@@ -112,7 +112,8 @@ impl PluginRegistryDbClient {
                 id,
                 plugin_id,
                 deploy_time,
-                status AS "status: PluginDeploymentStatus"
+                status AS "status: PluginDeploymentStatus",
+                deployed
             FROM plugin_deployment
             WHERE plugin_id = $1
             ORDER BY id desc limit 1;
@@ -195,5 +196,26 @@ impl PluginRegistryDbClient {
         .execute(&self.pool)
         .await
         .map(|_| ()) // Toss result
+    }
+
+    pub async fn deactivate_plugin_deployment(
+        &self,
+        plugin_id: &uuid::Uuid,
+    ) -> Result<(), sqlx::Error> {
+        let plugin_deployment_row = self.get_plugin_deployment(plugin_id).await?;
+        sqlx::query!(
+            r"
+            UPDATE plugin_deployment
+                SET deployed = false
+            WHERE
+                id = $1
+                AND plugin_id = $2::uuid;
+            ",
+            plugin_deployment_row.id,
+            plugin_deployment_row.plugin_id,
+        )
+        .execute(&self.pool)
+        .await
+        .map(|_| ())
     }
 }
