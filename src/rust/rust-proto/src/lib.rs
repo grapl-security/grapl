@@ -122,7 +122,6 @@ pub(crate) mod protobufs {
                     }
                 }
 
-                #[cfg(feature = "uid-allocator")]
                 pub(crate) mod uid_allocator {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -214,7 +213,6 @@ pub mod graplinc {
                 mod v1beta1_server;
             }
 
-            #[cfg(feature = "uid-allocator")]
             pub mod uid_allocator {
                 pub mod v1beta1;
             }

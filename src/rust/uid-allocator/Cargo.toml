@@ -4,6 +4,54 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+rust-proto = { path = "../rust-proto" }
+chrono = "0.4.19"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
+serde = { version = "1.0.136", features = ["derive"] }
+tokio = { version = "1.17.0", features = ["full"] }
+uuid = { version = "1.0.0", features = ["v4"] }
+maplit = "1.0.2"
+tracing-appender = "0.2"
+tracing-opentelemetry = "0.16"
+tracing = "0.1.32"
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "json"
+] }
+test-log = { version = "0.2.8", default-features = false, features = ["trace"] }
+env_logger = "0.9.0"
+async-recursion = "1.0.0"
+rand = "0.8.5"
+futures = "0.3.21"
+itertools = "0.10.3"
+prost = "0.9.0"
+prost-types = "0.9.0"
+sqlx = { version = "0.6", features = [
+  "postgres",
+  "runtime-tokio-rustls",
+  "uuid",
+  "offline"
+] }
+thiserror = "1.0.30"
+dashmap = "5.2.0"
+async-trait = "0.1.53"
+opentelemetry = { version = "0.16", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.15", features = [
+  "collector_client",
+  "rt-tokio"
+] }
+
+[dev-dependencies]
+quickcheck = "1.0.3"
+quickcheck_macros = "1.0.0"
+tracing-subscriber = "0.3.2"
 
 [features]
-integration = []
+default = ["client", "service"]
+new_integration_tests = []
+client = []
+service = []
