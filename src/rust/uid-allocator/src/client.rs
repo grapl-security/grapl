@@ -5,6 +5,7 @@ use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::{
     messages::{
         AllocateIdsRequest,
         Allocation,
+        CreateTenantKeyspaceRequest,
     },
 };
 
@@ -45,6 +46,14 @@ impl CachingUidAllocatorServiceClient {
                 Ok(next)
             }
         }
+    }
+
+    pub async fn create_tenant_keyspace(
+        &mut self,
+        request: CreateTenantKeyspaceRequest,
+    ) -> Result<(), UidAllocatorServiceClientError> {
+        self.allocator.create_tenant_keyspace(request).await?;
+        Ok(())
     }
 
     fn get_from_allocation_map(&self, tenant_id: uuid::Uuid) -> Option<u64> {

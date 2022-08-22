@@ -1,7 +1,8 @@
-#![allow(warnings)]
-
 pub mod server {
-    use std::net::SocketAddr;
+    use std::{
+        future::Future,
+        time::Duration,
+    };
 
     use futures::FutureExt;
     use tokio::{
@@ -10,12 +11,16 @@ pub mod server {
     };
     use tokio_stream::wrappers::TcpListenerStream;
     use tonic::{
-        transport::Server,
+        transport::{
+            NamedService,
+            Server,
+        },
         Request,
         Response,
     };
 
     use crate::{
+        execute_rpc,
         graplinc::grapl::api::uid_allocator::v1beta1::messages::{
             AllocateIdsRequest,
             AllocateIdsResponse,
@@ -25,7 +30,7 @@ pub mod server {
         protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
             uid_allocator_service_server::{
                 UidAllocatorService as UidAllocatorServiceProto,
-                UidAllocatorServiceServer as UidAllocatorServiceServerProto,
+                UidAllocatorServiceServer,
             },
             AllocateIdsRequest as AllocateIdsRequestProto,
             AllocateIdsResponse as AllocateIdsResponseProto,
@@ -33,12 +38,15 @@ pub mod server {
             CreateTenantKeyspaceResponse as CreateTenantKeyspaceResponseProto,
         },
         protocol::{
+            error::ServeError,
             healthcheck::{
                 server::init_health_service,
+                HealthcheckError,
                 HealthcheckStatus,
             },
             status::Status,
         },
+        server_internals::GrpcApi,
     };
 
     #[async_trait::async_trait]
@@ -53,153 +61,123 @@ pub mod server {
             request: AllocateIdsRequest,
         ) -> Result<AllocateIdsResponse, Self::Error>;
 
-        async fn create_tenant(
+        async fn create_tenant_keyspace(
             &self,
             request: CreateTenantKeyspaceRequest,
         ) -> Result<CreateTenantKeyspaceResponse, Self::Error>;
     }
 
     #[async_trait::async_trait]
-    impl<T, E> UidAllocatorServiceProto for T
+    impl<T> UidAllocatorServiceProto for GrpcApi<T>
     where
-        T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+        T: UidAllocatorApi + Send + Sync + 'static,
     {
         async fn allocate_ids(
             &self,
-            raw_request: Request<AllocateIdsRequestProto>,
+            request: Request<AllocateIdsRequestProto>,
         ) -> Result<Response<AllocateIdsResponseProto>, tonic::Status> {
-            let proto_request = raw_request.into_inner();
-            let request: AllocateIdsRequest = match proto_request.try_into() {
-                Ok(request) => request,
-                Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
-            };
-            let response = UidAllocatorApi::allocate_ids(self, request)
-                .await
-                .map_err(|e| e.into())?;
-
-            Ok(Response::new(response.into()))
+            execute_rpc!(self, request, allocate_ids)
         }
 
         async fn create_tenant_keyspace(
             &self,
-            raw_request: Request<CreateTenantKeyspaceRequestProto>,
+            request: Request<CreateTenantKeyspaceRequestProto>,
         ) -> Result<Response<CreateTenantKeyspaceResponseProto>, tonic::Status> {
-            let proto_request = raw_request.into_inner();
-            let request: CreateTenantKeyspaceRequest = match proto_request.try_into() {
-                Ok(request) => request,
-                Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
-            };
-            let response = UidAllocatorApi::create_tenant_keyspace(self, request)
-                .await
-                .map_err(|e| e.into())?;
-
-            Ok(Response::new(response.into()))
+            execute_rpc!(self, request, create_tenant_keyspace)
         }
     }
 
-    #[derive(thiserror::Error, Debug)]
-    pub enum UidAllocatorServiceServerError {
-        #[error("grpc transport error: {0}")]
-        GrpcTransportError(#[from] tonic::transport::Error),
-        #[error("Bind error: {0}")]
-        BindError(std::io::Error),
-    }
-
-    /// A server construct that drives the UidAllocatorApi implementation.
-    pub struct UidAllocatorServiceServer<T, E>
+    /**
+     * !!!!! IMPORTANT !!!!!
+     * This is almost entirely cargo-culted from PipelineIngressServer.
+     * Lots of opportunities to deduplicate and simplify.
+     */
+    pub struct UidAllocatorServer<T, H, F>
     where
-        T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+        T: UidAllocatorApi + Send + Sync + 'static,
+        H: Fn() -> F + Send + Sync + 'static,
+        F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
     {
-        server: UidAllocatorServiceServerProto<T>,
-        addr: SocketAddr,
+        api_server: T,
+        healthcheck: H,
+        healthcheck_polling_interval: Duration,
+        tcp_listener: TcpListener,
         shutdown_rx: Receiver<()>,
+        service_name: &'static str,
     }
 
-    impl<T, E> UidAllocatorServiceServer<T, E>
+    impl<T, H, F> UidAllocatorServer<T, H, F>
     where
-        T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+        T: UidAllocatorApi + Send + Sync + 'static,
+        H: Fn() -> F + Send + Sync + 'static,
+        F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
     {
-        pub fn builder(
-            service: T,
-            addr: SocketAddr,
-            shutdown_rx: Receiver<()>,
-        ) -> UidAllocatorServiceServerBuilder<T, E> {
-            UidAllocatorServiceServerBuilder::new(service, addr, shutdown_rx)
+        /// Construct a new gRPC server which will serve the given API
+        /// implementation on the given socket address. Server is constructed in
+        /// a non-running state. Call the serve() method to run the server. This
+        /// method also returns a channel you can use to trigger server
+        /// shutdown.
+        pub fn new(
+            api_server: T,
+            tcp_listener: TcpListener,
+            healthcheck: H,
+            healthcheck_polling_interval: Duration,
+        ) -> (Self, tokio::sync::oneshot::Sender<()>) {
+            let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+            (
+                Self {
+                    api_server,
+                    healthcheck,
+                    healthcheck_polling_interval,
+                    tcp_listener,
+                    shutdown_rx,
+                    service_name: UidAllocatorServiceServer::<GrpcApi<T>>::NAME,
+                },
+                shutdown_tx,
+            )
         }
 
-        pub async fn serve(self) -> Result<(), UidAllocatorServiceServerError> {
+        /// returns the service name associated with this service. You will need
+        /// this value to construct a HealthcheckClient with which to query this
+        /// service's healthcheck.
+        pub fn service_name(&self) -> &'static str {
+            self.service_name
+        }
+
+        /// Run the gRPC server and serve the API on this server's socket
+        /// address. Returns a ServeError if the gRPC server cannot run.
+        pub async fn serve(self) -> Result<(), ServeError> {
             let (healthcheck_handle, health_service) =
-                init_health_service::<UidAllocatorServiceServerProto<T>, _, _>(
-                    || async { Ok(HealthcheckStatus::Serving) },
-                    std::time::Duration::from_millis(500),
+                init_health_service::<UidAllocatorServiceServer<GrpcApi<T>>, _, _>(
+                    self.healthcheck,
+                    self.healthcheck_polling_interval,
                 )
                 .await;
 
-            let listener = TcpListener::bind(self.addr)
-                .await
-                .map_err(UidAllocatorServiceServerError::BindError)?;
-
-            Server::builder()
+            // TODO: add tower tracing, tls_config, concurrency limits
+            Ok(Server::builder()
                 .trace_fn(|request| {
-                    tracing::trace_span!(
+                    tracing::info_span!(
                         "UidAllocator",
-                        headers = ?request.headers(),
+                        request_id = ?request.headers().get("x-request-id"),
                         method = ?request.method(),
                         uri = %request.uri(),
                         extensions = ?request.extensions(),
                     )
                 })
                 .add_service(health_service)
-                .add_service(self.server)
+                .add_service(UidAllocatorServiceServer::new(GrpcApi::new(
+                    self.api_server,
+                )))
                 .serve_with_incoming_shutdown(
-                    TcpListenerStream::new(listener),
+                    TcpListenerStream::new(self.tcp_listener),
                     self.shutdown_rx.map(|_| ()),
                 )
                 .then(|result| async move {
                     healthcheck_handle.abort();
                     result
                 })
-                .await?;
-            Ok(())
-        }
-    }
-
-    pub struct UidAllocatorServiceServerBuilder<T, E>
-    where
-        T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
-    {
-        server: UidAllocatorServiceServerProto<T>,
-        addr: SocketAddr,
-        shutdown_rx: Receiver<()>,
-    }
-
-    impl<T, E> UidAllocatorServiceServerBuilder<T, E>
-    where
-        T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
-    {
-        /// Create a new builder for a UidAllocatorServiceServer,
-        /// taking the required arguments upfront.
-        pub fn new(service: T, addr: SocketAddr, shutdown_rx: Receiver<()>) -> Self {
-            Self {
-                server: UidAllocatorServiceServerProto::new(service),
-                addr,
-                shutdown_rx,
-            }
-        }
-
-        /// Consumes the builder and returns a new `UidAllocatorServiceServer`.
-        /// Note: Panics on invalid build state
-        pub fn build(self) -> UidAllocatorServiceServer<T, E> {
-            UidAllocatorServiceServer {
-                server: self.server,
-                addr: self.addr,
-                shutdown_rx: self.shutdown_rx,
-            }
+                .await?)
         }
     }
 }
@@ -266,14 +244,14 @@ pub mod client {
             Ok(response)
         }
 
-        pub async fn create_tenant(
+        pub async fn create_tenant_keyspace(
             &mut self,
             request: CreateTenantKeyspaceRequest,
         ) -> Result<CreateTenantKeyspaceResponse, UidAllocatorServiceClientError> {
             let raw_request: CreateTenantKeyspaceRequestProto = request.into();
             let raw_response = self
                 .inner
-                .create_tenant(raw_request)
+                .create_tenant_keyspace(raw_request)
                 .await
                 .map_err(|s| UidAllocatorServiceClientError::Status(s.into()))?;
             let proto_response = raw_response.into_inner();

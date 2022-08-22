@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use rust_proto::{
     graplinc::grapl::api::uid_allocator::v1beta1::{
         messages::{
@@ -6,12 +8,22 @@ use rust_proto::{
             CreateTenantKeyspaceRequest,
             CreateTenantKeyspaceResponse,
         },
-        server::UidAllocatorApi,
+        server::{
+            UidAllocatorApi,
+            UidAllocatorServer,
+        },
     },
-    protocol::status::Status,
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        status::Status,
+    },
 };
+use sqlx::PgPool;
 
-use crate::allocator::UidAllocator;
+use crate::{
+    allocator::UidAllocator,
+    config::UidAllocatorServiceConfig,
+};
 
 pub struct UidAllocatorService {
     pub allocator: UidAllocator,
@@ -59,7 +71,7 @@ impl UidAllocatorApi for UidAllocatorService {
     ) -> Result<CreateTenantKeyspaceResponse, Self::Error> {
         let tenant_id = request.tenant_id;
         sqlx::query!(
-            "INSERT INTO counters (tenant_id, counter) VALUES ($1, 1)\
+            r"INSERT INTO counters (tenant_id, counter) VALUES ($1, 1)
             ON CONFLICT DO NOTHING;",
             tenant_id
         )
@@ -70,4 +82,33 @@ impl UidAllocatorApi for UidAllocatorService {
 
         Ok(CreateTenantKeyspaceResponse {})
     }
+}
+
+pub async fn exec_service(
+    config: UidAllocatorServiceConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let addr = config.uid_allocator_bind_address;
+    let pool = PgPool::connect(&config.counter_db_config.to_postgres_url()).await?;
+
+    let allocator = UidAllocator::new(
+        pool,
+        config.preallocation_size,
+        config.maximum_allocation_size,
+        config.default_allocation_size,
+    );
+    let allocator = UidAllocatorService { allocator };
+
+    let healthcheck_polling_interval_ms = 5000; // TODO: un-hardcode
+    let (server, _shutdown_tx) = UidAllocatorServer::new(
+        allocator,
+        tokio::net::TcpListener::bind(addr.clone()).await?,
+        || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
+        Duration::from_millis(healthcheck_polling_interval_ms),
+    );
+    tracing::info!(
+        message = "starting gRPC server",
+        socket_address = %addr,
+    );
+
+    Ok(server.serve().await?)
 }

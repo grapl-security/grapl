@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+grapl-tracing = { path = "../grapl-tracing" }
 rust-proto = { path = "../rust-proto" }
 chrono = "0.4.19"
 clap = { version = "3.0", default_features = false, features = [
@@ -51,7 +52,4 @@ quickcheck_macros = "1.0.0"
 tracing-subscriber = "0.3.2"
 
 [features]
-default = ["client", "service"]
-new_integration_tests = []
-client = []
-service = []
+integration_tests = []
