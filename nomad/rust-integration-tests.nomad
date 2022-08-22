@@ -153,13 +153,13 @@ job "rust-integration-tests" {
             }
 
             upstreams {
-              destination_name = "graph-schema-manager"
-              local_bind_port  = 1009
+              destination_name = "db-schema-manager"
+              local_bind_port  = 1008
             }
 
             upstreams {
-              destination_name = "db-schema-manager"
-              local_bind_port  = 1007
+              destination_name = "graph-schema-manager"
+              local_bind_port  = 1009
             }
           }
         }
