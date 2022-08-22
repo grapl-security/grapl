@@ -174,6 +174,7 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
+    "graph-schema-manager",
     "uid-allocator",
   ]
 }
@@ -320,6 +321,14 @@ target "event-source" {
   ]
 }
 
+target "generator-execution-sidecar" {
+  inherits = ["_rust-base"]
+  target   = "generator-execution-sidecar-deploy"
+  tags = [
+    upstream_aware_tag("generator-execution-sidecar")
+  ]
+}
+
 target "kafka-retry" {
   inherits = ["_rust-base"]
   target   = "kafka-retry-deploy"
@@ -386,11 +395,11 @@ target "plugin-work-queue" {
   ]
 }
 
-target "generator-execution-sidecar" {
+target "graph-schema-manager" {
   inherits = ["_rust-base"]
-  target   = "generator-execution-sidecar-deploy"
+  target   = "graph-schema-manager-deploy"
   tags = [
-    upstream_aware_tag("generator-execution-sidecar")
+    upstream_aware_tag("graph-schema-manager")
   ]
 }
 

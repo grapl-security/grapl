@@ -84,6 +84,7 @@ BUILD @christophermaier
 /src/rust/nomad-client-gen/ @wimax-grapl
 /src/rust/rust-proto/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain.toml @inickles-grapl
+/src/rust/graph-schema-manager @colin-grapl @wimax-grapl
 /src/rust/sysmon-parser/ @inickles-grapl
 /src/rust/uid-allocator/ @colin-grapl
 /test/docker-compose* @inickles-grapl @christophermaier

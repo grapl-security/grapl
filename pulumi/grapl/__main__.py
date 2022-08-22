@@ -82,6 +82,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
         "provisioner": builder.build_with_tag("provisioner"),
+        "graph-schema-manager": builder.build_with_tag("graph-schema-manager"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),
         "uid-allocator": builder.build_with_tag("uid-allocator"),
     }
@@ -300,6 +301,7 @@ def main() -> None:
     plugin_work_queue_db: NomadServicePostgresResource
     uid_allocator_db: NomadServicePostgresResource
     event_source_db: NomadServicePostgresResource
+    graph_schema_manager_db: NomadServicePostgresResource
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -341,6 +343,10 @@ def main() -> None:
             port=5436,
         )
 
+        graph_schema_manager_db = LocalPostgresInstance(
+            name="graph-schema-manager-db", port=5437
+        )
+
         # Since we're using an IP for Jaeger, this should only be created for local grapl.
         # Once we're using dns addresses we can create it for everything
         ConsulConfig(
@@ -354,6 +360,7 @@ def main() -> None:
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+            graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
             **nomad_inputs,
         )
@@ -421,6 +428,7 @@ def main() -> None:
             plugin_work_queue_db,
             uid_allocator_db,
             event_source_db,
+            graph_schema_manager_db,
         ) = (
             Postgres(
                 name=db_resource_name,
@@ -435,6 +443,7 @@ def main() -> None:
                 "plugin-work-queue",
                 "uid-allocator-db",
                 "event-source-db",
+                "graph-schema-manager-db",
             )
         )
 
@@ -445,11 +454,12 @@ def main() -> None:
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+            graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
             **nomad_inputs,
         )
 
-        # make it easy to debug nomad var unset issues
+        # make it easy to debug nomad var issues
         if pulumi.runtime.is_dry_run():
             pulumi.export("prod-grapl-core-vars", prod_grapl_core_vars)
 
@@ -473,6 +483,15 @@ def main() -> None:
                 depends_on=[
                     nomad_grapl_core.job,
                 ],
+                provider=nomad_provider,
+            ),
+        )
+
+        NomadJob(
+            "grapl-observability",
+            jobspec=repository_path("nomad/observability.nomad"),
+            vars={},
+            opts=pulumi.ResourceOptions(
                 provider=nomad_provider,
             ),
         )

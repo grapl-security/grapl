@@ -1,0 +1,33 @@
+[package]
+name = "graph-schema-manager"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1"
+bytes = "1.1"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
+dashmap = "5.3"
+grapl-config = { path = "../grapl-config" }
+grapl-graphql-codegen = { path = "../grapl-graphql-codegen" }
+grapl-tracing = { path = "../grapl-tracing" }
+rust-proto = { path = "../rust-proto" }
+sqlx = { version = "0.6", features = [
+  "runtime-tokio-rustls",
+  "postgres",
+  "time",
+  "offline",
+  "uuid",
+  "migrate",
+] }
+thiserror = "1.0"
+tokio = { version = "1.19", features = ["full"] }
+tracing = "0.1"
+uuid = { version = "1.0", default-features = false, features = ["v4"] }
+
+[features]
+integration_tests = []

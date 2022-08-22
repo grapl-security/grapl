@@ -485,3 +485,21 @@ mod plugin_work_queue {
         }
     }
 }
+
+mod graph_schema_manager {
+    use strategies::graph_schema_manager as sm_strats;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_deploy_schema_requests(value in sm_strats::deploy_schema_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_get_edge_schema_responses(value in sm_strats::get_edge_schema_responses()) {
+            check_encode_decode_invariant(value)
+        }
+    }
+}
