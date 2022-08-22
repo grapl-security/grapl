@@ -6,13 +6,24 @@ job "otel-collector" {
     count = 1
 
     network {
-      port "metrics" {
+      port "otlp-grpc" {
+        to = 4317
+      }
+
+      port "otlp-http" {
+        to = 4318
+      }
+
+      port "otel-metrics" {
         to = 8888
       }
 
-      # Receivers
-      port "otlp" {
-        to = 4317
+      port "prometheus" {
+        to = 9090
+      }
+
+      port "zipkin" {
+        to = 9411
       }
 
       port "jaeger-grpc" {
@@ -21,10 +32,6 @@ job "otel-collector" {
 
       port "jaeger-thrift-http" {
         to = 14268
-      }
-
-      port "zipkin" {
-        to = 9411
       }
 
       # Extensions
@@ -53,7 +60,7 @@ job "otel-collector" {
 
     service {
       name = "otel-collector"
-      port = "otlp"
+      port = "otlp-grpc"
       tags = ["otlp"]
     }
 
@@ -77,7 +84,7 @@ job "otel-collector" {
 
     service {
       name = "otel-agent"
-      port = "metrics"
+      port = "otel-metrics"
       tags = ["metrics"]
     }
 
@@ -98,12 +105,12 @@ job "otel-collector" {
           "/otelcontribcol",
           "--config=/etc/otel/otel-collector-config.yaml",
           # Memory Ballast size should be max 1/3 to 1/2 of memory.
-          "--mem-ballast-size-mib=683"
+#          "--mem-ballast-size-mib=683"
         ]
 
         ports = [
-          "metrics",
-          "otlp",
+          "otel-metrics",
+          "otlp-grpc",
           "jaeger-grpc",
           "jaeger-thrift-http",
           "zipkin",
