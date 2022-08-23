@@ -9,6 +9,7 @@ import { EngagementUx } from "../components/engagementView/EngagementView";
 
 import Generators from "../components/generators/generators";
 import Analyzers from "../components/analyzers/analyzers";
+import NewAnalyzers from "../components/new_analyzers/analyzers"
 
 export default function GraplRoutes() {
     return (
@@ -18,6 +19,7 @@ export default function GraplRoutes() {
                 Engagement UX for now, will replace with Dashboard eventually
                 <Route path="/login" element={<LogIn />} />
                 <Route path="/analyzers" element={<Analyzers />} />
+                <Route path="/new_analyzers" element={<NewAnalyzers />} />
                 <Route path="/engagements" element={<EngagementUx />} />
                 <Route path="/generators" element={<Generators />} />
             </Routes>
