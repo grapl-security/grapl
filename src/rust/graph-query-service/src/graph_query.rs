@@ -33,8 +33,7 @@ pub async fn query_graph(
 ) -> Result<Option<(GraphView, Uid)>, GraphQueryError> {
     let mut query_handles = Vec::with_capacity(graph_query.node_property_queries.len());
     let x_query_short_circuiter = ShortCircuit::new();
-    // We should add a way for different queries to short circuit each other
-    for node_query in graph_query.node_property_queries.values() {
+    for node_query in graph_query.node_property_queries.into_values() {
         let property_query_executor = property_query_executor.clone();
         let node_query = node_query.clone();
         let x_query_short_circuiter = x_query_short_circuiter.clone();

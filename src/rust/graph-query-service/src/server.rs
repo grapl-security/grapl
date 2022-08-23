@@ -43,8 +43,12 @@ pub enum GraphQueryServiceError {
 }
 
 impl From<GraphQueryServiceError> for Status {
-    fn from(_e: GraphQueryServiceError) -> Self {
-        Status::unimplemented("foo")
+    fn from(gqs_err: GraphQueryServiceError) -> Self {
+        type GQSErr = GraphQueryServiceError;
+        match gqs_err {
+            GQSErr::GraphQueryError(e) => Status::unknown(e.to_string()),
+            GQSErr::NodeQueryError(e) => Status::unknown(e.to_string()),
+        }
     }
 }
 

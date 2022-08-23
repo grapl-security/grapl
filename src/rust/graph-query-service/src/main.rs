@@ -46,13 +46,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     exec_service(config, graph_query_service).await
 }
 
+#[tracing::instrument(skip(config, api_server))]
 pub async fn exec_service(
     config: GraphQueryServiceConfig,
     api_server: GraphQueryService,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    tracing::info!(message = "Binding service",);
     let addr = config.graph_query_service_bind_address;
     let healthcheck_polling_interval_ms = 5000;
+
+    tracing::info!(
+        message = "Binding service",
+        socket_address = %addr,
+    );
 
     let (server, _shutdown_tx) = GraphQueryServiceServer::new(
         api_server,
@@ -61,10 +66,7 @@ pub async fn exec_service(
         Duration::from_millis(healthcheck_polling_interval_ms),
     );
 
-    tracing::info!(
-        message = "starting gRPC server",
-        socket_address = %addr,
-    );
+    tracing::info!(message = "starting gRPC server",);
 
     Ok(server.serve().await?)
 }
