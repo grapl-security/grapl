@@ -1,14 +1,25 @@
-use std::net::SocketAddr;
+use std::time::Duration;
 
-use futures::FutureExt;
+use futures::{
+    channel::oneshot::{
+        self,
+        Sender,
+        Receiver,
+    },
+    Future,
+    FutureExt,
+};
 use tokio::{
     net::TcpListener,
-    sync::oneshot::Receiver,
 };
 use tokio_stream::wrappers::TcpListenerStream;
-use tonic::transport::Server;
+use tonic::transport::{
+    NamedService,
+    Server,
+};
 
 use crate::{
+    execute_rpc,
     graplinc::grapl::api::graph_mutation::v1beta1::messages as native,
     protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
         self as proto,
@@ -18,13 +29,16 @@ use crate::{
         },
     },
     protocol::{
+        error::ServeError,
         healthcheck::{
             server::init_health_service,
+            HealthcheckError,
             HealthcheckStatus,
         },
         status::Status,
     },
-    SerDeError, execute_rpc,
+    server_internals::GrpcApi,
+    SerDeError,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -53,10 +67,9 @@ pub trait GraphMutationApi {
 }
 
 #[tonic::async_trait]
-impl<T, E> GraphMutationServiceProto for T
+impl<T> GraphMutationServiceProto for GrpcApi<T>
 where
-    T: GraphMutationApi<Error = E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
+    T: GraphMutationApi + Send + Sync + 'static,
 {
     /// Create Node allocates a new node in the graph, returning the uid of the new node.
     async fn create_node(
@@ -80,5 +93,90 @@ where
         request: tonic::Request<proto::CreateEdgeRequest>,
     ) -> Result<tonic::Response<proto::CreateEdgeResponse>, tonic::Status> {
         execute_rpc!(self, request, create_edge)
+    }
+}
+
+/**
+ * !!!!! IMPORTANT !!!!!
+ * This is almost entirely cargo-culted from PipelineIngressServer.
+ * Lots of opportunities to deduplicate and simplify.
+ */
+pub struct GraphMutationServer<T, H, F>
+where
+    T: GraphMutationApi + Send + Sync + 'static,
+    H: Fn() -> F + Send + Sync + 'static,
+    F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
+{
+    api_server: T,
+    healthcheck: H,
+    healthcheck_polling_interval: Duration,
+    tcp_listener: TcpListener,
+    shutdown_rx: Receiver<()>,
+    service_name: &'static str,
+}
+
+impl<T, H, F> GraphMutationServer<T, H, F>
+where
+    T: GraphMutationApi + Send + Sync + 'static,
+    H: Fn() -> F + Send + Sync + 'static,
+    F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
+{
+    /// Construct a new gRPC server which will serve the given API
+    /// implementation on the given socket address. Server is constructed in
+    /// a non-running state. Call the serve() method to run the server. This
+    /// method also returns a channel you can use to trigger server
+    /// shutdown.
+    pub fn new(
+        api_server: T,
+        tcp_listener: TcpListener,
+        healthcheck: H,
+        healthcheck_polling_interval: Duration,
+    ) -> (Self, Sender<()>) {
+        let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+        (
+            Self {
+                api_server,
+                healthcheck,
+                healthcheck_polling_interval,
+                tcp_listener,
+                shutdown_rx,
+                service_name: GraphMutationServiceServerProto::<GrpcApi<T>>::NAME,
+            },
+            shutdown_tx,
+        )
+    }
+
+    /// returns the service name associated with this service. You will need
+    /// this value to construct a HealthcheckClient with which to query this
+    /// service's healthcheck.
+    pub fn service_name(&self) -> &'static str {
+        self.service_name
+    }
+
+    /// Run the gRPC server and serve the API on this server's socket
+    /// address. Returns a ServeError if the gRPC server cannot run.
+    pub async fn serve(self) -> Result<(), ServeError> {
+        let (healthcheck_handle, health_service) =
+            init_health_service::<GraphMutationServiceServerProto<GrpcApi<T>>, _, _>(
+                self.healthcheck,
+                self.healthcheck_polling_interval,
+            )
+            .await;
+
+        // TODO: add tower tracing, tls_config, concurrency limits
+        Ok(Server::builder()
+            .add_service(health_service)
+            .add_service(GraphMutationServiceServerProto::new(GrpcApi::new(
+                self.api_server,
+            )))
+            .serve_with_incoming_shutdown(
+                TcpListenerStream::new(self.tcp_listener),
+                self.shutdown_rx.map(|_| ()),
+            )
+            .then(|result| async move {
+                healthcheck_handle.abort();
+                result
+            })
+            .await?)
     }
 }
