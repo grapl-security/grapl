@@ -1,71 +1,82 @@
-use crate::{
-    graplinc::grapl::api::graph_query_service::v1beta1::messages::{
-        QueryGraphFromUidRequest,
-        QueryGraphFromUidResponse,
-        QueryGraphWithUidRequest,
-        QueryGraphWithUidResponse,
-    },
-    protobufs::graplinc::grapl::api::graph_query_service::v1beta1::{
-        graph_query_service_client::GraphQueryServiceClient,
-        QueryGraphFromUidRequest as QueryGraphFromUidRequestProto,
-        QueryGraphWithUidRequest as QueryGraphWithUidRequestProto,
-    },
-    protocol::status::Status,
-    SerDeError,
-};
+use std::time::Duration;
 
-#[derive(thiserror::Error, Debug)]
-pub enum GraphQueryClientError {
-    #[error("Failed to deserialize response {0}")]
-    SerDeError(#[from] SerDeError),
-    #[error("Status {0}")]
-    Status(#[from] Status),
-    #[error("ConnectError")]
-    ConnectError(tonic::transport::Error),
-}
+use client_executor::{
+    Executor,
+    ExecutorConfig,
+};
+use tonic::transport::Endpoint;
+
+use crate::{
+    client_macros::ExecuteClientRpcOptions,
+    create_proto_client,
+    execute_client_rpc,
+    graplinc::grapl::api::graph_query_service::v1beta1::messages as native,
+    protobufs::graplinc::grapl::api::graph_query_service::v1beta1::{
+        self as proto,
+        graph_query_service_client::GraphQueryServiceClient,
+    },
+    protocol::{
+        error::GrpcClientError,
+        service_client::{
+            ConnectError,
+            Connectable,
+        },
+    },
+};
+pub type GraphQueryClientError = GrpcClientError;
 
 #[derive(Clone)]
 pub struct GraphQueryClient {
-    inner: GraphQueryServiceClient<tonic::transport::Channel>,
+    proto_client: GraphQueryServiceClient<tonic::transport::Channel>,
+    executor: Executor,
+}
+
+#[async_trait::async_trait]
+impl Connectable for GraphQueryClient {
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.graph_query_service.v1beta1.GraphQueryService";
+
+    #[tracing::instrument(err)]
+    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
+        let proto_client = create_proto_client!(
+            executor,
+            GraphQueryServiceClient<tonic::transport::Channel>,
+            endpoint,
+        );
+
+        Ok(Self {
+            proto_client,
+            executor,
+        })
+    }
 }
 
 impl GraphQueryClient {
-    pub async fn connect<T>(endpoint: T) -> Result<Self, GraphQueryClientError>
-    where
-        T: TryInto<tonic::transport::Endpoint>,
-        T::Error: std::error::Error + Send + Sync + 'static,
-    {
-        Ok(GraphQueryClient {
-            inner: GraphQueryServiceClient::connect(endpoint)
-                .await
-                .map_err(GraphQueryClientError::ConnectError)?,
-        })
-    }
-
     pub async fn query_graph_with_uid(
         &mut self,
-        request: QueryGraphWithUidRequest,
-    ) -> Result<QueryGraphWithUidResponse, GraphQueryClientError> {
-        let request: QueryGraphWithUidRequestProto = request.into();
-        Ok(self
-            .inner
-            .query_graph_with_uid(request)
-            .await
-            .map_err(Status::from)?
-            .into_inner()
-            .try_into()?)
+        request: native::QueryGraphWithUidRequest,
+    ) -> Result<native::QueryGraphWithUidResponse, GraphQueryClientError> {
+        execute_client_rpc!(
+            self,
+            request,
+            query_graph_with_uid,
+            proto::QueryGraphWithUidRequest,
+            native::QueryGraphWithUidResponse,
+            ExecuteClientRpcOptions::default(),
+        )
     }
     pub async fn query_graph_from_uid(
         &mut self,
-        request: QueryGraphFromUidRequest,
-    ) -> Result<QueryGraphFromUidResponse, GraphQueryClientError> {
-        let request: QueryGraphFromUidRequestProto = request.into();
-        Ok(self
-            .inner
-            .query_graph_from_uid(request)
-            .await
-            .map_err(Status::from)?
-            .into_inner()
-            .try_into()?)
+        request: native::QueryGraphFromUidRequest,
+    ) -> Result<native::QueryGraphFromUidResponse, GraphQueryClientError> {
+        execute_client_rpc!(
+            self,
+            request,
+            query_graph_from_uid,
+            proto::QueryGraphFromUidRequest,
+            native::QueryGraphFromUidResponse,
+            ExecuteClientRpcOptions::default(),
+        )
     }
 }

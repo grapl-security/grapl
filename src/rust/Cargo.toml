@@ -9,6 +9,7 @@ members = [
   "./generator-dispatcher",
   "./generators/osquery-generator",
   "./generators/sysmon-generator",
+  "./graph-query-service",
   "./graph-merger",
   "./grapl-config",
   "./grapl-graphql-codegen",

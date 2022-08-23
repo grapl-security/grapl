@@ -2,6 +2,7 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:cloudsmith-repository-name: grapl/testing
+  grapl:confluent-environment-name: testing
   grapl:env_vars:
     graph-merger:
       RUST_BACKTRACE: "1"
@@ -14,4 +15,11 @@ config:
       RUST_LOG: DEBUG
   grapl:postgres-instance-type: db.t4g.small
   grapl:postgres-version: "13.4"
-  grapl:confluent-environment-name: "testing"
+  grapl:scylla-addresses:
+    # These 3 Scylla instances have the Nomad Agent whitelisted.
+    - 54.153.52.239:9042
+    - 54.193.175.245:9042
+    - 13.52.29.102:9042
+  grapl:scylla-password:
+    secure: AAABAK2/I2aoHMbzoFCnPcJyolF1CEJGutj/3W95Y0ri11U7U03+AXymjxPc2eo=
+  grapl:scylla-username: scylla

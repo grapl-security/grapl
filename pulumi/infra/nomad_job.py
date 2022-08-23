@@ -11,6 +11,7 @@ from hcl2_type_reflection.hcl2_type_reflection.hcl2_type_reflection import (
 from infra.config import STACK_NAME
 from infra.kafka import NomadServiceKafkaCredentials
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
+from infra.scylla import NomadServiceScyllaDbArgs
 
 import pulumi
 
@@ -21,6 +22,7 @@ _ValidNomadVarTypes = pulumi.Input[
         Mapping[str, pulumi.Input[_ValidNomadVarTypePrimitives]],
         # Upsettingly, TypedDicts are a Mapping[str, object]
         NomadServicePostgresDbArgs,
+        NomadServiceScyllaDbArgs,
         Union[
             pulumi.Input[NomadServiceKafkaCredentials],
             Mapping[str, pulumi.Input[NomadServiceKafkaCredentials]],
