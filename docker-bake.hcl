@@ -306,6 +306,14 @@ target "graph-merger" {
   ]
 }
 
+target "graph-mutation-service" {
+  inherits = ["_rust-base"]
+  target   = "graph-mutation-service-deploy"
+  tags = [
+    upstream_aware_tag("graph-mutation-service")
+  ]
+}
+
 target "graph-query-service" {
   inherits = ["_rust-base"]
   target   = "graph-query-service-deploy"

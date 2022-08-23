@@ -57,6 +57,15 @@ pub(crate) mod protobufs {
                     }
                 }
 
+                pub(crate) mod graph_mutation {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.graph_mutation.v1beta1.rs"
+                        ));
+                    }
+                }
+
                 pub(crate) mod graph_query_service {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
