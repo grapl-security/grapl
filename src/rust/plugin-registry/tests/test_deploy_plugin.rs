@@ -12,8 +12,10 @@ use rust_proto::{
     },
     graplinc::grapl::api::plugin_registry::v1beta1::{
         DeployPluginRequest,
+        GetPluginDeploymentRequest,
         GetPluginHealthRequest,
         GetPluginHealthResponse,
+        PluginDeploymentStatus,
         PluginHealthStatus,
         PluginMetadata,
         PluginRegistryServiceClient,
@@ -71,6 +73,15 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
         .deploy_plugin(request)
         .timeout(std::time::Duration::from_secs(5))
         .await??;
+
+    let plugin_deployment = client
+        .get_plugin_deployment(GetPluginDeploymentRequest::new(plugin_id))
+        .await?
+        .plugin_deployment();
+
+    assert_eq!(plugin_deployment.plugin_id(), plugin_id);
+    assert!(plugin_deployment.deployed());
+    assert_eq!(plugin_deployment.status(), PluginDeploymentStatus::Success);
 
     Ok(())
 }
@@ -228,4 +239,14 @@ async fn test_teardown_plugin() {
         .await
         .expect("timeout elapsed")
         .expect("failed to tear down plugin");
+
+    let plugin_deployment = client
+        .get_plugin_deployment(GetPluginDeploymentRequest::new(plugin_id))
+        .await
+        .expect("failed to get plugin deployment")
+        .plugin_deployment();
+
+    assert_eq!(plugin_deployment.plugin_id(), plugin_id);
+    assert!(!plugin_deployment.deployed());
+    assert_eq!(plugin_deployment.status(), PluginDeploymentStatus::Success);
 }

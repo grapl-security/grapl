@@ -20,10 +20,13 @@ use rust_proto::{
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginDeploymentRequest,
+        GetPluginDeploymentResponse,
         GetPluginHealthRequest,
         GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
+        PluginDeployment,
         PluginMetadata,
         PluginRegistryApi,
         PluginRegistryServer,
@@ -230,6 +233,24 @@ impl PluginRegistryApi for PluginRegistry {
     }
 
     #[tracing::instrument(skip(self, request), err)]
+    async fn get_plugin_deployment(
+        &self,
+        request: GetPluginDeploymentRequest,
+    ) -> Result<GetPluginDeploymentResponse, Self::Error> {
+        let plugin_deployment_row = self
+            .db_client
+            .get_plugin_deployment(&request.plugin_id())
+            .await?;
+
+        Ok(GetPluginDeploymentResponse::new(PluginDeployment::new(
+            plugin_deployment_row.plugin_id,
+            plugin_deployment_row.timestamp.into(),
+            plugin_deployment_row.status.into(),
+            plugin_deployment_row.deployed,
+        )))
+    }
+
+    #[tracing::instrument(skip(self, request), err)]
     async fn deploy_plugin(
         &self,
         request: DeployPluginRequest,
@@ -252,7 +273,6 @@ impl PluginRegistryApi for PluginRegistry {
         Ok(DeployPluginResponse {})
     }
 
-    #[allow(dead_code)]
     #[tracing::instrument(skip(self, request), err)]
     async fn tear_down_plugin(
         &self,
@@ -293,7 +313,6 @@ impl PluginRegistryApi for PluginRegistry {
         }
     }
 
-    #[allow(dead_code)]
     #[tracing::instrument(skip(self, request), err)]
     async fn get_analyzers_for_tenant(
         &self,

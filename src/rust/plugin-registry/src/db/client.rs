@@ -111,7 +111,7 @@ impl PluginRegistryDbClient {
             SELECT
                 id,
                 plugin_id,
-                deploy_time,
+                timestamp,
                 status AS "status: PluginDeploymentStatus",
                 deployed
             FROM plugin_deployment
