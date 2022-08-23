@@ -21,5 +21,8 @@ config:
     - 54.193.175.245:9042
     - 13.52.29.102:9042
   grapl:scylla-password:
+    # This encrypted value uses the `pulumi config set --secret` mechanism,
+    # which can only be decrypted by a key held by Pulumi.
+    # https://www.pulumi.com/docs/intro/concepts/secrets/#secrets
     secure: AAABAK2/I2aoHMbzoFCnPcJyolF1CEJGutj/3W95Y0ri11U7U03+AXymjxPc2eo=
   grapl:scylla-username: scylla
