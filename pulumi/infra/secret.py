@@ -113,32 +113,3 @@ class TestUserPassword(pulumi.ComponentResource):
         self.register_outputs({})
 
         self.secret_id = self.secret.id
-
-    def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
-        """
-        Grants permission to the given `Role` to read this secret.
-
-        The name of the resource is formed from the Pulumi name of the `Role`.
-        """
-        aws.iam.RolePolicy(
-            f"{role._name}-reads-test-user-password",
-            role=role.name,
-            policy=self.secret.arn.apply(
-                lambda secret_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": [
-                                    "secretsmanager:GetSecretValue",
-                                    "secretsmanager:DescribeSecret",
-                                ],
-                                "Resource": secret_arn,
-                            },
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )

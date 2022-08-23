@@ -4,6 +4,9 @@ pub use event_source::EventSourceClientConfig;
 mod generator;
 pub use generator::GeneratorClientConfig;
 
+mod graph_query;
+pub use graph_query::GraphQueryClientConfig;
+
 mod organization_management;
 pub use organization_management::OrganizationManagementClientConfig;
 
@@ -18,3 +21,6 @@ pub use plugin_registry::PluginRegistryClientConfig;
 
 mod plugin_work_queue;
 pub use plugin_work_queue::PluginWorkQueueClientConfig;
+
+mod graph_schema_manager;
+pub use graph_schema_manager::GraphSchemaManagerClientConfig;

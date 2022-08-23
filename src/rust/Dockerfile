@@ -141,9 +141,11 @@ FROM base AS build-test-integration
 # hadolint ignore=SC3054
 RUN <<EOF
 INTEGRATION_TEST_FEATURES=(
-generator-dispatcher/integration_tests
 e2e-tests/integration_tests
+generator-dispatcher/integration_tests
 graph-merger/integration_tests
+graph-query-service/integration_tests
+graph-schema-manager/integration_tests
 grapl-web-ui/integration_tests
 node-identifier/integration_tests
 organization-management/integration_tests
@@ -209,17 +211,24 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
 # Put the Nomad binary on PATH
 # so that it's available to integration test consumers of NomadCli
 COPY --from=build /nomad/nomad /bin
-
-# Grab the example generator so we can deploy it in test_deploy_plugin
 RUN mkdir -p /test-fixtures
-COPY --from=build /outputs/example-generator /test-fixtures
-COPY --from=build /outputs/sysmon-generator /test-fixtures
-# Named context support https://github.com/hadolint/hadolint/issues/830
+
+# Copy in the Example Schemas, which we use in Schema Manager integration tests
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=etc-ctx example_schemas /test-fixtures/example_schemas
+
+# Copy in the 36-line sysmon event-log, which we use in E2E tests.
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
 # hadolint ignore=DL3022
 COPY --from=etc-ctx sample_data/36_eventlog.xml /test-fixtures
 
+# Copy in the example generator so we can deploy it in test_deploy_plugin
+COPY --from=build /outputs/example-generator /test-fixtures
+COPY --from=build /outputs/sysmon-generator /test-fixtures
+
 COPY --from=build-test-integration /grapl/tests /tests
-# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
 # hadolint ignore=DL3022
 COPY --from=test-ctx ./run/rust-integration-tests.sh /
 ENTRYPOINT [ "/rust-integration-tests.sh" ]
@@ -256,6 +265,12 @@ FROM rust-dist AS graph-merger-deploy
 
 COPY --from=build /outputs/graph-merger /
 ENTRYPOINT ["/graph-merger"]
+
+##### graph-query-service
+FROM rust-dist AS graph-query-service-deploy
+
+COPY --from=build /outputs/graph-query-service /
+ENTRYPOINT ["/graph-query-service"]
 
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy
@@ -331,3 +346,9 @@ ENTRYPOINT ["/event-source"]
 FROM rust-dist as kafka-retry-deploy
 COPY --from=build /outputs/kafka-retry /
 ENTRYPOINT ["/kafka-retry"]
+
+##### graph-schema-manager
+FROM rust-dist AS graph-schema-manager-deploy
+
+COPY --from=build /outputs/graph-schema-manager /
+ENTRYPOINT ["/graph-schema-manager"]

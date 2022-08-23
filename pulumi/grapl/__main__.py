@@ -11,6 +11,7 @@ from infra.api_gateway import ApiGateway
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
+from infra.config import repository_path
 from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
 from infra.consul_service_default import ConsulServiceDefault
@@ -30,8 +31,8 @@ from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
 from infra.observability_env_vars import observability_env_vars_for_local
-from infra.path import path_from_root
 from infra.postgres import Postgres
+from infra.scylla import ScyllaInstance
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -66,13 +67,13 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
     return {
         "analyzer-execution-sidecar": DockerImageId("TODO implement analzyer executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
-        "engagement-creator": builder.build_with_tag("engagement-creator"),
         "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
         "generator-execution-sidecar": builder.build_with_tag(
             "generator-execution-sidecar"
         ),
         "graph-merger": builder.build_with_tag("graph-merger"),
+        "graph-query-service": builder.build_with_tag("graph-query-service"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
         "kafka-retry": builder.build_with_tag("kafka-retry"),
@@ -83,6 +84,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
         "provisioner": builder.build_with_tag("provisioner"),
+        "graph-schema-manager": builder.build_with_tag("graph-schema-manager"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),
         "uid-allocator": builder.build_with_tag("uid-allocator"),
     }
@@ -220,7 +222,6 @@ def main() -> None:
         aws_env_vars_for_local=aws_env_vars_for_local,
         aws_region=aws.get_region().name,
         container_images=_container_images(artifacts),
-        dns_server=config.CONSUL_DNS_IP,
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
         kafka_credentials=kafka_service_credentials,
         kafka_consumer_groups=kafka_consumer_groups,
@@ -266,7 +267,7 @@ def main() -> None:
         "consul-intentions",
         # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
         # when they update nomad configs
-        intention_directory=path_from_root("nomad/consul-intentions").resolve(),
+        intention_directory=repository_path("nomad/consul-intentions"),
         opts=pulumi.ResourceOptions(provider=consul_provider),
     )
 
@@ -287,8 +288,8 @@ def main() -> None:
 
     nomad_grapl_ingress = NomadJob(
         "grapl-ingress",
-        jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
-        vars={"dns_server": config.CONSUL_DNS_IP},
+        jobspec=repository_path("nomad/grapl-ingress.nomad"),
+        vars={},
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
             # This dependson ensures we've switched the web-ui protocol to http instead of tcp prior. Otherwise there's
@@ -302,6 +303,9 @@ def main() -> None:
     plugin_work_queue_db: NomadServicePostgresResource
     uid_allocator_db: NomadServicePostgresResource
     event_source_db: NomadServicePostgresResource
+    graph_schema_manager_db: NomadServicePostgresResource
+
+    graph_db = ScyllaInstance("graph-db")
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -343,6 +347,10 @@ def main() -> None:
             port=5436,
         )
 
+        graph_schema_manager_db = LocalPostgresInstance(
+            name="graph-schema-manager-db", port=5437
+        )
+
         # Since we're using an IP for Jaeger, this should only be created for local grapl.
         # Once we're using dns addresses we can create it for everything
         ConsulConfig(
@@ -352,17 +360,19 @@ def main() -> None:
         )
 
         local_grapl_core_vars: Final[NomadVars] = dict(
+            graph_db=graph_db.to_nomad_scylla_args(),
             event_source_db=event_source_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+            graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
             **nomad_inputs,
         )
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
-            jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-core.nomad"),
             vars=local_grapl_core_vars,
             opts=ResourceOptions(
                 custom_timeouts=CustomTimeouts(
@@ -373,7 +383,7 @@ def main() -> None:
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
-            jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-provision.nomad"),
             vars=provision_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
         )
@@ -423,6 +433,7 @@ def main() -> None:
             plugin_work_queue_db,
             uid_allocator_db,
             event_source_db,
+            graph_schema_manager_db,
         ) = (
             Postgres(
                 name=db_resource_name,
@@ -437,27 +448,28 @@ def main() -> None:
                 "plugin-work-queue",
                 "uid-allocator-db",
                 "event-source-db",
+                "graph-schema-manager-db",
             )
         )
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
-            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
-            # instead of the var version.
+            graph_db=graph_db.to_nomad_scylla_args(),
             event_source_db=event_source_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+            graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
             **nomad_inputs,
         )
 
-        # make it easy to debug nomad var unset issues
+        # make it easy to debug nomad var issues
         if pulumi.runtime.is_dry_run():
             pulumi.export("prod-grapl-core-vars", prod_grapl_core_vars)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
-            jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-core.nomad"),
             vars=prod_grapl_core_vars,
             opts=pulumi.ResourceOptions(
                 provider=nomad_provider,
@@ -469,12 +481,21 @@ def main() -> None:
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
-            jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
+            jobspec=repository_path("nomad/grapl-provision.nomad"),
             vars=provision_vars,
             opts=pulumi.ResourceOptions(
                 depends_on=[
                     nomad_grapl_core.job,
                 ],
+                provider=nomad_provider,
+            ),
+        )
+
+        NomadJob(
+            "grapl-observability",
+            jobspec=repository_path("nomad/observability.nomad"),
+            vars={},
+            opts=pulumi.ResourceOptions(
                 provider=nomad_provider,
             ),
         )
@@ -514,6 +535,8 @@ def main() -> None:
 
     pulumi.export("user-auth-table", dynamodb_tables.user_auth_table.name)
     pulumi.export("user-session-table", dynamodb_tables.user_session_table.name)
+
+    pulumi.export("graph-db", graph_db.to_nomad_scylla_args())
 
     # Not currently imported in integration tests:
     # - uid-allocator-db

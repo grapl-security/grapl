@@ -166,6 +166,7 @@ group "rust-services" {
     "generator-dispatcher",
     "generator-execution-sidecar",
     "graph-merger",
+    "graph-query-service",
     "grapl-web-ui",
     "kafka-retry",
     "node-identifier",
@@ -174,6 +175,7 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
+    "graph-schema-manager",
     "uid-allocator",
   ]
 }
@@ -181,7 +183,6 @@ group "rust-services" {
 group "python-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "engagement-creator",
     "provisioner"
   ]
 }
@@ -305,6 +306,14 @@ target "graph-merger" {
   ]
 }
 
+target "graph-query-service" {
+  inherits = ["_rust-base"]
+  target   = "graph-query-service-deploy"
+  tags = [
+    upstream_aware_tag("graph-query-service")
+  ]
+}
+
 target "grapl-web-ui" {
   inherits = ["_rust-base"]
   target   = "grapl-web-ui-deploy"
@@ -318,6 +327,14 @@ target "event-source" {
   target   = "event-source-deploy"
   tags = [
     upstream_aware_tag("event-source")
+  ]
+}
+
+target "generator-execution-sidecar" {
+  inherits = ["_rust-base"]
+  target   = "generator-execution-sidecar-deploy"
+  tags = [
+    upstream_aware_tag("generator-execution-sidecar")
   ]
 }
 
@@ -387,11 +404,11 @@ target "plugin-work-queue" {
   ]
 }
 
-target "generator-execution-sidecar" {
+target "graph-schema-manager" {
   inherits = ["_rust-base"]
-  target   = "generator-execution-sidecar-deploy"
+  target   = "graph-schema-manager-deploy"
   tags = [
-    upstream_aware_tag("generator-execution-sidecar")
+    upstream_aware_tag("graph-schema-manager")
   ]
 }
 
@@ -419,14 +436,6 @@ target "_python-base" {
   args = {
     PYTHON_VERSION = "${PYTHON_VERSION}"
   }
-}
-
-target "engagement-creator" {
-  inherits = ["_python-base"]
-  target   = "engagement-creator-deploy"
-  tags = [
-    upstream_aware_tag("engagement-creator")
-  ]
 }
 
 target "provisioner" {

@@ -8,12 +8,13 @@ import pulumi_aws as aws
 from infra import config, log_levels
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
+from infra.config import repository_path
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Credential, Kafka
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
-from infra.path import path_from_root
+from infra.scylla import NomadServiceScyllaDbArgs
 
 import pulumi
 
@@ -66,10 +67,10 @@ def main() -> None:
     )
 
     rust_integration_tests_job_vars: NomadVars = {
+        "graph_db": grapl_stack.graph_db,
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _rust_integration_container_images(artifacts),
-        "dns_server": config.CONSUL_DNS_IP,
         "kafka_bootstrap_servers": kafka.bootstrap_servers(),
         "kafka_consumer_group": kafka.consumer_group("integration-tests"),
         "kafka_credentials": kafka_credentials,
@@ -82,7 +83,7 @@ def main() -> None:
 
     rust_integration_tests = NomadJob(
         "rust-integration-tests",
-        jobspec=path_from_root("nomad/rust-integration-tests.nomad").resolve(),
+        jobspec=repository_path("nomad/rust-integration-tests.nomad"),
         vars=rust_integration_tests_job_vars,
         opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
@@ -116,6 +117,8 @@ class GraplStack:
 
         self.user_auth_table = require_str("user-auth-table")
         self.user_session_table = require_str("user-session-table")
+
+        self.graph_db = cast(NomadServiceScyllaDbArgs, ref.require_output("graph-db"))
 
 
 if __name__ == "__main__":
