@@ -73,7 +73,9 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
             "generator-execution-sidecar"
         ),
         "graph-merger": builder.build_with_tag("graph-merger"),
+        "graph-mutation-service": builder.build_with_tag("graph-mutation-service"),
         "graph-query-service": builder.build_with_tag("graph-query-service"),
+        "graph-schema-manager": builder.build_with_tag("graph-schema-manager"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
         "kafka-retry": builder.build_with_tag("kafka-retry"),
@@ -84,7 +86,6 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
         "provisioner": builder.build_with_tag("provisioner"),
-        "graph-schema-manager": builder.build_with_tag("graph-schema-manager"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),
         "uid-allocator": builder.build_with_tag("uid-allocator"),
     }
