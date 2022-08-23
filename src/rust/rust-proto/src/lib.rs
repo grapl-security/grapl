@@ -197,6 +197,10 @@ pub mod graplinc {
                 pub mod v1beta1;
             }
 
+            pub mod graph_mutation {
+                pub mod v1beta1;
+            }
+
             pub mod model_plugin_deployer {
                 pub mod v1;
             }
