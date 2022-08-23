@@ -17,19 +17,6 @@
     },
     "query": "\n                INSERT INTO plugins (\n                    plugin_id,\n                    plugin_type,\n                    display_name,\n                    tenant_id,\n                    artifact_s3_key,\n                    event_source_id\n                )\n                VALUES ($1::uuid, $2, $3, $4::uuid, $5, $6::uuid)\n                ON CONFLICT DO NOTHING;\n                "
   },
-  "11ef66cca4e579a2c2ae76eb19e5e519aae80a031915eb6b4f23e03b4fc66695": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Int8",
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n            UPDATE plugin_deployment\n                SET deployed = false\n            WHERE\n                id = $1\n                AND plugin_id = $2::uuid;\n            "
-  },
   "28c021bb5a0f5ccde835369e727619efb41b97cf81ddda62ed368af95a6dcc06": {
     "describe": {
       "columns": [
@@ -89,6 +76,30 @@
       }
     },
     "query": "\n            INSERT INTO plugin_deployment (\n                plugin_id,\n                status\n            )\n            VALUES ($1::uuid, $2);\n            "
+  },
+  "64eac704edc95149df3a7a0797ffe102798633eae6f28379272ec6a253b7547d": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Uuid",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "fail",
+                  "success"
+                ]
+              },
+              "name": "plugin_deployment_status"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO plugin_deployment (\n                id,\n                plugin_id,\n                status,\n                deployed\n            ) VALUES (\n                $1,\n                $2::uuid,\n                $3,\n                false\n            ) ON CONFLICT DO NOTHING;\n            "
   },
   "ae60f2fc0cb1f7ac6f34b510895de75115c4c04ac0ebd8ee6287edb9324987c1": {
     "describe": {

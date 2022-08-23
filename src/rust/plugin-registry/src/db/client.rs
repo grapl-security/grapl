@@ -205,14 +205,21 @@ impl PluginRegistryDbClient {
         let plugin_deployment_row = self.get_plugin_deployment(plugin_id).await?;
         sqlx::query!(
             r"
-            UPDATE plugin_deployment
-                SET deployed = false
-            WHERE
-                id = $1
-                AND plugin_id = $2::uuid;
+            INSERT INTO plugin_deployment (
+                id,
+                plugin_id,
+                status,
+                deployed
+            ) VALUES (
+                $1,
+                $2::uuid,
+                $3,
+                false
+            ) ON CONFLICT DO NOTHING;
             ",
             plugin_deployment_row.id,
             plugin_deployment_row.plugin_id,
+            plugin_deployment_row.status as _,
         )
         .execute(&self.pool)
         .await
