@@ -1,18 +1,6 @@
 {
   "db": "PostgreSQL",
-  "7f4457e3ca57b27c293136f8dce0c9d7dce21e01fc3cb1277232f70395b03410": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "INSERT INTO counters (tenant_id, counter) VALUES ($1, 1)\n            ON CONFLICT DO NOTHING;"
-  },
-  "e675c3761e11c7b8eb7f5d93b8b9cc25e24299f4a32eb0c9da53968297db96a1": {
+  "5684a65ba4416a5819970172c4bf44846646de83809896513c9153bd6529be7d": {
     "describe": {
       "columns": [
         {
@@ -37,6 +25,18 @@
         ]
       }
     },
-    "query": "\n            UPDATE counters\n            SET counter = counter + $1\n            FROM (\n                     SELECT counter as prev\n                     FROM counters\n                     WHERE counters.tenant_id = $2\n                     LIMIT 1\n                 ) as c\n            WHERE counters.tenant_id = $2\n            RETURNING counter as new, c.prev\n            "
+    "query": "\n            UPDATE counters\n            SET counter = counter + $1\n            FROM (\n                     SELECT counter as prev\n                     FROM counters\n                     WHERE counters.tenant_id = $2\n                     LIMIT 1\n                     FOR UPDATE\n                 ) as c\n            WHERE counters.tenant_id = $2\n            RETURNING counter as new, c.prev\n            "
+  },
+  "7f4457e3ca57b27c293136f8dce0c9d7dce21e01fc3cb1277232f70395b03410": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "INSERT INTO counters (tenant_id, counter) VALUES ($1, 1)\n            ON CONFLICT DO NOTHING;"
   }
 }
