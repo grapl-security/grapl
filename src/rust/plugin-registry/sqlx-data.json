@@ -77,13 +77,12 @@
     },
     "query": "\n            INSERT INTO plugin_deployment (\n                plugin_id,\n                status\n            )\n            VALUES ($1::uuid, $2);\n            "
   },
-  "64eac704edc95149df3a7a0797ffe102798633eae6f28379272ec6a253b7547d": {
+  "93bdfbb157510d24a4fd8b0b88d24940089be7a3c3b4310de3f895aa8962f816": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Int8",
           "Uuid",
           {
             "Custom": {
@@ -99,7 +98,7 @@
         ]
       }
     },
-    "query": "\n            INSERT INTO plugin_deployment (\n                id,\n                plugin_id,\n                status,\n                deployed\n            ) VALUES (\n                $1,\n                $2::uuid,\n                $3,\n                false\n            ) ON CONFLICT DO NOTHING;\n            "
+    "query": "\n            INSERT INTO plugin_deployment (\n                plugin_id,\n                status,\n                deployed\n            ) VALUES (\n                $1::uuid,\n                $2,\n                false\n            ) ON CONFLICT DO NOTHING;\n            "
   },
   "ae60f2fc0cb1f7ac6f34b510895de75115c4c04ac0ebd8ee6287edb9324987c1": {
     "describe": {

@@ -206,18 +206,15 @@ impl PluginRegistryDbClient {
         sqlx::query!(
             r"
             INSERT INTO plugin_deployment (
-                id,
                 plugin_id,
                 status,
                 deployed
             ) VALUES (
-                $1,
-                $2::uuid,
-                $3,
+                $1::uuid,
+                $2,
                 false
             ) ON CONFLICT DO NOTHING;
             ",
-            plugin_deployment_row.id,
             plugin_deployment_row.plugin_id,
             plugin_deployment_row.status as _,
         )
