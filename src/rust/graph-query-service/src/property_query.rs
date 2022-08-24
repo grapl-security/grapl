@@ -25,7 +25,7 @@ pub enum PropertyQueryError {
     MaybeFirstRowTypedError(#[from] MaybeFirstRowTypedError),
     #[error("Row was invalid {0}")]
     FromRowError(#[from] FromRowError),
-    #[error("Invalid destination_uid '{destination_uid}' (source_uid: '{source_uid:?}': f_edge_name: '{f_edge_name}')")]
+    #[error("Invalid destination_uid '{destination_uid}' (source_uid: '{source_uid:?}', f_edge_name: '{f_edge_name}')")]
     InvalidUidInDb {
         destination_uid: i64,
         source_uid: Uid,
