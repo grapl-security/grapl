@@ -272,6 +272,12 @@ FROM rust-dist AS graph-query-service-deploy
 COPY --from=build /outputs/graph-query-service /
 ENTRYPOINT ["/graph-query-service"]
 
+##### graph-mutation-service
+FROM rust-dist AS graph-mutation-service-deploy
+
+COPY --from=build /outputs/graph-mutation-service /
+ENTRYPOINT ["/graph-mutation-service"]
+
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy
 
