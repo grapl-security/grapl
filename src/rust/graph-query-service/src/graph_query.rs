@@ -20,8 +20,8 @@ use crate::{
 
 #[derive(thiserror::Error, Debug)]
 pub enum GraphQueryError {
-    #[error("NodeQueryError {0}")]
-    NodeQueryError(#[from] NodeQueryError),
+    #[error("Node query failed (uid: '{uid:?}'): {source}")]
+    NodeQueryError { uid: Uid, source: NodeQueryError },
 }
 
 #[tracing::instrument(skip(graph_query, property_query_executor))]
@@ -57,7 +57,7 @@ pub async fn query_graph(
                     Ok(Some((g, root_query_uid)))
                 }
                 Ok(None) => Ok(None),
-                Err(e) => Err(GraphQueryError::NodeQueryError(e.into())),
+                Err(e) => Err(GraphQueryError::NodeQueryError { uid, source: e }),
             }
         });
     }

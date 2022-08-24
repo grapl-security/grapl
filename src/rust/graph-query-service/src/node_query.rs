@@ -41,7 +41,7 @@ use crate::{
 
 #[derive(thiserror::Error, Debug)]
 pub enum NodeQueryError {
-    #[error("PropertyQueryError {0}")]
+    #[error("Property query failed: {0:?}")]
     PropertyQueryError(#[from] PropertyQueryError),
 }
 
