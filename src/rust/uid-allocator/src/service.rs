@@ -41,10 +41,10 @@ impl From<UidAllocatorServiceError> for Status {
     fn from(err: UidAllocatorServiceError) -> Self {
         match err {
             UidAllocatorServiceError::SqlxError(err) => {
-                Status::internal(format!("Internal database error: {}", err))
+                Status::internal(format!("Internal database error: {err}"))
             }
             UidAllocatorServiceError::UnknownTenant(tenant_id) => {
-                Status::not_found(format!("Unknown Tenant: {}", tenant_id))
+                Status::not_found(format!("Unknown Tenant: {tenant_id}"))
             }
         }
     }
