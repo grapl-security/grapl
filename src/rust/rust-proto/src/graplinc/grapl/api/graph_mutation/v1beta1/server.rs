@@ -3,15 +3,13 @@ use std::time::Duration;
 use futures::{
     channel::oneshot::{
         self,
-        Sender,
         Receiver,
+        Sender,
     },
     Future,
     FutureExt,
 };
-use tokio::{
-    net::TcpListener,
-};
+use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::{
     NamedService,
@@ -38,7 +36,6 @@ use crate::{
         status::Status,
     },
     server_internals::GrpcApi,
-    SerDeError,
 };
 
 #[derive(thiserror::Error, Debug)]

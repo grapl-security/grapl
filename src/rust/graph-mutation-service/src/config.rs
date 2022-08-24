@@ -1,5 +1,7 @@
 use std::net::SocketAddr;
 
+use rust_proto::client_factory::services::GraphSchemaManagerClientConfig;
+
 #[derive(clap::Parser, Debug, Clone)]
 pub struct GraphDbConfig {
     #[clap(long, env)]
@@ -21,13 +23,6 @@ pub struct UidAllocatorClientConfig {
 }
 
 #[derive(clap::Parser, Debug, Clone)]
-pub struct SchemaManagerClientConfig {
-    #[clap(env)]
-    /// The address to connect to for the schema manager
-    pub schema_manager_address: String,
-}
-
-#[derive(clap::Parser, Debug, Clone)]
 pub struct GraphMutationServiceConfig {
     #[clap(env)]
     /// The address to bind the graph mutation service to
@@ -37,7 +32,7 @@ pub struct GraphMutationServiceConfig {
     pub uid_allocator_client_config: UidAllocatorClientConfig,
 
     #[clap(flatten)]
-    pub schema_manager_client_config: SchemaManagerClientConfig,
+    pub graph_schema_manager_client_config: GraphSchemaManagerClientConfig,
 
     #[clap(flatten)]
     pub graph_db_config: GraphDbConfig,

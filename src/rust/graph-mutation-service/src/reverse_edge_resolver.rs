@@ -1,8 +1,8 @@
 use rust_proto::graplinc::grapl::{
-    api::schema_manager::v1beta1::{
+    api::graph_schema_manager::v1beta1::{
         client::{
-            SchemaManagerClient,
-            SchemaManagerClientError,
+            GraphSchemaManagerClient,
+            GraphSchemaManagerClientError,
         },
         messages::{
             GetEdgeSchemaRequest,
@@ -17,18 +17,18 @@ use rust_proto::graplinc::grapl::{
 
 #[derive(thiserror::Error, Debug)]
 pub enum ReverseEdgeResolverError {
-    #[error("SchemaManagerClientError {0}")]
-    SchemaManagerClientError(#[from] SchemaManagerClientError),
+    #[error("couldn't resolve reverse edge from Graph Schema Manager: {0}")]
+    GraphSchemaManagerClientError(#[from] GraphSchemaManagerClientError),
 }
 
 #[derive(Clone)]
 pub struct ReverseEdgeResolver {
-    schema_client: SchemaManagerClient,
+    schema_client: GraphSchemaManagerClient,
     r_edge_cache: dashmap::DashMap<(uuid::Uuid, EdgeName, NodeType), GetEdgeSchemaResponse>,
 }
 
 impl ReverseEdgeResolver {
-    pub fn new(schema_client: SchemaManagerClient, cache_size: usize) -> Self {
+    pub fn new(schema_client: GraphSchemaManagerClient, cache_size: usize) -> Self {
         let r_edge_cache = dashmap::DashMap::with_capacity(cache_size);
         Self {
             schema_client,
