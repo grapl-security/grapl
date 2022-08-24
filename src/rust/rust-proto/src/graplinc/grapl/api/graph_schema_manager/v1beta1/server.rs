@@ -42,7 +42,6 @@ use crate::{
         status::Status,
     },
     server_internals::GrpcApi,
-    SerDeError,
 };
 
 #[derive(thiserror::Error, Debug)]
