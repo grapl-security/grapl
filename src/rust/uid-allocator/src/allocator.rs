@@ -15,6 +15,7 @@ use crate::{
 /// PreAllocation is intended to be a struct large enough to represent many allocations worth
 /// of Uid ranges. When clients request a new allocation, first it is taken from the PreAllocation,
 /// so that we only reach out to the database when the PreAllocation is exhausted.
+/// The PreAllocation is inclusive, so 'end' will be handed out.
 #[derive(Clone, Copy)]
 pub struct PreAllocation {
     pub start: u64,
