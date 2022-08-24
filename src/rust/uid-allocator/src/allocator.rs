@@ -167,7 +167,10 @@ impl UidAllocator {
         }
     }
 
-    pub async fn create_tenant_keyspace(&self, tenant_id: uuid::Uuid) -> Result<(), UidAllocatorServiceError> {
+    pub async fn create_tenant_keyspace(
+        &self,
+        tenant_id: uuid::Uuid,
+    ) -> Result<(), UidAllocatorServiceError> {
         sqlx::query!(
             r"INSERT INTO counters (tenant_id, counter) VALUES ($1, 1)
             ON CONFLICT DO NOTHING;",
