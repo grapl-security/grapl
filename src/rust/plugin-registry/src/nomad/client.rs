@@ -37,6 +37,8 @@ pub enum NomadClientError {
     PlanJobAllocationFail,
     #[error("GetJobError {0:?}")]
     GetJobError(#[from] Error<jobs_api::GetJobError>),
+    #[error("DeleteJobError {0:?}")]
+    DeleteJobError(#[from] Error<jobs_api::DeleteJobError>),
 }
 
 #[allow(dead_code)]
@@ -131,6 +133,24 @@ impl NomadClient {
             jobs_api::GetJobParams {
                 namespace: namespace.clone(),
                 job_name: job_name.to_owned(),
+                ..Default::default()
+            },
+        )
+        .await
+        .map_err(NomadClientError::from)
+    }
+
+    #[tracing::instrument(skip(self, job_name, namespace), err)]
+    pub async fn delete_job(
+        &self,
+        job_name: String,
+        namespace: Option<String>,
+    ) -> Result<models::JobDeregisterResponse, NomadClientError> {
+        jobs_api::delete_job(
+            &self.internal_config,
+            jobs_api::DeleteJobParams {
+                job_name,
+                namespace,
                 ..Default::default()
             },
         )

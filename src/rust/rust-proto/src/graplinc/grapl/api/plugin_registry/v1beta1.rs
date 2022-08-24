@@ -1,4 +1,7 @@
-use std::fmt::Debug;
+use std::{
+    fmt::Debug,
+    time::SystemTime,
+};
 
 use bytes::Bytes;
 use proto::create_plugin_request;
@@ -362,6 +365,236 @@ impl From<DeployPluginResponse> for proto::DeployPluginResponse {
 
 impl ProtobufSerializable for DeployPluginResponse {
     type ProtobufMessage = proto::DeployPluginResponse;
+}
+
+//
+// PluginDeployment
+//
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PluginDeploymentStatus {
+    Unspecified,
+    Success,
+    Fail,
+}
+
+impl From<proto::PluginDeploymentStatus> for PluginDeploymentStatus {
+    fn from(proto_plugin_deployment_status: proto::PluginDeploymentStatus) -> Self {
+        match proto_plugin_deployment_status {
+            proto::PluginDeploymentStatus::Unspecified => Self::Unspecified,
+            proto::PluginDeploymentStatus::Success => Self::Success,
+            proto::PluginDeploymentStatus::Fail => Self::Fail,
+        }
+    }
+}
+
+impl From<PluginDeploymentStatus> for proto::PluginDeploymentStatus {
+    fn from(plugin_deployment_status: PluginDeploymentStatus) -> Self {
+        match plugin_deployment_status {
+            PluginDeploymentStatus::Unspecified => Self::Unspecified,
+            PluginDeploymentStatus::Success => Self::Success,
+            PluginDeploymentStatus::Fail => Self::Fail,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginDeployment {
+    plugin_id: uuid::Uuid,
+    timestamp: SystemTime,
+    status: PluginDeploymentStatus,
+    deployed: bool,
+}
+
+impl PluginDeployment {
+    pub fn new(
+        plugin_id: uuid::Uuid,
+        timestamp: SystemTime,
+        status: PluginDeploymentStatus,
+        deployed: bool,
+    ) -> Self {
+        Self {
+            plugin_id,
+            timestamp,
+            status,
+            deployed,
+        }
+    }
+
+    pub fn plugin_id(&self) -> uuid::Uuid {
+        self.plugin_id
+    }
+
+    pub fn timestamp(&self) -> SystemTime {
+        self.timestamp
+    }
+
+    pub fn status(&self) -> PluginDeploymentStatus {
+        self.status
+    }
+
+    pub fn deployed(&self) -> bool {
+        self.deployed
+    }
+}
+
+impl type_url::TypeUrl for PluginDeployment {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.PluginDeployment";
+}
+
+impl TryFrom<proto::PluginDeployment> for PluginDeployment {
+    type Error = SerDeError;
+
+    fn try_from(proto_plugin_deployment: proto::PluginDeployment) -> Result<Self, Self::Error> {
+        let status = proto_plugin_deployment.status().into();
+
+        let plugin_id = proto_plugin_deployment
+            .plugin_id
+            .ok_or(SerDeError::MissingField("plugin_id"))?
+            .into();
+
+        let timestamp = proto_plugin_deployment
+            .timestamp
+            .ok_or(SerDeError::MissingField("timestamp"))?
+            .try_into()?;
+
+        Ok(Self {
+            plugin_id,
+            timestamp,
+            status,
+            deployed: proto_plugin_deployment.deployed,
+        })
+    }
+}
+
+impl TryFrom<PluginDeployment> for proto::PluginDeployment {
+    type Error = SerDeError;
+
+    fn try_from(plugin_deployment: PluginDeployment) -> Result<Self, Self::Error> {
+        let status: proto::PluginDeploymentStatus = plugin_deployment.status().into();
+
+        Ok(Self {
+            plugin_id: Some(plugin_deployment.plugin_id().into()),
+            timestamp: Some(plugin_deployment.timestamp().try_into()?),
+            status: status as i32,
+            deployed: plugin_deployment.deployed(),
+        })
+    }
+}
+
+impl ProtobufSerializable for PluginDeployment {
+    type ProtobufMessage = proto::PluginDeployment;
+}
+
+//
+// GetPluginDeploymentRequest
+//
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GetPluginDeploymentRequest {
+    plugin_id: uuid::Uuid,
+}
+
+impl GetPluginDeploymentRequest {
+    pub fn new(plugin_id: uuid::Uuid) -> Self {
+        Self { plugin_id }
+    }
+
+    pub fn plugin_id(&self) -> uuid::Uuid {
+        self.plugin_id
+    }
+}
+
+impl type_url::TypeUrl for GetPluginDeploymentRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetPluginDeploymentRequest";
+}
+
+impl TryFrom<proto::GetPluginDeploymentRequest> for GetPluginDeploymentRequest {
+    type Error = SerDeError;
+
+    fn try_from(
+        proto_get_plugin_deployment_request: proto::GetPluginDeploymentRequest,
+    ) -> Result<Self, Self::Error> {
+        let plugin_id = proto_get_plugin_deployment_request
+            .plugin_id
+            .ok_or(SerDeError::MissingField("plugin_id"))?
+            .into();
+
+        Ok(Self { plugin_id })
+    }
+}
+
+impl From<GetPluginDeploymentRequest> for proto::GetPluginDeploymentRequest {
+    fn from(get_plugin_deployment_request: GetPluginDeploymentRequest) -> Self {
+        Self {
+            plugin_id: Some(get_plugin_deployment_request.plugin_id().into()),
+        }
+    }
+}
+
+impl ProtobufSerializable for GetPluginDeploymentRequest {
+    type ProtobufMessage = proto::GetPluginDeploymentRequest;
+}
+
+//
+// GetPluginDeploymentResponse
+//
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GetPluginDeploymentResponse {
+    plugin_deployment: PluginDeployment,
+}
+
+impl GetPluginDeploymentResponse {
+    pub fn new(plugin_deployment: PluginDeployment) -> Self {
+        Self { plugin_deployment }
+    }
+
+    pub fn plugin_deployment(self) -> PluginDeployment {
+        self.plugin_deployment
+    }
+}
+
+impl TryFrom<proto::GetPluginDeploymentResponse> for GetPluginDeploymentResponse {
+    type Error = SerDeError;
+
+    fn try_from(
+        proto_get_plugin_deployment_response: proto::GetPluginDeploymentResponse,
+    ) -> Result<Self, Self::Error> {
+        let plugin_deployment = proto_get_plugin_deployment_response
+            .plugin_deployment
+            .ok_or(SerDeError::MissingField("plugin_deployment"))?
+            .try_into()?;
+
+        Ok(Self { plugin_deployment })
+    }
+}
+
+impl TryFrom<GetPluginDeploymentResponse> for proto::GetPluginDeploymentResponse {
+    type Error = SerDeError;
+
+    fn try_from(
+        get_plugin_deployment_response: GetPluginDeploymentResponse,
+    ) -> Result<Self, Self::Error> {
+        Ok(Self {
+            plugin_deployment: Some(
+                get_plugin_deployment_response
+                    .plugin_deployment()
+                    .try_into()?,
+            ),
+        })
+    }
+}
+
+impl type_url::TypeUrl for GetPluginDeploymentResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetPluginDeploymentResponse";
+}
+
+impl ProtobufSerializable for GetPluginDeploymentResponse {
+    type ProtobufMessage = proto::GetPluginDeploymentResponse;
 }
 
 //
