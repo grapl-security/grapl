@@ -70,15 +70,7 @@ impl UidAllocatorApi for UidAllocatorService {
         request: CreateTenantKeyspaceRequest,
     ) -> Result<CreateTenantKeyspaceResponse, Self::Error> {
         let tenant_id = request.tenant_id;
-        sqlx::query!(
-            r"INSERT INTO counters (tenant_id, counter) VALUES ($1, 1)
-            ON CONFLICT DO NOTHING;",
-            tenant_id
-        )
-        .execute(&self.allocator.db.pool)
-        .await?;
-
-        // Create the entry
+        self.allocator.create_tenant_keyspace(tenant_id).await?;
 
         Ok(CreateTenantKeyspaceResponse {})
     }
