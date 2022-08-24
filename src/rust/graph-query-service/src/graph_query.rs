@@ -57,10 +57,7 @@ pub async fn query_graph(
                     Ok(Some((g, root_query_uid)))
                 }
                 Ok(None) => Ok(None),
-                Err(e) => Err(GraphQueryError::NodeQueryError{
-                    uid,
-                    source: e
-                })
+                Err(e) => Err(GraphQueryError::NodeQueryError { uid, source: e }),
             }
         });
     }
