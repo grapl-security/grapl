@@ -166,6 +166,7 @@ group "rust-services" {
     "generator-dispatcher",
     "generator-execution-sidecar",
     "graph-merger",
+    "graph-mutation-service",
     "graph-query-service",
     "grapl-web-ui",
     "kafka-retry",

@@ -1,4 +1,8 @@
-use std::sync::Arc;
+use std::{
+    net::SocketAddr,
+    sync::Arc,
+    time::Duration,
+};
 
 use clap::Parser;
 use graph_mutation_service::{
@@ -6,11 +10,13 @@ use graph_mutation_service::{
     graph_mutation::GraphMutationManager,
     reverse_edge_resolver::ReverseEdgeResolver,
 };
-use rust_proto::graplinc::grapl::api::{
-    graph_mutation::v1beta1::server::GraphMutationServiceServer,
-    schema_manager::v1beta1::client::SchemaManagerClient,
+use rust_proto::{
+    client_factory::build_grpc_client,
+    graplinc::grapl::api::graph_mutation::v1beta1::server::GraphMutationServer,
+    protocol::healthcheck::HealthcheckStatus,
 };
 use scylla::CachingSession;
+use tokio::net::TcpListener;
 use uid_allocator::client::{
     CachingUidAllocatorServiceClient as CachingUidAllocatorClient,
     UidAllocatorServiceClient as UidAllocatorClient,
@@ -28,6 +34,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         scylla::Session::connect(scylla_config).await?,
         10_000,
     ));
+    let graph_schema_manager_client =
+        build_grpc_client(config.graph_schema_manager_client_config).await?;
     let graph_mutation_service = GraphMutationManager::new(
         scylla_client,
         CachingUidAllocatorClient::new(
@@ -35,25 +43,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .await?,
             100,
         ),
-        ReverseEdgeResolver::new(
-            SchemaManagerClient::connect(
-                config.schema_manager_client_config.schema_manager_address,
-            )
-            .await?,
-            10_000,
-        ),
+        ReverseEdgeResolver::new(graph_schema_manager_client, 10_000),
         1_000_000,
     );
-
-    let (_tx, rx) = tokio::sync::oneshot::channel();
-    GraphMutationServiceServer::builder(
-        graph_mutation_service,
+    exec_service(
         config.graph_mutation_service_bind_address,
-        rx,
+        graph_mutation_service,
     )
-    .build()
-    .serve()
-    .await?;
+    .await
+}
 
-    Ok(())
+#[tracing::instrument(skip(addr, api_server))]
+pub async fn exec_service(
+    addr: SocketAddr,
+    api_server: GraphMutationManager,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let healthcheck_polling_interval_ms = 5000;
+
+    tracing::info!(
+        message = "Binding service",
+        socket_address = %addr,
+    );
+
+    let (server, _shutdown_tx) = GraphMutationServer::new(
+        api_server,
+        TcpListener::bind(addr.clone()).await?,
+        || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
+        Duration::from_millis(healthcheck_polling_interval_ms),
+    );
+
+    tracing::info!(message = "starting gRPC server",);
+
+    Ok(server.serve().await?)
 }

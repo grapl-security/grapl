@@ -802,10 +802,10 @@ job "grapl-core" {
         GRAPH_DB_ADDRESSES                  = var.graph_db.addresses
         GRAPH_DB_AUTH_PASSWORD              = var.graph_db.password
         GRAPH_DB_AUTH_USERNAME              = var.graph_db.username
-        SCHEMA_MANAGER_ADDRESS              = "http://${NOMAD_UPSTREAM_ADDR_schema-manager}"
+
+        # upstreams
+        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_schema-manager}"
         UID_ALLOCATOR_ADDRESS               = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
-        OTEL_EXPORTER_JAEGER_AGENT_HOST     = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT     = local.tracing_jaeger_endpoint_port
       }
     }
 
