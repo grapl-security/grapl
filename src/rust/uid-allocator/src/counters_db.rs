@@ -34,6 +34,7 @@ impl CountersDb {
                      FROM counters
                      WHERE counters.tenant_id = $2
                      LIMIT 1
+                     FOR UPDATE
                  ) as c
             WHERE counters.tenant_id = $2
             RETURNING counter as new, c.prev
