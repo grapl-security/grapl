@@ -140,13 +140,13 @@ impl PropertyQueryExecutor {
                 f_edge_name: edge_name.clone(),
                 r_edge_name: EdgeName::try_from(r_edge_name)
                     .map_err(PropertyQueryError::InvalidStoredEdgeName)?,
-                destination_uid: Uid::from_i64(destination_uid).ok_or(
+                destination_uid: Uid::from_i64(destination_uid).ok_or_else(|_| {
                     PropertyQueryError::InvalidUidInDb {
                         destination_uid,
                         source_uid: uid,
                         f_edge_name: edge_name.to_string(),
-                    },
-                )?,
+                    }
+                })?,
                 tenant_id,
             });
         }
