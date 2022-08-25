@@ -5,14 +5,14 @@ use std::{
 
 use async_trait::async_trait;
 use rust_proto::{
-    graplinc::grapl::api::db_schema_manager::v1beta1::{
+    graplinc::grapl::api::scylla_provisioner::v1beta1::{
         messages::{
             DeployGraphSchemasRequest,
             DeployGraphSchemasResponse,
         },
         server::{
-            DbSchemaManagerApi,
-            DbSchemaManagerServer,
+            ScyllaProvisionerApi,
+            ScyllaProvisionerServer,
         },
     },
     protocol::{
@@ -26,18 +26,18 @@ use scylla::{
 };
 use tokio::net::TcpListener;
 
-use crate::config::DbSchemaManagerServiceConfig;
+use crate::config::ScyllaProvisionerServiceConfig;
 
 #[derive(thiserror::Error, Debug)]
-pub enum DbSchemaManagerError {
+pub enum ScyllaProvisionerError {
     #[error("Scylla Error {0}")]
     ScyllaError(#[from] QueryError),
 }
 
-impl From<DbSchemaManagerError> for Status {
-    fn from(error: DbSchemaManagerError) -> Self {
+impl From<ScyllaProvisionerError> for Status {
+    fn from(error: ScyllaProvisionerError) -> Self {
         match error {
-            DbSchemaManagerError::ScyllaError(error) => {
+            ScyllaProvisionerError::ScyllaError(error) => {
                 Status::unknown(format!("Scylla Error: {}", error).as_str())
             }
         }
@@ -45,13 +45,13 @@ impl From<DbSchemaManagerError> for Status {
 }
 
 #[derive(Clone)]
-pub struct DbSchemaManager {
+pub struct ScyllaProvisioner {
     scylla_client: Arc<Session>,
 }
 
 #[async_trait]
-impl DbSchemaManagerApi for DbSchemaManager {
-    type Error = DbSchemaManagerError;
+impl ScyllaProvisionerApi for ScyllaProvisioner {
+    type Error = ScyllaProvisionerError;
 
     async fn deploy_graph_schemas(
         &self,
@@ -122,23 +122,23 @@ impl DbSchemaManagerApi for DbSchemaManager {
 
 #[tracing::instrument(skip(config), err)]
 pub async fn exec_service(
-    config: DbSchemaManagerServiceConfig,
+    config: ScyllaProvisionerServiceConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let graph_db_config = config.graph_db_config;
 
-    let addr = config.db_schema_manager_bind_address;
+    let addr = config.scylla_provisioner_bind_address;
     tracing::info!(
         message="Starting Db Schema Manager Service",
         addr=?addr,
         graph_db_addresses=?graph_db_config.graph_db_addresses,
     );
 
-    let plugin_registry = DbSchemaManager {
+    let plugin_registry = ScyllaProvisioner {
         scylla_client: Arc::new(graph_db_config.connect().await?),
     };
 
     let healthcheck_polling_interval_ms = 5000; // TODO: un-hardcode
-    let (server, _shutdown_tx) = DbSchemaManagerServer::new(
+    let (server, _shutdown_tx) = ScyllaProvisionerServer::new(
         plugin_registry,
         TcpListener::bind(addr).await?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage

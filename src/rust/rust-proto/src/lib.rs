@@ -39,11 +39,11 @@ pub(crate) mod protobufs {
             }
 
             pub(crate) mod api {
-                pub(crate) mod db_schema_manager {
+                pub(crate) mod scylla_provisioner {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
                             env!("OUT_DIR"),
-                            "/graplinc.grapl.api.db_schema_manager.v1beta1.rs"
+                            "/graplinc.grapl.api.scylla_provisioner.v1beta1.rs"
                         ));
                     }
                 }
@@ -186,7 +186,7 @@ pub mod graplinc {
         }
 
         pub mod api {
-            pub mod db_schema_manager {
+            pub mod scylla_provisioner {
                 pub mod v1beta1;
             }
 

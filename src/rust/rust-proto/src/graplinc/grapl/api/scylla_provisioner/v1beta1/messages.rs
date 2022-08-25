@@ -1,5 +1,5 @@
 use crate::{
-    protobufs::graplinc::grapl::api::db_schema_manager::v1beta1::{
+    protobufs::graplinc::grapl::api::scylla_provisioner::v1beta1::{
         DeployGraphSchemasRequest as DeployGraphSchemasRequestProto,
         DeployGraphSchemasResponse as DeployGraphSchemasResponseProto,
     },

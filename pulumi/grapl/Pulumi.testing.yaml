@@ -12,7 +12,7 @@ config:
     sysmon-generator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
-    db-schema-manager:
+    scylla-provisioner:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
   grapl:postgres-instance-type: db.t4g.small

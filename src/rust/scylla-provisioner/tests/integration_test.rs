@@ -1,6 +1,6 @@
 #![cfg(feature = "integration_tests")]
-use rust_proto::graplinc::grapl::api::db_schema_manager::v1beta1::{
-    client::DbSchemaManagerClient,
+use rust_proto::graplinc::grapl::api::scylla_provisioner::v1beta1::{
+    client::ScyllaProvisionerClient,
     messages::DeployGraphSchemasRequest,
 };
 
@@ -13,21 +13,21 @@ async fn test_provision() -> Result<(), DynError> {
         "tenant_id", tenant_id=?tracing::field::Empty,
     );
     tracing::info!("starting test_provision");
-    let db_schema_manager_endpoint = std::env::var("DB_SCHEMA_MANAGER_ENDPOINT_ADDRESS")
-        .expect("DB_SCHEMA_MANAGER_ENDPOINT_ADDRESS");
+    let scylla_provisioner_endpoint = std::env::var("SCYLLA_PROVISIONER_ENDPOINT_ADDRESS")
+        .expect("SCYLLA_PROVISIONER_ENDPOINT_ADDRESS");
 
     tracing::info!(
-        db_schema_manager_endpoint=%db_schema_manager_endpoint,
+        scylla_provisioner_endpoint=%scylla_provisioner_endpoint,
         message="connecting to db schema manager service"
     );
-    let mut db_schema_manager_client =
-        DbSchemaManagerClient::connect(db_schema_manager_endpoint).await?;
+    let mut scylla_provisioner_client =
+        ScyllaProvisionerClient::connect(scylla_provisioner_endpoint).await?;
     tracing::info!("connected to graph query service");
 
     let tenant_id = uuid::Uuid::new_v4();
     _span.record("tenant_id", &format!("{tenant_id}"));
 
-    db_schema_manager_client
+    scylla_provisioner_client
         .query_graph_with_uid(DeployGraphSchemasRequest { tenant_id })
         .await?;
 

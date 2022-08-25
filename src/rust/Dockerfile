@@ -150,7 +150,7 @@ organization-management/integration_tests
 pipeline-ingress/integration_tests
 plugin-registry/integration_tests
 plugin-work-queue/integration_tests
-db-schema-manager/integration_tests
+scylla-provisioner/integration_tests
 sysmon-generator/integration_tests
 graph-schema-manager/integration_tests
 )
@@ -319,11 +319,11 @@ FROM rust-dist AS pipeline-ingress-deploy
 COPY --from=build /outputs/pipeline-ingress /
 ENTRYPOINT ["/pipeline-ingress"]
 
-##### db-schema-manager
-FROM rust-dist AS db-schema-manager-deploy
+##### scylla-provisioner
+FROM rust-dist AS scylla-provisioner-deploy
 
-COPY --from=build /outputs/db-schema-manager /
-ENTRYPOINT ["/db-schema-manager"]
+COPY --from=build /outputs/scylla-provisioner /
+ENTRYPOINT ["/scylla-provisioner"]
 
 ##### uid-allocator
 FROM rust-dist AS uid-allocator-deploy

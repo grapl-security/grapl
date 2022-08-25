@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package graplinc.grapl.api.db_schema_manager.v1beta1;
+package graplinc.grapl.api.scylla_provisioner.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/common/v1beta1/types.proto";
@@ -11,6 +11,6 @@ message DeployGraphSchemasRequest {
 
 message DeployGraphSchemasResponse {}
 
-service DbSchemaManagerService {
+service ScyllaProvisionerService {
   rpc DeployGraphSchemas(DeployGraphSchemasRequest) returns (DeployGraphSchemasResponse);
 }

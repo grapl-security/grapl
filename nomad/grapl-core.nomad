@@ -595,26 +595,26 @@ job "grapl-core" {
   ## Begin actual Grapl core services ##
   #######################################
 
-  group "db-schema-manager" {
+  group "scylla-provisioner" {
     network {
       mode = "bridge"
       dns {
         servers = local.dns_servers
       }
-      port "db-schema-manager-port" {
+      port "scylla-provisioner-port" {
       }
     }
 
-    task "db-schema-manager" {
+    task "scylla-provisioner" {
       driver = "docker"
 
       config {
-        image = var.container_images["db-schema-manager"]
-        ports = ["db-schema-manager-port"]
+        image = var.container_images["scylla-provisioner"]
+        ports = ["scylla-provisioner-port"]
       }
 
       env {
-        DB_SCHEMA_MANAGER_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_db-schema-manager-port}"
+        SCYLLA_PROVISIONER_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_scylla-provisioner-port}"
         RUST_BACKTRACE                 = local.rust_backtrace
         RUST_LOG                       = var.rust_log
         GRAPH_DB_ADDRESSES             = var.graph_db.addresses
@@ -624,15 +624,15 @@ job "grapl-core" {
     }
 
     service {
-      name = "db-schema-manager"
-      port = "db-schema-manager-port"
+      name = "scylla-provisioner"
+      port = "scylla-provisioner-port"
       connect {
         sidecar_service {}
       }
 
       check {
         type     = "grpc"
-        port     = "db-schema-manager-port"
+        port     = "scylla-provisioner-port"
         interval = "10s"
         timeout  = "3s"
       }

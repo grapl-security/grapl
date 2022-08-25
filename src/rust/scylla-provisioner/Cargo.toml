@@ -1,5 +1,5 @@
 [package]
-name = "db-schema-manager"
+name = "scylla-provisioner"
 version = "0.1.0"
 edition = "2021"
 

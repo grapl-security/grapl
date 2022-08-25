@@ -27,10 +27,10 @@ impl GraphDbConfig {
 }
 
 #[derive(clap::Parser, Debug, Clone)]
-pub struct DbSchemaManagerServiceConfig {
+pub struct ScyllaProvisionerServiceConfig {
     #[clap(env)]
     /// The address to bind the graph query service to
-    pub db_schema_manager_bind_address: SocketAddr,
+    pub scylla_provisioner_bind_address: SocketAddr,
 
     #[clap(flatten)]
     pub graph_db_config: GraphDbConfig,

@@ -1,17 +1,17 @@
 use clap::Parser;
-use db_schema_manager::{
-    config::DbSchemaManagerServiceConfig,
+use scylla_provisioner::{
+    config::ScyllaProvisionerServiceConfig,
     server::exec_service,
 };
 use grapl_tracing::setup_tracing;
 use tracing::info;
 
-const SERVICE_NAME: &'static str = "db-schema-manager";
+const SERVICE_NAME: &'static str = "scylla-provisioner";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = setup_tracing(SERVICE_NAME)?;
-    let config = DbSchemaManagerServiceConfig::parse();
+    let config = ScyllaProvisionerServiceConfig::parse();
     info!(message="Starting Db Schema Manager Service", config=?config);
 
     exec_service(config).await?;

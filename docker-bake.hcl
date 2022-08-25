@@ -162,7 +162,7 @@ group "cloudsmith-images" {
 group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "db-schema-manager",
+    "scylla-provisioner",
     "event-source",
     "generator-dispatcher",
     "generator-execution-sidecar",
@@ -291,11 +291,11 @@ target "_rust-base" {
 }
 
 
-target "db-schema-manager" {
+target "scylla-provisioner" {
   inherits = ["_rust-base"]
-  target   = "db-schema-manager-deploy"
+  target   = "scylla-provisioner-deploy"
   tags = [
-    upstream_aware_tag("db-schema-manager")
+    upstream_aware_tag("scylla-provisioner")
   ]
 }
 

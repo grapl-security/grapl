@@ -2,7 +2,6 @@
 members = [
   "./client-executor",
   "./consul-connect",
-  "./db-schema-manager",
   "./derive-dynamic-node",
   "./e2e-tests",
   "./endpoint-plugin",
@@ -29,6 +28,7 @@ members = [
   "./plugin-work-queue",
   "./rust-proto",
   "./graph-schema-manager",
+  "./scylla-provisioner",
   "./sysmon-parser",
   "./uid-allocator",
 ]

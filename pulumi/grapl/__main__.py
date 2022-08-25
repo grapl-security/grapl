@@ -66,7 +66,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
 
     return {
         "analyzer-execution-sidecar": DockerImageId("TODO implement analzyer executor"),
-        "db-schema-manager": builder.build_with_tag("db-schema-manager"),
+        "scylla-provisioner": builder.build_with_tag("scylla-provisioner"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),

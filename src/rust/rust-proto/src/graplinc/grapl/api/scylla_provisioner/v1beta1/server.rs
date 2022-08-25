@@ -12,7 +12,7 @@ use futures::{
     SinkExt,
     StreamExt,
 };
-use proto::db_schema_manager_service_server::DbSchemaManagerService;
+use proto::scylla_provisioner_service_server::ScyllaProvisionerService;
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::{
@@ -26,13 +26,13 @@ use tonic::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::db_schema_manager::v1beta1::messages::{
+    graplinc::grapl::api::scylla_provisioner::v1beta1::messages::{
         DeployGraphSchemasRequest,
         DeployGraphSchemasResponse,
     },
-    protobufs::graplinc::grapl::api::db_schema_manager::v1beta1::{
+    protobufs::graplinc::grapl::api::scylla_provisioner::v1beta1::{
         self as proto,
-        db_schema_manager_service_server::DbSchemaManagerServiceServer as DbSchemaManagerServiceProto,
+        scylla_provisioner_service_server::ScyllaProvisionerServiceServer as ScyllaProvisionerServiceProto,
         DeployGraphSchemasRequest as DeployGraphSchemasRequestProto,
         DeployGraphSchemasResponse as DeployGraphSchemasResponseProto,
     },
@@ -51,7 +51,7 @@ use crate::{
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
-pub trait DbSchemaManagerApi {
+pub trait ScyllaProvisionerApi {
     type Error: Into<Status>;
     async fn deploy_graph_schemas(
         &self,
@@ -60,9 +60,9 @@ pub trait DbSchemaManagerApi {
 }
 
 #[tonic::async_trait]
-impl<T> DbSchemaManagerService for GrpcApi<T>
+impl<T> ScyllaProvisionerService for GrpcApi<T>
 where
-    T: DbSchemaManagerApi + Send + Sync + 'static,
+    T: ScyllaProvisionerApi + Send + Sync + 'static,
 {
     #[tracing::instrument(skip(self, request), err)]
     async fn deploy_graph_schemas(
@@ -90,9 +90,9 @@ where
  * This is almost entirely cargo-culted from PipelineIngressServer.
  * Lots of opportunities to deduplicate and simplify.
  */
-pub struct DbSchemaManagerServer<T, H, F>
+pub struct ScyllaProvisionerServer<T, H, F>
 where
-    T: DbSchemaManagerApi + Send + Sync + 'static,
+    T: ScyllaProvisionerApi + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
 {
@@ -104,9 +104,9 @@ where
     service_name: &'static str,
 }
 
-impl<T, H, F> DbSchemaManagerServer<T, H, F>
+impl<T, H, F> ScyllaProvisionerServer<T, H, F>
 where
-    T: DbSchemaManagerApi + Send + Sync + 'static,
+    T: ScyllaProvisionerApi + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
@@ -129,7 +129,7 @@ where
                 healthcheck_polling_interval,
                 tcp_listener,
                 shutdown_rx,
-                service_name: DbSchemaManagerServiceProto::<GrpcApi<T>>::NAME,
+                service_name: ScyllaProvisionerServiceProto::<GrpcApi<T>>::NAME,
             },
             shutdown_tx,
         )
@@ -146,7 +146,7 @@ where
     /// address. Returns a ServeError if the gRPC server cannot run.
     pub async fn serve(self) -> Result<(), ServeError> {
         let (healthcheck_handle, health_service) =
-            init_health_service::<DbSchemaManagerServiceProto<GrpcApi<T>>, _, _>(
+            init_health_service::<ScyllaProvisionerServiceProto<GrpcApi<T>>, _, _>(
                 self.healthcheck,
                 self.healthcheck_polling_interval,
             )
@@ -156,7 +156,7 @@ where
         Ok(Server::builder()
             .trace_fn(|request| {
                 tracing::info_span!(
-                    "DbSchemaManager",
+                    "ScyllaProvisioner",
                     request_id = ?request.headers().get("x-request-id"),
                     method = ?request.method(),
                     uri = %request.uri(),
@@ -164,7 +164,7 @@ where
                 )
             })
             .add_service(health_service)
-            .add_service(DbSchemaManagerServiceProto::new(GrpcApi::new(
+            .add_service(ScyllaProvisionerServiceProto::new(GrpcApi::new(
                 self.api_server,
             )))
             .serve_with_incoming_shutdown(

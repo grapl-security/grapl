@@ -1273,24 +1273,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ee2393c4a91429dffb4bedf19f4d6abf27d8a732c8ce4980305d782e5426d57"
 
 [[package]]
-name = "db-schema-manager"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "clap 3.2.13",
- "grapl-tracing",
- "rust-proto",
- "scylla",
- "secrecy",
- "test-log",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "uuid",
-]
-
-[[package]]
 name = "der"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4353,6 +4335,24 @@ checksum = "13dc0caffb1274feb3df615e3260cb71a5a7a5d579adc49ba5544c87950a701c"
 dependencies = [
  "quote",
  "syn",
+]
+
+[[package]]
+name = "scylla-provisioner"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "clap 3.2.13",
+ "grapl-tracing",
+ "rust-proto",
+ "scylla",
+ "secrecy",
+ "test-log",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]
