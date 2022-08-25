@@ -809,11 +809,11 @@ job "grapl-core" {
 
       env {
         GRAPH_MUTATION_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-mutation-port}"
-        RUST_BACKTRACE                      = local.rust_backtrace
-        RUST_LOG                            = var.rust_log
-        GRAPH_DB_ADDRESSES                  = var.graph_db.addresses
-        GRAPH_DB_AUTH_PASSWORD              = var.graph_db.password
-        GRAPH_DB_AUTH_USERNAME              = var.graph_db.username
+        RUST_BACKTRACE              = local.rust_backtrace
+        RUST_LOG                    = var.rust_log
+        GRAPH_DB_ADDRESSES          = var.graph_db.addresses
+        GRAPH_DB_AUTH_PASSWORD      = var.graph_db.password
+        GRAPH_DB_AUTH_USERNAME      = var.graph_db.username
 
         # upstreams
         GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"

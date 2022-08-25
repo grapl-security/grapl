@@ -66,7 +66,7 @@ BUILD @christophermaier
 /src/rust/generator-dispatcher/ @wimax-grapl
 /src/rust/generators/ @inickles-grapl
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
-/src/rust/graph-mutation-service/ @colin-grapl
+/src/rust/graph-mutation/ @colin-grapl
 /src/rust/graph-query-service/ @colin-grapl
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
