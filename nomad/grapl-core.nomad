@@ -808,7 +808,7 @@ job "grapl-core" {
       }
 
       env {
-        GRAPH_MUTATION_SERVICE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-mutation-port}"
+        GRAPH_MUTATION_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-mutation-port}"
         RUST_BACKTRACE                      = local.rust_backtrace
         RUST_LOG                            = var.rust_log
         GRAPH_DB_ADDRESSES                  = var.graph_db.addresses

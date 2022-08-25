@@ -26,7 +26,7 @@ pub struct UidAllocatorClientConfig {
 pub struct GraphMutationServiceConfig {
     #[clap(env)]
     /// The address to bind the graph mutation service to
-    pub graph_mutation_service_bind_address: SocketAddr,
+    pub graph_mutation_bind_address: SocketAddr,
 
     #[clap(flatten)]
     pub uid_allocator_client_config: UidAllocatorClientConfig,

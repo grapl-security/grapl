@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         1_000_000,
     );
     exec_service(
-        config.graph_mutation_service_bind_address,
+        config.graph_mutation_bind_address,
         graph_mutation_service,
     )
     .await
