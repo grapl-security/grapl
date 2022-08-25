@@ -128,6 +128,6 @@ def provision() -> None:
             username=username,
             cleartext=password,
             role="owner",
-            org="test_org",
+            org="00000000-0000-0000-0000-000000000000",
         )
         LOGGER.info("created test user")

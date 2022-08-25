@@ -2,4 +2,5 @@
 
 mod auth;
 mod config;
+mod plugin;
 mod test_app;

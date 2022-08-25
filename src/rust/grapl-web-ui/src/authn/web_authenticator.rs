@@ -135,10 +135,18 @@ impl WebAuthenticator {
             .await?
             .ok_or(AuthenticationError::UserNotFound(username.to_string()))?;
 
+        let organization_id =
+            uuid::Uuid::parse_str(user_row.get_organization_id()).map_err(|source| {
+                AuthenticationError::ParseOrgId {
+                    input: user_row.get_organization_id().to_string(),
+                    source,
+                }
+            })?;
+
         let authenticated_user = AuthenticatedUser::new(
             user_row.get_username().to_owned(),
             user_row.get_role().to_owned(),
-            user_row.get_organization_id().to_owned(),
+            organization_id,
         );
 
         Ok(authenticated_user)
