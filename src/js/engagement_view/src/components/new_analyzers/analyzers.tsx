@@ -145,11 +145,12 @@ const NewAnalyzers = () => {
             {/*    <UploadForm></UploadForm>*/}
             {/*</div>*/}
 
-            <div>
-                <UploadPluginModal />
-            </div>
+
             <div>
                 <AnalyzersListTable></AnalyzersListTable>
+            </div>
+            <div>
+                <UploadPluginModal />
             </div>
         </Box>
     );
