@@ -1,4 +1,4 @@
-mod api;
+pub mod api;
 mod grapl_logo;
 pub mod index;
 mod r#static;

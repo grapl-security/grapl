@@ -2,8 +2,16 @@ use clap::Parser;
 use grapl_config::env_helpers::FromEnv;
 use rand::Rng;
 use rusoto_dynamodb::DynamoDbClient;
+use rust_proto::{
+    client_factory::{
+        build_grpc_client,
+        services::PluginRegistryClientConfig,
+    },
+    graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryServiceClient,
+};
 
-use crate::GraphQlEndpointUrl;
+// use rust_proto::protocol::service_client::ConnectError;
+use crate::upstream::GraphQlEndpointUrl;
 
 const KEY_SIZE: usize = 32;
 pub(crate) const SESSION_TOKEN: &'static str = "SESSION_TOKEN";
@@ -17,6 +25,10 @@ pub enum ConfigError {
     Clap(#[from] clap::Error),
     #[error(transparent)]
     BindAddress(#[from] std::io::Error),
+    #[error("failed to initialize Plugin Regsitry client: {source}")]
+    PluginRegistryClient {
+        source: rust_proto::protocol::service_client::ConnectError,
+    },
 }
 
 pub struct Config {
@@ -26,14 +38,22 @@ pub struct Config {
     pub user_auth_table_name: String,
     pub user_session_table_name: String,
     pub graphql_endpoint: GraphQlEndpointUrl,
+    // pub plugin_registry_url: PluginRegistryUrl,
+    // plugin_registry_endpoint: Endpoint,
+    pub plugin_registry_client: PluginRegistryServiceClient,
     pub google_client_id: String,
 }
 
 impl Config {
-    pub fn from_env() -> Result<Self, ConfigError> {
+    pub async fn from_env() -> Result<Self, ConfigError> {
         let builder = ConfigBuilder::try_parse()?;
 
         let listener = std::net::TcpListener::bind(builder.bind_address)?;
+
+        // Delibrately avoiding
+        let plugin_registry_client = build_grpc_client(builder.plugin_registry_config)
+            .await
+            .map_err(|source| ConfigError::PluginRegistryClient { source })?;
 
         let dynamodb_client = DynamoDbClient::from_env();
 
@@ -47,6 +67,8 @@ impl Config {
             user_auth_table_name: builder.user_auth_table_name,
             user_session_table_name: builder.user_session_table_name,
             graphql_endpoint: builder.graphql_endpoint,
+            // plugin_registry_url: builder.plugin_registry_url,
+            plugin_registry_client,
             google_client_id: builder.google_client_id,
         };
 
@@ -65,6 +87,10 @@ pub struct ConfigBuilder {
     pub user_session_table_name: String,
     #[clap(env = "GRAPL_GRAPHQL_ENDPOINT")]
     pub graphql_endpoint: GraphQlEndpointUrl,
+    // #[clap(env = "GRAPL_PLUGIN_REGISTRY_URL")]
+    // pub plugin_registry_url: PluginRegistryUrl,
+    #[clap(flatten)]
+    pub plugin_registry_config: PluginRegistryClientConfig,
     #[clap(env = "GRAPL_GOOGLE_CLIENT_ID")]
     pub google_client_id: String,
 }

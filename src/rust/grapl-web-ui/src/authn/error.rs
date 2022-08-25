@@ -27,6 +27,11 @@ pub enum AuthenticationError {
     SessionTokenNotFound,
     #[error("session expired")]
     SessionExpired,
+    #[error("error parsing tenant_id '{input}': {source}")]
+    ParseOrgId {
+        input: String,
+        source: uuid::Error,
+    }
 }
 
 impl actix_web::error::ResponseError for AuthenticationError {
