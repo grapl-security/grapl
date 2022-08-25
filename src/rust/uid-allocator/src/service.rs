@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use grapl_config::PostgresClient;
 use rust_proto::{
     graplinc::grapl::api::uid_allocator::v1beta1::{
         messages::{
@@ -18,11 +19,11 @@ use rust_proto::{
         status::Status,
     },
 };
-use sqlx::PgPool;
 
 use crate::{
     allocator::UidAllocator,
     config::UidAllocatorServiceConfig,
+    counter_db::CounterDb,
 };
 
 pub struct UidAllocatorService {
@@ -54,6 +55,7 @@ impl From<UidAllocatorServiceError> for Status {
 impl UidAllocatorApi for UidAllocatorService {
     type Error = UidAllocatorServiceError;
 
+    #[tracing::instrument(err, skip(self))]
     async fn allocate_ids(
         &self,
         request: AllocateIdsRequest,
@@ -65,6 +67,7 @@ impl UidAllocatorApi for UidAllocatorService {
         Ok(AllocateIdsResponse { allocation })
     }
 
+    #[tracing::instrument(err, skip(self))]
     async fn create_tenant_keyspace(
         &self,
         request: CreateTenantKeyspaceRequest,
@@ -80,10 +83,10 @@ pub async fn exec_service(
     config: UidAllocatorServiceConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let addr = config.uid_allocator_bind_address;
-    let pool = PgPool::connect(&config.counter_db_config.to_postgres_url()).await?;
+    let counter_db = CounterDb::init_with_config(config.counter_db_config.clone()).await?;
 
     let allocator = UidAllocator::new(
-        pool,
+        counter_db,
         config.preallocation_size,
         config.maximum_allocation_size,
         config.default_allocation_size,

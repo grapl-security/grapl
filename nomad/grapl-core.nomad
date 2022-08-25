@@ -1314,15 +1314,16 @@ job "grapl-core" {
 
       env {
         UID_ALLOCATOR_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
-        COUNTER_DB_HOSTNAME        = var.uid_allocator_db.hostname
-        COUNTER_DB_PASSWORD        = var.uid_allocator_db.password
-        COUNTER_DB_PORT            = var.uid_allocator_db.port
-        COUNTER_DB_USERNAME        = var.uid_allocator_db.username
-        DEFAULT_ALLOCATION_SIZE    = 100
-        PREALLOCATION_SIZE         = 10000
-        MAXIMUM_ALLOCATION_SIZE    = 1000
-        RUST_BACKTRACE             = local.rust_backtrace
-        RUST_LOG                   = var.rust_log
+
+        COUNTER_DB_ADDRESS  = "${var.uid_allocator_db.hostname}:${var.uid_allocator_db.port}"
+        COUNTER_DB_PASSWORD = var.uid_allocator_db.password
+        COUNTER_DB_USERNAME = var.uid_allocator_db.username
+
+        DEFAULT_ALLOCATION_SIZE = 100
+        PREALLOCATION_SIZE      = 10000
+        MAXIMUM_ALLOCATION_SIZE = 1000
+        RUST_BACKTRACE          = local.rust_backtrace
+        RUST_LOG                = var.rust_log
       }
     }
 
