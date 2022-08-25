@@ -171,6 +171,11 @@ job "rust-integration-tests" {
               local_bind_port  = 1009
             }
 
+            upstreams {
+              destination_name = "uid-allocator"
+              local_bind_port  = 1010
+            }
+
           }
         }
       }
@@ -234,6 +239,9 @@ job "rust-integration-tests" {
         GRAPH_DB_ADDRESSES     = var.graph_db.addresses
         GRAPH_DB_AUTH_PASSWORD = var.graph_db.password
         GRAPH_DB_AUTH_USERNAME = var.graph_db.username
+
+        UID_ALLOCATOR_CONNECT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
+        UID_ALLOCATOR_ALLOCATION_SIZE = 100
       }
 
       resources {

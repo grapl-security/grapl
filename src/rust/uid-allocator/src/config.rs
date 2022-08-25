@@ -82,5 +82,5 @@ pub struct UidAllocatorClientConfig {
 
     #[clap(env)]
     /// The size for the client to request when allocating uids
-    pub allocation_size: u32,
+    pub uid_allocator_allocation_size: u32,
 }
