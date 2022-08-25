@@ -13,7 +13,7 @@ async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
 
     let tenant_id = uuid::Uuid::new_v4();
 
-    let endpoint = format!("http://{}", &client_config.uid_allocator_connect_address);
+    let endpoint = client_config.uid_allocator_connect_address;
     let mut allocator_client = CachingUidAllocatorServiceClient::new(
         UidAllocatorServiceClient::connect(endpoint).await?,
         100,
