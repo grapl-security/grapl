@@ -1937,6 +1937,7 @@ dependencies = [
  "blake2",
  "clap 3.2.13",
  "dashmap",
+ "grapl-tracing",
  "grapl-utils",
  "hash_hasher",
  "lazy_static",

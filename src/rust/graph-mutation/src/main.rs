@@ -22,8 +22,12 @@ use uid_allocator::client::{
     UidAllocatorServiceClient as UidAllocatorClient,
 };
 
+const SERVICE_NAME: &'static str = "graph-mutation";
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _guard = grapl_tracing::setup_tracing(SERVICE_NAME);
+
     let config = GraphMutationServiceConfig::parse();
     let mut scylla_config = scylla::SessionConfig::new();
     scylla_config.add_known_nodes_addr(&config.graph_db_config.graph_db_addresses[..]);
