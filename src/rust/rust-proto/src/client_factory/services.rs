@@ -27,3 +27,6 @@ pub use graph_schema_manager::GraphSchemaManagerClientConfig;
 
 mod uid_allocator;
 pub use uid_allocator::UidAllocatorClientConfig;
+
+mod graph_mutation;
+pub use graph_mutation::GraphMutationClientConfig;

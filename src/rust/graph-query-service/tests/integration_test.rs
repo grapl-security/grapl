@@ -9,14 +9,25 @@ use graph_query::{
 use rust_proto::{
     client_factory::{
         build_grpc_client,
-        services::GraphQueryClientConfig,
+        services::{
+            GraphMutationClientConfig,
+            GraphQueryClientConfig,
+        },
     },
     graplinc::grapl::{
-        api::graph_query_service::v1beta1::messages::{
-            MatchedGraphWithUid,
-            MaybeMatchWithUid,
-            QueryGraphWithUidRequest,
-            StringCmp,
+        api::{
+            graph::v1beta1::{
+                ImmutableStrProp,
+                NodeProperty,
+                Property,
+            },
+            graph_mutation::v1beta1::messages as mutation,
+            graph_query_service::v1beta1::messages::{
+                MatchedGraphWithUid,
+                MaybeMatchWithUid,
+                QueryGraphWithUidRequest,
+                StringCmp,
+            },
         },
         common::v1beta1::types::{
             NodeType,
@@ -146,6 +157,7 @@ async fn create_node(
     Ok(())
 }
 
+#[allow(dead_code)]
 async fn insert_string(
     session: &CachingSession,
     keyspace: impl AsRef<str>,
@@ -177,20 +189,46 @@ async fn test_query_single_node() -> Result<(), DynError> {
     );
     tracing::info!("starting test_query_single_node");
 
-    let client_config = GraphQueryClientConfig::parse();
-    let mut graph_query_client = build_grpc_client(client_config).await?;
+    let query_client_config = GraphQueryClientConfig::parse();
+    let mut graph_query_client = build_grpc_client(query_client_config).await?;
     tracing::info!("connected to graph query service");
+
+    let mutation_client_config = GraphMutationClientConfig::parse();
+    let mut graph_mutation_client = build_grpc_client(mutation_client_config).await?;
+    tracing::info!("connected to graph mutation service");
 
     let tenant_id = uuid::Uuid::new_v4();
     _span.record("tenant_id", &format!("{tenant_id}"));
 
     let session = get_scylla_client().await?;
 
-    let keyspace_name = provision_keyspace(session.as_ref(), tenant_id).await?;
+    let _keyspace_name = provision_keyspace(session.as_ref(), tenant_id).await?;
 
-    let uid = Uid::from_u64(1).unwrap();
+    //let uid = Uid::from_u64(1).unwrap();
     let node_type = NodeType::try_from("Process").unwrap();
 
+    let mutation::CreateNodeResponse { uid } = graph_mutation_client
+        .create_node(mutation::CreateNodeRequest {
+            tenant_id,
+            node_type: node_type.clone(),
+        })
+        .await?;
+
+    graph_mutation_client
+        .set_node_property(mutation::SetNodePropertyRequest {
+            tenant_id,
+            uid,
+            node_type: node_type.clone(),
+            property_name: "process_name".try_into()?,
+            property: NodeProperty {
+                property: Property::ImmutableStrProp(ImmutableStrProp {
+                    prop: "chrome.exe".into(),
+                }),
+            },
+        })
+        .await?;
+
+    /*
     create_node(session.as_ref(), &keyspace_name, uid, &node_type).await?;
     insert_string(
         session.as_ref(),
@@ -200,6 +238,7 @@ async fn test_query_single_node() -> Result<(), DynError> {
         "chrome.exe",
     )
     .await?;
+    */
 
     let graph_query = NodeQuery::root(node_type.clone())
         .with_string_comparisons(

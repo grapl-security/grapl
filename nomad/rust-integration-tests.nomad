@@ -167,6 +167,11 @@ job "rust-integration-tests" {
             }
 
             upstreams {
+              destination_name = "graph-mutation"
+              local_bind_port  = 1008
+            }
+
+            upstreams {
               destination_name = "graph-schema-manager"
               local_bind_port  = 1009
             }
@@ -217,6 +222,7 @@ job "rust-integration-tests" {
 
         EVENT_SOURCE_CLIENT_ADDRESS            = "http://${NOMAD_UPSTREAM_ADDR_event-source}"
         GRAPH_QUERY_CLIENT_ADDRESS             = "http://${NOMAD_UPSTREAM_ADDR_graph-query}"
+        GRAPH_MUTATION_CLIENT_ADDRESS          = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
         GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS    = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
         ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
         PIPELINE_INGRESS_CLIENT_ADDRESS        = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
