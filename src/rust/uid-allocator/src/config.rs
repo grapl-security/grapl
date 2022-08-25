@@ -78,7 +78,7 @@ impl UidAllocatorServiceConfig {
 pub struct UidAllocatorClientConfig {
     #[clap(env)]
     /// The address to connect the uid allocator client to
-    pub uid_allocator_connect_address: SocketAddr,
+    pub uid_allocator_connect_address: String,
 
     #[clap(env)]
     /// The size for the client to request when allocating uids
