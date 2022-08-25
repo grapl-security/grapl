@@ -153,6 +153,7 @@ pipeline-ingress/integration_tests
 plugin-registry/integration_tests
 plugin-work-queue/integration_tests
 sysmon-generator/integration_tests
+uid-allocator/integration_tests
 )
 
 # cargo --features expects a comma-separated feature1,feature2,feature3

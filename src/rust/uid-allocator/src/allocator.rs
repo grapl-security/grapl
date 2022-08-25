@@ -5,10 +5,9 @@ use dashmap::{
     DashMap,
 };
 use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::messages::Allocation;
-use sqlx::PgPool;
 
 use crate::{
-    counters_db::CountersDb,
+    counter_db::CounterDb,
     service::UidAllocatorServiceError,
 };
 
@@ -69,8 +68,8 @@ impl PreAllocation {
 pub struct UidAllocator {
     /// The in-memory state of pre-allocated uids for each tenant
     pub allocated_ranges: Arc<DashMap<uuid::Uuid, PreAllocation>>,
-    /// The CountersDb is our source of truth for the last allocated uid for each tenant
-    pub db: CountersDb,
+    /// The CounterDb is our source of truth for the last allocated uid for each tenant
+    pub db: CounterDb,
     /// Default allocation size indicates how many uids to allocate for a tenant if the
     /// client requests an allocation of size `0`.
     /// Consider values of 10, 100, or 1_000
@@ -93,7 +92,7 @@ impl UidAllocator {
     /// Panics if the preallocation_size is larger than the maximum_allocation_size, or if
     /// the either of `preallocation_size` or `maximum_allocation_size` are 0.
     pub fn new(
-        pool: PgPool,
+        counter_db: CounterDb,
         preallocation_size: u32,
         maximum_allocation_size: u32,
         default_allocation_size: u32,
@@ -104,7 +103,7 @@ impl UidAllocator {
         assert!(preallocation_size >= maximum_allocation_size);
         UidAllocator {
             allocated_ranges: Arc::new(DashMap::with_capacity(2)),
-            db: CountersDb { pool },
+            db: counter_db,
             default_allocation_size,
             preallocation_size,
             maximum_allocation_size,

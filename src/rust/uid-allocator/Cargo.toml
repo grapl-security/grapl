@@ -40,6 +40,7 @@ sqlx = { version = "0.6", features = [
 thiserror = "1.0.30"
 dashmap = "5.2.0"
 async-trait = "0.1.53"
+grapl-config = { path = "../grapl-config" }
 opentelemetry = { version = "0.16", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.15", features = [
   "collector_client",
