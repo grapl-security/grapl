@@ -19,7 +19,7 @@ pub struct TestApp {
 impl TestApp {
     /// Initialize a new instance of TestApp.
     ///
-    /// This provisinos a new test user to use for authentication.
+    /// This provisions a new test user to use for authentication.
     pub async fn init() -> eyre::Result<Self> {
         let config = TestConfig::from_env()?;
 

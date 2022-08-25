@@ -7,6 +7,8 @@ use actix_web::{
 };
 use actix_web_opentelemetry::ClientExt;
 
+use crate::upstream::GraphQlEndpointUrl;
+
 pub(super) fn config(cfg: &mut actix_web::web::ServiceConfig) {
     cfg.service(handler);
 }
@@ -15,7 +17,7 @@ pub(super) fn config(cfg: &mut actix_web::web::ServiceConfig) {
 pub(crate) async fn handler(
     req: HttpRequest,
     payload: web::Payload,
-    backend_endpoint: web::Data<crate::GraphQlEndpointUrl>,
+    backend_endpoint: web::Data<GraphQlEndpointUrl>,
     path: web::Path<String>,
     client: web::Data<awc::Client>,
     _user: crate::authn::AuthenticatedUser,
