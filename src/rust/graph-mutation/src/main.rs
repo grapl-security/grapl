@@ -5,7 +5,7 @@ use std::{
 };
 
 use clap::Parser;
-use graph_mutation_service::{
+use graph_mutation::{
     config::GraphMutationServiceConfig,
     graph_mutation::GraphMutationManager,
     reverse_edge_resolver::ReverseEdgeResolver,

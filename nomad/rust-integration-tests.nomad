@@ -162,7 +162,7 @@ job "rust-integration-tests" {
             }
 
             upstreams {
-              destination_name = "graph-query-service"
+              destination_name = "graph-query"
               local_bind_port  = 1007
             }
 
@@ -216,7 +216,7 @@ job "rust-integration-tests" {
         ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
         EVENT_SOURCE_CLIENT_ADDRESS            = "http://${NOMAD_UPSTREAM_ADDR_event-source}"
-        GRAPH_QUERY_CLIENT_ADDRESS             = "http://${NOMAD_UPSTREAM_ADDR_graph-query-service}"
+        GRAPH_QUERY_CLIENT_ADDRESS             = "http://${NOMAD_UPSTREAM_ADDR_graph-query}"
         GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS    = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
         ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
         PIPELINE_INGRESS_CLIENT_ADDRESS        = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"

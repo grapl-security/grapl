@@ -10,8 +10,8 @@ members = [
   "./generators/osquery-generator",
   "./generators/sysmon-generator",
   "./graph-merger",
-  "./graph-mutation-service",
-  "./graph-query-service",
+  "./graph-mutation",
+  "./graph-query-service", # TODO rename dir
   "./graph-schema-manager",
   "./grapl-config",
   "./grapl-graphql-codegen",

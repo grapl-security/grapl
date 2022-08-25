@@ -2,7 +2,7 @@
 use std::sync::Arc;
 
 use clap::Parser;
-use graph_query_service::{
+use graph_query::{
     config::GraphDbConfig,
     node_query::NodeQuery,
 };

@@ -295,17 +295,17 @@ FROM rust-dist AS graph-merger-deploy
 COPY --from=build /outputs/graph-merger /
 ENTRYPOINT ["/graph-merger"]
 
-##### graph-query-service
-FROM rust-dist AS graph-query-service-deploy
+##### graph-query
+FROM rust-dist AS graph-query-deploy
 
-COPY --from=build /outputs/graph-query-service /
-ENTRYPOINT ["/graph-query-service"]
+COPY --from=build /outputs/graph-query /
+ENTRYPOINT ["/graph-query"]
 
-##### graph-mutation-service
-FROM rust-dist AS graph-mutation-service-deploy
+##### graph-mutation
+FROM rust-dist AS graph-mutation-deploy
 
-COPY --from=build /outputs/graph-mutation-service /
-ENTRYPOINT ["/graph-mutation-service"]
+COPY --from=build /outputs/graph-mutation /
+ENTRYPOINT ["/graph-mutation"]
 
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy

@@ -1930,7 +1930,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "graph-mutation-service"
+name = "graph-mutation"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -1951,7 +1951,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "graph-query-service"
+name = "graph-query"
 version = "0.1.0"
 dependencies = [
  "async-recursion",
