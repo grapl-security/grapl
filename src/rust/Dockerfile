@@ -144,7 +144,7 @@ INTEGRATION_TEST_FEATURES=(
 e2e-tests/integration_tests
 generator-dispatcher/integration_tests
 graph-merger/integration_tests
-graph-query-service/integration_tests
+graph-query/integration_tests
 graph-schema-manager/integration_tests
 grapl-web-ui/integration_tests
 node-identifier/integration_tests
