@@ -9,9 +9,11 @@ use uid_allocator::client::CachingUidAllocatorServiceClient;
 
 #[tokio::test]
 async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
+    let _guard = grapl_tracing::setup_tracing("uid-allocator integ test")?;
     let client_config = uid_allocator::config::UidAllocatorClientConfig::parse();
 
     let tenant_id = uuid::Uuid::new_v4();
+    tracing::info!(tenant_id = ?tenant_id);
 
     let endpoint = client_config.uid_allocator_connect_address;
     let mut allocator_client = CachingUidAllocatorServiceClient::new(
