@@ -184,6 +184,8 @@ async fn insert_string(
 
 #[test_log::test(tokio::test)]
 async fn test_query_single_node() -> Result<(), DynError> {
+    let _guard = grapl_tracing::setup_tracing("graph-query-service integ tests");
+
     let _span = tracing::info_span!(
         "tenant_id", tenant_id=?tracing::field::Empty,
     );
