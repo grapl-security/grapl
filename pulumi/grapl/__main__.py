@@ -74,6 +74,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
             "generator-execution-sidecar"
         ),
         "graph-merger": builder.build_with_tag("graph-merger"),
+        "graph-query-service": builder.build_with_tag("graph-query-service"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
         "kafka-retry": builder.build_with_tag("kafka-retry"),
@@ -305,6 +306,8 @@ def main() -> None:
     event_source_db: NomadServicePostgresResource
     graph_schema_manager_db: NomadServicePostgresResource
 
+    graph_db = ScyllaInstance("graph-db")
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -456,8 +459,7 @@ def main() -> None:
         )
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
-            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
-            # instead of the var version.
+            graph_db=graph_db.to_nomad_scylla_args(),
             event_source_db=event_source_db.to_nomad_service_db_args(),
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
@@ -539,6 +541,8 @@ def main() -> None:
 
     pulumi.export("user-auth-table", dynamodb_tables.user_auth_table.name)
     pulumi.export("user-session-table", dynamodb_tables.user_session_table.name)
+
+    pulumi.export("graph-db", graph_db.to_nomad_scylla_args())
 
     # Not currently imported in integration tests:
     # - uid-allocator-db

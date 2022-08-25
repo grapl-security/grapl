@@ -11,9 +11,10 @@ recloser = "1.0.0"
 thiserror = "1.0.31"
 tokio = { version = "1.20.0", features = ["full"] }
 tokio-retry = "0.3.0"
-tracing = "0.1.35"
+tracing = "0.1"
 
 [dev-dependencies]
+env_logger = "0.9.0"
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",

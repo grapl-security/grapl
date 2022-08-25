@@ -351,22 +351,41 @@ mod plugin_registry {
         fn test_serde_get_generators_for_event_source_requests(value in pr_strats::get_generators_for_event_source_requests()) {
             check_encode_decode_invariant(value)
         }
+
         #[test]
         fn test_serde_get_generators_for_event_source_responses(value in pr_strats::get_generators_for_event_source_responses()) {
             check_encode_decode_invariant(value)
         }
+
         #[test]
         fn test_serde_get_plugin_requests(value in pr_strats::get_plugin_requests()) {
             check_encode_decode_invariant(value)
         }
+
         #[test]
         fn test_serde_get_plugin_responses(value in pr_strats::get_plugin_responses()) {
             check_encode_decode_invariant(value)
         }
+
+        #[test]
+        fn test_serde_get_plugin_deployment_requests(
+            plugin_deployment_request in pr_strats::get_plugin_deployment_requests()
+        ) {
+            check_encode_decode_invariant(plugin_deployment_request)
+        }
+
+        #[test]
+        fn test_serde_get_plugin_deployment_responses(
+            plugin_deployment_response in pr_strats::get_plugin_deployment_responses()
+        ) {
+            check_encode_decode_invariant(plugin_deployment_response)
+        }
+
         #[test]
         fn test_serde_tear_down_plugin_requests(value in pr_strats::tear_down_plugin_requests()) {
             check_encode_decode_invariant(value)
         }
+
         #[test]
         fn test_serde_tear_down_plugin_responses(value in pr_strats::tear_down_plugin_responses()) {
             check_encode_decode_invariant(value)

@@ -14,6 +14,7 @@ from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Credential, Kafka
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresDbArgs
+from infra.scylla import NomadServiceScyllaDbArgs
 
 import pulumi
 
@@ -66,6 +67,7 @@ def main() -> None:
     )
 
     rust_integration_tests_job_vars: NomadVars = {
+        "graph_db": grapl_stack.graph_db,
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _rust_integration_container_images(artifacts),
@@ -115,6 +117,8 @@ class GraplStack:
 
         self.user_auth_table = require_str("user-auth-table")
         self.user_session_table = require_str("user-session-table")
+
+        self.graph_db = cast(NomadServiceScyllaDbArgs, ref.require_output("graph-db"))
 
 
 if __name__ == "__main__":

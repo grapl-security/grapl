@@ -167,6 +167,7 @@ group "rust-services" {
     "generator-dispatcher",
     "generator-execution-sidecar",
     "graph-merger",
+    "graph-query-service",
     "grapl-web-ui",
     "kafka-retry",
     "node-identifier",
@@ -312,6 +313,14 @@ target "graph-merger" {
   target   = "graph-merger-deploy"
   tags = [
     upstream_aware_tag("graph-merger")
+  ]
+}
+
+target "graph-query-service" {
+  inherits = ["_rust-base"]
+  target   = "graph-query-service-deploy"
+  tags = [
+    upstream_aware_tag("graph-query-service")
   ]
 }
 

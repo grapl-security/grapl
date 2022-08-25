@@ -113,6 +113,21 @@ impl PluginRegistryServiceClient {
         )
     }
 
+    #[instrument(skip(self, request), err)]
+    pub async fn get_plugin_deployment(
+        &mut self,
+        request: native::GetPluginDeploymentRequest,
+    ) -> Result<native::GetPluginDeploymentResponse, GrpcClientError> {
+        execute_client_rpc!(
+            self,
+            request,
+            get_plugin_deployment,
+            proto::GetPluginDeploymentRequest,
+            native::GetPluginDeploymentResponse,
+            ExecuteClientRpcOptions::default(),
+        )
+    }
+
     /// turn on a particular plugin's code
     #[instrument(skip(self, request), err)]
     pub async fn deploy_plugin(

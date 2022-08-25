@@ -77,7 +77,30 @@
     },
     "query": "\n            INSERT INTO plugin_deployment (\n                plugin_id,\n                status\n            )\n            VALUES ($1::uuid, $2);\n            "
   },
-  "5a1b633a47279ec559e797b2d76abb94d85ebf1853cb7b7e9fa4d3b6f633d5f8": {
+  "93bdfbb157510d24a4fd8b0b88d24940089be7a3c3b4310de3f895aa8962f816": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "fail",
+                  "success"
+                ]
+              },
+              "name": "plugin_deployment_status"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO plugin_deployment (\n                plugin_id,\n                status,\n                deployed\n            ) VALUES (\n                $1::uuid,\n                $2,\n                false\n            ) ON CONFLICT DO NOTHING;\n            "
+  },
+  "ae60f2fc0cb1f7ac6f34b510895de75115c4c04ac0ebd8ee6287edb9324987c1": {
     "describe": {
       "columns": [
         {
@@ -91,7 +114,7 @@
           "type_info": "Uuid"
         },
         {
-          "name": "deploy_time",
+          "name": "timestamp",
           "ordinal": 2,
           "type_info": "Timestamptz"
         },
@@ -109,9 +132,15 @@
               "name": "plugin_deployment_status"
             }
           }
+        },
+        {
+          "name": "deployed",
+          "ordinal": 4,
+          "type_info": "Bool"
         }
       ],
       "nullable": [
+        false,
         false,
         false,
         false,
@@ -123,7 +152,7 @@
         ]
       }
     },
-    "query": "\n            SELECT\n                id,\n                plugin_id,\n                deploy_time,\n                status AS \"status: PluginDeploymentStatus\"\n            FROM plugin_deployment\n            WHERE plugin_id = $1\n            ORDER BY id desc limit 1;\n            "
+    "query": "\n            SELECT\n                id,\n                plugin_id,\n                timestamp,\n                status AS \"status: PluginDeploymentStatus\",\n                deployed\n            FROM plugin_deployment\n            WHERE plugin_id = $1\n            ORDER BY id desc limit 1;\n            "
   },
   "cd302b0299a3919aa7fcd34ec60877e8a3189560b9485dc9f75b3ca0368afcc8": {
     "describe": {

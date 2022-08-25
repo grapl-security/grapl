@@ -680,10 +680,14 @@ pub mod plugin_registry {
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginDeploymentRequest,
+        GetPluginDeploymentResponse,
         GetPluginHealthRequest,
         GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
+        PluginDeployment,
+        PluginDeploymentStatus,
         PluginHealthStatus,
         PluginMetadata,
         PluginType,
@@ -799,6 +803,41 @@ pub mod plugin_registry {
             plugin_metadata in plugin_metadatas(),
         ) -> GetPluginResponse {
             GetPluginResponse::new(plugin_id, plugin_metadata)
+        }
+    }
+
+    pub fn plugin_deployment_statuses() -> impl Strategy<Value = PluginDeploymentStatus> {
+        prop_oneof![
+            Just(PluginDeploymentStatus::Unspecified),
+            Just(PluginDeploymentStatus::Success),
+            Just(PluginDeploymentStatus::Fail),
+        ]
+    }
+
+    prop_compose! {
+        pub fn plugin_deployments()(
+            plugin_id in uuids(),
+            timestamp in any::<SystemTime>(),
+            status in plugin_deployment_statuses(),
+            deployed in any::<bool>(),
+        ) -> PluginDeployment {
+            PluginDeployment::new(plugin_id, timestamp, status, deployed)
+        }
+    }
+
+    prop_compose! {
+        pub fn get_plugin_deployment_requests()(
+            plugin_id in uuids()
+        ) -> GetPluginDeploymentRequest {
+            GetPluginDeploymentRequest::new(plugin_id)
+        }
+    }
+
+    prop_compose! {
+        pub fn get_plugin_deployment_responses()(
+            plugin_deployment in plugin_deployments()
+        ) -> GetPluginDeploymentResponse {
+            GetPluginDeploymentResponse::new(plugin_deployment)
         }
     }
 

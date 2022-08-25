@@ -160,6 +160,15 @@ variable "plugin_work_queue_db" {
   description = "Vars for plugin-work-queue database"
 }
 
+variable "graph_db" {
+  type = object({
+    addresses = string
+    username  = string
+    password  = string
+  })
+  description = "Vars for graph (scylla) database"
+}
+
 variable "uid_allocator_db" {
   type = object({
     hostname = string
@@ -775,6 +784,51 @@ job "grapl-core" {
     }
   }
 
+
+  group "graph-query-service" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "graph-query-service-port" {
+      }
+    }
+
+    task "graph-query-service" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["graph-query-service"]
+        ports = ["graph-query-service-port"]
+      }
+
+      env {
+        GRAPH_QUERY_SERVICE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-service-port}"
+        RUST_BACKTRACE                   = local.rust_backtrace
+        RUST_LOG                         = var.rust_log
+        GRAPH_DB_ADDRESSES               = var.graph_db.addresses
+        GRAPH_DB_AUTH_PASSWORD           = var.graph_db.password
+        GRAPH_DB_AUTH_USERNAME           = var.graph_db.username
+      }
+    }
+
+    service {
+      name = "graph-query-service"
+      port = "graph-query-service-port"
+      connect {
+        sidecar_service {}
+      }
+
+      check {
+        type     = "grpc"
+        port     = "graph-query-service-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
+    }
+  }
+
   group "node-identifier" {
     count = 2
 
@@ -1313,10 +1367,13 @@ job "grapl-core" {
 
       env {
         UID_ALLOCATOR_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
-        UID_ALLOCATOR_DB_HOSTNAME  = var.uid_allocator_db.hostname
-        UID_ALLOCATOR_DB_PASSWORD  = var.uid_allocator_db.password
-        UID_ALLOCATOR_DB_PORT      = var.uid_allocator_db.port
-        UID_ALLOCATOR_DB_USERNAME  = var.uid_allocator_db.username
+        COUNTER_DB_HOSTNAME        = var.uid_allocator_db.hostname
+        COUNTER_DB_PASSWORD        = var.uid_allocator_db.password
+        COUNTER_DB_PORT            = var.uid_allocator_db.port
+        COUNTER_DB_USERNAME        = var.uid_allocator_db.username
+        DEFAULT_ALLOCATION_SIZE    = 100
+        PREALLOCATION_SIZE         = 10000
+        MAXIMUM_ALLOCATION_SIZE    = 1000
         RUST_BACKTRACE             = local.rust_backtrace
         RUST_LOG                   = var.rust_log
       }
