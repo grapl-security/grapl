@@ -192,7 +192,7 @@ job "rust-integration-tests" {
         GRAPL_USER_AUTH_TABLE                  = var.user_auth_table
         GRAPL_USER_SESSION_TABLE               = var.user_session_table
         GRAPL_WEB_UI_ENDPOINT_ADDRESS          = "http://${NOMAD_UPSTREAM_ADDR_web-ui}"
-        SCYLLA_PROVISIONER_ENDPOINT_ADDRESS     = "http://${NOMAD_UPSTREAM_ADDR_scylla-provisioner}"
+        SCYLLA_PROVISIONER_ENDPOINT_ADDRESS    = "http://${NOMAD_UPSTREAM_ADDR_scylla-provisioner}"
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS   = "0.0.0.0:1004" # not used but required due to clap
         ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
         ORGANIZATION_MANAGEMENT_DB_ADDRESS     = "${var.organization_management_db.hostname}:${var.organization_management_db.port}"

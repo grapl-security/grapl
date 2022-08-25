@@ -615,11 +615,11 @@ job "grapl-core" {
 
       env {
         SCYLLA_PROVISIONER_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_scylla-provisioner-port}"
-        RUST_BACKTRACE                 = local.rust_backtrace
-        RUST_LOG                       = var.rust_log
-        GRAPH_DB_ADDRESSES             = var.graph_db.addresses
-        GRAPH_DB_AUTH_PASSWORD         = var.graph_db.password
-        GRAPH_DB_AUTH_USERNAME         = var.graph_db.username
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        GRAPH_DB_ADDRESSES              = var.graph_db.addresses
+        GRAPH_DB_AUTH_PASSWORD          = var.graph_db.password
+        GRAPH_DB_AUTH_USERNAME          = var.graph_db.username
       }
     }
 

@@ -1,9 +1,9 @@
 use clap::Parser;
+use grapl_tracing::setup_tracing;
 use scylla_provisioner::{
     config::ScyllaProvisionerServiceConfig,
     server::exec_service,
 };
-use grapl_tracing::setup_tracing;
 use tracing::info;
 
 const SERVICE_NAME: &'static str = "scylla-provisioner";
