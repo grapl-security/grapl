@@ -1,7 +1,8 @@
-use sqlx::PgPool;
+use grapl_config::PostgresClient;
 
 use crate::{
     allocator::PreAllocation,
+    config::CounterDbConfig,
     service::UidAllocatorServiceError,
 };
 
@@ -12,11 +13,29 @@ pub struct Count {
 }
 
 #[derive(Clone)]
-pub struct CountersDb {
-    pub pool: PgPool,
+pub struct CounterDb {
+    pub pool: sqlx::PgPool,
 }
 
-impl CountersDb {
+#[async_trait::async_trait]
+impl PostgresClient for CounterDb {
+    type Config = CounterDbConfig;
+    type Error = grapl_config::PostgresDbInitError;
+
+    fn new(pool: sqlx::Pool<sqlx::Postgres>) -> Self {
+        Self { pool }
+    }
+
+    #[tracing::instrument]
+    async fn migrate(pool: &sqlx::Pool<sqlx::Postgres>) -> Result<(), sqlx::migrate::MigrateError> {
+        tracing::info!(message = "Performing database migration");
+
+        sqlx::migrate!().run(pool).await
+    }
+}
+
+impl CounterDb {
+    #[tracing::instrument(skip(self), err)]
     pub async fn preallocate(
         &self,
         tenant_id: uuid::Uuid,
@@ -49,6 +68,12 @@ impl CountersDb {
             Some(count) => count,
             None => return Err(UidAllocatorServiceError::UnknownTenant(tenant_id)),
         };
+
+        tracing::debug!(
+            message="Allocated new range in db",
+            prev=%count.prev,
+            new=%count.new,
+        );
 
         Ok(PreAllocation::new(count.prev as u64, count.new as u64))
     }

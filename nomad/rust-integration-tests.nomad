@@ -171,6 +171,11 @@ job "rust-integration-tests" {
               local_bind_port  = 1009
             }
 
+            upstreams {
+              destination_name = "uid-allocator"
+              local_bind_port  = 1010
+            }
+
           }
         }
       }
@@ -203,19 +208,21 @@ job "rust-integration-tests" {
         GRAPL_USER_SESSION_TABLE      = var.user_session_table
         GRAPL_WEB_UI_ENDPOINT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_web-ui}"
 
-        ORGANIZATION_MANAGEMENT_BIND_ADDRESS   = "0.0.0.0:1004" # not used but required due to clap
-        ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
-        ORGANIZATION_MANAGEMENT_DB_ADDRESS     = "${var.organization_management_db.hostname}:${var.organization_management_db.port}"
-        ORGANIZATION_MANAGEMENT_DB_PASSWORD    = var.organization_management_db.password
-        ORGANIZATION_MANAGEMENT_DB_USERNAME    = var.organization_management_db.username
+        ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:1004" # not used but required due to clap
+        ORGANIZATION_MANAGEMENT_DB_ADDRESS   = "${var.organization_management_db.hostname}:${var.organization_management_db.port}"
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db.password
+        ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db.username
 
         ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
-        EVENT_SOURCE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_event-source}"
-
-        PIPELINE_INGRESS_CLIENT_ADDRESS  = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
-        PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
-        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+        EVENT_SOURCE_CLIENT_ADDRESS            = "http://${NOMAD_UPSTREAM_ADDR_event-source}"
+        GRAPH_QUERY_CLIENT_ADDRESS             = "http://${NOMAD_UPSTREAM_ADDR_graph-query-service}"
+        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS    = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
+        ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
+        PIPELINE_INGRESS_CLIENT_ADDRESS        = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
+        PLUGIN_REGISTRY_CLIENT_ADDRESS         = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS       = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+        UID_ALLOCATOR_CLIENT_ADDRESS           = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
 
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_group
@@ -227,9 +234,6 @@ job "rust-integration-tests" {
         PLUGIN_WORK_QUEUE_DB_ADDRESS  = "${var.plugin_work_queue_db.hostname}:${var.plugin_work_queue_db.port}"
         PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue_db.username
         PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue_db.password
-
-        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
-        GRAPH_QUERY_CLIENT_ADDRESS          = "http://${NOMAD_UPSTREAM_ADDR_graph-query-service}"
 
         GRAPH_DB_ADDRESSES     = var.graph_db.addresses
         GRAPH_DB_AUTH_PASSWORD = var.graph_db.password
