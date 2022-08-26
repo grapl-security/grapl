@@ -206,7 +206,8 @@ FROM debian:bullseye-slim AS integration-tests
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        ca-certificates=20210119
+        ca-certificates=20210119 \
+        parallel
 
 # Put the Nomad binary on PATH
 # so that it's available to integration test consumers of NomadCli
@@ -228,10 +229,8 @@ COPY --from=build /outputs/example-generator /test-fixtures
 COPY --from=build /outputs/sysmon-generator /test-fixtures
 
 COPY --from=build-test-integration /grapl/tests /tests
-# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --from=test-ctx ./run/rust-integration-tests.sh /
-ENTRYPOINT [ "/rust-integration-tests.sh" ]
+
+ENTRYPOINT [ "sh", "-c", "find /tests -type f | parallel" ]
 
 
 # images for running services
