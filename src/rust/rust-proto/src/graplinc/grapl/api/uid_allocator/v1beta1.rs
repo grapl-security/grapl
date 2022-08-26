@@ -189,6 +189,7 @@ pub mod client {
         Executor,
         ExecutorConfig,
     };
+    use tonic::transport::Endpoint;
 
     use crate::{
         client_macros::ExecuteClientRpcOptions,
@@ -200,35 +201,31 @@ pub mod client {
             uid_allocator_service_client::UidAllocatorServiceClient as UidAllocatorServiceClientProto,
         },
         protocol::{
-            service_client::ConnectError,
-            status::Status,
+            error::GrpcClientError,
+            service_client::{
+                ConnectError,
+                Connectable,
+            },
         },
-        SerDeError,
     };
 
-    #[derive(thiserror::Error, Debug)]
-    pub enum UidAllocatorServiceClientError {
-        #[error("Failed to deserialize response {0}")]
-        SerDeError(#[from] SerDeError),
-        #[error("Status {0}")]
-        Status(Status),
-        #[error("ConnectError")]
-        ConnectError(tonic::transport::Error),
-    }
+    pub type UidAllocatorServiceClientError = GrpcClientError;
 
     #[derive(Clone)]
     /// This allocator should rarely be used. Instead, use the CachingUidAllocatorServiceClient
     /// from the uid-allocator crate.
     pub struct UidAllocatorServiceClient {
         proto_client: UidAllocatorServiceClientProto<tonic::transport::Channel>,
+        executor: Executor,
     }
 
-    impl UidAllocatorServiceClient {
-        pub async fn connect<T>(endpoint: T) -> Result<Self, ConnectError>
-        where
-            T: TryInto<tonic::transport::Endpoint> + Clone,
-            T::Error: std::error::Error + Send + Sync + 'static,
-        {
+    #[async_trait::async_trait]
+    impl Connectable for UidAllocatorServiceClient {
+        const SERVICE_NAME: &'static str =
+            "graplinc.grapl.api.uid_allocator.v1beta1.UidAllocatorService";
+
+        #[tracing::instrument(err)]
+        async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
             let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
             let proto_client = create_proto_client!(
                 executor,
@@ -236,9 +233,14 @@ pub mod client {
                 endpoint,
             );
 
-            Ok(UidAllocatorServiceClient { proto_client })
+            Ok(Self {
+                proto_client,
+                executor,
+            })
         }
+    }
 
+    impl UidAllocatorServiceClient {
         pub async fn allocate_ids(
             &mut self,
             request: native::AllocateIdsRequest,
