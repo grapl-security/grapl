@@ -24,17 +24,33 @@ job "otel-collector-gateway" {
         to = 9090
       }
 
+      port "zipkin" {
+        to = 9411
+      }
+
+      port "jaeger-grpc" {
+        to = 14250
+      }
+
+      port "jaeger-thrift" {
+        to = 14268
+      }
     }
 
     service {
       port = "otlp-http"
     }
 
-
     service {
       name = "otel-collector-hc"
       port = "prometheus"
       tags = ["prometheus"]
+    }
+
+    service {
+      name = "otel-collector-zipkin"
+      port = "zipkin"
+      tags = ["zipkin"]
     }
 
     service {
@@ -47,7 +63,7 @@ job "otel-collector-gateway" {
       driver = "docker"
 
       config {
-        image = "otel/opentelemetry-collector-contrib:0.40.0"
+        image      = "otel/opentelemetry-collector-contrib:0.40.0"
         force_pull = true
 
         entrypoint = [
@@ -69,8 +85,9 @@ job "otel-collector-gateway" {
       }
 
       template {
-        data   = <<EOF
+        data        = <<EOF
 receivers:
+  zipkin:
   otlp:
     protocols:
       grpc:
@@ -88,11 +105,15 @@ processors:
 exporters:
   logging:
     logLevel: debug
+  otlp/ls:
+    endpoint: ingest.lightstep.com:443
+    headers:
+      "lightstep-access-token": "leVpbNbMm++jqMMyA0N6Ko+Acuzw7xWTw3yxenVkVll4fzxY2VwmeQwPOIuTqUK/yhfxJeGsGorY4Qk891ngSipYm/agwwox2aggLY7h"
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [logging]
+      exporters: [logging, otlp/ls]
 EOF
         destination = "local/config/otel-collector-config.yaml"
       }

@@ -19,7 +19,7 @@ class ConsulConfig(pulumi.ComponentResource):
         super().__init__("grapl:ConsulConfig", name, None, opts)
 
         # Instead of using a reading a hcl file or a template, we're just going to define it here as a plain python dict
-        # so its easy to pass in a url.
+        # so it's easy to pass in an url.
         config = {
             "Config": [
                 {

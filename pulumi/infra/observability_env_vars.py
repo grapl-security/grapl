@@ -1,5 +1,7 @@
 from infra import config
 
+import pulumi
+
 
 def observability_env_vars_for_local() -> str:
     # We currently use both the zipkin v2 endpoint for consul, python and typescript instrumentation and the jaeger udp
@@ -25,3 +27,45 @@ def observability_env_vars_for_local() -> str:
         OTEL_EXPORTER_ZIPKIN_ENDPOINT   = {zipkin_endpoint}
         OTEL_BSP_MAX_EXPORT_BATCH_SIZE = {otel_bsp_max_export_batch_size}
     """
+
+
+def otel_config(lightstep_token: pulumi.Output[str]) -> pulumi.Output[str]:
+    return pulumi.Output.all(lightstep_token=lightstep_token).apply(
+        lambda args: f"""
+receivers:
+  zipkin:
+  jaeger:
+    protocols:
+      thrift_compact:
+        endpoint: "0.0.0.0:6831"
+  otlp:
+    protocols:
+      grpc:
+      http:
+        endpoint: "0.0.0.0:4318"
+processors:
+  batch:
+    timeout: 10s
+  memory_limiter:
+    # 75% of maximum memory up to 4G
+    limit_mib: 1536
+    # 25% of limit up to 2G
+    spike_limit_mib: 512
+    check_interval: 5s
+exporters:
+  logging:
+    logLevel: debug
+  otlp/ls:
+    endpoint: ingest.lightstep.com:443
+    headers:
+      "lightstep-access-token": {args['lightstep_token']}
+service:
+  telemetry:
+    logs:
+      level: "debug"
+  pipelines:
+    traces:
+      receivers: [otlp, jaeger, zipkin]
+      exporters: [logging, otlp/ls]
+"""
+    )

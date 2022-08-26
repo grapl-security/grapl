@@ -30,7 +30,7 @@ from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
-from infra.observability_env_vars import observability_env_vars_for_local
+from infra.observability_env_vars import observability_env_vars_for_local, otel_config
 from infra.postgres import Postgres
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -301,6 +301,23 @@ def main() -> None:
     uid_allocator_db: NomadServicePostgresResource
     event_source_db: NomadServicePostgresResource
 
+    # TODO migrate secret lookups to dynamic vault lookups inline Nomad.
+    #  This requires Nomad to have been hooked up to Vault first
+    lightstep_access_token = pulumi.Output.secret(
+        pulumi_config.get(key="lightstep-access-token") or ""
+    )
+    otel_configuration = otel_config(lightstep_access_token)
+    NomadJob(
+        "otel-collector",
+        jobspec=repository_path("nomad/observability.nomad"),
+        vars=dict(otel_config=otel_configuration),
+        opts=ResourceOptions(
+            custom_timeouts=CustomTimeouts(
+                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
+            )
+        ),
+    )
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -345,7 +362,7 @@ def main() -> None:
         # Once we're using dns addresses we can create it for everything
         ConsulConfig(
             "grapl-core",
-            tracing_endpoint="jaeger-zipkin.service.consul",
+            tracing_endpoint="otel-collector-zipkin.service.consul",
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 
