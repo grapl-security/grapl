@@ -167,6 +167,30 @@ pub async fn deploy_plugin(
     Ok(())
 }
 
+#[tracing::instrument(skip(client, db_client, plugin), err)]
+pub async fn teardown_plugin(
+    client: &NomadClient,
+    db_client: &PluginRegistryDbClient,
+    plugin: PluginRow,
+    service_config: &PluginRegistryServiceConfig,
+) -> Result<(), PluginRegistryServiceError> {
+    // --- Convert HCL to JSON Job model
+    let job_name = plugin_nomad_job::job_name();
+    let namespace_name = plugin_nomad_job::namespace_name(&plugin.plugin_id);
+
+    // --- Delete the job
+    client
+        .delete_job(job_name.to_owned(), Some(namespace_name.clone()))
+        .await?;
+
+    // --- Mark plugin as inactive in `plugins` table
+    db_client
+        .deactivate_plugin_deployment(&plugin.plugin_id)
+        .await?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -184,6 +208,7 @@ mod tests {
             passthrough_vars: Default::default(),
         }
     }
+
     /// This is used to keep test coverage on the eventually-desirable-but-
     /// currently-deadcode `get_job` logic branch.
     #[test]

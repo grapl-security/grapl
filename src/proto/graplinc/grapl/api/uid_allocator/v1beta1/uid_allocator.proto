@@ -27,7 +27,18 @@ message AllocateIdsResponse {
   Allocation allocation = 1;
 }
 
-// The UidAllocator provides an API for requesting node ids for a given tenant
+// Creates a new entry for a tenant, with a uid allocation of 1
+message CreateTenantKeyspaceRequest {
+  // The tenant ID that we want to set up
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+}
+
+// The response to a CreateTenantKeyspaceRequest, indicating successful setup
+message CreateTenantKeyspaceResponse {
+  // Empty
+}
+
+// The UidAllocatorService provides an API for requesting node ids for a given tenant
 service UidAllocatorService {
   // Allocate a range of ids for a tenant. Although the client may request a range, the server will
   // decide what range to provide, truncating or expanding as necessary.
@@ -35,4 +46,11 @@ service UidAllocatorService {
   // OK and a range of ids for the tenant
   // NOT_FOUND if the tenant does not exist
   rpc AllocateIds(AllocateIdsRequest) returns (AllocateIdsResponse);
+
+  // Initializes a new tenant Id keyspace if it does not exist
+  // returns:
+  // OK if the tenant keyspace was set up properly or if the tenant keyspace already exists
+  rpc CreateTenantKeyspace(CreateTenantKeyspaceRequest) returns (CreateTenantKeyspaceResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }

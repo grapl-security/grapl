@@ -111,8 +111,9 @@ impl PluginRegistryDbClient {
             SELECT
                 id,
                 plugin_id,
-                deploy_time,
-                status AS "status: PluginDeploymentStatus"
+                timestamp,
+                status AS "status: PluginDeploymentStatus",
+                deployed
             FROM plugin_deployment
             WHERE plugin_id = $1
             ORDER BY id desc limit 1;
@@ -195,5 +196,30 @@ impl PluginRegistryDbClient {
         .execute(&self.pool)
         .await
         .map(|_| ()) // Toss result
+    }
+
+    pub async fn deactivate_plugin_deployment(
+        &self,
+        plugin_id: &uuid::Uuid,
+    ) -> Result<(), sqlx::Error> {
+        let plugin_deployment_row = self.get_plugin_deployment(plugin_id).await?;
+        sqlx::query!(
+            r"
+            INSERT INTO plugin_deployment (
+                plugin_id,
+                status,
+                deployed
+            ) VALUES (
+                $1::uuid,
+                $2,
+                false
+            ) ON CONFLICT DO NOTHING;
+            ",
+            plugin_deployment_row.plugin_id,
+            plugin_deployment_row.status as _,
+        )
+        .execute(&self.pool)
+        .await
+        .map(|_| ())
     }
 }

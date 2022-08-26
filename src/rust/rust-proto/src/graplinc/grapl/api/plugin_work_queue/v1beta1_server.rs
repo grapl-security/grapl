@@ -34,7 +34,6 @@ use crate::{
         status::Status,
     },
     server_internals::GrpcApi,
-    SerDeError,
 };
 
 /// Implement this trait to define the API business logic

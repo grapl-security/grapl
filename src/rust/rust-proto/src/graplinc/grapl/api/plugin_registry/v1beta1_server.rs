@@ -34,6 +34,8 @@ use crate::{
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginDeploymentRequest,
+        GetPluginDeploymentResponse,
         GetPluginHealthRequest,
         GetPluginHealthResponse,
         GetPluginRequest,
@@ -70,6 +72,11 @@ pub trait PluginRegistryApi {
 
     async fn get_plugin(&self, request: GetPluginRequest)
         -> Result<GetPluginResponse, Self::Error>;
+
+    async fn get_plugin_deployment(
+        &self,
+        request: GetPluginDeploymentRequest,
+    ) -> Result<GetPluginDeploymentResponse, Self::Error>;
 
     async fn deploy_plugin(
         &self,
@@ -149,6 +156,13 @@ where
         request: Request<proto::GetPluginRequest>,
     ) -> Result<Response<proto::GetPluginResponse>, tonic::Status> {
         execute_rpc!(self, request, get_plugin)
+    }
+
+    async fn get_plugin_deployment(
+        &self,
+        request: Request<proto::GetPluginDeploymentRequest>,
+    ) -> Result<Response<proto::GetPluginDeploymentResponse>, tonic::Status> {
+        execute_rpc!(self, request, get_plugin_deployment)
     }
 
     async fn deploy_plugin(
