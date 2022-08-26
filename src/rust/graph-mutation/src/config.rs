@@ -1,6 +1,9 @@
 use std::net::SocketAddr;
 
-use rust_proto::client_factory::services::GraphSchemaManagerClientConfig;
+use rust_proto::client_factory::services::{
+    GraphSchemaManagerClientConfig,
+    UidAllocatorClientConfig,
+};
 
 #[derive(clap::Parser, Debug, Clone)]
 pub struct GraphDbConfig {
@@ -13,13 +16,6 @@ pub struct GraphDbConfig {
     #[clap(env)]
     /// The password for the graph database
     pub graph_db_auth_password: String,
-}
-
-#[derive(clap::Parser, Debug, Clone)]
-pub struct UidAllocatorClientConfig {
-    #[clap(env)]
-    /// The address to connect to for the uid allocator
-    pub uid_allocator_address: String,
 }
 
 #[derive(clap::Parser, Debug, Clone)]

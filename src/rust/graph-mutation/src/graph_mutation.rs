@@ -72,11 +72,11 @@ impl From<GraphMutationManagerError> for Status {
                 e
             )),
             GraphMutationManagerError::UidAllocatorServiceClientError(
-                UidAllocatorServiceClientError::Status(e),
+                UidAllocatorServiceClientError::ErrorStatus(e),
             ) => e,
-            GraphMutationManagerError::UidAllocatorServiceClientError(
-                UidAllocatorServiceClientError::ConnectError(e),
-            ) => Status::internal(format!("Failed to connect to UidAllocator {:?}", e)),
+            GraphMutationManagerError::UidAllocatorServiceClientError(_) => {
+                Status::internal(format!("UidAllocatorClient error: {e:?}"))
+            }
             GraphMutationManagerError::ZeroUid => Status::failed_precondition("Allocated Zero Uid"),
             e => Status::internal(e.to_string()),
         }
@@ -123,10 +123,13 @@ impl GraphMutationManager {
                 || async move {
                     let property_value = property_value as i64;
                     let tenant_urn = tenant_keyspace.urn();
-                    let mut query = Query::new(format!(r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{MAX_U_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                    let mut query = Query::new(format!(
+                        r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{MAX_U_64_TABLE_NAME} 
+                        (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
-                    "));
+                    "
+                    ));
                     query.set_timestamp(Some(property_value));
 
                     self.scylla_client
@@ -163,10 +166,13 @@ impl GraphMutationManager {
                 || async move {
                     let property_value = property_value as i64;
                     let tenant_urn = tenant_keyspace.urn();
-                    let mut query = Query::new(format!(r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{MIN_U_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                    let mut query = Query::new(format!(
+                        r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{MIN_U_64_TABLE_NAME} 
+                        (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
-                    "));
+                    "
+                    ));
 
                     query.set_timestamp(Some(-property_value));
 
@@ -205,10 +211,13 @@ impl GraphMutationManager {
                     // todo: We should only prepare statements once
 
                     let tenant_urn = tenant_keyspace.urn();
-                    let query = Query::new(format!(r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_U_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                    let query = Query::new(format!(
+                        r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_U_64_TABLE_NAME} 
+                        (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
-                    "));
+                    "
+                    ));
 
                     self.scylla_client
                         .execute(
@@ -244,10 +253,13 @@ impl GraphMutationManager {
                 property_value,
                 || async move {
                     let tenant_urn = tenant_keyspace.urn();
-                    let mut query = Query::new(format!(r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{MAX_I_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                    let mut query = Query::new(format!(
+                        r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{MAX_I_64_TABLE_NAME} 
+                        (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
-                    "));
+                    "
+                    ));
                     query.set_timestamp(Some(property_value));
 
                     self.scylla_client
@@ -283,10 +295,13 @@ impl GraphMutationManager {
                 property_value,
                 || async move {
                     let tenant_urn = tenant_keyspace.urn();
-                    let mut query = Query::new(format!(r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{MIN_I_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                    let mut query = Query::new(format!(
+                        r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{MIN_I_64_TABLE_NAME} 
+                        (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
-                    "));
+                    "
+                    ));
 
                     query.set_timestamp(Some(-property_value));
 
@@ -322,10 +337,13 @@ impl GraphMutationManager {
                 property_name.clone(),
                 || async move {
                     let tenant_urn = tenant_keyspace.urn();
-                    let query = Query::new(format!(r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_I_64_TABLE_NAME} (uid, node_type, property_name, property_value)
+                    let query = Query::new(format!(
+                        r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_I_64_TABLE_NAME} 
+                        (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
-                    "));
+                    "
+                    ));
 
                     self.scylla_client
                         .execute(
@@ -382,12 +400,14 @@ impl GraphMutationManager {
                 node_type.clone(),
                 property_name.clone(),
                 || async move {
-
                     let tenant_urn = tenant_keyspace.urn();
-                    let query = Query::new(format!(r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_STRING_TABLE_NAME} (uid, node_type, property_name, property_value)
+                    let query = Query::new(format!(
+                        r"
+                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_STRING_TABLE_NAME} 
+                        (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
-                    "));
+                    "
+                    ));
 
                     self.scylla_client
                         .execute(

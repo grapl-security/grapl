@@ -40,13 +40,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ));
     let graph_schema_manager_client =
         build_grpc_client(config.graph_schema_manager_client_config).await?;
+    let uid_allocator_client =
+        CachingUidAllocatorClient::from_client_config(config.uid_allocator_client_config, 100)
+            .await?;
     let graph_mutation_service = GraphMutationManager::new(
         scylla_client,
-        CachingUidAllocatorClient::new(
-            UidAllocatorClient::connect(config.uid_allocator_client_config.uid_allocator_address)
-                .await?,
-            100,
-        ),
+        uid_allocator_client,
         ReverseEdgeResolver::new(graph_schema_manager_client, 10_000),
         1_000_000,
     );
