@@ -40,7 +40,7 @@ impl PreAllocation {
         // take a u32 because the requested size should never be close to that
         let mut requested_size = requested_size as u64;
 
-        // If we have exhausted the PreAllocation, return None.
+        // If we have not exhausted the PreAllocation
         if self.current < self.end {
             let previous = self.current;
             // If the requested size is larger than the remaining space, we truncate.
@@ -121,6 +121,7 @@ impl UidAllocator {
     ///
     /// If the current preallocated range is already exhausted `allocate` will preallocate a new range,
     /// storing that range in the counter database, and will return a new allocation from that preallocation.
+    #[tracing::instrument(skip(self), err)]
     pub async fn allocate(
         &self,
         tenant_id: uuid::Uuid,
@@ -134,6 +135,10 @@ impl UidAllocator {
         // First, we check if we have a PreAllocation for this tenant. If not, we create one.
         match self.allocated_ranges.entry(tenant_id) {
             Entry::Occupied(mut entry) => {
+                tracing::debug!(
+                    message="Found existing preallocation for tenant",
+                    tenant_id=%tenant_id
+                );
                 let preallocation = entry.get_mut();
 
                 let allocation = preallocation.next(size);
@@ -166,6 +171,7 @@ impl UidAllocator {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn create_tenant_keyspace(
         &self,
         tenant_id: uuid::Uuid,

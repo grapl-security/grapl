@@ -64,6 +64,10 @@ impl UidAllocatorApi for UidAllocatorService {
         // `0` is a sentinel for "let the server decide on the allocation size"
         let count = if count == 0 { 1_000 } else { count };
         let allocation = self.allocator.allocate(tenant_id, count).await?;
+        tracing::debug!(
+            message="Returning new allocation",
+            allocation=?allocation,
+        );
         Ok(AllocateIdsResponse { allocation })
     }
 

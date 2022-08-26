@@ -13,21 +13,28 @@ async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = uid_allocator::config::UidAllocatorClientConfig::parse();
 
     let tenant_id = uuid::Uuid::new_v4();
-    tracing::info!(tenant_id = ?tenant_id);
-
     let endpoint = client_config.uid_allocator_connect_address;
+    tracing::info!(
+        tenant_id = ?tenant_id,
+        endpoint = %endpoint,
+    );
+
     let mut allocator_client = CachingUidAllocatorServiceClient::new(
         UidAllocatorServiceClient::connect(endpoint).await?,
         100,
     );
 
+    tracing::info!("creating keyspace");
     allocator_client
         .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
         .await?;
 
-    for i in 1u64..10_000 {
+    tracing::info!("allocating ids");
+    let mut init = 0;
+    for _ in 1u64..10000 {
         let next_id = allocator_client.allocate_id(tenant_id).await?;
-        assert_eq!(next_id, i);
+        assert!(next_id > init);
+        init = next_id;
     }
 
     Ok(())
