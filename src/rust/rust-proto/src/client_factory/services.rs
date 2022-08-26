@@ -24,3 +24,6 @@ pub use plugin_work_queue::PluginWorkQueueClientConfig;
 
 mod graph_schema_manager;
 pub use graph_schema_manager::GraphSchemaManagerClientConfig;
+
+mod uid_allocator;
+pub use uid_allocator::UidAllocatorClientConfig;

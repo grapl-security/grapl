@@ -5,10 +5,9 @@ use dashmap::{
     DashMap,
 };
 use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::messages::Allocation;
-use sqlx::PgPool;
 
 use crate::{
-    counters_db::CountersDb,
+    counter_db::CounterDb,
     service::UidAllocatorServiceError,
 };
 
@@ -41,7 +40,7 @@ impl PreAllocation {
         // take a u32 because the requested size should never be close to that
         let mut requested_size = requested_size as u64;
 
-        // If we have exhausted the PreAllocation, return None.
+        // If we have not exhausted the PreAllocation
         if self.current < self.end {
             let previous = self.current;
             // If the requested size is larger than the remaining space, we truncate.
@@ -69,8 +68,8 @@ impl PreAllocation {
 pub struct UidAllocator {
     /// The in-memory state of pre-allocated uids for each tenant
     pub allocated_ranges: Arc<DashMap<uuid::Uuid, PreAllocation>>,
-    /// The CountersDb is our source of truth for the last allocated uid for each tenant
-    pub db: CountersDb,
+    /// The CounterDb is our source of truth for the last allocated uid for each tenant
+    pub db: CounterDb,
     /// Default allocation size indicates how many uids to allocate for a tenant if the
     /// client requests an allocation of size `0`.
     /// Consider values of 10, 100, or 1_000
@@ -93,7 +92,7 @@ impl UidAllocator {
     /// Panics if the preallocation_size is larger than the maximum_allocation_size, or if
     /// the either of `preallocation_size` or `maximum_allocation_size` are 0.
     pub fn new(
-        pool: PgPool,
+        counter_db: CounterDb,
         preallocation_size: u32,
         maximum_allocation_size: u32,
         default_allocation_size: u32,
@@ -104,7 +103,7 @@ impl UidAllocator {
         assert!(preallocation_size >= maximum_allocation_size);
         UidAllocator {
             allocated_ranges: Arc::new(DashMap::with_capacity(2)),
-            db: CountersDb { pool },
+            db: counter_db,
             default_allocation_size,
             preallocation_size,
             maximum_allocation_size,
@@ -122,6 +121,7 @@ impl UidAllocator {
     ///
     /// If the current preallocated range is already exhausted `allocate` will preallocate a new range,
     /// storing that range in the counter database, and will return a new allocation from that preallocation.
+    #[tracing::instrument(skip(self), err)]
     pub async fn allocate(
         &self,
         tenant_id: uuid::Uuid,
@@ -135,6 +135,10 @@ impl UidAllocator {
         // First, we check if we have a PreAllocation for this tenant. If not, we create one.
         match self.allocated_ranges.entry(tenant_id) {
             Entry::Occupied(mut entry) => {
+                tracing::debug!(
+                    message="Found existing preallocation for tenant",
+                    tenant_id=%tenant_id
+                );
                 let preallocation = entry.get_mut();
 
                 let allocation = preallocation.next(size);
@@ -167,6 +171,7 @@ impl UidAllocator {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn create_tenant_keyspace(
         &self,
         tenant_id: uuid::Uuid,

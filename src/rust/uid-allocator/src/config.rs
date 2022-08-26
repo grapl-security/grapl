@@ -2,33 +2,21 @@ use std::net::SocketAddr;
 
 #[derive(clap::Parser, Debug, Clone)]
 pub struct CounterDbConfig {
-    #[clap(env)]
-    /// The hostname of the counter database
-    counter_db_hostname: String,
-
-    #[clap(env)]
-    /// The username to use when connecting to the counter database
+    #[clap(long, env)]
+    counter_db_address: String,
+    #[clap(long, env)]
     counter_db_username: String,
-
-    #[clap(env)]
-    /// The password to use when connecting to the counter database
-    counter_db_password: String,
-
-    #[clap(env)]
-    /// The port to use when connecting to the counter database
-    counter_db_port: u16,
+    #[clap(long, env)]
+    counter_db_password: grapl_config::SecretString,
 }
 
-impl CounterDbConfig {
-    /// Returns the postgres connection url
-    pub fn to_postgres_url(&self) -> String {
-        format!(
-            "postgres://{}:{}@{}:{}",
-            self.counter_db_username,
-            self.counter_db_password,
-            self.counter_db_hostname,
-            self.counter_db_port,
-        )
+impl grapl_config::ToPostgresUrl for CounterDbConfig {
+    fn to_postgres_url(self) -> grapl_config::PostgresUrl {
+        grapl_config::PostgresUrl {
+            address: self.counter_db_address,
+            username: self.counter_db_username,
+            password: self.counter_db_password,
+        }
     }
 }
 
@@ -84,15 +72,4 @@ impl UidAllocatorServiceConfig {
 
         Ok(())
     }
-}
-
-#[derive(clap::Parser, Debug, Clone)]
-pub struct UidAllocatorClientConfig {
-    #[clap(env)]
-    /// The address to connect the uid allocator client to
-    pub uid_allocator_connect_address: SocketAddr,
-
-    #[clap(env)]
-    /// The size for the client to request when allocating uids
-    pub allocation_size: u32,
 }

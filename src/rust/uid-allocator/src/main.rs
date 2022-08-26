@@ -3,6 +3,7 @@ use uid_allocator::config::UidAllocatorServiceConfig;
 
 const SERVICE_NAME: &str = "uid-allocator";
 
+#[tracing::instrument(err)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = grapl_tracing::setup_tracing(SERVICE_NAME)?;
