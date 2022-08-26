@@ -5,6 +5,10 @@ use clap::Parser;
 use graph_query::{
     config::GraphDbConfig,
     node_query::NodeQuery,
+    table_names::{
+        tenant_keyspace_name,
+        IMM_STRING_TABLE_NAME,
+    },
 };
 use rust_proto::{
     client_factory::{
@@ -45,12 +49,6 @@ use secrecy::ExposeSecret;
 
 type DynError = Box<dyn std::error::Error + Send + Sync>;
 
-fn tenant_keyspace_name(tenant_id: uuid::Uuid) -> String {
-    // scylla keyspace names must be alphanumeric + underscores, and max out at 48.
-    // fun fact: the result of this is exactly 48
-    format!("tenant_keyspace_{}", tenant_id.simple())
-}
-
 // NOTE: temporary code to set up the keyspace before we have a service
 // to set it up for us
 #[tracing::instrument(skip(session, uid_allocator_client), err)]
@@ -70,7 +68,7 @@ async fn provision_keyspace(
         &[],
     ).await?;
 
-    let property_table_names = [("immutable_strings", "text")];
+    let property_table_names = [(IMM_STRING_TABLE_NAME, "text")];
 
     for (table_name, value_type) in property_table_names.into_iter() {
         session

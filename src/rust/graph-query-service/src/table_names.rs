@@ -1,3 +1,5 @@
+// Completely copy-pasted from graph-mutation;
+// perhaps find a shared place for this to live
 pub const MAX_I_64_TABLE_NAME: &str = "max_i64";
 pub const MIN_I_64_TABLE_NAME: &str = "min_i64";
 pub const IMM_I_64_TABLE_NAME: &str = "imm_i64";

@@ -39,6 +39,7 @@ use crate::{
         ReverseEdgeResolverError,
     },
     table_names::{
+        tenant_keyspace_name,
         IMM_I_64_TABLE_NAME,
         IMM_STRING_TABLE_NAME,
         IMM_U_64_TABLE_NAME,
@@ -88,12 +89,6 @@ pub struct GraphMutationManager {
     uid_allocator_client: UidAllocatorClient,
     reverse_edge_resolver: ReverseEdgeResolver,
     write_dropper: WriteDropper,
-}
-
-fn tenant_keyspace_name(tenant_id: uuid::Uuid) -> String {
-    // scylla keyspace names must be alphanumeric + underscores, and max out at 48.
-    // fun fact: the result of this is exactly 48
-    format!("tenant_keyspace_{}", tenant_id.simple())
 }
 
 impl GraphMutationManager {

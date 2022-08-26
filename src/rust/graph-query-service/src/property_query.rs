@@ -17,6 +17,11 @@ use scylla::{
     CachingSession,
 };
 
+use crate::table_names::{
+    tenant_keyspace_name,
+    IMM_STRING_TABLE_NAME,
+};
+
 #[derive(Debug, thiserror::Error)]
 pub enum PropertyQueryError {
     #[error("QueryError: {0}")]
@@ -69,12 +74,12 @@ impl PropertyQueryExecutor {
         uid: Uid,
         property_name: &PropertyName,
     ) -> Result<Option<StringField>, PropertyQueryError> {
-        let tenant_urn = tenant_id.simple();
+        let tenant_ks = tenant_keyspace_name(tenant_id);
 
         let mut query = scylla::query::Query::from(format!(
             r"
             SELECT value
-            FROM tenant_keyspace_{tenant_urn}.immutable_strings
+            FROM {tenant_ks}.{IMM_STRING_TABLE_NAME}
             WHERE
                 uid = ? AND
                 populated_field = ?
@@ -108,12 +113,12 @@ impl PropertyQueryExecutor {
         uid: Uid,
         edge_name: &EdgeName,
     ) -> Result<Option<Vec<EdgeRow>>, PropertyQueryError> {
-        let tenant_urn = tenant_id.simple();
+        let tenant_ks = tenant_keyspace_name(tenant_id);
 
         let mut query = scylla::query::Query::from(format!(
             r"
             SELECT r_edge_name, destination_uid
-            FROM tenant_keyspace_{tenant_urn}.edge
+            FROM {tenant_ks}.edge
             WHERE
                 source_uid = ? AND
                 f_edge_name = ?
