@@ -69,8 +69,8 @@ pub mod server {
 
     #[async_trait::async_trait]
     impl<T> UidAllocatorServiceProto for GrpcApi<T>
-    where
-        T: UidAllocatorApi + Send + Sync + 'static,
+        where
+            T: UidAllocatorApi + Send + Sync + 'static,
     {
         async fn allocate_ids(
             &self,
@@ -93,10 +93,10 @@ pub mod server {
      * Lots of opportunities to deduplicate and simplify.
      */
     pub struct UidAllocatorServer<T, H, F>
-    where
-        T: UidAllocatorApi + Send + Sync + 'static,
-        H: Fn() -> F + Send + Sync + 'static,
-        F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
+        where
+            T: UidAllocatorApi + Send + Sync + 'static,
+            H: Fn() -> F + Send + Sync + 'static,
+            F: Future<Output=Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
     {
         api_server: T,
         healthcheck: H,
@@ -107,10 +107,10 @@ pub mod server {
     }
 
     impl<T, H, F> UidAllocatorServer<T, H, F>
-    where
-        T: UidAllocatorApi + Send + Sync + 'static,
-        H: Fn() -> F + Send + Sync + 'static,
-        F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
+        where
+            T: UidAllocatorApi + Send + Sync + 'static,
+            H: Fn() -> F + Send + Sync + 'static,
+            F: Future<Output=Result<HealthcheckStatus, HealthcheckError>> + Send,
     {
         /// Construct a new gRPC server which will serve the given API
         /// implementation on the given socket address. Server is constructed in
@@ -152,7 +152,7 @@ pub mod server {
                     self.healthcheck,
                     self.healthcheck_polling_interval,
                 )
-                .await;
+                    .await;
 
             // TODO: add tower tracing, tls_config, concurrency limits
             Ok(Server::builder()
@@ -183,21 +183,19 @@ pub mod server {
 }
 
 pub mod client {
-    use crate::{
-        graplinc::grapl::api::uid_allocator::v1beta1::messages::{
-            AllocateIdsRequest,
-            AllocateIdsResponse,
-            CreateTenantKeyspaceRequest,
-            CreateTenantKeyspaceResponse,
-        },
-        protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
-            uid_allocator_service_client::UidAllocatorServiceClient as UidAllocatorServiceClientProto,
-            AllocateIdsRequest as AllocateIdsRequestProto,
-            CreateTenantKeyspaceRequest as CreateTenantKeyspaceRequestProto,
-        },
-        protocol::status::Status,
-        SerDeError,
-    };
+    use std::time::Duration;
+    use client_executor::{Executor, ExecutorConfig};
+    use crate::{create_proto_client, graplinc::grapl::api::uid_allocator::v1beta1::messages::{
+        AllocateIdsRequest,
+        AllocateIdsResponse,
+        CreateTenantKeyspaceRequest,
+        CreateTenantKeyspaceResponse,
+    }, protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
+        uid_allocator_service_client::UidAllocatorServiceClient as UidAllocatorServiceClientProto,
+        AllocateIdsRequest as AllocateIdsRequestProto,
+        CreateTenantKeyspaceRequest as CreateTenantKeyspaceRequestProto,
+    }, protocol::status::Status, SerDeError};
+    use crate::protocol::service_client::ConnectError;
 
     #[derive(thiserror::Error, Debug)]
     pub enum UidAllocatorServiceClientError {
@@ -213,19 +211,24 @@ pub mod client {
     /// This allocator should rarely be used. Instead, use the CachingUidAllocatorServiceClient
     /// from the uid-allocator crate.
     pub struct UidAllocatorServiceClient {
-        inner: UidAllocatorServiceClientProto<tonic::transport::Channel>,
+        proto_client: UidAllocatorServiceClientProto<tonic::transport::Channel>,
     }
 
     impl UidAllocatorServiceClient {
-        pub async fn connect<T>(endpoint: T) -> Result<Self, UidAllocatorServiceClientError>
-        where
-            T: std::convert::TryInto<tonic::transport::Endpoint>,
-            T::Error: std::error::Error + Send + Sync + 'static,
+        pub async fn connect<T>(endpoint: T) -> Result<Self, ConnectError>
+            where
+                T: TryInto<tonic::transport::Endpoint> + Clone,
+                T::Error: std::error::Error + Send + Sync + 'static,
         {
+            let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
+            let proto_client = create_proto_client!(
+                executor,
+                UidAllocatorServiceClientProto<tonic::transport::Channel>,
+               endpoint,
+            );
+
             Ok(UidAllocatorServiceClient {
-                inner: UidAllocatorServiceClientProto::connect(endpoint)
-                    .await
-                    .map_err(UidAllocatorServiceClientError::ConnectError)?,
+                proto_client
             })
         }
 
@@ -235,7 +238,7 @@ pub mod client {
         ) -> Result<AllocateIdsResponse, UidAllocatorServiceClientError> {
             let raw_request: AllocateIdsRequestProto = request.into();
             let raw_response = self
-                .inner
+                .proto_client
                 .allocate_ids(raw_request)
                 .await
                 .map_err(|s| UidAllocatorServiceClientError::Status(s.into()))?;
@@ -250,7 +253,7 @@ pub mod client {
         ) -> Result<CreateTenantKeyspaceResponse, UidAllocatorServiceClientError> {
             let raw_request: CreateTenantKeyspaceRequestProto = request.into();
             let raw_response = self
-                .inner
+                .proto_client
                 .create_tenant_keyspace(raw_request)
                 .await
                 .map_err(|s| UidAllocatorServiceClientError::Status(s.into()))?;

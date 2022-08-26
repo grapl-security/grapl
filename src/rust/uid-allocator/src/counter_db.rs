@@ -35,6 +35,7 @@ impl PostgresClient for CounterDb {
 }
 
 impl CounterDb {
+    #[tracing::instrument(skip(self), err)]
     pub async fn preallocate(
         &self,
         tenant_id: uuid::Uuid,
@@ -67,6 +68,12 @@ impl CounterDb {
             Some(count) => count,
             None => return Err(UidAllocatorServiceError::UnknownTenant(tenant_id)),
         };
+
+        tracing::debug!(
+            message="Allocated new range in db",
+            prev=%count.prev,
+            new=%count.new,
+        );
 
         Ok(PreAllocation::new(count.prev as u64, count.new as u64))
     }
