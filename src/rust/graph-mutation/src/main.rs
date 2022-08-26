@@ -17,10 +17,7 @@ use rust_proto::{
 };
 use scylla::CachingSession;
 use tokio::net::TcpListener;
-use uid_allocator::client::{
-    CachingUidAllocatorServiceClient as CachingUidAllocatorClient,
-    UidAllocatorServiceClient as UidAllocatorClient,
-};
+use uid_allocator::client::CachingUidAllocatorServiceClient as CachingUidAllocatorClient;
 
 const SERVICE_NAME: &'static str = "graph-mutation";
 

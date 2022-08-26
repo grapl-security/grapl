@@ -56,9 +56,9 @@ pub enum GraphMutationManagerError {
     UidAllocatorServiceClientError(#[from] UidAllocatorServiceClientError),
     #[error("Allocated Zero Uid")]
     ZeroUid,
-    #[error("Scylla Error {0}")]
+    #[error("Scylla Error: {0}")]
     ScyllaError(#[from] scylla::transport::errors::QueryError),
-    #[error("ReverseEdgeResolverError {0}")]
+    #[error("ReverseEdgeResolverError: {0}")]
     ReverseEdgeResolverError(#[from] ReverseEdgeResolverError),
 }
 
@@ -90,6 +90,12 @@ pub struct GraphMutationManager {
     write_dropper: WriteDropper,
 }
 
+fn tenant_keyspace_name(tenant_id: uuid::Uuid) -> String {
+    // scylla keyspace names must be alphanumeric + underscores, and max out at 48.
+    // fun fact: the result of this is exactly 48
+    format!("tenant_keyspace_{}", tenant_id.simple())
+}
+
 impl GraphMutationManager {
     pub fn new(
         scylla_client: Arc<CachingSession>,
@@ -108,7 +114,7 @@ impl GraphMutationManager {
     #[tracing::instrument(skip(self), err)]
     async fn upsert_max_u64(
         &self,
-        tenant_keyspace: uuid::Uuid,
+        tenant_id: uuid::Uuid,
         uid: Uid,
         node_type: NodeType,
         property_name: PropertyName,
@@ -116,16 +122,16 @@ impl GraphMutationManager {
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_max_u64(
-                tenant_keyspace,
+                tenant_id,
                 node_type.clone(),
                 property_name.clone(),
                 property_value,
                 || async move {
                     let property_value = property_value as i64;
-                    let tenant_urn = tenant_keyspace.urn();
+                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let mut query = Query::new(format!(
                         r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{MAX_U_64_TABLE_NAME} 
+                        INSERT INTO {tenant_ks}.{MAX_U_64_TABLE_NAME} 
                         (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
                     "
@@ -151,7 +157,7 @@ impl GraphMutationManager {
 
     async fn upsert_min_u64(
         &self,
-        tenant_keyspace: uuid::Uuid,
+        tenant_id: uuid::Uuid,
         uid: Uid,
         node_type: NodeType,
         property_name: PropertyName,
@@ -159,16 +165,16 @@ impl GraphMutationManager {
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_min_u64(
-                tenant_keyspace,
+                tenant_id,
                 node_type.clone(),
                 property_name.clone(),
                 property_value,
                 || async move {
                     let property_value = property_value as i64;
-                    let tenant_urn = tenant_keyspace.urn();
+                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let mut query = Query::new(format!(
                         r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{MIN_U_64_TABLE_NAME} 
+                        INSERT INTO {tenant_ks}.{MIN_U_64_TABLE_NAME} 
                         (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
                     "
@@ -195,7 +201,7 @@ impl GraphMutationManager {
 
     async fn upsert_immutable_u64(
         &self,
-        tenant_keyspace: uuid::Uuid,
+        tenant_id: uuid::Uuid,
         uid: Uid,
         node_type: NodeType,
         property_name: PropertyName,
@@ -203,17 +209,17 @@ impl GraphMutationManager {
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_imm_u64(
-                tenant_keyspace,
+                tenant_id,
                 node_type.clone(),
                 property_name.clone(),
                 || async move {
                     let property_value = property_value as i64;
                     // todo: We should only prepare statements once
 
-                    let tenant_urn = tenant_keyspace.urn();
+                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let query = Query::new(format!(
                         r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_U_64_TABLE_NAME} 
+                        INSERT INTO {tenant_ks}.{IMM_U_64_TABLE_NAME} 
                         (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
                     "
@@ -239,7 +245,7 @@ impl GraphMutationManager {
     #[tracing::instrument(skip(self), err)]
     async fn upsert_max_i64(
         &self,
-        tenant_keyspace: uuid::Uuid,
+        tenant_id: uuid::Uuid,
         uid: Uid,
         node_type: NodeType,
         property_name: PropertyName,
@@ -247,15 +253,15 @@ impl GraphMutationManager {
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_max_i64(
-                tenant_keyspace,
+                tenant_id,
                 node_type.clone(),
                 property_name.clone(),
                 property_value,
                 || async move {
-                    let tenant_urn = tenant_keyspace.urn();
+                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let mut query = Query::new(format!(
                         r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{MAX_I_64_TABLE_NAME} 
+                        INSERT INTO {tenant_ks}.{MAX_I_64_TABLE_NAME} 
                         (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
                     "
@@ -281,7 +287,7 @@ impl GraphMutationManager {
 
     async fn upsert_min_i64(
         &self,
-        tenant_keyspace: uuid::Uuid,
+        tenant_id: uuid::Uuid,
         uid: Uid,
         node_type: NodeType,
         property_name: PropertyName,
@@ -289,15 +295,15 @@ impl GraphMutationManager {
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_min_i64(
-                tenant_keyspace,
+                tenant_id,
                 node_type.clone(),
                 property_name.clone(),
                 property_value,
                 || async move {
-                    let tenant_urn = tenant_keyspace.urn();
+                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let mut query = Query::new(format!(
                         r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{MIN_I_64_TABLE_NAME} 
+                        INSERT INTO {tenant_ks}.{MIN_I_64_TABLE_NAME} 
                         (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
                     "
@@ -324,7 +330,7 @@ impl GraphMutationManager {
 
     async fn upsert_immutable_i64(
         &self,
-        tenant_keyspace: uuid::Uuid,
+        tenant_id: uuid::Uuid,
         uid: Uid,
         node_type: NodeType,
         property_name: PropertyName,
@@ -332,14 +338,14 @@ impl GraphMutationManager {
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_imm_i64(
-                tenant_keyspace,
+                tenant_id,
                 node_type.clone(),
                 property_name.clone(),
                 || async move {
-                    let tenant_urn = tenant_keyspace.urn();
+                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let query = Query::new(format!(
                         r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_I_64_TABLE_NAME} 
+                        INSERT INTO {tenant_ks}.{IMM_I_64_TABLE_NAME} 
                         (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
                     "
@@ -364,16 +370,16 @@ impl GraphMutationManager {
 
     async fn set_node_type(
         &self,
-        tenant_keyspace: uuid::Uuid,
+        tenant_id: uuid::Uuid,
         uid: Uid,
         node_type: NodeType,
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
-            .check_node_type(tenant_keyspace, uid, || async move {
-                let tenant_urn = tenant_keyspace.urn();
+            .check_node_type(tenant_id, uid, || async move {
+                let tenant_ks = tenant_keyspace_name(tenant_id);
                 let query = Query::new(format!(
                     r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.node_type (uid, node_type)
+                        INSERT INTO {tenant_ks}.node_type (uid, node_type)
                         VALUES (?, ?)
                     "
                 ));
@@ -388,7 +394,7 @@ impl GraphMutationManager {
 
     async fn upsert_immutable_string(
         &self,
-        tenant_keyspace: uuid::Uuid,
+        tenant_id: uuid::Uuid,
         uid: Uid,
         node_type: NodeType,
         property_name: PropertyName,
@@ -396,14 +402,14 @@ impl GraphMutationManager {
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_imm_string(
-                tenant_keyspace,
+                tenant_id,
                 node_type.clone(),
                 property_name.clone(),
                 || async move {
-                    let tenant_urn = tenant_keyspace.urn();
+                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let query = Query::new(format!(
                         r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.{IMM_STRING_TABLE_NAME} 
+                        INSERT INTO {tenant_ks}.{IMM_STRING_TABLE_NAME} 
                         (uid, node_type, property_name, property_value)
                         VALUES (?, ?, ?, ?)
                     "
@@ -428,7 +434,7 @@ impl GraphMutationManager {
 
     async fn upsert_edges(
         &self,
-        tenant_keyspace: uuid::Uuid,
+        tenant_id: uuid::Uuid,
         from_uid: Uid,
         to_uid: Uid,
         f_edge_name: EdgeName,
@@ -436,7 +442,7 @@ impl GraphMutationManager {
     ) -> Result<(), GraphMutationManagerError> {
         self.write_dropper
             .check_edges(
-                tenant_keyspace,
+                tenant_id,
                 from_uid,
                 to_uid,
                 f_edge_name,
@@ -444,11 +450,11 @@ impl GraphMutationManager {
                 |f_edge_name, r_edge_name| async move {
                     // todo: Batch statements are currently not supported by the Scylla rust client
                     //       https://github.com/scylladb/scylla-rust-driver/issues/469
-                    let tenant_urn = tenant_keyspace.urn();
+                    let tenant_ks = tenant_keyspace_name(tenant_id);
 
                     let f_statement = format!(
                         r"
-                        INSERT INTO tenant_keyspace_{tenant_urn}.edges (
+                        INSERT INTO {tenant_ks}.edges (
                             source_uid,
                             f_edge_name,
                             r_edge_name,
@@ -497,6 +503,7 @@ impl GraphMutationApi for GraphMutationManager {
     type Error = GraphMutationManagerError;
 
     /// Create Node allocates a new node in the graph, returning the uid of the new node.
+    #[tracing::instrument(skip(self), err)]
     async fn create_node(
         &self,
         request: CreateNodeRequest,
@@ -515,6 +522,7 @@ impl GraphMutationApi for GraphMutationManager {
 
     /// SetNodeProperty will update the property of the node with the given uid.
     /// If the node does not exist it will be created.
+    #[tracing::instrument(skip(self), err)]
     async fn set_node_property(
         &self,
         request: SetNodePropertyRequest,
@@ -573,6 +581,7 @@ impl GraphMutationApi for GraphMutationManager {
 
     /// CreateEdge will create an edge with the name edge_name between the nodes
     /// that have the given uids. It will also create the reverse edge.
+    #[tracing::instrument(skip(self), err)]
     async fn create_edge(
         &self,
         request: CreateEdgeRequest,

@@ -12,6 +12,7 @@ use rust_proto::{
         services::{
             GraphMutationClientConfig,
             GraphQueryClientConfig,
+            UidAllocatorClientConfig,
         },
     },
     graplinc::grapl::{
@@ -28,6 +29,10 @@ use rust_proto::{
                 QueryGraphWithUidRequest,
                 StringCmp,
             },
+            uid_allocator::v1beta1::{
+                client::UidAllocatorServiceClient,
+                messages::CreateTenantKeyspaceRequest,
+            },
         },
         common::v1beta1::types::{
             NodeType,
@@ -40,14 +45,21 @@ use secrecy::ExposeSecret;
 
 type DynError = Box<dyn std::error::Error + Send + Sync>;
 
+fn tenant_keyspace_name(tenant_id: uuid::Uuid) -> String {
+    // scylla keyspace names must be alphanumeric + underscores, and max out at 48.
+    // fun fact: the result of this is exactly 48
+    format!("tenant_keyspace_{}", tenant_id.simple())
+}
+
 // NOTE: temporary code to set up the keyspace before we have a service
 // to set it up for us
-#[tracing::instrument(skip(session), err)]
+#[tracing::instrument(skip(session, uid_allocator_client), err)]
 async fn provision_keyspace(
     session: &CachingSession,
     tenant_id: uuid::Uuid,
+    mut uid_allocator_client: UidAllocatorServiceClient,
 ) -> Result<String, DynError> {
-    let tenant_ks = format!("tenant_keyspace_{}", tenant_id.simple());
+    let tenant_ks = tenant_keyspace_name(tenant_id);
 
     session
         .session
@@ -108,6 +120,10 @@ async fn provision_keyspace(
         .await?;
 
     session.session.await_schema_agreement().await?;
+
+    uid_allocator_client
+        .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
+        .await?;
 
     Ok(tenant_ks)
 }
@@ -184,8 +200,6 @@ async fn insert_string(
 
 #[test_log::test(tokio::test)]
 async fn test_query_single_node() -> Result<(), DynError> {
-    let _guard = grapl_tracing::setup_tracing("graph-query-service integ tests");
-
     let _span = tracing::info_span!(
         "tenant_id", tenant_id=?tracing::field::Empty,
     );
@@ -199,14 +213,17 @@ async fn test_query_single_node() -> Result<(), DynError> {
     let mut graph_mutation_client = build_grpc_client(mutation_client_config).await?;
     tracing::info!("connected to graph mutation service");
 
+    // Only used to provision the keyspace. It's okay here to use the
+    // otherwise-unrecommended non-cachine UidAllocator client
+    let uid_allocator_client = build_grpc_client(UidAllocatorClientConfig::parse()).await?;
+
     let tenant_id = uuid::Uuid::new_v4();
     _span.record("tenant_id", &format!("{tenant_id}"));
 
     let session = get_scylla_client().await?;
+    let _keyspace_name =
+        provision_keyspace(session.as_ref(), tenant_id, uid_allocator_client).await?;
 
-    let _keyspace_name = provision_keyspace(session.as_ref(), tenant_id).await?;
-
-    //let uid = Uid::from_u64(1).unwrap();
     let node_type = NodeType::try_from("Process").unwrap();
 
     let mutation::CreateNodeResponse { uid } = graph_mutation_client
@@ -229,18 +246,6 @@ async fn test_query_single_node() -> Result<(), DynError> {
             },
         })
         .await?;
-
-    /*
-    create_node(session.as_ref(), &keyspace_name, uid, &node_type).await?;
-    insert_string(
-        session.as_ref(),
-        &keyspace_name,
-        uid,
-        "process_name",
-        "chrome.exe",
-    )
-    .await?;
-    */
 
     let graph_query = NodeQuery::root(node_type.clone())
         .with_string_comparisons(

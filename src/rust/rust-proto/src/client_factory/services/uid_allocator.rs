@@ -6,7 +6,7 @@ use crate::{
     graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorServiceClient,
 };
 
-#[derive(clap::Parser, Debug)]
+#[derive(clap::Parser, Debug, Clone)]
 pub struct UidAllocatorClientConfig {
     #[clap(long, env)]
     pub uid_allocator_client_address: String,
