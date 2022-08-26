@@ -191,17 +191,13 @@ pub mod client {
     };
 
     use crate::{
+        client_macros::ExecuteClientRpcOptions,
         create_proto_client,
-        graplinc::grapl::api::uid_allocator::v1beta1::messages::{
-            AllocateIdsRequest,
-            AllocateIdsResponse,
-            CreateTenantKeyspaceRequest,
-            CreateTenantKeyspaceResponse,
-        },
+        execute_client_rpc,
+        graplinc::grapl::api::uid_allocator::v1beta1::messages as native,
         protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
+            self as proto,
             uid_allocator_service_client::UidAllocatorServiceClient as UidAllocatorServiceClientProto,
-            AllocateIdsRequest as AllocateIdsRequestProto,
-            CreateTenantKeyspaceRequest as CreateTenantKeyspaceRequestProto,
         },
         protocol::{
             service_client::ConnectError,
@@ -245,31 +241,30 @@ pub mod client {
 
         pub async fn allocate_ids(
             &mut self,
-            request: AllocateIdsRequest,
-        ) -> Result<AllocateIdsResponse, UidAllocatorServiceClientError> {
-            let raw_request: AllocateIdsRequestProto = request.into();
-            let raw_response = self
-                .proto_client
-                .allocate_ids(raw_request)
-                .await
-                .map_err(|s| UidAllocatorServiceClientError::Status(s.into()))?;
-            let proto_response = raw_response.into_inner();
-            let response = proto_response.try_into()?;
-            Ok(response)
+            request: native::AllocateIdsRequest,
+        ) -> Result<native::AllocateIdsResponse, UidAllocatorServiceClientError> {
+            execute_client_rpc!(
+                self,
+                request,
+                allocate_ids,
+                proto::AllocateIdsRequest,
+                native::AllocateIdsResponse,
+                ExecuteClientRpcOptions::default(),
+            )
         }
 
         pub async fn create_tenant_keyspace(
             &mut self,
-            request: CreateTenantKeyspaceRequest,
-        ) -> Result<CreateTenantKeyspaceResponse, UidAllocatorServiceClientError> {
-            let raw_request: CreateTenantKeyspaceRequestProto = request.into();
-            let raw_response = self
-                .proto_client
-                .create_tenant_keyspace(raw_request)
-                .await
-                .map_err(|s| UidAllocatorServiceClientError::Status(s.into()))?;
-            let proto_response = raw_response.into_inner();
-            Ok(proto_response.into())
+            request: native::CreateTenantKeyspaceRequest,
+        ) -> Result<native::CreateTenantKeyspaceResponse, UidAllocatorServiceClientError> {
+            execute_client_rpc!(
+                self,
+                request,
+                create_tenant_keyspace,
+                proto::CreateTenantKeyspaceRequest,
+                native::CreateTenantKeyspaceResponse,
+                ExecuteClientRpcOptions::default(),
+            )
         }
     }
 }
