@@ -1,5 +1,6 @@
 #![cfg(all(test, feature = "integration_tests"))]
 
+use std::collections::HashSet;
 use clap::Parser;
 use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::{
     client::UidAllocatorServiceClient,
@@ -30,11 +31,10 @@ async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     tracing::info!("allocating ids");
-    let mut init = 0;
-    for _ in 1u64..10000 {
+    let mut uids = std::collections::HashSet::with_capacity(11000);
+    for _ in 0u64..11000 {
         let next_id = allocator_client.allocate_id(tenant_id).await?;
-        assert!(next_id > init);
-        init = next_id;
+        assert!(uids.insert(next_id), "next_id was not unique");
     }
 
     Ok(())
