@@ -1,6 +1,7 @@
 #![cfg(all(test, feature = "integration_tests"))]
 
 use std::collections::HashSet;
+
 use clap::Parser;
 use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::{
     client::UidAllocatorServiceClient,
