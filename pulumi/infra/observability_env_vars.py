@@ -29,7 +29,9 @@ def observability_env_vars_for_local() -> str:
     """
 
 
-def otel_config(lightstep_token: pulumi.Output[str]) -> pulumi.Output[str]:
+# lightstep_token should be pulumi.Output[str], but the additional type causes pulumi.Output.all to blow up during
+# typechecking
+def otel_config(lightstep_token: pulumi.Output) -> pulumi.Output[str]:
     return pulumi.Output.all(lightstep_token=lightstep_token).apply(
         lambda args: f"""
 receivers:
