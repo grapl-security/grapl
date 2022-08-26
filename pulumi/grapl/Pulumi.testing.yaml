@@ -2,6 +2,7 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:cloudsmith-repository-name: grapl/testing
+  grapl:confluent-environment-name: testing
   grapl:env_vars:
     graph-merger:
       RUST_BACKTRACE: "1"
@@ -12,6 +13,7 @@ config:
     sysmon-generator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
+  grapl:lightstep-access-token:
+    secure: AAABAKxa4yxFSvciEOaqrBtoUWo6qQUGrDeba1ZGrxfW/yToz6ZjXXMrGCC+69aCZvTZhzWif6r+S2fEJJGbJz8WDuje825m0wxGI7hBOsrjPw/gIJ/huFVoTM7mOgRcPZwzkVaVN0ePtdkFQJOb/PD5dOgcEf+CCcYpRthO8T9YEzVowm9lzg==
   grapl:postgres-instance-type: db.t4g.small
   grapl:postgres-version: "13.4"
-  grapl:confluent-environment-name: "testing"
