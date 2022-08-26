@@ -1,40 +1,35 @@
 #![cfg(all(test, feature = "integration_tests"))]
 
 use clap::Parser;
-use rust_proto::{graplinc::grapl::api::uid_allocator::v1beta1::{
-    client::UidAllocatorServiceClient,
-    messages::CreateTenantKeyspaceRequest,
-}, protocol::service_client::Connectable};
+use rust_proto::{
+    client_factory::services::UidAllocatorClientConfig,
+    graplinc::grapl::api::uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
+};
 use uid_allocator::client::CachingUidAllocatorServiceClient;
 
 #[tokio::test]
 async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = grapl_tracing::setup_tracing("uid-allocator integ test")?;
-    let client_config = uid_allocator::config::UidAllocatorClientConfig::parse();
 
     let tenant_id = uuid::Uuid::new_v4();
-    let endpoint = client_config.uid_allocator_connect_address;
     tracing::info!(
         tenant_id = ?tenant_id,
-        endpoint = %endpoint,
     );
 
-    let mut allocator_client = CachingUidAllocatorServiceClient::new(
-        UidAllocatorServiceClient::connect(endpoint).await?,
-        100,
-    );
+    let client_config = UidAllocatorClientConfig::parse();
+    let mut allocator_client =
+        CachingUidAllocatorServiceClient::from_client_config(client_config, 100).await?;
 
     tracing::info!("creating keyspace");
     allocator_client
         .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
         .await?;
 
-
     // If there were 1 single `uid-allocator` instance we're talking to we'd
     // expect this to go monotonically increasing upwards (1 to 10,000),
     // but since we currently have two `uid-allocator` - each reserving 10_000
     // locally on the server - we can make no promises about the order in which
-    // uids are allocated. 
+    // uids are allocated.
 
     // Example behavior:
     // client:  "give me 100 ids for tenant ABC"
@@ -58,7 +53,10 @@ async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
     for _ in 0u64..num_requested_uids {
         let next_id = allocator_client.allocate_id(tenant_id).await?;
         assert!(uids.insert(next_id), "next_id {next_id} was not unique");
-        assert!(next_id <= shouldnt_exceed, "next_id {next_id} exceeded expected max {shouldnt_exceed}");
+        assert!(
+            next_id <= shouldnt_exceed,
+            "next_id {next_id} exceeded expected max {shouldnt_exceed}"
+        );
     }
 
     Ok(())

@@ -1,12 +1,19 @@
 use dashmap::DashMap;
 pub use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorServiceClient;
-use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::{
-    client::UidAllocatorServiceClientError,
-    messages::{
-        AllocateIdsRequest,
-        Allocation,
-        CreateTenantKeyspaceRequest,
+use rust_proto::{
+    client_factory::{
+        build_grpc_client,
+        services::UidAllocatorClientConfig,
     },
+    graplinc::grapl::api::uid_allocator::v1beta1::{
+        client::UidAllocatorServiceClientError,
+        messages::{
+            AllocateIdsRequest,
+            Allocation,
+            CreateTenantKeyspaceRequest,
+        },
+    },
+    protocol::service_client::ConnectError,
 };
 
 #[derive(Clone)]
@@ -24,6 +31,14 @@ impl CachingUidAllocatorServiceClient {
             allocation_map: DashMap::with_capacity(1),
             count,
         }
+    }
+
+    pub async fn from_client_config(
+        client_config: UidAllocatorClientConfig,
+        count: u32,
+    ) -> Result<Self, ConnectError> {
+        let allocator = build_grpc_client(client_config).await?;
+        Ok(Self::new(allocator, count))
     }
 
     pub async fn allocate_id(

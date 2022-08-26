@@ -73,14 +73,3 @@ impl UidAllocatorServiceConfig {
         Ok(())
     }
 }
-
-#[derive(clap::Parser, Debug, Clone)]
-pub struct UidAllocatorClientConfig {
-    #[clap(env)]
-    /// The address to connect the uid allocator client to
-    pub uid_allocator_connect_address: String,
-
-    #[clap(env)]
-    /// The size for the client to request when allocating uids
-    pub uid_allocator_allocation_size: u32,
-}
