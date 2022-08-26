@@ -203,10 +203,13 @@ EOF
 # install as needed, but the debian image we're using has zlib already.
 FROM debian:bullseye-slim AS integration-tests
 
+# Apt package versioning may be helpful elsewhere, like the production images,
+# but not here. Pinning versions becomes an issue when versions get pulled.
+# hadolint ignore=DL3008
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        ca-certificates=20210119 \
+        ca-certificates \
         parallel
 
 # Put the Nomad binary on PATH
