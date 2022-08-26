@@ -281,7 +281,6 @@ target "_rust-base" {
   contexts = {
     dist-ctx = "dist"
     etc-ctx  = "etc"
-    test-ctx = "test"
   }
   dockerfile = "rust/Dockerfile"
   args = {
