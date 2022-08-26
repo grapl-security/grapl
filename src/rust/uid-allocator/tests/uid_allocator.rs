@@ -31,7 +31,7 @@ async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     tracing::info!("allocating ids");
-    let mut uids = std::collections::HashSet::with_capacity(11000);
+    let mut uids = HashSet::with_capacity(11000);
     for _ in 0u64..11000 {
         let next_id = allocator_client.allocate_id(tenant_id).await?;
         assert!(uids.insert(next_id), "next_id was not unique");
