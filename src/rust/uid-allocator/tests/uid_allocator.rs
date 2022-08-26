@@ -29,13 +29,20 @@ async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
         .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
         .await?;
 
+
+    // If there were 1 single `uid-allocator` instance we're talking to we'd
+    // expect this to go monotonically increasing upwards (1 to 10,000),
+    // but since we currently have two instances - each reserving a large space
+    // locally on the server - we can make no promises about the order in which
+    // uids are allocated. 
     tracing::info!("allocating ids");
-    let mut init = 0;
+    let mut last_id = 0;
     for _ in 1u64..10000 {
         let next_id = allocator_client.allocate_id(tenant_id).await?;
-        assert!(next_id > init);
-        init = next_id;
+        assert!(next_id > last_id);
+        last_id = next_id;
     }
+    tracing::info!(last_id = last_id);
 
     Ok(())
 }
