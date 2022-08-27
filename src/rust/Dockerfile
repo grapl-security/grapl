@@ -152,6 +152,7 @@ organization-management/integration_tests
 pipeline-ingress/integration_tests
 plugin-registry/integration_tests
 plugin-work-queue/integration_tests
+scylla-provisioner/integration_tests
 sysmon-generator/integration_tests
 uid-allocator/integration_tests
 )
@@ -353,6 +354,12 @@ FROM rust-dist AS pipeline-ingress-deploy
 
 COPY --from=build /outputs/pipeline-ingress /
 ENTRYPOINT ["/pipeline-ingress"]
+
+##### scylla-provisioner
+FROM rust-dist AS scylla-provisioner-deploy
+
+COPY --from=build /outputs/scylla-provisioner /
+ENTRYPOINT ["/scylla-provisioner"]
 
 ##### uid-allocator
 FROM rust-dist AS uid-allocator-deploy

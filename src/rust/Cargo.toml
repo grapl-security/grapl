@@ -29,6 +29,7 @@ members = [
   "./plugin-work-queue",
   "./rust-proto",
   "./graph-schema-manager",
+  "./scylla-provisioner",
   "./sysmon-parser",
   "./uid-allocator",
 ]

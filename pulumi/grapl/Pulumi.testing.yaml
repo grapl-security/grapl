@@ -4,15 +4,6 @@ config:
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
   grapl:env_vars:
-    graph-merger:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
-    node-identifier:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
-    sysmon-generator:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
   grapl:postgres-instance-type: db.t4g.small
   grapl:postgres-version: "13.4"
   grapl:scylla-addresses:

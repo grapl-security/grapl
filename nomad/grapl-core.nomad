@@ -595,6 +595,50 @@ job "grapl-core" {
   ## Begin actual Grapl core services ##
   #######################################
 
+  group "scylla-provisioner" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "scylla-provisioner-port" {
+      }
+    }
+
+    task "scylla-provisioner" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["scylla-provisioner"]
+        ports = ["scylla-provisioner-port"]
+      }
+
+      env {
+        SCYLLA_PROVISIONER_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_scylla-provisioner-port}"
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        GRAPH_DB_ADDRESSES              = var.graph_db.addresses
+        GRAPH_DB_AUTH_PASSWORD          = var.graph_db.password
+        GRAPH_DB_AUTH_USERNAME          = var.graph_db.username
+      }
+    }
+
+    service {
+      name = "scylla-provisioner"
+      port = "scylla-provisioner-port"
+      connect {
+        sidecar_service {}
+      }
+
+      check {
+        type     = "grpc"
+        port     = "scylla-provisioner-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
+    }
+  }
+
   group "generator-dispatcher" {
     count = 2
 
