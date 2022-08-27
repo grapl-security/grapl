@@ -127,8 +127,8 @@ impl GraphMutationManager {
                     let mut query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{MAX_U_64_TABLE_NAME} 
-                        (uid, node_type, property_name, property_value)
-                        VALUES (?, ?, ?, ?)
+                        (uid, property_name, property_value)
+                        VALUES (?, ?, ?)
                     "
                     ));
                     query.set_timestamp(Some(property_value));
@@ -170,8 +170,8 @@ impl GraphMutationManager {
                     let mut query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{MIN_U_64_TABLE_NAME} 
-                        (uid, node_type, property_name, property_value)
-                        VALUES (?, ?, ?, ?)
+                        (uid, property_name, property_value)
+                        VALUES (?, ?, ?)
                     "
                     ));
 
@@ -215,8 +215,8 @@ impl GraphMutationManager {
                     let query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{IMM_U_64_TABLE_NAME} 
-                        (uid, node_type, property_name, property_value)
-                        VALUES (?, ?, ?, ?)
+                        (uid, property_name, property_value)
+                        VALUES (?, ?, ?)
                     "
                     ));
 
@@ -257,8 +257,8 @@ impl GraphMutationManager {
                     let mut query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{MAX_I_64_TABLE_NAME} 
-                        (uid, node_type, property_name, property_value)
-                        VALUES (?, ?, ?, ?)
+                        (uid, property_name, property_value)
+                        VALUES (?, ?, ?)
                     "
                     ));
                     query.set_timestamp(Some(property_value));
@@ -299,8 +299,8 @@ impl GraphMutationManager {
                     let mut query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{MIN_I_64_TABLE_NAME} 
-                        (uid, node_type, property_name, property_value)
-                        VALUES (?, ?, ?, ?)
+                        (uid, property_name, property_value)
+                        VALUES (?, ?, ?)
                     "
                     ));
 
@@ -341,8 +341,8 @@ impl GraphMutationManager {
                     let query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{IMM_I_64_TABLE_NAME} 
-                        (uid, node_type, property_name, property_value)
-                        VALUES (?, ?, ?, ?)
+                        (uid, property_name, property_value)
+                        VALUES (?, ?, ?)
                     "
                     ));
 
@@ -405,8 +405,8 @@ impl GraphMutationManager {
                     let query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{IMM_STRING_TABLE_NAME} 
-                        (uid, node_type, property_name, property_value)
-                        VALUES (?, ?, ?, ?)
+                        (uid, property_name, property_value)
+                        VALUES (?, ?, ?)
                     "
                     ));
 
