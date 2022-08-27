@@ -1,6 +1,7 @@
 #![cfg(feature = "integration_tests")]
 use std::sync::Arc;
 
+use bytes::Bytes;
 use clap::Parser;
 use graph_query::{
     config::GraphDbConfig,
@@ -16,6 +17,7 @@ use rust_proto::{
         services::{
             GraphMutationClientConfig,
             GraphQueryClientConfig,
+            GraphSchemaManagerClientConfig,
             UidAllocatorClientConfig,
         },
     },
@@ -30,15 +32,20 @@ use rust_proto::{
             graph_query_service::v1beta1::messages::{
                 MatchedGraphWithUid,
                 MaybeMatchWithUid,
+                QueryGraphFromUidRequest,
                 QueryGraphWithUidRequest,
                 StringCmp,
             },
+            graph_schema_manager::v1beta1::messages as graph_schema_manager_api,
             uid_allocator::v1beta1::{
                 client::UidAllocatorServiceClient,
                 messages::CreateTenantKeyspaceRequest,
             },
         },
-        common::v1beta1::types::NodeType,
+        common::v1beta1::types::{
+            EdgeName,
+            NodeType,
+        },
     },
 };
 use scylla::CachingSession;
@@ -123,6 +130,28 @@ async fn provision_keyspace(
     Ok(tenant_ks)
 }
 
+async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> Result<(), DynError> {
+    let graph_schema_manager_client_config = GraphSchemaManagerClientConfig::parse();
+    let mut graph_schema_manager_client =
+        build_grpc_client(graph_schema_manager_client_config).await?;
+
+    fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
+        // This path is created in rust/Dockerfile
+        let path = "/test-fixtures/example_schemas/example.graphql";
+        std::fs::read(path).map(Bytes::from)
+    }
+
+    graph_schema_manager_client
+        .deploy_schema(graph_schema_manager_api::DeploySchemaRequest {
+            tenant_id,
+            schema: get_example_graphql_schema().unwrap(),
+            schema_type: graph_schema_manager_api::SchemaType::GraphqlV0,
+            schema_version: 0,
+        })
+        .await?;
+    Ok(())
+}
+
 async fn get_scylla_client() -> Result<Arc<CachingSession>, DynError> {
     let graph_db_config = GraphDbConfig::parse();
 
@@ -144,22 +173,19 @@ async fn get_scylla_client() -> Result<Arc<CachingSession>, DynError> {
 }
 
 #[test_log::test(tokio::test)]
-async fn test_query_single_node() -> Result<(), DynError> {
+async fn test_query_two_attached_nodes() -> Result<(), DynError> {
     let _span = tracing::info_span!(
         "tenant_id", tenant_id=?tracing::field::Empty,
     );
-    tracing::info!("starting test_query_single_node");
 
     let query_client_config = GraphQueryClientConfig::parse();
     let mut graph_query_client = build_grpc_client(query_client_config).await?;
-    tracing::info!("connected to graph query service");
 
     let mutation_client_config = GraphMutationClientConfig::parse();
     let mut graph_mutation_client = build_grpc_client(mutation_client_config).await?;
-    tracing::info!("connected to graph mutation service");
 
     // Only used to provision the keyspace. It's okay here to use the
-    // otherwise-unrecommended non-cachine UidAllocator client
+    // otherwise-unrecommended non-caching UidAllocator client.
     let uid_allocator_client = build_grpc_client(UidAllocatorClientConfig::parse()).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
@@ -169,12 +195,16 @@ async fn test_query_single_node() -> Result<(), DynError> {
     let _keyspace_name =
         provision_keyspace(session.as_ref(), tenant_id, uid_allocator_client).await?;
 
-    let node_type = NodeType::try_from("Process").unwrap();
+    // Provision a Schema so we can test how edges work
+    provision_example_graph_schema(tenant_id).await?;
+
+    let process_node_type = NodeType::try_from("Process").unwrap();
+    let file_node_type = NodeType::try_from("File").unwrap();
 
     let mutation::CreateNodeResponse { uid } = graph_mutation_client
         .create_node(mutation::CreateNodeRequest {
             tenant_id,
-            node_type: node_type.clone(),
+            node_type: process_node_type.clone(),
         })
         .await?;
 
@@ -182,7 +212,7 @@ async fn test_query_single_node() -> Result<(), DynError> {
         .set_node_property(mutation::SetNodePropertyRequest {
             tenant_id,
             uid,
-            node_type: node_type.clone(),
+            node_type: process_node_type.clone(),
             property_name: "process_name".try_into()?,
             property: NodeProperty {
                 property: Property::ImmutableStrProp(ImmutableStrProp {
@@ -192,13 +222,41 @@ async fn test_query_single_node() -> Result<(), DynError> {
         })
         .await?;
 
-    let graph_query = NodeQuery::root(node_type.clone())
+    // Add another Node - the time a File
+    let mutation::CreateNodeResponse {
+        uid: second_node_uid,
+    } = graph_mutation_client
+        .create_node(mutation::CreateNodeRequest {
+            tenant_id,
+            node_type: file_node_type.clone(),
+        })
+        .await?;
+
+    // Create an 'binary_file' Edge from Process --> File
+    let edge_name = EdgeName {
+        value: "binary_file".to_string(), // as defined in the example Graphql schema
+    };
+    let _reverse_edge_name = EdgeName {
+        value: "executed_as_processes".to_string(),
+    };
+    graph_mutation_client
+        .create_edge(mutation::CreateEdgeRequest {
+            edge_name: edge_name.clone(),
+            tenant_id,
+            from_uid: uid,
+            to_uid: second_node_uid,
+            source_node_type: process_node_type.clone(),
+        })
+        .await?;
+
+    let graph_query = NodeQuery::root(process_node_type.clone())
         .with_string_comparisons(
             "process_name".try_into()?,
             vec![StringCmp::Eq("chrome.exe".to_owned(), false)],
         )
         .build();
 
+    // Query about just the single node
     let response = graph_query_client
         .query_graph_with_uid(QueryGraphWithUidRequest {
             tenant_id: tenant_id.into(),
@@ -218,22 +276,61 @@ async fn test_query_single_node() -> Result<(), DynError> {
     assert_eq!(matched_graph.nodes.len(), 1);
     assert_eq!(matched_graph.edges.len(), 0);
 
-    let (returned_uid, returned_node) = matched_graph.nodes.into_iter().next().unwrap();
-    assert_eq!(returned_uid, uid);
-    assert_eq!(returned_uid, root_uid);
+    {
+        // Assertions on the root node
+        let (returned_uid, returned_node) = matched_graph.nodes.into_iter().next().unwrap();
+        assert_eq!(returned_uid, uid);
+        assert_eq!(returned_uid, root_uid);
 
-    assert_eq!(returned_node.node_type, node_type);
-    assert_eq!(returned_node.string_properties.prop_map.len(), 1);
+        assert_eq!(returned_node.node_type, process_node_type);
+        assert_eq!(returned_node.string_properties.prop_map.len(), 1);
 
-    let (returned_property_name, returned_property) = returned_node
-        .string_properties
-        .prop_map
-        .into_iter()
-        .next()
-        .unwrap();
+        let (returned_property_name, returned_property) = returned_node
+            .string_properties
+            .prop_map
+            .into_iter()
+            .next()
+            .unwrap();
 
-    assert_eq!(returned_property_name, "process_name".try_into()?);
-    assert_eq!(&returned_property, "chrome.exe");
+        assert_eq!(returned_property_name, "process_name".try_into()?);
+        assert_eq!(&returned_property, "chrome.exe");
+    }
+
+    // Commented out because wimax doesn't know how to do graph queries :'(
+    /*
+    // Now try to query the 'full' graph from that root uid
+    let graph_query = NodeQuery::root(process_node_type.clone())
+        // wtf is init_edge for
+        .with_edge_to(
+            edge_name.clone(),
+            reverse_edge_name.clone(),
+            file_node_type,
+            |_q| {},
+        )
+        .build();
+
+    let response = graph_query_client
+        .query_graph_from_uid(QueryGraphFromUidRequest {
+            tenant_id: tenant_id.into(),
+            node_uid: uid,
+            graph_query,
+        })
+        .await?;
+
+    let matched_graph = response.matched_graph.expect("Expected a matched graph");
+
+    assert_eq!(matched_graph.nodes.len(), 2);
+    assert_eq!(matched_graph.edges.len(), 1);
+
+    {
+        // Assertions on the edge
+        let ((_uid, edge_name), hash_set) = matched_graph.edges.into_iter().next().unwrap();
+        assert_eq!(edge_name.value, "some_edge");
+        assert_eq!(hash_set.len(), 1);
+        assert!(hash_set.contains(&second_node_uid));
+    }
+    */
+
     drop(_span);
     Ok(())
 }

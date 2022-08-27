@@ -395,9 +395,9 @@ impl GraphMutationManager {
                         r"
                         INSERT INTO {tenant_ks}.edges (
                             source_uid,
-                            f_edge_name,
-                            r_edge_name,
                             destination_uid,
+                            f_edge_name,
+                            r_edge_name
                         )
                         VALUES (?, ?, ?, ?)
                         ",
@@ -417,15 +417,15 @@ impl GraphMutationManager {
                             (
                                 (
                                     from_uid.as_i64(),
+                                    to_uid.as_i64(),
                                     &f_edge_name.value,
                                     &r_edge_name.value,
-                                    to_uid.as_i64(),
                                 ),
                                 (
                                     to_uid.as_i64(),
+                                    from_uid.as_i64(),
                                     &r_edge_name.value,
                                     &f_edge_name.value,
-                                    from_uid.as_i64(),
                                 ),
                             ),
                         )
