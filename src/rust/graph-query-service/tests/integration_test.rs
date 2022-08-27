@@ -38,10 +38,7 @@ use rust_proto::{
                 messages::CreateTenantKeyspaceRequest,
             },
         },
-        common::v1beta1::types::{
-            NodeType,
-            Uid,
-        },
+        common::v1beta1::types::NodeType,
     },
 };
 use scylla::CachingSession;
@@ -144,56 +141,6 @@ async fn get_scylla_client() -> Result<Arc<CachingSession>, DynError> {
         10_000,
     ));
     Ok(scylla_client)
-}
-
-#[tracing::instrument(skip(session), fields(
-    keyspace = %keyspace.as_ref(),
-    uid=%uid.as_i64(),
-    node_type=node_type.value.as_str(),
-) err)]
-async fn create_node(
-    session: &CachingSession,
-    keyspace: impl AsRef<str>,
-    uid: Uid,
-    node_type: &NodeType,
-) -> Result<(), DynError> {
-    let keyspace = keyspace.as_ref();
-    let insert = format!(
-        r"INSERT INTO {keyspace}.node_type
-       (uid, node_type)
-       VALUES (?, ?)"
-    );
-
-    session
-        .execute(insert, &(uid.as_i64(), &node_type.value))
-        .await?;
-
-    Ok(())
-}
-
-#[allow(dead_code)]
-async fn insert_string(
-    session: &CachingSession,
-    keyspace: impl AsRef<str>,
-    uid: Uid,
-    populated_field: impl AsRef<str>,
-    value: impl AsRef<str>,
-) -> Result<(), DynError> {
-    let keyspace = keyspace.as_ref();
-    let insert = format!(
-        r"INSERT INTO {keyspace}.immutable_strings
-        (uid, populated_field, value)
-        VALUES (?, ?, ?)"
-    );
-
-    session
-        .execute(
-            insert,
-            &(uid.as_i64(), populated_field.as_ref(), value.as_ref()),
-        )
-        .await?;
-
-    Ok(())
 }
 
 #[test_log::test(tokio::test)]
