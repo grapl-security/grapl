@@ -162,6 +162,7 @@ group "cloudsmith-images" {
 group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
+    "scylla-provisioner",
     "event-source",
     "generator-dispatcher",
     "generator-execution-sidecar",
@@ -288,6 +289,15 @@ target "_rust-base" {
     RUST_BUILD   = "${RUST_BUILD}"
     RUST_VERSION = "${RUST_VERSION}"
   }
+}
+
+
+target "scylla-provisioner" {
+  inherits = ["_rust-base"]
+  target   = "scylla-provisioner-deploy"
+  tags = [
+    upstream_aware_tag("scylla-provisioner")
+  ]
 }
 
 target "generator-dispatcher" {
