@@ -118,7 +118,7 @@ impl PropertyQueryExecutor {
         let mut query = scylla::query::Query::from(format!(
             r"
             SELECT r_edge_name, destination_uid
-            FROM {tenant_ks}.edge
+            FROM {tenant_ks}.edges
             WHERE
                 source_uid = ? AND
                 f_edge_name = ?
