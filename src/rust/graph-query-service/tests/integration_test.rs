@@ -32,6 +32,7 @@ use rust_proto::{
             graph_query_service::v1beta1::messages::{
                 MatchedGraphWithUid,
                 MaybeMatchWithUid,
+                NodePropertyQuery,
                 QueryGraphFromUidRequest,
                 QueryGraphWithUidRequest,
                 StringCmp,
@@ -201,7 +202,9 @@ async fn test_query_two_attached_nodes() -> Result<(), DynError> {
     let process_node_type = NodeType::try_from("Process").unwrap();
     let file_node_type = NodeType::try_from("File").unwrap();
 
-    let mutation::CreateNodeResponse { uid } = graph_mutation_client
+    let mutation::CreateNodeResponse {
+        uid: first_node_uid,
+    } = graph_mutation_client
         .create_node(mutation::CreateNodeRequest {
             tenant_id,
             node_type: process_node_type.clone(),
@@ -211,7 +214,7 @@ async fn test_query_two_attached_nodes() -> Result<(), DynError> {
     graph_mutation_client
         .set_node_property(mutation::SetNodePropertyRequest {
             tenant_id,
-            uid,
+            uid: first_node_uid,
             node_type: process_node_type.clone(),
             property_name: "process_name".try_into()?,
             property: NodeProperty {
@@ -233,17 +236,17 @@ async fn test_query_two_attached_nodes() -> Result<(), DynError> {
         .await?;
 
     // Create an 'binary_file' Edge from Process --> File
-    let edge_name = EdgeName {
+    let forward_edge_name = EdgeName {
         value: "binary_file".to_string(), // as defined in the example Graphql schema
     };
-    let _reverse_edge_name = EdgeName {
+    let reverse_edge_name = EdgeName {
         value: "executed_as_processes".to_string(),
     };
     graph_mutation_client
         .create_edge(mutation::CreateEdgeRequest {
-            edge_name: edge_name.clone(),
+            edge_name: forward_edge_name.clone(),
             tenant_id,
-            from_uid: uid,
+            from_uid: first_node_uid,
             to_uid: second_node_uid,
             source_node_type: process_node_type.clone(),
         })
@@ -260,7 +263,7 @@ async fn test_query_two_attached_nodes() -> Result<(), DynError> {
     let response = graph_query_client
         .query_graph_with_uid(QueryGraphWithUidRequest {
             tenant_id: tenant_id.into(),
-            node_uid: uid,
+            node_uid: first_node_uid,
             graph_query,
         })
         .await?;
@@ -279,7 +282,7 @@ async fn test_query_two_attached_nodes() -> Result<(), DynError> {
     {
         // Assertions on the root node
         let (returned_uid, returned_node) = matched_graph.nodes.into_iter().next().unwrap();
-        assert_eq!(returned_uid, uid);
+        assert_eq!(returned_uid, first_node_uid);
         assert_eq!(returned_uid, root_uid);
 
         assert_eq!(returned_node.node_type, process_node_type);
@@ -296,15 +299,13 @@ async fn test_query_two_attached_nodes() -> Result<(), DynError> {
         assert_eq!(&returned_property, "chrome.exe");
     }
 
-    // Commented out because wimax doesn't know how to do graph queries :'(
-    /*
     // Now try to query the 'full' graph from that root uid
     let graph_query = NodeQuery::root(process_node_type.clone())
-        // wtf is init_edge for
-        .with_edge_to(
-            edge_name.clone(),
+        .with_shared_edge(
+            forward_edge_name.clone(),
             reverse_edge_name.clone(),
-            file_node_type,
+            NodePropertyQuery::new(file_node_type.clone()),
+            // ??? what is init_edge for?
             |_q| {},
         )
         .build();
@@ -312,7 +313,7 @@ async fn test_query_two_attached_nodes() -> Result<(), DynError> {
     let response = graph_query_client
         .query_graph_from_uid(QueryGraphFromUidRequest {
             tenant_id: tenant_id.into(),
-            node_uid: uid,
+            node_uid: first_node_uid,
             graph_query,
         })
         .await?;
@@ -320,16 +321,32 @@ async fn test_query_two_attached_nodes() -> Result<(), DynError> {
     let matched_graph = response.matched_graph.expect("Expected a matched graph");
 
     assert_eq!(matched_graph.nodes.len(), 2);
-    assert_eq!(matched_graph.edges.len(), 1);
+    assert_eq!(matched_graph.edges.len(), 2); // forward and reverse edge
 
-    {
-        // Assertions on the edge
-        let ((_uid, edge_name), hash_set) = matched_graph.edges.into_iter().next().unwrap();
-        assert_eq!(edge_name.value, "some_edge");
+    tracing::info!(
+        nodes=?matched_graph.nodes,
+        edges=?matched_graph.edges,
+    );
+
+    // Assertions on the edges
+    for ((source_uid, edge_name), hash_set) in matched_graph.edges.into_iter() {
         assert_eq!(hash_set.len(), 1);
-        assert!(hash_set.contains(&second_node_uid));
+        if edge_name == forward_edge_name {
+            assert_eq!(first_node_uid, source_uid);
+            assert!(
+                hash_set.contains(&second_node_uid),
+                "expected {second_node_uid:?} in {hash_set:?}"
+            );
+        } else if edge_name == reverse_edge_name {
+            assert_eq!(second_node_uid, source_uid);
+            assert!(
+                hash_set.contains(&first_node_uid),
+                "expected {first_node_uid:?} in {hash_set:?}"
+            );
+        } else {
+            panic!("Unknown edge_name {edge_name} (uid={source_uid:?})");
+        }
     }
-    */
 
     drop(_span);
     Ok(())
