@@ -305,8 +305,7 @@ async fn test_query_two_attached_nodes() -> Result<(), DynError> {
             forward_edge_name.clone(),
             reverse_edge_name.clone(),
             NodePropertyQuery::new(file_node_type.clone()),
-            // ??? what is init_edge for?
-            |_q| {},
+            |_| {},
         )
         .build();
 
@@ -351,3 +350,5 @@ async fn test_query_two_attached_nodes() -> Result<(), DynError> {
     drop(_span);
     Ok(())
 }
+
+// TODO: test `with_edge_to`
