@@ -1,7 +1,17 @@
+#![allow(warnings)]
+#![recursion_limit = "256"]
+
 use clap::Parser;
 use futures::StreamExt;
+
+use rusoto_dynamodb::DynamoDbClient;
+use tracing::instrument::WithSubscriber;
+use rust_proto::protocol::service_client::Connectable;
+
 use grapl_config::env_helpers::FromEnv;
+
 use grapl_tracing::setup_tracing;
+
 use kafka::{
     config::{
         ConsumerConfig,
@@ -10,22 +20,24 @@ use kafka::{
     StreamProcessor,
     StreamProcessorError,
 };
-use rusoto_dynamodb::DynamoDbClient;
 use rust_proto::graplinc::grapl::{
-    api::graph::v1beta1::{
-        GraphDescription,
-        IdentifiedGraph,
+    api::{
+        graph::v1beta1::{
+            GraphDescription,
+            IdentifiedGraph,
+        },
     },
+};
+use rust_proto::graplinc::grapl::{
     pipeline::v1beta1::Envelope,
 };
-use tracing::instrument::WithSubscriber;
+use rust_proto::graplinc::grapl::api::graph_mutation::v1beta1::client::GraphMutationClient;
+use rust_proto::protocol::endpoint::Endpoint;
 
-mod dynamic_sessiondb;
-mod error;
-mod node_identifier;
-mod sessiondb;
-mod sessions;
-
+use crate::{
+    config::NodeIdentifierConfig,
+    static_mapping_db::StaticMappingDb,
+};
 use crate::{
     dynamic_sessiondb::NodeDescriptionIdentifier,
     error::NodeIdentifierError,
@@ -33,24 +45,45 @@ use crate::{
     sessiondb::SessionDb,
 };
 
+mod config;
+mod dynamic_sessiondb;
+mod error;
+mod node_identifier;
+mod sessiondb;
+mod sessions;
+mod static_mapping_db;
+
 const SERVICE_NAME: &'static str = "node-identifier";
 
+
 #[tokio::main]
-async fn main() -> Result<(), NodeIdentifierError> {
+async fn main() -> eyre::Result<()> {
     let _guard = setup_tracing(SERVICE_NAME)?;
 
     handler().await
 }
 
 #[tracing::instrument]
-async fn handler() -> Result<(), NodeIdentifierError> {
+async fn handler() -> eyre::Result<()> {
+    let service_config = NodeIdentifierConfig::parse();
     let dynamo = DynamoDbClient::from_env();
-    let dyn_session_db = SessionDb::new(
-        dynamo.clone(),
-        std::env::var("GRAPL_DYNAMIC_SESSION_TABLE")?,
-    );
-    let node_identifier = NodeIdentifier::new(NodeDescriptionIdentifier::new(dyn_session_db, true));
+    let dyn_session_db = SessionDb::new(dynamo.clone(), service_config.grapl_dynamic_session_table);
+    let graph_mutation_client = GraphMutationClient::connect(
+        Endpoint::from_shared(service_config.graph_mutation_url)?
+    ).await?;
 
+    let static_mapping_db = StaticMappingDb::new(
+        dynamo.clone(),
+        graph_mutation_client.clone(),
+        service_config.grapl_static_mapping_table,
+    );
+
+    let node_identifier = NodeIdentifier::new(NodeDescriptionIdentifier::new(
+        dyn_session_db,
+        graph_mutation_client,
+        static_mapping_db,
+        true,
+    ));
     let consumer_config = ConsumerConfig::parse();
     let producer_config = ProducerConfig::parse();
 

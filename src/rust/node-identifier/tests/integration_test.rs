@@ -3,27 +3,43 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use e2e_tests::test_utils::context::{
-    E2eTestContext,
-    SetupResult,
+use futures::StreamExt;
+use grapl_tracing::{
+    setup_tracing,
+    WorkerGuard,
 };
 use kafka::{
     config::ConsumerConfig,
-    test_utils::topic_scanner::KafkaTopicScanner,
+    Consumer,
+    ConsumerError,
 };
-use rust_proto::graplinc::grapl::{
-    api::{
-        graph::v1beta1::{
-            IdentifiedGraph,
-            IdentifiedNode,
-            ImmutableUintProp,
-            Property,
+use rust_proto::{
+    graplinc::grapl::{
+        api::{
+            graph::v1beta1::{
+                IdentifiedGraph,
+                IdentifiedNode,
+                ImmutableUintProp,
+                Property,
+            },
+            pipeline_ingress::v1beta1::{
+                client::PipelineIngressClient,
+                PublishRawLogRequest,
+            },
         },
-        pipeline_ingress::v1beta1::PublishRawLogRequest,
+        pipeline::v1beta2::Envelope,
     },
-    pipeline::v1beta1::Envelope,
+    protocol::{
+        healthcheck::client::HealthcheckClient,
+        service_client::NamedService,
+    },
 };
-use test_context::test_context;
+use test_context::{
+    test_context,
+    AsyncTestContext,
+};
+use tokio::sync::oneshot;
+use tracing::Instrument;
 use uuid::Uuid;
 
 static CONSUMER_TOPIC: &'static str = "identified-graphs";
@@ -40,32 +56,123 @@ fn find_node<'a>(
     })
 }
 
-#[test_context(E2eTestContext)]
+struct NodeIdentifierTestContext {
+    pipeline_ingress_client: PipelineIngressClient,
+    consumer_config: ConsumerConfig,
+    _guard: WorkerGuard,
+}
+
+const SERVICE_NAME: &'static str = "node-identifier-integration-tests";
+
+#[async_trait::async_trait]
+impl AsyncTestContext for NodeIdentifierTestContext {
+    async fn setup() -> Self {
+        let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
+
+        let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
+            .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
+
+        tracing::info!(
+            message = "waiting 10s for pipeline-ingress to report healthy",
+            endpoint = %endpoint,
+        );
+
+        HealthcheckClient::wait_until_healthy(
+            endpoint.clone(),
+            PipelineIngressClient::SERVICE_NAME,
+            Duration::from_millis(10000),
+            Duration::from_millis(500),
+        )
+        .await
+        .expect("pipeline-ingress never reported healthy");
+
+        tracing::info!("connecting pipeline-ingress gRPC client");
+        let pipeline_ingress_client = PipelineIngressClient::connect(endpoint.clone())
+            .await
+            .expect("could not configure gRPC client");
+
+        let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
+
+        NodeIdentifierTestContext {
+            pipeline_ingress_client,
+            consumer_config,
+            _guard,
+        }
+    }
+}
+
+#[test_context(NodeIdentifierTestContext)]
 #[tokio::test]
-async fn test_sysmon_event_produces_identified_graph(
-    ctx: &mut E2eTestContext,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let test_name = "test_sysmon_event_produces_identified_graph";
-    let SetupResult {
-        tenant_id,
-        plugin_id: _,
-        event_source_id,
-    } = ctx.setup_sysmon_generator(test_name).await?;
+async fn test_sysmon_event_produces_identified_graph(ctx: &mut NodeIdentifierTestContext) {
+    let event_source_id = Uuid::new_v4();
+    let tenant_id = Uuid::new_v4();
 
-    let kafka_scanner = KafkaTopicScanner::new(
-        ConsumerConfig::with_topic(CONSUMER_TOPIC),
-        Duration::from_secs(60),
-        Envelope::new(
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            IdentifiedGraph::new(),
-        ),
-    );
+    tracing::info!("configuring kafka consumer");
+    let kafka_consumer =
+        Consumer::new(ctx.consumer_config.clone()).expect("could not configure kafka consumer");
 
-    let handle = kafka_scanner
-        .scan_for_tenant(tenant_id, 1, |_: IdentifiedGraph| true)
-        .await;
+    // we'll use this channel to communicate that the consumer is ready to
+    // consume messages
+    let (tx, rx) = oneshot::channel::<()>();
+
+    tracing::info!("creating kafka subscriber thread");
+    let kafka_subscriber = tokio::task::spawn(async move {
+        let stream = kafka_consumer.stream();
+
+        // notify the consumer that we're ready to receive messages
+        tx.send(())
+            .expect("failed to notify sender that consumer is consuming");
+
+        let contains_expected = stream.any(
+            |res: Result<Envelope<IdentifiedGraph>, ConsumerError>| async move {
+                let envelope = res.expect("error consuming message from kafka");
+                let metadata = envelope.metadata;
+                let identified_graph = envelope.inner_message;
+
+                tracing::debug!(message = "consumed kafka message");
+
+                if metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id {
+                    let parent_process = find_node(
+                        &identified_graph,
+                        "process_id",
+                        ImmutableUintProp { prop: 6132 }.into(),
+                    )
+                    .expect("parent process missing");
+
+                    let child_process = find_node(
+                        &identified_graph,
+                        "process_id",
+                        ImmutableUintProp { prop: 5752 }.into(),
+                    )
+                    .expect("child process missing");
+
+                    let parent_to_child_edge = identified_graph
+                        .edges
+                        .get(&parent_process.uid)
+                        .iter()
+                        .flat_map(|edge_list| edge_list.edges.iter())
+                        .find(|edge| edge.to_uid == child_process.uid)
+                        .expect("missing edge from parent to child");
+
+                    parent_to_child_edge.edge_name == "children"
+                } else {
+                    false
+                }
+            },
+        );
+
+        tracing::info!("consuming kafka messages for 30s");
+        assert!(
+            tokio::time::timeout(Duration::from_millis(30000), contains_expected)
+                .await
+                .expect("failed to consume expected message within 30s")
+        );
+    });
+
+    // wait for the kafka consumer to start consuming
+    tracing::info!("waiting for kafka consumer to report ready");
+    rx.await
+        .expect("failed to receive notification that consumer is consuming");
 
     let log_event: Bytes = r#"
 <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
@@ -112,55 +219,19 @@ async fn test_sysmon_event_produces_identified_graph(
 </Event>
 "#.into();
 
-    tracing::info!(
-        message = "sending publish_raw_log request",
-        event_source_id =% event_source_id,
-        tenant_id =% tenant_id,
-    );
-
+    tracing::info!("sending publish_raw_log request");
     ctx.pipeline_ingress_client
-        .publish_raw_log(PublishRawLogRequest::new(
+        .publish_raw_log(PublishRawLogRequest {
             event_source_id,
             tenant_id,
             log_event,
-        ))
+        })
         .await
         .expect("received error response");
 
-    tracing::info!("waiting for kafka_scanner to complete");
-    let envelopes = handle.await?;
-
-    assert_eq!(envelopes.len(), 1);
-
-    let envelope = envelopes[0].clone();
-    assert_eq!(envelope.event_source_id(), event_source_id);
-    assert_eq!(envelope.tenant_id(), tenant_id);
-
-    let identified_graph = envelope.inner_message();
-
-    let parent_process = find_node(
-        &identified_graph,
-        "process_id",
-        ImmutableUintProp { prop: 6132 }.into(),
-    )
-    .expect("parent process missing");
-
-    let child_process = find_node(
-        &identified_graph,
-        "process_id",
-        ImmutableUintProp { prop: 5752 }.into(),
-    )
-    .expect("child process missing");
-
-    let parent_to_child_edge = identified_graph
-        .edges
-        .get(parent_process.get_node_key())
-        .iter()
-        .flat_map(|edge_list| edge_list.edges.iter())
-        .find(|edge| edge.to_node_key == child_process.get_node_key())
-        .expect("missing edge from parent to child");
-
-    assert_eq!(parent_to_child_edge.edge_name, "children");
-
-    Ok(())
+    tracing::info!("waiting for kafka_subscriber to complete");
+    kafka_subscriber
+        .instrument(tracing::debug_span!("kafka_subscriber"))
+        .await
+        .expect("could not join kafka subscriber");
 }

@@ -25,20 +25,21 @@ clap = { version = "3.0", default_features = false, features = [
 ] }
 failure = "0.1"
 futures = "0.3"
+grapl-utils = { path = "../grapl-utils" }
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
-grapl-utils = { path = "../grapl-utils" }
 hex = "0.4"
 hmap = "0.1"
-kafka = { path = "../kafka" }
+kafka = { path = "../kafka", version = "*" }
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-rusoto_credential = "0.47"
 rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
+rusoto_credential = "0.47"
 rust-proto = { path = "../rust-proto", version = "*" }
+uid-allocator = { path = "../uid-allocator" }
 serde = "1.0"
 serde_dynamodb = { version = "0.9", default_features = false, features = [
   "rustls"
@@ -54,10 +55,11 @@ tokio = { version = "1.17", features = [
 ] }
 tracing = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
+blake2 = "0.10.4"
+eyre = "0.6.8"
 
 [dev-dependencies]
 async-trait = "0.1"
-e2e-tests = { path = "../e2e-tests" }
-kafka = { path = "../kafka", features = ["test-utils"] }
-rand = "0.8"
+quickcheck = "1.0"
+quickcheck_macros = "1.0"
 test-context = "0.1"

@@ -20,8 +20,6 @@ anyhow = "1.0"
 async-trait = "0.1"
 bytes = "1.1"
 clap = { version = "3.0", default_features = false, features = ["std", "env"] }
-dgraph-tonic = { version = "0.10", features = ["dgraph-1-1"] }
-dgraph_query_lib = "0.1"
 futures = "0.3"
 futures-retry = "0.6"
 grapl-config = { path = "../grapl-config", version = "*" }
@@ -33,10 +31,10 @@ lru = "0.7"
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-rusoto_credential = "0.47"
 rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
+rusoto_credential = "0.47"
 rust-proto = { path = "../rust-proto", version = "*" }
 serde_json = "1.0"
 thiserror = "1.0"
@@ -51,6 +49,4 @@ tracing = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
 
 [dev-dependencies]
-e2e-tests = { path = "../e2e-tests" }
-kafka = { path = "../kafka", features = ["test-utils"] }
 test-context = "0.1"
