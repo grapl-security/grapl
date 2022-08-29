@@ -731,27 +731,33 @@ job "grapl-core" {
     }
   }
 
-
-  group "graph-query-service" {
+  // todo: move to a new graph-db.nomad
+  group "graph-query" {
     network {
       mode = "bridge"
       dns {
         servers = local.dns_servers
       }
-      port "graph-query-service-port" {
+      port "graph-query-port" {
       }
     }
 
-    task "graph-query-service" {
+    task "graph-query" {
       driver = "docker"
 
       config {
-        image = var.container_images["graph-query-service"]
-        ports = ["graph-query-service-port"]
+        image = var.container_images["graph-query"]
+        ports = ["graph-query-port"]
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
       }
 
       env {
-        GRAPH_QUERY_SERVICE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-service-port}"
+        GRAPH_QUERY_SERVICE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-port}"
         RUST_BACKTRACE                   = local.rust_backtrace
         RUST_LOG                         = var.rust_log
         GRAPH_DB_ADDRESSES               = var.graph_db.addresses
@@ -761,15 +767,87 @@ job "grapl-core" {
     }
 
     service {
-      name = "graph-query-service"
-      port = "graph-query-service-port"
+      name = "graph-query"
+      port = "graph-query-port"
       connect {
         sidecar_service {}
       }
 
       check {
         type     = "grpc"
-        port     = "graph-query-service-port"
+        port     = "graph-query-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
+    }
+  }
+
+  // todo: move to a new graph-db.nomad
+  group "graph-mutation" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "graph-mutation-port" {
+      }
+    }
+
+    task "graph-mutation" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["graph-mutation"]
+        ports = ["graph-mutation-port"]
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
+      env {
+        GRAPH_MUTATION_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-mutation-port}"
+
+        RUST_BACKTRACE         = local.rust_backtrace
+        RUST_LOG               = var.rust_log
+        GRAPH_DB_ADDRESSES     = var.graph_db.addresses
+        GRAPH_DB_AUTH_PASSWORD = var.graph_db.password
+        GRAPH_DB_AUTH_USERNAME = var.graph_db.username
+
+        # upstreams
+        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
+        UID_ALLOCATOR_CLIENT_ADDRESS        = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
+      }
+    }
+
+    service {
+      name = "graph-mutation"
+      port = "graph-mutation-port"
+      connect {
+        sidecar_service {
+          proxy {
+            config {
+              protocol = "grpc"
+            }
+
+            upstreams {
+              destination_name = "graph-schema-manager"
+              local_bind_port  = 1000
+            }
+
+            upstreams {
+              destination_name = "uid-allocator"
+              local_bind_port  = 1001
+            }
+          }
+        }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "graph-mutation-port"
         interval = "10s"
         timeout  = "3s"
       }

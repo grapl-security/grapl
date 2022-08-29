@@ -1930,11 +1930,34 @@ dependencies = [
 ]
 
 [[package]]
-name = "graph-query-service"
+name = "graph-mutation"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "blake2",
+ "clap 3.2.13",
+ "dashmap",
+ "grapl-tracing",
+ "grapl-utils",
+ "hash_hasher",
+ "lazy_static",
+ "lru",
+ "rust-proto",
+ "scylla",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "uid-allocator",
+ "uuid",
+]
+
+[[package]]
+name = "graph-query"
 version = "0.1.0"
 dependencies = [
  "async-recursion",
  "async-trait",
+ "bytes",
  "chrono",
  "clap 3.2.13",
  "env_logger 0.9.0",
@@ -2106,6 +2129,12 @@ name = "half"
 version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eabb4a44450da02c90444cf74558da904edde8fb4e9035a9a6a4e15445af0bd7"
+
+[[package]]
+name = "hash_hasher"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74721d007512d0cb3338cd20f0654ac913920061a4c4d0d8708edb3f2a698c0c"
 
 [[package]]
 name = "hashbrown"

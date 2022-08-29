@@ -4,7 +4,7 @@ use std::{
 };
 
 use clap::Parser;
-use graph_query_service::{
+use graph_query::{
     config,
     server,
 };
@@ -20,7 +20,7 @@ use tokio::net::TcpListener;
 
 use crate::config::GraphQueryServiceConfig;
 
-const SERVICE_NAME: &'static str = "graph-query-service";
+const SERVICE_NAME: &'static str = "graph-query";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
