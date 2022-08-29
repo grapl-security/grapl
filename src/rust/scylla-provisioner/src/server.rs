@@ -23,7 +23,13 @@ use scylla::{
 };
 use tokio::net::TcpListener;
 
-use crate::config::ScyllaProvisionerServiceConfig;
+use crate::{
+    config::ScyllaProvisionerServiceConfig,
+    table_names::{
+        tenant_keyspace_name,
+        IMM_STRING_TABLE_NAME,
+    },
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ScyllaProvisionerError {
@@ -57,7 +63,7 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
         let native::ProvisionGraphForTenantRequest { tenant_id } = request;
         let session = self.scylla_client.as_ref();
 
-        let tenant_ks = format!("tenant_keyspace_{}", tenant_id.simple());
+        let tenant_ks = tenant_keyspace_name(tenant_id);
 
         session.query(
             format!(
@@ -66,7 +72,7 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
             &[]
         ).await?;
 
-        let property_table_names = [("immutable_strings", "text")];
+        let property_table_names = [(IMM_STRING_TABLE_NAME, "text")];
 
         for (table_name, value_type) in property_table_names.into_iter() {
             session
