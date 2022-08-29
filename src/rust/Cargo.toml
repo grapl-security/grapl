@@ -30,6 +30,7 @@ members = [
   "./plugin-sdk/generator-sdk/",
   "./plugin-work-queue",
   "./rust-proto",
+  "./scylla-provisioner",
   "./sysmon-parser",
   "./uid-allocator",
 ]
