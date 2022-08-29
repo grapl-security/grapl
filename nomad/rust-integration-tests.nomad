@@ -227,7 +227,7 @@ job "rust-integration-tests" {
         PIPELINE_INGRESS_CLIENT_ADDRESS        = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
         PLUGIN_REGISTRY_CLIENT_ADDRESS         = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS       = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
-        SCYLLA_PROVISIONER_ENDPOINT_ADDRESS    = "http://${NOMAD_UPSTREAM_ADDR_scylla-provisioner}"
+        SCYLLA_PROVISIONER_CLIENT_ADDRESS      = "http://${NOMAD_UPSTREAM_ADDR_scylla-provisioner}"
         UID_ALLOCATOR_CLIENT_ADDRESS           = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
 
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers

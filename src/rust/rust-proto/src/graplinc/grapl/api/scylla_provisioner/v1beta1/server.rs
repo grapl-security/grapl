@@ -26,15 +26,10 @@ use tonic::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::scylla_provisioner::v1beta1::messages::{
-        DeployGraphSchemasRequest,
-        DeployGraphSchemasResponse,
-    },
+    graplinc::grapl::api::scylla_provisioner::v1beta1::messages as native,
     protobufs::graplinc::grapl::api::scylla_provisioner::v1beta1::{
         self as proto,
         scylla_provisioner_service_server::ScyllaProvisionerServiceServer as ScyllaProvisionerServiceProto,
-        DeployGraphSchemasRequest as DeployGraphSchemasRequestProto,
-        DeployGraphSchemasResponse as DeployGraphSchemasResponseProto,
     },
     protocol::{
         error::ServeError,
@@ -55,8 +50,8 @@ pub trait ScyllaProvisionerApi {
     type Error: Into<Status>;
     async fn deploy_graph_schemas(
         &self,
-        request: DeployGraphSchemasRequest,
-    ) -> Result<DeployGraphSchemasResponse, Self::Error>;
+        request: native::DeployGraphSchemasRequest,
+    ) -> Result<native::DeployGraphSchemasResponse, Self::Error>;
 }
 
 #[tonic::async_trait]
@@ -67,21 +62,9 @@ where
     #[tracing::instrument(skip(self, request), err)]
     async fn deploy_graph_schemas(
         &self,
-        request: Request<DeployGraphSchemasRequestProto>,
-    ) -> Result<Response<DeployGraphSchemasResponseProto>, tonic::Status> {
-        let proto_request = request.into_inner();
-
-        let native_request = proto_request.try_into()?;
-
-        let native_response = self
-            .api_server
-            .deploy_graph_schemas(native_request)
-            .await
-            .map_err(|e| e.into())?;
-
-        let proto_response = native_response.try_into().map_err(SerDeError::from)?;
-
-        Ok(Response::new(proto_response))
+        request: Request<proto::DeployGraphSchemasRequest>,
+    ) -> Result<Response<proto::DeployGraphSchemasResponse>, tonic::Status> {
+        execute_rpc!(self, request, deploy_graph_schemas)
     }
 }
 

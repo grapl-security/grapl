@@ -6,10 +6,7 @@ use std::{
 use async_trait::async_trait;
 use rust_proto::{
     graplinc::grapl::api::scylla_provisioner::v1beta1::{
-        messages::{
-            DeployGraphSchemasRequest,
-            DeployGraphSchemasResponse,
-        },
+        messages as native,
         server::{
             ScyllaProvisionerApi,
             ScyllaProvisionerServer,
@@ -55,9 +52,9 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
 
     async fn deploy_graph_schemas(
         &self,
-        request: DeployGraphSchemasRequest,
-    ) -> Result<DeployGraphSchemasResponse, Self::Error> {
-        let DeployGraphSchemasRequest { tenant_id } = request;
+        request: native::DeployGraphSchemasRequest,
+    ) -> Result<native::DeployGraphSchemasResponse, Self::Error> {
+        let native::DeployGraphSchemasRequest { tenant_id } = request;
         let session = self.scylla_client.as_ref();
 
         let tenant_ks = format!("tenant_keyspace_{}", tenant_id.simple());
@@ -116,7 +113,7 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
 
         session.await_schema_agreement().await?;
 
-        Ok(DeployGraphSchemasResponse {})
+        Ok(native::DeployGraphSchemasResponse {})
     }
 }
 

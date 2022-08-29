@@ -1,22 +1,30 @@
 use std::time::Duration;
 
-use client_executor::{Executor, ExecutorConfig};
+use client_executor::{
+    Executor,
+    ExecutorConfig,
+};
 use tonic::transport::Endpoint;
 
 use crate::{
-    graplinc::grapl::api::scylla_provisioner::v1beta1::messages::{
-        self as native,
-    },
+    client_macros::ExecuteClientRpcOptions,
+    create_proto_client,
+    execute_client_rpc,
+    graplinc::grapl::api::scylla_provisioner::v1beta1::messages::{self as native,},
     protobufs::graplinc::grapl::api::scylla_provisioner::v1beta1::{
-        scylla_provisioner_service_client::ScyllaProvisionerServiceClient,
         self as proto,
+        scylla_provisioner_service_client::ScyllaProvisionerServiceClient,
     },
-    protocol::{error::GrpcClientError, service_client::{Connectable, ConnectError}},
-    create_proto_client, execute_client_rpc, client_macros::ExecuteClientRpcOptions,
+    protocol::{
+        error::GrpcClientError,
+        service_client::{
+            ConnectError,
+            Connectable,
+        },
+    },
 };
 
 pub type ScyllaProvisionerClientError = GrpcClientError;
-
 
 pub struct ScyllaProvisionerClient {
     proto_client: ScyllaProvisionerServiceClient<tonic::transport::Channel>,
