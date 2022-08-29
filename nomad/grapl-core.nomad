@@ -595,6 +595,7 @@ job "grapl-core" {
   ## Begin actual Grapl core services ##
   #######################################
 
+  // todo: move to a new graph-db.nomad
   group "scylla-provisioner" {
     network {
       mode = "bridge"
