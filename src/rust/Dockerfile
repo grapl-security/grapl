@@ -144,7 +144,7 @@ INTEGRATION_TEST_FEATURES=(
 e2e-tests/integration_tests
 generator-dispatcher/integration_tests
 graph-merger/integration_tests
-graph-query-service/integration_tests
+graph-query/integration_tests
 graph-schema-manager/integration_tests
 grapl-web-ui/integration_tests
 node-identifier/integration_tests
@@ -295,11 +295,17 @@ FROM rust-dist AS graph-merger-deploy
 COPY --from=build /outputs/graph-merger /
 ENTRYPOINT ["/graph-merger"]
 
-##### graph-query-service
-FROM rust-dist AS graph-query-service-deploy
+##### graph-query
+FROM rust-dist AS graph-query-deploy
 
-COPY --from=build /outputs/graph-query-service /
-ENTRYPOINT ["/graph-query-service"]
+COPY --from=build /outputs/graph-query /
+ENTRYPOINT ["/graph-query"]
+
+##### graph-mutation
+FROM rust-dist AS graph-mutation-deploy
+
+COPY --from=build /outputs/graph-mutation /
+ENTRYPOINT ["/graph-mutation"]
 
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy

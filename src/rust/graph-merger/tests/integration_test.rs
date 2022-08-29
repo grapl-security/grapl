@@ -42,9 +42,7 @@ const CONSUMER_TOPIC: &'static str = "merged-graphs";
 
 #[test_context(E2eTestContext)]
 #[tokio::test]
-async fn test_sysmon_event_produces_merged_graph(
-    ctx: &mut E2eTestContext,
-) -> Result<(), Box<dyn std::error::Error>> {
+async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let test_name = "test_sysmon_event_produces_merged_graph";
     let SetupResult {
         tenant_id,

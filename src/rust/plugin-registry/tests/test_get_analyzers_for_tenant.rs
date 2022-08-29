@@ -20,7 +20,7 @@ use rust_proto::{
 };
 
 #[test_log::test(tokio::test)]
-async fn test_get_analyzers_for_tenant() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_get_analyzers_for_tenant() -> eyre::Result<()> {
     tracing::debug!(
         env=?std::env::args(),
     );
@@ -108,7 +108,7 @@ async fn test_get_analyzers_for_tenant() -> Result<(), Box<dyn std::error::Error
 }
 
 #[test_log::test(tokio::test)]
-async fn test_get_analyzers_for_tenant_not_found() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_get_analyzers_for_tenant_not_found() -> eyre::Result<()> {
     tracing::debug!(
         env=?std::env::args(),
     );

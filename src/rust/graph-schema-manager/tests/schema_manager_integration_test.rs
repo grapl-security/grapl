@@ -20,7 +20,7 @@ pub fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
 }
 
 #[tokio::test]
-async fn test_deploy_schema() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_deploy_schema() -> eyre::Result<()> {
     let client_config = GraphSchemaManagerClientConfig::parse();
     let mut client = build_grpc_client(client_config).await?;
 

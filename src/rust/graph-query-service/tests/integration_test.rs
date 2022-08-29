@@ -1,42 +1,66 @@
 #![cfg(feature = "integration_tests")]
 use std::sync::Arc;
 
+use bytes::Bytes;
 use clap::Parser;
-use graph_query_service::{
+use graph_query::{
     config::GraphDbConfig,
     node_query::NodeQuery,
+    table_names::{
+        tenant_keyspace_name,
+        IMM_STRING_TABLE_NAME,
+    },
 };
 use rust_proto::{
     client_factory::{
         build_grpc_client,
-        services::GraphQueryClientConfig,
+        services::{
+            GraphMutationClientConfig,
+            GraphQueryClientConfig,
+            GraphSchemaManagerClientConfig,
+            UidAllocatorClientConfig,
+        },
     },
     graplinc::grapl::{
-        api::graph_query_service::v1beta1::messages::{
-            MatchedGraphWithUid,
-            MaybeMatchWithUid,
-            QueryGraphWithUidRequest,
-            StringCmp,
+        api::{
+            graph::v1beta1::{
+                ImmutableStrProp,
+                NodeProperty,
+                Property,
+            },
+            graph_mutation::v1beta1::messages as mutation,
+            graph_query_service::v1beta1::messages::{
+                MatchedGraphWithUid,
+                MaybeMatchWithUid,
+                NodePropertyQuery,
+                QueryGraphFromUidRequest,
+                QueryGraphWithUidRequest,
+                StringCmp,
+            },
+            graph_schema_manager::v1beta1::messages as graph_schema_manager_api,
+            uid_allocator::v1beta1::{
+                client::UidAllocatorServiceClient,
+                messages::CreateTenantKeyspaceRequest,
+            },
         },
         common::v1beta1::types::{
+            EdgeName,
             NodeType,
-            Uid,
         },
     },
 };
 use scylla::CachingSession;
 use secrecy::ExposeSecret;
 
-type DynError = Box<dyn std::error::Error + Send + Sync>;
-
 // NOTE: temporary code to set up the keyspace before we have a service
 // to set it up for us
-#[tracing::instrument(skip(session), err)]
+#[tracing::instrument(skip(session, uid_allocator_client), err)]
 async fn provision_keyspace(
     session: &CachingSession,
     tenant_id: uuid::Uuid,
-) -> Result<String, DynError> {
-    let tenant_ks = format!("tenant_keyspace_{}", tenant_id.simple());
+    mut uid_allocator_client: UidAllocatorServiceClient,
+) -> eyre::Result<String> {
+    let tenant_ks = tenant_keyspace_name(tenant_id);
 
     session
         .session
@@ -47,7 +71,7 @@ async fn provision_keyspace(
         &[],
     ).await?;
 
-    let property_table_names = [("immutable_strings", "text")];
+    let property_table_names = [(IMM_STRING_TABLE_NAME, "text")];
 
     for (table_name, value_type) in property_table_names.into_iter() {
         session
@@ -98,10 +122,36 @@ async fn provision_keyspace(
 
     session.session.await_schema_agreement().await?;
 
+    uid_allocator_client
+        .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
+        .await?;
+
     Ok(tenant_ks)
 }
 
-async fn get_scylla_client() -> Result<Arc<CachingSession>, DynError> {
+async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> eyre::Result<()> {
+    let graph_schema_manager_client_config = GraphSchemaManagerClientConfig::parse();
+    let mut graph_schema_manager_client =
+        build_grpc_client(graph_schema_manager_client_config).await?;
+
+    fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
+        // This path is created in rust/Dockerfile
+        let path = "/test-fixtures/example_schemas/example.graphql";
+        std::fs::read(path).map(Bytes::from)
+    }
+
+    graph_schema_manager_client
+        .deploy_schema(graph_schema_manager_api::DeploySchemaRequest {
+            tenant_id,
+            schema: get_example_graphql_schema().unwrap(),
+            schema_type: graph_schema_manager_api::SchemaType::GraphqlV0,
+            schema_version: 0,
+        })
+        .await?;
+    Ok(())
+}
+
+async fn get_scylla_client() -> eyre::Result<Arc<CachingSession>> {
     let graph_db_config = GraphDbConfig::parse();
 
     let mut scylla_config = scylla::SessionConfig::new();
@@ -121,97 +171,97 @@ async fn get_scylla_client() -> Result<Arc<CachingSession>, DynError> {
     Ok(scylla_client)
 }
 
-#[tracing::instrument(skip(session), fields(
-    keyspace = %keyspace.as_ref(),
-    uid=%uid.as_i64(),
-    node_type=node_type.value.as_str(),
-) err)]
-async fn create_node(
-    session: &CachingSession,
-    keyspace: impl AsRef<str>,
-    uid: Uid,
-    node_type: &NodeType,
-) -> Result<(), DynError> {
-    let keyspace = keyspace.as_ref();
-    let insert = format!(
-        r"INSERT INTO {keyspace}.node_type
-       (uid, node_type)
-       VALUES (?, ?)"
-    );
-
-    session
-        .execute(insert, &(uid.as_i64(), &node_type.value))
-        .await?;
-
-    Ok(())
-}
-
-async fn insert_string(
-    session: &CachingSession,
-    keyspace: impl AsRef<str>,
-    uid: Uid,
-    populated_field: impl AsRef<str>,
-    value: impl AsRef<str>,
-) -> Result<(), DynError> {
-    let keyspace = keyspace.as_ref();
-    let insert = format!(
-        r"INSERT INTO {keyspace}.immutable_strings
-        (uid, populated_field, value)
-        VALUES (?, ?, ?)"
-    );
-
-    session
-        .execute(
-            insert,
-            &(uid.as_i64(), populated_field.as_ref(), value.as_ref()),
-        )
-        .await?;
-
-    Ok(())
-}
-
 #[test_log::test(tokio::test)]
-async fn test_query_single_node() -> Result<(), DynError> {
+async fn test_query_two_attached_nodes() -> eyre::Result<()> {
     let _span = tracing::info_span!(
         "tenant_id", tenant_id=?tracing::field::Empty,
     );
-    tracing::info!("starting test_query_single_node");
 
-    let client_config = GraphQueryClientConfig::parse();
-    let mut graph_query_client = build_grpc_client(client_config).await?;
-    tracing::info!("connected to graph query service");
+    let query_client_config = GraphQueryClientConfig::parse();
+    let mut graph_query_client = build_grpc_client(query_client_config).await?;
+
+    let mutation_client_config = GraphMutationClientConfig::parse();
+    let mut graph_mutation_client = build_grpc_client(mutation_client_config).await?;
+
+    // Only used to provision the keyspace. It's okay here to use the
+    // otherwise-unrecommended non-caching UidAllocator client.
+    let uid_allocator_client = build_grpc_client(UidAllocatorClientConfig::parse()).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     _span.record("tenant_id", &format!("{tenant_id}"));
 
     let session = get_scylla_client().await?;
+    let _keyspace_name =
+        provision_keyspace(session.as_ref(), tenant_id, uid_allocator_client).await?;
 
-    let keyspace_name = provision_keyspace(session.as_ref(), tenant_id).await?;
+    // Provision a Schema so we can test how edges work
+    provision_example_graph_schema(tenant_id).await?;
 
-    let uid = Uid::from_u64(1).unwrap();
-    let node_type = NodeType::try_from("Process").unwrap();
+    let process_node_type = NodeType::try_from("Process").unwrap();
+    let file_node_type = NodeType::try_from("File").unwrap();
 
-    create_node(session.as_ref(), &keyspace_name, uid, &node_type).await?;
-    insert_string(
-        session.as_ref(),
-        &keyspace_name,
-        uid,
-        "process_name",
-        "chrome.exe",
-    )
-    .await?;
+    let mutation::CreateNodeResponse {
+        uid: first_node_uid,
+    } = graph_mutation_client
+        .create_node(mutation::CreateNodeRequest {
+            tenant_id,
+            node_type: process_node_type.clone(),
+        })
+        .await?;
 
-    let graph_query = NodeQuery::root(node_type.clone())
+    graph_mutation_client
+        .set_node_property(mutation::SetNodePropertyRequest {
+            tenant_id,
+            uid: first_node_uid,
+            node_type: process_node_type.clone(),
+            property_name: "process_name".try_into()?,
+            property: NodeProperty {
+                property: Property::ImmutableStrProp(ImmutableStrProp {
+                    prop: "chrome.exe".into(),
+                }),
+            },
+        })
+        .await?;
+
+    // Add another Node - the time a File
+    let mutation::CreateNodeResponse {
+        uid: second_node_uid,
+    } = graph_mutation_client
+        .create_node(mutation::CreateNodeRequest {
+            tenant_id,
+            node_type: file_node_type.clone(),
+        })
+        .await?;
+
+    // Create an 'binary_file' Edge from Process --> File
+    let forward_edge_name = EdgeName {
+        value: "binary_file".to_string(), // as defined in the example Graphql schema
+    };
+    let reverse_edge_name = EdgeName {
+        value: "executed_as_processes".to_string(),
+    };
+    graph_mutation_client
+        .create_edge(mutation::CreateEdgeRequest {
+            edge_name: forward_edge_name.clone(),
+            tenant_id,
+            from_uid: first_node_uid,
+            to_uid: second_node_uid,
+            source_node_type: process_node_type.clone(),
+        })
+        .await?;
+
+    let graph_query = NodeQuery::root(process_node_type.clone())
         .with_string_comparisons(
             "process_name".try_into()?,
             vec![StringCmp::Eq("chrome.exe".to_owned(), false)],
         )
         .build();
 
+    // Query about just the single node
     let response = graph_query_client
         .query_graph_with_uid(QueryGraphWithUidRequest {
             tenant_id: tenant_id.into(),
-            node_uid: uid,
+            node_uid: first_node_uid,
             graph_query,
         })
         .await?;
@@ -227,22 +277,76 @@ async fn test_query_single_node() -> Result<(), DynError> {
     assert_eq!(matched_graph.nodes.len(), 1);
     assert_eq!(matched_graph.edges.len(), 0);
 
-    let (returned_uid, returned_node) = matched_graph.nodes.into_iter().next().unwrap();
-    assert_eq!(returned_uid, uid);
-    assert_eq!(returned_uid, root_uid);
+    {
+        // Assertions on the root node
+        let (returned_uid, returned_node) = matched_graph.nodes.into_iter().next().unwrap();
+        assert_eq!(returned_uid, first_node_uid);
+        assert_eq!(returned_uid, root_uid);
 
-    assert_eq!(returned_node.node_type, node_type);
-    assert_eq!(returned_node.string_properties.prop_map.len(), 1);
+        assert_eq!(returned_node.node_type, process_node_type);
+        assert_eq!(returned_node.string_properties.prop_map.len(), 1);
 
-    let (returned_property_name, returned_property) = returned_node
-        .string_properties
-        .prop_map
-        .into_iter()
-        .next()
-        .unwrap();
+        let (returned_property_name, returned_property) = returned_node
+            .string_properties
+            .prop_map
+            .into_iter()
+            .next()
+            .unwrap();
 
-    assert_eq!(returned_property_name, "process_name".try_into()?);
-    assert_eq!(&returned_property, "chrome.exe");
+        assert_eq!(returned_property_name, "process_name".try_into()?);
+        assert_eq!(&returned_property, "chrome.exe");
+    }
+
+    // Now try to query the 'full' graph from that root uid
+    let graph_query = NodeQuery::root(process_node_type.clone())
+        .with_shared_edge(
+            forward_edge_name.clone(),
+            reverse_edge_name.clone(),
+            NodePropertyQuery::new(file_node_type.clone()),
+            |_| {},
+        )
+        .build();
+
+    let response = graph_query_client
+        .query_graph_from_uid(QueryGraphFromUidRequest {
+            tenant_id: tenant_id.into(),
+            node_uid: first_node_uid,
+            graph_query,
+        })
+        .await?;
+
+    let matched_graph = response.matched_graph.expect("Expected a matched graph");
+
+    assert_eq!(matched_graph.nodes.len(), 2);
+    assert_eq!(matched_graph.edges.len(), 2); // forward and reverse edge
+
+    tracing::info!(
+        nodes=?matched_graph.nodes,
+        edges=?matched_graph.edges,
+    );
+
+    // Assertions on the edges
+    for ((source_uid, edge_name), hash_set) in matched_graph.edges.into_iter() {
+        assert_eq!(hash_set.len(), 1);
+        if edge_name == forward_edge_name {
+            assert_eq!(first_node_uid, source_uid);
+            assert!(
+                hash_set.contains(&second_node_uid),
+                "expected {second_node_uid:?} in {hash_set:?}"
+            );
+        } else if edge_name == reverse_edge_name {
+            assert_eq!(second_node_uid, source_uid);
+            assert!(
+                hash_set.contains(&first_node_uid),
+                "expected {first_node_uid:?} in {hash_set:?}"
+            );
+        } else {
+            panic!("Unknown edge_name {edge_name} (uid={source_uid:?})");
+        }
+    }
+
     drop(_span);
     Ok(())
 }
+
+// TODO: test `with_edge_to`

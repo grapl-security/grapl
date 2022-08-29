@@ -1486,6 +1486,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "clap 3.2.13",
+ "eyre",
  "futures",
  "grapl-config",
  "grapl-tracing",
@@ -1585,6 +1586,7 @@ dependencies = [
  "async-trait",
  "clap 3.2.13",
  "env_logger 0.9.0",
+ "eyre",
  "grapl-config",
  "grapl-tracing",
  "grapl-utils",
@@ -1811,6 +1813,7 @@ dependencies = [
  "bytes",
  "clap 3.2.13",
  "e2e-tests",
+ "eyre",
  "futures",
  "grapl-tracing",
  "kafka",
@@ -1909,6 +1912,7 @@ dependencies = [
  "dgraph-tonic",
  "dgraph_query_lib",
  "e2e-tests",
+ "eyre",
  "futures",
  "futures-retry",
  "grapl-config",
@@ -1930,14 +1934,38 @@ dependencies = [
 ]
 
 [[package]]
-name = "graph-query-service"
+name = "graph-mutation"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "blake2",
+ "clap 3.2.13",
+ "dashmap",
+ "grapl-tracing",
+ "grapl-utils",
+ "hash_hasher",
+ "lazy_static",
+ "lru",
+ "rust-proto",
+ "scylla",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "uid-allocator",
+ "uuid",
+]
+
+[[package]]
+name = "graph-query"
 version = "0.1.0"
 dependencies = [
  "async-recursion",
  "async-trait",
+ "bytes",
  "chrono",
  "clap 3.2.13",
  "env_logger 0.9.0",
+ "eyre",
  "futures",
  "grapl-tracing",
  "itertools 0.10.3",
@@ -1969,6 +1997,7 @@ dependencies = [
  "bytes",
  "clap 3.2.13",
  "dashmap",
+ "eyre",
  "grapl-config",
  "grapl-graphql-codegen",
  "grapl-tracing",
@@ -2106,6 +2135,12 @@ name = "half"
 version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eabb4a44450da02c90444cf74558da904edde8fb4e9035a9a6a4e15445af0bd7"
+
+[[package]]
+name = "hash_hasher"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74721d007512d0cb3338cd20f0654ac913920061a4c4d0d8708edb3f2a698c0c"
 
 [[package]]
 name = "hashbrown"
@@ -2857,6 +2892,7 @@ dependencies = [
  "chrono",
  "clap 3.2.13",
  "e2e-tests",
+ "eyre",
  "failure",
  "futures",
  "grapl-config",
@@ -3203,6 +3239,7 @@ dependencies = [
  "async-trait",
  "clap 3.2.13",
  "env_logger 0.9.0",
+ "eyre",
  "grapl-config",
  "grapl-tracing",
  "grapl-utils",
@@ -3399,6 +3436,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "clap 3.2.13",
+ "eyre",
  "futures",
  "grapl-tracing",
  "kafka",
@@ -3506,6 +3544,7 @@ dependencies = [
  "bytes",
  "clap 3.2.13",
  "env_logger 0.9.0",
+ "eyre",
  "futures",
  "futures-retry",
  "grapl-config",
@@ -3534,6 +3573,7 @@ dependencies = [
  "bytes",
  "chrono",
  "clap 3.2.13",
+ "eyre",
  "futures",
  "grapl-config",
  "grapl-tracing",
@@ -4935,6 +4975,7 @@ dependencies = [
  "chrono",
  "clap 3.2.13",
  "endpoint-plugin",
+ "eyre",
  "futures",
  "generator-sdk",
  "grapl-tracing",
@@ -4955,6 +4996,7 @@ dependencies = [
  "chrono",
  "criterion",
  "derive-into-owned",
+ "eyre",
  "memchr",
  "serde",
  "thiserror",
@@ -5659,6 +5701,7 @@ dependencies = [
  "clap 3.2.13",
  "dashmap",
  "env_logger 0.9.0",
+ "eyre",
  "futures",
  "grapl-config",
  "grapl-tracing",

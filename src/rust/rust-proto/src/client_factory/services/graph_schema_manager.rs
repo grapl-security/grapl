@@ -6,7 +6,7 @@ use crate::{
     graplinc::grapl::api::graph_schema_manager::v1beta1::client::GraphSchemaManagerClient,
 };
 
-#[derive(clap::Parser, Debug)]
+#[derive(clap::Parser, Debug, Clone)]
 pub struct GraphSchemaManagerClientConfig {
     #[clap(long, env)]
     pub graph_schema_manager_client_address: String,

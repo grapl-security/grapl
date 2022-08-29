@@ -8,7 +8,7 @@ use rust_proto::{
 use uid_allocator::client::CachingUidAllocatorServiceClient;
 
 #[tokio::test]
-async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_uid_allocator() -> eyre::Result<()> {
     let _guard = grapl_tracing::setup_tracing("uid-allocator integ test")?;
 
     let tenant_id = uuid::Uuid::new_v4();

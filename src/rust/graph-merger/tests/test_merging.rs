@@ -181,7 +181,7 @@ pub mod test {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_upsert_edge_and_retrieve() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_upsert_edge_and_retrieve() -> eyre::Result<()> {
         init_test_env();
         let mg_alpha = grapl_config::mg_alphas()
             .pop()
@@ -279,7 +279,7 @@ pub mod test {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_upsert_idempotency() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_upsert_idempotency() -> eyre::Result<()> {
         init_test_env();
         let mg_alpha = grapl_config::mg_alphas()
             .pop()
@@ -360,7 +360,7 @@ pub mod test {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_upsert_multifield() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_upsert_multifield() -> eyre::Result<()> {
         init_test_env();
         let mg_alpha = grapl_config::mg_alphas()
             .pop()
