@@ -39,7 +39,7 @@ from infra.scylla import ScyllaInstance
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
 from infra.upstream_stacks import UpstreamStacks
-from pulumi.resource import CustomTimeouts, ResourceOptions
+from pulumi.resource import CustomTimeouts
 from typing_extensions import Final
 
 import pulumi
@@ -359,36 +359,6 @@ def main() -> None:
             tracing_endpoint="jaeger-zipkin.service.consul",
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
-
-        local_grapl_core_vars: Final[NomadVars] = dict(
-            graph_db=graph_db.to_nomad_scylla_args(),
-            event_source_db=event_source_db.to_nomad_service_db_args(),
-            organization_management_db=organization_management_db.to_nomad_service_db_args(),
-            plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
-            plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
-            graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
-            uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
-            **nomad_inputs,
-        )
-
-        nomad_grapl_core = NomadJob(
-            "grapl-core",
-            jobspec=repository_path("nomad/grapl-core.nomad"),
-            vars=local_grapl_core_vars,
-            opts=ResourceOptions(
-                custom_timeouts=CustomTimeouts(
-                    create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-                )
-            ),
-        )
-
-        nomad_grapl_provision = NomadJob(
-            "grapl-provision",
-            jobspec=repository_path("nomad/grapl-provision.nomad"),
-            vars=provision_vars,
-            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
-        )
-
     else:
         ###################################
         # AWS Grapl
@@ -453,45 +423,6 @@ def main() -> None:
             )
         )
 
-        prod_grapl_core_vars: Final[NomadVars] = dict(
-            graph_db=graph_db.to_nomad_scylla_args(),
-            event_source_db=event_source_db.to_nomad_service_db_args(),
-            organization_management_db=organization_management_db.to_nomad_service_db_args(),
-            plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
-            plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
-            graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
-            uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
-            **nomad_inputs,
-        )
-
-        # make it easy to debug nomad var issues
-        if pulumi.runtime.is_dry_run():
-            pulumi.export("prod-grapl-core-vars", prod_grapl_core_vars)
-
-        nomad_grapl_core = NomadJob(
-            "grapl-core",
-            jobspec=repository_path("nomad/grapl-core.nomad"),
-            vars=prod_grapl_core_vars,
-            opts=pulumi.ResourceOptions(
-                provider=nomad_provider,
-                custom_timeouts=CustomTimeouts(
-                    create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-                ),
-            ),
-        )
-
-        nomad_grapl_provision = NomadJob(
-            "grapl-provision",
-            jobspec=repository_path("nomad/grapl-provision.nomad"),
-            vars=provision_vars,
-            opts=pulumi.ResourceOptions(
-                depends_on=[
-                    nomad_grapl_core.job,
-                ],
-                provider=nomad_provider,
-            ),
-        )
-
         NomadJob(
             "grapl-observability",
             jobspec=repository_path("nomad/observability.nomad"),
@@ -512,18 +443,61 @@ def main() -> None:
         )
         pulumi.export("stage-url", api_gateway.stage.invoke_url)
 
-        # Describes resources that should be destroyed/updated between
-        # E2E-in-AWS runs.
-        pulumi.export(
-            "stateful-resource-urns",
-            [
-                # We need to re-provision
-                nomad_grapl_provision.urn,
-                dynamodb_tables.urn,
+    grapl_core_vars: Final[NomadVars] = dict(
+        graph_db=graph_db.to_nomad_scylla_args(),
+        event_source_db=event_source_db.to_nomad_service_db_args(),
+        organization_management_db=organization_management_db.to_nomad_service_db_args(),
+        plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
+        plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+        graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
+        uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
+        **nomad_inputs,
+    )
+
+    nomad_grapl_core = NomadJob(
+        "grapl-core",
+        jobspec=repository_path("nomad/grapl-core.nomad"),
+        vars=grapl_core_vars,
+        opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
+            custom_timeouts=CustomTimeouts(
+                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
+            ),
+        ),
+    )
+
+    nomad_grapl_provision = NomadJob(
+        "grapl-provision",
+        jobspec=repository_path("nomad/grapl-provision.nomad"),
+        vars=provision_vars,
+        opts=pulumi.ResourceOptions(
+            depends_on=[
+                nomad_grapl_core.job,
             ],
-        )
+            provider=nomad_provider,
+        ),
+    )
 
     OpsAlarms(name="ops-alarms")
+
+    ##############################
+    # EXPORTS
+    ##############################
+
+    # make it easy to debug nomad var issues
+    if (not config.LOCAL_GRAPL) and pulumi.runtime.is_dry_run():
+        pulumi.export("prod-grapl-core-vars", grapl_core_vars)
+
+    # Describes resources that should be destroyed/updated between
+    # E2E-in-AWS runs.
+    pulumi.export(
+        "stateful-resource-urns",
+        [
+            # We need to re-provision
+            nomad_grapl_provision.urn,
+            dynamodb_tables.urn,
+        ],
+    )
 
     pulumi.export(
         "organization-management-db",
