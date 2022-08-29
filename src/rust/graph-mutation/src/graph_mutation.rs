@@ -142,6 +142,7 @@ impl GraphMutationManager {
             .await
     }
 
+    #[tracing::instrument(skip(self), err)]
     async fn upsert_min_u64(
         &self,
         tenant_id: uuid::Uuid,
@@ -178,6 +179,7 @@ impl GraphMutationManager {
             .await
     }
 
+    #[tracing::instrument(skip(self), err)]
     async fn upsert_immutable_u64(
         &self,
         tenant_id: uuid::Uuid,
@@ -193,8 +195,6 @@ impl GraphMutationManager {
                 property_name.clone(),
                 || async move {
                     let property_value = property_value as i64;
-                    // todo: We should only prepare statements once
-
                     let tenant_ks = tenant_keyspace_name(tenant_id);
                     let query = Query::new(format!(
                         r"
@@ -248,6 +248,7 @@ impl GraphMutationManager {
             .await
     }
 
+    #[tracing::instrument(skip(self), err)]
     async fn upsert_min_i64(
         &self,
         tenant_id: uuid::Uuid,
@@ -283,6 +284,7 @@ impl GraphMutationManager {
             .await
     }
 
+    #[tracing::instrument(skip(self), err)]
     async fn upsert_immutable_i64(
         &self,
         tenant_id: uuid::Uuid,
@@ -315,6 +317,7 @@ impl GraphMutationManager {
             .await
     }
 
+    #[tracing::instrument(skip(self), err)]
     async fn set_node_type(
         &self,
         tenant_id: uuid::Uuid,
@@ -339,6 +342,7 @@ impl GraphMutationManager {
             .await
     }
 
+    #[tracing::instrument(skip(self), err)]
     async fn upsert_immutable_string(
         &self,
         tenant_id: uuid::Uuid,
@@ -371,6 +375,7 @@ impl GraphMutationManager {
             .await
     }
 
+    #[tracing::instrument(skip(self), err)]
     async fn upsert_edges(
         &self,
         tenant_id: uuid::Uuid,
