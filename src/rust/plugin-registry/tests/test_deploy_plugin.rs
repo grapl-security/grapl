@@ -39,7 +39,7 @@ fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
 }
 
 #[test_log::test(tokio::test)]
-async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_deploy_example_generator() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
     let mut client = build_grpc_client(client_config).await?;
 
@@ -87,7 +87,7 @@ async fn test_deploy_example_generator() -> Result<(), Box<dyn std::error::Error
 }
 
 #[test_log::test(tokio::test)]
-async fn test_deploy_sysmon_generator() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
     let mut client = build_grpc_client(client_config).await?;
 
@@ -148,7 +148,7 @@ async fn assert_health(
     client: &mut PluginRegistryServiceClient,
     plugin_id: uuid::Uuid,
     expected: PluginHealthStatus,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> eyre::Result<()> {
     let get_health_response: GetPluginHealthResponse = client
         .get_plugin_health(GetPluginHealthRequest::new(plugin_id))
         .timeout(std::time::Duration::from_secs(5))
@@ -158,14 +158,14 @@ async fn assert_health(
     if expected == actual {
         Ok(())
     } else {
-        Err(format!("Expected one of {expected:?}, got {actual:?}").into())
+        Err(eyre::eyre!("Expected one of {expected:?}, got {actual:?}"))
     }
 }
 
 #[test_log::test(tokio::test)]
 /// So we *expect* this call to fail since it's an arbitrary PluginID that
 /// hasn't been created yet
-async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
     let mut client = build_grpc_client(client_config).await?;
 

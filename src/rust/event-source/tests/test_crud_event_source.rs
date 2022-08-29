@@ -12,7 +12,7 @@ use rust_proto::{
 };
 
 #[test_log::test(tokio::test)]
-async fn test_create_update_get() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_create_update_get() -> eyre::Result<()> {
     let client_config = EventSourceClientConfig::parse();
     let mut client = build_grpc_client(client_config).await?;
 

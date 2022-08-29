@@ -52,8 +52,6 @@ use rust_proto::{
 use scylla::CachingSession;
 use secrecy::ExposeSecret;
 
-type DynError = Box<dyn std::error::Error + Send + Sync>;
-
 // NOTE: temporary code to set up the keyspace before we have a service
 // to set it up for us
 #[tracing::instrument(skip(session, uid_allocator_client), err)]
@@ -61,7 +59,7 @@ async fn provision_keyspace(
     session: &CachingSession,
     tenant_id: uuid::Uuid,
     mut uid_allocator_client: UidAllocatorServiceClient,
-) -> Result<String, DynError> {
+) -> eyre::Result<String> {
     let tenant_ks = tenant_keyspace_name(tenant_id);
 
     session
@@ -131,7 +129,7 @@ async fn provision_keyspace(
     Ok(tenant_ks)
 }
 
-async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> Result<(), DynError> {
+async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> eyre::Result<()> {
     let graph_schema_manager_client_config = GraphSchemaManagerClientConfig::parse();
     let mut graph_schema_manager_client =
         build_grpc_client(graph_schema_manager_client_config).await?;
@@ -153,7 +151,7 @@ async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> Result<(), Dyn
     Ok(())
 }
 
-async fn get_scylla_client() -> Result<Arc<CachingSession>, DynError> {
+async fn get_scylla_client() -> eyre::Result<Arc<CachingSession>> {
     let graph_db_config = GraphDbConfig::parse();
 
     let mut scylla_config = scylla::SessionConfig::new();
@@ -174,7 +172,7 @@ async fn get_scylla_client() -> Result<Arc<CachingSession>, DynError> {
 }
 
 #[test_log::test(tokio::test)]
-async fn test_query_two_attached_nodes() -> Result<(), DynError> {
+async fn test_query_two_attached_nodes() -> eyre::Result<()> {
     let _span = tracing::info_span!(
         "tenant_id", tenant_id=?tracing::field::Empty,
     );

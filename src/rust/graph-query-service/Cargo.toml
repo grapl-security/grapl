@@ -40,6 +40,7 @@ tonic-build = { version = "0.6.0", features = ["prost"] }
 
 [dev-dependencies]
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
+eyre = "0.6"
 
 [features]
 integration_tests = []

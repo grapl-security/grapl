@@ -19,7 +19,7 @@ use rust_proto::{
 /// For now, this is just a smoke test. This test can and should evolve as
 /// the service matures.
 #[test_log::test(tokio::test)]
-async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_create_plugin() -> eyre::Result<()> {
     tracing::debug!(
         env=?std::env::args(),
     );
