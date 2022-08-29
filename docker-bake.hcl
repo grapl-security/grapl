@@ -166,6 +166,8 @@ group "rust-services" {
     "generator-dispatcher",
     "generator-execution-sidecar",
     "graph-merger",
+    "graph-mutation",
+    "graph-query",
     "grapl-web-ui",
     "kafka-retry",
     "node-identifier",
@@ -174,6 +176,7 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
+    "graph-schema-manager",
     "uid-allocator",
   ]
 }
@@ -279,7 +282,6 @@ target "_rust-base" {
   contexts = {
     dist-ctx = "dist"
     etc-ctx  = "etc"
-    test-ctx = "test"
   }
   dockerfile = "rust/Dockerfile"
   args = {
@@ -304,6 +306,22 @@ target "graph-merger" {
   ]
 }
 
+target "graph-mutation" {
+  inherits = ["_rust-base"]
+  target   = "graph-mutation-deploy"
+  tags = [
+    upstream_aware_tag("graph-mutation")
+  ]
+}
+
+target "graph-query" {
+  inherits = ["_rust-base"]
+  target   = "graph-query-deploy"
+  tags = [
+    upstream_aware_tag("graph-query")
+  ]
+}
+
 target "grapl-web-ui" {
   inherits = ["_rust-base"]
   target   = "grapl-web-ui-deploy"
@@ -317,6 +335,14 @@ target "event-source" {
   target   = "event-source-deploy"
   tags = [
     upstream_aware_tag("event-source")
+  ]
+}
+
+target "generator-execution-sidecar" {
+  inherits = ["_rust-base"]
+  target   = "generator-execution-sidecar-deploy"
+  tags = [
+    upstream_aware_tag("generator-execution-sidecar")
   ]
 }
 
@@ -386,11 +412,11 @@ target "plugin-work-queue" {
   ]
 }
 
-target "generator-execution-sidecar" {
+target "graph-schema-manager" {
   inherits = ["_rust-base"]
-  target   = "generator-execution-sidecar-deploy"
+  target   = "graph-schema-manager-deploy"
   tags = [
-    upstream_aware_tag("generator-execution-sidecar")
+    upstream_aware_tag("graph-schema-manager")
   ]
 }
 

@@ -106,6 +106,16 @@ variable "organization_management_db" {
   description = "Vars for organization-management database"
 }
 
+variable "graph_schema_manager_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for graph-schema-manager database"
+}
+
 variable "organization_management_healthcheck_polling_interval_ms" {
   type        = string
   description = "The amount of time to wait between each healthcheck execution."
@@ -139,6 +149,15 @@ variable "plugin_work_queue_db" {
     password = string
   })
   description = "Vars for plugin-work-queue database"
+}
+
+variable "graph_db" {
+  type = object({
+    addresses = string
+    username  = string
+    password  = string
+  })
+  description = "Vars for graph (scylla) database"
 }
 
 variable "uid_allocator_db" {
@@ -712,6 +731,129 @@ job "grapl-core" {
     }
   }
 
+  // todo: move to a new graph-db.nomad
+  group "graph-query" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "graph-query-port" {
+      }
+    }
+
+    task "graph-query" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["graph-query"]
+        ports = ["graph-query-port"]
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
+      env {
+        GRAPH_QUERY_SERVICE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-port}"
+        RUST_BACKTRACE                   = local.rust_backtrace
+        RUST_LOG                         = var.rust_log
+        GRAPH_DB_ADDRESSES               = var.graph_db.addresses
+        GRAPH_DB_AUTH_PASSWORD           = var.graph_db.password
+        GRAPH_DB_AUTH_USERNAME           = var.graph_db.username
+      }
+    }
+
+    service {
+      name = "graph-query"
+      port = "graph-query-port"
+      connect {
+        sidecar_service {}
+      }
+
+      check {
+        type     = "grpc"
+        port     = "graph-query-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
+    }
+  }
+
+  // todo: move to a new graph-db.nomad
+  group "graph-mutation" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "graph-mutation-port" {
+      }
+    }
+
+    task "graph-mutation" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["graph-mutation"]
+        ports = ["graph-mutation-port"]
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
+      env {
+        GRAPH_MUTATION_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-mutation-port}"
+
+        RUST_BACKTRACE         = local.rust_backtrace
+        RUST_LOG               = var.rust_log
+        GRAPH_DB_ADDRESSES     = var.graph_db.addresses
+        GRAPH_DB_AUTH_PASSWORD = var.graph_db.password
+        GRAPH_DB_AUTH_USERNAME = var.graph_db.username
+
+        # upstreams
+        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
+        UID_ALLOCATOR_CLIENT_ADDRESS        = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
+      }
+    }
+
+    service {
+      name = "graph-mutation"
+      port = "graph-mutation-port"
+      connect {
+        sidecar_service {
+          proxy {
+            config {
+              protocol = "grpc"
+            }
+
+            upstreams {
+              destination_name = "graph-schema-manager"
+              local_bind_port  = 1000
+            }
+
+            upstreams {
+              destination_name = "uid-allocator"
+              local_bind_port  = 1001
+            }
+          }
+        }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "graph-mutation-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
+    }
+  }
+
   group "node-identifier" {
     count = 2
 
@@ -1250,12 +1392,16 @@ job "grapl-core" {
 
       env {
         UID_ALLOCATOR_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
-        UID_ALLOCATOR_DB_HOSTNAME  = var.uid_allocator_db.hostname
-        UID_ALLOCATOR_DB_PASSWORD  = var.uid_allocator_db.password
-        UID_ALLOCATOR_DB_PORT      = var.uid_allocator_db.port
-        UID_ALLOCATOR_DB_USERNAME  = var.uid_allocator_db.username
-        RUST_BACKTRACE             = local.rust_backtrace
-        RUST_LOG                   = var.rust_log
+
+        COUNTER_DB_ADDRESS  = "${var.uid_allocator_db.hostname}:${var.uid_allocator_db.port}"
+        COUNTER_DB_PASSWORD = var.uid_allocator_db.password
+        COUNTER_DB_USERNAME = var.uid_allocator_db.username
+
+        DEFAULT_ALLOCATION_SIZE = 100
+        PREALLOCATION_SIZE      = 10000
+        MAXIMUM_ALLOCATION_SIZE = 1000
+        RUST_BACKTRACE          = local.rust_backtrace
+        RUST_LOG                = var.rust_log
       }
     }
 
@@ -1327,6 +1473,68 @@ job "grapl-core" {
       check {
         type     = "grpc"
         port     = "event-source-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
+    }
+  }
+
+  group "graph-schema-manager" {
+    count = 2
+
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "graph-schema-manager-port" {
+      }
+    }
+
+    task "graph-schema-manager" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["graph-schema-manager"]
+        ports = ["graph-schema-manager-port"]
+      }
+
+      template {
+        data        = var.aws_env_vars_for_local
+        destination = "aws_vars.env"
+        env         = true
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
+      env {
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
+
+        GRAPH_SCHEMA_MANAGER_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_graph-schema-manager-port}"
+        GRAPH_SCHEMA_MANAGER_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
+
+        GRAPH_SCHEMA_DB_ADDRESS  = "${var.graph_schema_manager_db.hostname}:${var.graph_schema_manager_db.port}"
+        GRAPH_SCHEMA_DB_PASSWORD = var.graph_schema_manager_db.password
+        GRAPH_SCHEMA_DB_USERNAME = var.graph_schema_manager_db.username
+      }
+    }
+
+    service {
+      name = "graph-schema-manager"
+      port = "graph-schema-manager-port"
+      connect {
+        sidecar_service {
+        }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "graph-schema-manager-port"
         interval = "10s"
         timeout  = "3s"
       }

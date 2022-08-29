@@ -75,6 +75,22 @@ pub mod pipeline {
     }
 }
 
+pub mod common {
+
+    use rust_proto::graplinc::grapl::common::v1beta1::types::{self as native,};
+
+    use super::*;
+    prop_compose! {
+        pub fn edge_names()(
+            name in string_not_empty()
+        ) -> native::EdgeName {
+            native::EdgeName{
+                value: name
+            }
+        }
+    }
+}
+
 pub mod graph {
     use proptest::collection;
     use rust_proto::graplinc::grapl::api::graph::v1beta1::{
@@ -664,10 +680,14 @@ pub mod plugin_registry {
         GetAnalyzersForTenantResponse,
         GetGeneratorsForEventSourceRequest,
         GetGeneratorsForEventSourceResponse,
+        GetPluginDeploymentRequest,
+        GetPluginDeploymentResponse,
         GetPluginHealthRequest,
         GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
+        PluginDeployment,
+        PluginDeploymentStatus,
         PluginHealthStatus,
         PluginMetadata,
         PluginType,
@@ -783,6 +803,41 @@ pub mod plugin_registry {
             plugin_metadata in plugin_metadatas(),
         ) -> GetPluginResponse {
             GetPluginResponse::new(plugin_id, plugin_metadata)
+        }
+    }
+
+    pub fn plugin_deployment_statuses() -> impl Strategy<Value = PluginDeploymentStatus> {
+        prop_oneof![
+            Just(PluginDeploymentStatus::Unspecified),
+            Just(PluginDeploymentStatus::Success),
+            Just(PluginDeploymentStatus::Fail),
+        ]
+    }
+
+    prop_compose! {
+        pub fn plugin_deployments()(
+            plugin_id in uuids(),
+            timestamp in any::<SystemTime>(),
+            status in plugin_deployment_statuses(),
+            deployed in any::<bool>(),
+        ) -> PluginDeployment {
+            PluginDeployment::new(plugin_id, timestamp, status, deployed)
+        }
+    }
+
+    prop_compose! {
+        pub fn get_plugin_deployment_requests()(
+            plugin_id in uuids()
+        ) -> GetPluginDeploymentRequest {
+            GetPluginDeploymentRequest::new(plugin_id)
+        }
+    }
+
+    prop_compose! {
+        pub fn get_plugin_deployment_responses()(
+            plugin_deployment in plugin_deployments()
+        ) -> GetPluginDeploymentResponse {
+            GetPluginDeploymentResponse::new(plugin_deployment)
         }
     }
 
@@ -1008,5 +1063,60 @@ pub mod plugin_work_queue {
     pub fn push_execute_generator_responses(
     ) -> impl Strategy<Value = native::PushExecuteGeneratorResponse> {
         Just(native::PushExecuteGeneratorResponse {})
+    }
+}
+
+pub mod graph_schema_manager {
+    use rust_proto::graplinc::grapl::api::graph_schema_manager::v1beta1::messages::{
+        self as native,
+    };
+
+    use super::*;
+
+    pub fn schema_types() -> BoxedStrategy<native::SchemaType> {
+        prop_oneof![
+            // For cases without data, `Just` is all you need
+            Just(native::SchemaType::GraphqlV0),
+        ]
+        .boxed()
+    }
+
+    pub fn edge_cardinalities() -> BoxedStrategy<native::EdgeCardinality> {
+        prop_oneof![
+            // For cases without data, `Just` is all you need
+            Just(native::EdgeCardinality::ToOne),
+            Just(native::EdgeCardinality::ToMany),
+        ]
+        .boxed()
+    }
+
+    prop_compose! {
+        pub fn get_edge_schema_responses()(
+            edge_name in common::edge_names(),
+            cardinality in edge_cardinalities(),
+            reverse_cardinality in edge_cardinalities(),
+        ) -> native::GetEdgeSchemaResponse {
+            native::GetEdgeSchemaResponse {
+                reverse_edge_name: edge_name,
+                cardinality,
+                reverse_cardinality,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn deploy_schema_requests()(
+            tenant_id in uuids(),
+            schema in bytes(32),
+            schema_type in schema_types(),
+            schema_version in any::<u32>(),
+        ) -> native::DeploySchemaRequest {
+            native::DeploySchemaRequest{
+                tenant_id,
+                schema,
+                schema_type,
+                schema_version
+            }
+        }
     }
 }

@@ -66,6 +66,8 @@ BUILD @christophermaier
 /src/rust/generator-dispatcher/ @wimax-grapl
 /src/rust/generators/ @inickles-grapl
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
+/src/rust/graph-mutation/ @colin-grapl
+/src/rust/graph-query-service/ @colin-grapl
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
 /src/rust/grapl-tracing/ @wimax-grapl
@@ -84,6 +86,7 @@ BUILD @christophermaier
 /src/rust/nomad-client-gen/ @wimax-grapl
 /src/rust/rust-proto/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain.toml @inickles-grapl
+/src/rust/graph-schema-manager @colin-grapl @wimax-grapl
 /src/rust/sysmon-parser/ @inickles-grapl
 /src/rust/uid-allocator/ @colin-grapl
 /test/docker-compose* @inickles-grapl @christophermaier

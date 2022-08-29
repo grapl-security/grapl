@@ -17,3 +17,14 @@ config:
     secure: AAABAKxa4yxFSvciEOaqrBtoUWo6qQUGrDeba1ZGrxfW/yToz6ZjXXMrGCC+69aCZvTZhzWif6r+S2fEJJGbJz8WDuje825m0wxGI7hBOsrjPw/gIJ/huFVoTM7mOgRcPZwzkVaVN0ePtdkFQJOb/PD5dOgcEf+CCcYpRthO8T9YEzVowm9lzg==
   grapl:postgres-instance-type: db.t4g.small
   grapl:postgres-version: "13.4"
+  grapl:scylla-addresses:
+    # These 3 Scylla instances have the Nomad Agent whitelisted.
+    - 54.153.52.239:9042
+    - 54.193.175.245:9042
+    - 13.52.29.102:9042
+  grapl:scylla-password:
+    # This encrypted value uses the `pulumi config set --secret` mechanism,
+    # which can only be decrypted by a key held by Pulumi.
+    # https://www.pulumi.com/docs/intro/concepts/secrets/#secrets
+    secure: AAABAK2/I2aoHMbzoFCnPcJyolF1CEJGutj/3W95Y0ri11U7U03+AXymjxPc2eo=
+  grapl:scylla-username: scylla

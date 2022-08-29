@@ -351,22 +351,41 @@ mod plugin_registry {
         fn test_serde_get_generators_for_event_source_requests(value in pr_strats::get_generators_for_event_source_requests()) {
             check_encode_decode_invariant(value)
         }
+
         #[test]
         fn test_serde_get_generators_for_event_source_responses(value in pr_strats::get_generators_for_event_source_responses()) {
             check_encode_decode_invariant(value)
         }
+
         #[test]
         fn test_serde_get_plugin_requests(value in pr_strats::get_plugin_requests()) {
             check_encode_decode_invariant(value)
         }
+
         #[test]
         fn test_serde_get_plugin_responses(value in pr_strats::get_plugin_responses()) {
             check_encode_decode_invariant(value)
         }
+
+        #[test]
+        fn test_serde_get_plugin_deployment_requests(
+            plugin_deployment_request in pr_strats::get_plugin_deployment_requests()
+        ) {
+            check_encode_decode_invariant(plugin_deployment_request)
+        }
+
+        #[test]
+        fn test_serde_get_plugin_deployment_responses(
+            plugin_deployment_response in pr_strats::get_plugin_deployment_responses()
+        ) {
+            check_encode_decode_invariant(plugin_deployment_response)
+        }
+
         #[test]
         fn test_serde_tear_down_plugin_requests(value in pr_strats::tear_down_plugin_requests()) {
             check_encode_decode_invariant(value)
         }
+
         #[test]
         fn test_serde_tear_down_plugin_responses(value in pr_strats::tear_down_plugin_responses()) {
             check_encode_decode_invariant(value)
@@ -481,6 +500,24 @@ mod plugin_work_queue {
 
         #[test]
         fn test_push_execute_generator_responses(value in pwq_strats::push_execute_generator_responses()) {
+            check_encode_decode_invariant(value)
+        }
+    }
+}
+
+mod graph_schema_manager {
+    use strategies::graph_schema_manager as sm_strats;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_deploy_schema_requests(value in sm_strats::deploy_schema_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_get_edge_schema_responses(value in sm_strats::get_edge_schema_responses()) {
             check_encode_decode_invariant(value)
         }
     }

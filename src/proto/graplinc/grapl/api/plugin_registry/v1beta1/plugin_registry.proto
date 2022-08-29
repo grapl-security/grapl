@@ -127,6 +127,37 @@ message GetAnalyzersForTenantResponse {
   repeated graplinc.common.v1beta1.Uuid plugin_ids = 1;
 }
 
+// Whether the deployment has succeeded or not
+enum PluginDeploymentStatus {
+  PLUGIN_DEPLOYMENT_STATUS_UNSPECIFIED = 0;
+  PLUGIN_DEPLOYMENT_STATUS_SUCCESS = 1;
+  PLUGIN_DEPLOYMENT_STATUS_FAIL = 2;
+}
+
+// A PluginDeployment represents a distinct "we (possibly unsuccessfully)
+// deployed (or tore down) your plugin" event. For example if status is SUCCESS
+// and deployed is false, this event represents a successful plugin teardown.
+message PluginDeployment {
+  // The plugin's unique identifier
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+  // When this PluginDeployment event took place
+  graplinc.common.v1beta1.Timestamp timestamp = 2;
+  // Whether the operation was successful
+  PluginDeploymentStatus status = 3;
+  // Whether the plugin is currently actively deployed
+  bool deployed = 4;
+}
+
+// Get the most recent plugin deployment
+message GetPluginDeploymentRequest {
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
+
+// The most recent plugin deployment
+message GetPluginDeploymentResponse {
+  PluginDeployment plugin_deployment = 1;
+}
+
 // A service that manages the state of plugins
 service PluginRegistryService {
   // create a new plugin
@@ -134,6 +165,9 @@ service PluginRegistryService {
 
   // retrieve the plugin corresponding to the given plugin_id
   rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse);
+
+  // retrieve the latest plugin deployment corresponding to the given plugin_id
+  rpc GetPluginDeployment(GetPluginDeploymentRequest) returns (GetPluginDeploymentResponse);
 
   // turn on a particular plugin's code
   rpc DeployPlugin(DeployPluginRequest) returns (DeployPluginResponse);

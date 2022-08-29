@@ -1,5 +1,16 @@
-fn main() {
-    println!("Dummy uid-allocator started");
+use clap::Parser;
+use uid_allocator::config::UidAllocatorServiceConfig;
 
-    std::thread::sleep(std::time::Duration::from_secs(60 * 30));
+const SERVICE_NAME: &str = "uid-allocator";
+
+#[tracing::instrument(err)]
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _guard = grapl_tracing::setup_tracing(SERVICE_NAME)?;
+    let config = UidAllocatorServiceConfig::parse();
+    tracing::info!(message="Starting Uid Allocator Service", config=?config);
+
+    uid_allocator::service::exec_service(config).await?;
+
+    Ok(())
 }

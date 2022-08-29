@@ -141,9 +141,11 @@ FROM base AS build-test-integration
 # hadolint ignore=SC3054
 RUN <<EOF
 INTEGRATION_TEST_FEATURES=(
-generator-dispatcher/integration_tests
 e2e-tests/integration_tests
+generator-dispatcher/integration_tests
 graph-merger/integration_tests
+graph-query/integration_tests
+graph-schema-manager/integration_tests
 grapl-web-ui/integration_tests
 node-identifier/integration_tests
 organization-management/integration_tests
@@ -151,6 +153,7 @@ pipeline-ingress/integration_tests
 plugin-registry/integration_tests
 plugin-work-queue/integration_tests
 sysmon-generator/integration_tests
+uid-allocator/integration_tests
 )
 
 # cargo --features expects a comma-separated feature1,feature2,feature3
@@ -201,28 +204,63 @@ EOF
 # install as needed, but the debian image we're using has zlib already.
 FROM debian:bullseye-slim AS integration-tests
 
+# Apt package versioning may be helpful elsewhere, like the production images,
+# but not here. Pinning versions becomes an issue when versions get pulled.
+# hadolint ignore=DL3008
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        ca-certificates=20210119
+        ca-certificates \
+        parallel
 
 # Put the Nomad binary on PATH
 # so that it's available to integration test consumers of NomadCli
 COPY --from=build /nomad/nomad /bin
-
-# Grab the example generator so we can deploy it in test_deploy_plugin
 RUN mkdir -p /test-fixtures
-COPY --from=build /outputs/example-generator /test-fixtures
-COPY --from=build /outputs/sysmon-generator /test-fixtures
-# Named context support https://github.com/hadolint/hadolint/issues/830
+
+# Copy in the Example Schemas, which we use in Schema Manager integration tests
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=etc-ctx example_schemas /test-fixtures/example_schemas
+
+# Copy in the 36-line sysmon event-log, which we use in E2E tests.
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
 # hadolint ignore=DL3022
 COPY --from=etc-ctx sample_data/36_eventlog.xml /test-fixtures
 
+# Copy in the example generator so we can deploy it in test_deploy_plugin
+COPY --from=build /outputs/example-generator /test-fixtures
+COPY --from=build /outputs/sysmon-generator /test-fixtures
+
 COPY --from=build-test-integration /grapl/tests /tests
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --from=test-ctx ./run/rust-integration-tests.sh /
-ENTRYPOINT [ "/rust-integration-tests.sh" ]
+
+# We need to wait for Nomad/Consul service discovery sidecar to finish setting
+# up before some of our tests attempt to connect to local sidecars. Without
+# doing so there is a race between between the sidecar and tests trying to
+# connect. Without waiting we can reliably get connection refuse errors:
+# 
+#   error trying to connect: tcp connect error: Connection refused (os error
+#   111)
+#
+# Although the gRPC Client Executor is equipped with retry logic, it is not the
+# only network client being used in these tests, nor should it be assumed to be
+# the only. Grapl web, for example, would not use that to test all its APIs.
+# 
+# While the web tests at this point could connect directly to the web-ui
+# service at http://web-ui.service.dc1.consul:1234 without this annoying wait,
+# doing so won't work for authenticated APIs because the web-ui service sets
+# the session cookie as Secure-Only, which means it won't be sent to the host,
+# and sending a Secure-Only cookie over a non-TLS connection only works when
+# the endpoint address is 127.0.0.1. When/if the Nomad ingres service (not to
+# be confused with the Grapl Pipeline ingress service) serves the web-ui behind
+# TLS then we can skip this wait and connect right away via
+# https://web-ui.service.dc1.consul:1234. This would have the additional
+# benefit of including the Nomad ingress-service in this integration test.
+#
+# TODO: remove this when we can either a) rely on local service discovery to
+# finish setting up before we run our tests, or b) connect via the Nomad
+# ingress-service via HTTPS.
+ENTRYPOINT [ "sh", "-c", "sleep 10; find /tests -type f | parallel" ]
 
 
 # images for running services
@@ -256,6 +294,18 @@ FROM rust-dist AS graph-merger-deploy
 
 COPY --from=build /outputs/graph-merger /
 ENTRYPOINT ["/graph-merger"]
+
+##### graph-query
+FROM rust-dist AS graph-query-deploy
+
+COPY --from=build /outputs/graph-query /
+ENTRYPOINT ["/graph-query"]
+
+##### graph-mutation
+FROM rust-dist AS graph-mutation-deploy
+
+COPY --from=build /outputs/graph-mutation /
+ENTRYPOINT ["/graph-mutation"]
 
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy
@@ -331,3 +381,9 @@ ENTRYPOINT ["/event-source"]
 FROM rust-dist as kafka-retry-deploy
 COPY --from=build /outputs/kafka-retry /
 ENTRYPOINT ["/kafka-retry"]
+
+##### graph-schema-manager
+FROM rust-dist AS graph-schema-manager-deploy
+
+COPY --from=build /outputs/graph-schema-manager /
+ENTRYPOINT ["/graph-schema-manager"]

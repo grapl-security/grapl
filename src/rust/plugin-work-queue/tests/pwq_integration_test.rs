@@ -14,7 +14,7 @@ use rust_proto::{
 };
 
 #[tokio::test]
-async fn test_push_and_get_execute_generator() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_push_and_get_execute_generator() -> eyre::Result<()> {
     let mut pwq_client = build_grpc_client(PluginWorkQueueClientConfig::parse()).await?;
 
     // Send 2 jobs to Plugin Work Queue
