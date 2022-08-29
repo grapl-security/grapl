@@ -51,10 +51,9 @@ BUILD @christophermaier
 /src/python/mypy.ini @christophermaier @wimax-grapl
 /src/python/provisioner/ @jgrillo-grapl
 /src/python/python-proto/ @grapl-security/wg-data-infra
-/src/sh/ @wimax-grapl @christophermaier
 /src/rust/bin/ @christophermaier
-/src/rust/.cargo @christophermaier
 /src/rust/.cargo/audit.toml @colin-grapl @inickles-grapl
+/src/rust/.cargo @christophermaier
 /src/rust/Cargo.lock @christophermaier
 /src/rust/Cargo.toml @christophermaier
 /src/rust/client-executor/ @colin-grapl
@@ -68,6 +67,7 @@ BUILD @christophermaier
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
 /src/rust/graph-mutation/ @colin-grapl
 /src/rust/graph-query-service/ @colin-grapl
+/src/rust/graph-schema-manager @colin-grapl @wimax-grapl
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
 /src/rust/grapl-tracing/ @wimax-grapl
@@ -75,6 +75,8 @@ BUILD @christophermaier
 /src/rust/grapl-web-ui/ @inickles-grapl
 /src/rust/kafka/ @grapl-security/wg-data-infra
 /src/rust/kafka-retry/ @jgrillo-grapl
+/src/rust/node-identifier/ @grapl-security/wg-data-infra
+/src/rust/nomad-client-gen/ @wimax-grapl
 /src/rust/organization-management/ @andrea-grapl
 /src/rust/pipeline-ingress/ @jgrillo-grapl
 /src/rust/plugin-bootstrap/ @colin-grapl
@@ -82,13 +84,12 @@ BUILD @christophermaier
 /src/rust/plugin-registry/ @colin-grapl
 /src/rust/plugin-sdk/ @colin-grapl
 /src/rust/plugin-work-queue/ @colin-grapl
-/src/rust/node-identifier/ @grapl-security/wg-data-infra
-/src/rust/nomad-client-gen/ @wimax-grapl
 /src/rust/rust-proto/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain.toml @inickles-grapl
 /src/rust/scylla-provisioner/ @colin-grapl @wimax-grapl
 /src/rust/sysmon-parser/ @inickles-grapl
 /src/rust/uid-allocator/ @colin-grapl
+/src/sh/ @wimax-grapl @christophermaier
 /test/docker-compose* @inickles-grapl @christophermaier
 /test/run @wimax-grapl
 
