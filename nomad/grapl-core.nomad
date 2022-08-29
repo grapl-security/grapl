@@ -614,6 +614,12 @@ job "grapl-core" {
         ports = ["scylla-provisioner-port"]
       }
 
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       env {
         SCYLLA_PROVISIONER_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_scylla-provisioner-port}"
         RUST_BACKTRACE                  = local.rust_backtrace
