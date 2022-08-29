@@ -152,7 +152,6 @@ organization-management/integration_tests
 pipeline-ingress/integration_tests
 plugin-registry/integration_tests
 plugin-work-queue/integration_tests
-scylla-provisioner/integration_tests
 sysmon-generator/integration_tests
 uid-allocator/integration_tests
 )

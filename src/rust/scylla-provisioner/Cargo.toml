@@ -23,6 +23,3 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "fmt"
 ] }
-
-[features]
-integration_tests = []
