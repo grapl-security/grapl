@@ -5,18 +5,18 @@ package graplinc.grapl.api.scylla_provisioner.v1beta1;
 import "graplinc/common/v1beta1/types.proto";
 
 // A request to create the various scylla tables and keyspaces for a tenant
-message DeployGraphSchemasRequest {
+message ProvisionGraphForTenantRequest {
   // The tenant id for the tenant whose tables will be created
   graplinc.common.v1beta1.Uuid tenant_id = 1;
 }
 
 // A response, indicating successful provisioning
-message DeployGraphSchemasResponse {
+message ProvisionGraphForTenantResponse {
   // Empty
 }
 
 // The service provides an RPC to create dynamic keyspaces/tables for a tenant
 service ScyllaProvisionerService {
   // The driving rpc for creating scylla keyspaces
-  rpc DeployGraphSchemas(DeployGraphSchemasRequest) returns (DeployGraphSchemasResponse);
+  rpc ProvisionGraphForTenant(ProvisionGraphForTenantRequest) returns (ProvisionGraphForTenantResponse);
 }

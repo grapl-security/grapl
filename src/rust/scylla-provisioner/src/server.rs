@@ -50,11 +50,11 @@ pub struct ScyllaProvisioner {
 impl ScyllaProvisionerApi for ScyllaProvisioner {
     type Error = ScyllaProvisionerError;
 
-    async fn deploy_graph_schemas(
+    async fn provision_graph_for_tenant(
         &self,
-        request: native::DeployGraphSchemasRequest,
-    ) -> Result<native::DeployGraphSchemasResponse, Self::Error> {
-        let native::DeployGraphSchemasRequest { tenant_id } = request;
+        request: native::ProvisionGraphForTenantRequest,
+    ) -> Result<native::ProvisionGraphForTenantResponse, Self::Error> {
+        let native::ProvisionGraphForTenantRequest { tenant_id } = request;
         let session = self.scylla_client.as_ref();
 
         let tenant_ks = format!("tenant_keyspace_{}", tenant_id.simple());
@@ -113,7 +113,7 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
 
         session.await_schema_agreement().await?;
 
-        Ok(native::DeployGraphSchemasResponse {})
+        Ok(native::ProvisionGraphForTenantResponse {})
     }
 }
 

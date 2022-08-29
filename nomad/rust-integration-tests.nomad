@@ -183,7 +183,7 @@ job "rust-integration-tests" {
 
             upstreams {
               destination_name = "scylla-provisioner"
-              local_bind_port = 1011
+              local_bind_port  = 1011
             }
           }
         }

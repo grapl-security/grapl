@@ -53,16 +53,16 @@ impl Connectable for ScyllaProvisionerClient {
 }
 
 impl ScyllaProvisionerClient {
-    pub async fn deploy_graph_schemas(
+    pub async fn provision_graph_for_tenant(
         &mut self,
-        request: native::DeployGraphSchemasRequest,
-    ) -> Result<native::DeployGraphSchemasResponse, ScyllaProvisionerClientError> {
+        request: native::ProvisionGraphForTenantRequest,
+    ) -> Result<native::ProvisionGraphForTenantResponse, ScyllaProvisionerClientError> {
         execute_client_rpc!(
             self,
             request,
-            deploy_graph_schemas,
-            proto::DeployGraphSchemasRequest,
-            native::DeployGraphSchemasResponse,
+            provision_graph_for_tenant,
+            proto::ProvisionGraphForTenantRequest,
+            native::ProvisionGraphForTenantResponse,
             ExecuteClientRpcOptions::default(),
         )
     }

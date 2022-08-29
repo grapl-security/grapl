@@ -6,7 +6,7 @@ use rust_proto::{
         build_grpc_client,
         services::ScyllaProvisionerClientConfig,
     },
-    graplinc::grapl::api::scylla_provisioner::v1beta1::messages::DeployGraphSchemasRequest,
+    graplinc::grapl::api::scylla_provisioner::v1beta1::messages::ProvisionGraphForTenantRequest,
 };
 
 type DynError = Box<dyn std::error::Error + Send + Sync>;
@@ -28,7 +28,7 @@ async fn test_provision() -> Result<(), DynError> {
     _span.record("tenant_id", &format!("{tenant_id}"));
 
     scylla_provisioner_client
-        .deploy_graph_schemas(DeployGraphSchemasRequest { tenant_id })
+        .provision_graph_for_tenant(ProvisionGraphForTenantRequest { tenant_id })
         .await?;
 
     Ok(())

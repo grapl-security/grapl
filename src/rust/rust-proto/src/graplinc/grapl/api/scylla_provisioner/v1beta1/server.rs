@@ -48,10 +48,10 @@ use crate::{
 #[tonic::async_trait]
 pub trait ScyllaProvisionerApi {
     type Error: Into<Status>;
-    async fn deploy_graph_schemas(
+    async fn provision_graph_for_tenant(
         &self,
-        request: native::DeployGraphSchemasRequest,
-    ) -> Result<native::DeployGraphSchemasResponse, Self::Error>;
+        request: native::ProvisionGraphForTenantRequest,
+    ) -> Result<native::ProvisionGraphForTenantResponse, Self::Error>;
 }
 
 #[tonic::async_trait]
@@ -60,11 +60,11 @@ where
     T: ScyllaProvisionerApi + Send + Sync + 'static,
 {
     #[tracing::instrument(skip(self, request), err)]
-    async fn deploy_graph_schemas(
+    async fn provision_graph_for_tenant(
         &self,
-        request: Request<proto::DeployGraphSchemasRequest>,
-    ) -> Result<Response<proto::DeployGraphSchemasResponse>, tonic::Status> {
-        execute_rpc!(self, request, deploy_graph_schemas)
+        request: Request<proto::ProvisionGraphForTenantRequest>,
+    ) -> Result<Response<proto::ProvisionGraphForTenantResponse>, tonic::Status> {
+        execute_rpc!(self, request, provision_graph_for_tenant)
     }
 }
 

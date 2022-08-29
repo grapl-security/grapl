@@ -162,13 +162,13 @@ group "cloudsmith-images" {
 group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "scylla-provisioner",
     "event-source",
     "generator-dispatcher",
     "generator-execution-sidecar",
     "graph-merger",
     "graph-mutation",
     "graph-query",
+    "graph-schema-manager",
     "grapl-web-ui",
     "kafka-retry",
     "node-identifier",
@@ -177,7 +177,7 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
-    "graph-schema-manager",
+    "scylla-provisioner",
     "uid-allocator",
   ]
 }
