@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 #[test]
 
-fn from_str() -> Result<(), Box<dyn std::error::Error>> {
+fn from_str() -> eyre::Result<()> {
     // TODO(inickles): use data from the file under 'tests/data' directory after we move this
     // package to its own repo
     // let xml = std::fs::read_to_string("tests/data/process_creation.xml")?;

@@ -63,7 +63,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
 #[tokio::test]
 async fn test_publish_raw_log_sends_message_to_kafka(
     ctx: &mut PipelineIngressTestContext,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> eyre::Result<()> {
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
     let log_event: Bytes = r#"

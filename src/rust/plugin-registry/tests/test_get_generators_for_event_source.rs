@@ -20,7 +20,7 @@ use rust_proto::{
 };
 
 #[test_log::test(tokio::test)]
-async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_get_generators_for_event_source() -> eyre::Result<()> {
     tracing::debug!(
         env=?std::env::args(),
     );
@@ -107,8 +107,7 @@ async fn test_get_generators_for_event_source() -> Result<(), Box<dyn std::error
 }
 
 #[test_log::test(tokio::test)]
-async fn test_get_generators_for_event_source_not_found() -> Result<(), Box<dyn std::error::Error>>
-{
+async fn test_get_generators_for_event_source_not_found() -> eyre::Result<()> {
     tracing::debug!(
         env=?std::env::args(),
     );

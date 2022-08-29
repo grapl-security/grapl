@@ -48,6 +48,7 @@ opentelemetry-jaeger = { version = "0.15", features = [
 ] }
 
 [dev-dependencies]
+eyre = "0.6"
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
 tracing-subscriber = "0.3.2"
