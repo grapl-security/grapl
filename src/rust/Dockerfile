@@ -260,7 +260,10 @@ COPY --from=build-test-integration /grapl/tests /tests
 # TODO: remove this when we can either a) rely on local service discovery to
 # finish setting up before we run our tests, or b) connect via the Nomad
 # ingress-service via HTTPS.
-ENTRYPOINT [ "sh", "-c", "sleep 10; find /tests -type f | parallel" ]
+#
+# Note: do not expand the following '-v' to '--verbose', the effect is
+# different and not desired.
+ENTRYPOINT [ "sh", "-c", "sleep 10; find /tests -type f | parallel -v '{}' '2>&1'" ]
 
 
 # images for running services
