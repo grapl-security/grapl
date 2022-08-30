@@ -318,7 +318,7 @@ def main() -> None:
         "otel-collector",
         jobspec=repository_path("nomad/observability.nomad"),
         vars=dict(otel_config=otel_configuration),
-        opts=ResourceOptions(
+        opts=pulumi.ResourceOptions(
             custom_timeouts=CustomTimeouts(
                 create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
             )
