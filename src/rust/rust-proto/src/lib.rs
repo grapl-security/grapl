@@ -39,6 +39,15 @@ pub(crate) mod protobufs {
             }
 
             pub(crate) mod api {
+                pub(crate) mod scylla_provisioner {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.scylla_provisioner.v1beta1.rs"
+                        ));
+                    }
+                }
+
                 pub(crate) mod event_source {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -185,6 +194,10 @@ pub mod graplinc {
         }
 
         pub mod api {
+            pub mod scylla_provisioner {
+                pub mod v1beta1;
+            }
+
             pub mod event_source {
                 pub mod v1beta1;
             }

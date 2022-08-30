@@ -168,6 +168,7 @@ group "rust-services" {
     "graph-merger",
     "graph-mutation",
     "graph-query",
+    "graph-schema-manager",
     "grapl-web-ui",
     "kafka-retry",
     "node-identifier",
@@ -176,7 +177,7 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
-    "graph-schema-manager",
+    "scylla-provisioner",
     "uid-allocator",
   ]
 }
@@ -288,6 +289,15 @@ target "_rust-base" {
     RUST_BUILD   = "${RUST_BUILD}"
     RUST_VERSION = "${RUST_VERSION}"
   }
+}
+
+
+target "scylla-provisioner" {
+  inherits = ["_rust-base"]
+  target   = "scylla-provisioner-deploy"
+  tags = [
+    upstream_aware_tag("scylla-provisioner")
+  ]
 }
 
 target "generator-dispatcher" {

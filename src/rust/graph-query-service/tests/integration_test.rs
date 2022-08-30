@@ -1,16 +1,7 @@
 #![cfg(feature = "integration_tests")]
-use std::sync::Arc;
-
 use bytes::Bytes;
 use clap::Parser;
-use graph_query::{
-    config::GraphDbConfig,
-    node_query::NodeQuery,
-    table_names::{
-        tenant_keyspace_name,
-        IMM_STRING_TABLE_NAME,
-    },
-};
+use graph_query::node_query::NodeQuery;
 use rust_proto::{
     client_factory::{
         build_grpc_client,
@@ -18,6 +9,7 @@ use rust_proto::{
             GraphMutationClientConfig,
             GraphQueryClientConfig,
             GraphSchemaManagerClientConfig,
+            ScyllaProvisionerClientConfig,
             UidAllocatorClientConfig,
         },
     },
@@ -38,10 +30,8 @@ use rust_proto::{
                 StringCmp,
             },
             graph_schema_manager::v1beta1::messages as graph_schema_manager_api,
-            uid_allocator::v1beta1::{
-                client::UidAllocatorServiceClient,
-                messages::CreateTenantKeyspaceRequest,
-            },
+            scylla_provisioner::v1beta1::messages as scylla_provisioner_msgs,
+            uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
         },
         common::v1beta1::types::{
             EdgeName,
@@ -49,85 +39,6 @@ use rust_proto::{
         },
     },
 };
-use scylla::CachingSession;
-use secrecy::ExposeSecret;
-
-// NOTE: temporary code to set up the keyspace before we have a service
-// to set it up for us
-#[tracing::instrument(skip(session, uid_allocator_client), err)]
-async fn provision_keyspace(
-    session: &CachingSession,
-    tenant_id: uuid::Uuid,
-    mut uid_allocator_client: UidAllocatorServiceClient,
-) -> eyre::Result<String> {
-    let tenant_ks = tenant_keyspace_name(tenant_id);
-
-    session
-        .session
-        .query(
-        format!(
-            r"CREATE KEYSPACE IF NOT EXISTS {tenant_ks} WITH REPLICATION = {{'class' : 'SimpleStrategy', 'replication_factor' : 1}};"
-        ),
-        &[],
-    ).await?;
-
-    let property_table_names = [(IMM_STRING_TABLE_NAME, "text")];
-
-    for (table_name, value_type) in property_table_names.into_iter() {
-        session
-            .session
-            .query(
-                format!(
-                    r"CREATE TABLE IF NOT EXISTS {tenant_ks}.{table_name} (
-                        uid bigint,
-                        populated_field text,
-                        value {value_type},
-                        PRIMARY KEY (uid, populated_field)
-                    )"
-                ),
-                &(),
-            )
-            .await?;
-    }
-
-    session
-        .session
-        .query(
-            format!(
-                r"CREATE TABLE IF NOT EXISTS {tenant_ks}.node_type (
-                    uid bigint,
-                    node_type text,
-                    PRIMARY KEY (uid, node_type)
-                )"
-            ),
-            &(),
-        )
-        .await?;
-
-    session
-        .session
-        .query(
-            format!(
-                r"CREATE TABLE IF NOT EXISTS {tenant_ks}.edges (
-                    source_uid bigint,
-                    destination_uid bigint,
-                    f_edge_name text,
-                    r_edge_name text,
-                    PRIMARY KEY ((source_uid, f_edge_name), destination_uid)
-                )"
-            ),
-            &(),
-        )
-        .await?;
-
-    session.session.await_schema_agreement().await?;
-
-    uid_allocator_client
-        .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
-        .await?;
-
-    Ok(tenant_ks)
-}
 
 async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> eyre::Result<()> {
     let graph_schema_manager_client_config = GraphSchemaManagerClientConfig::parse();
@@ -151,26 +62,6 @@ async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> eyre::Result<(
     Ok(())
 }
 
-async fn get_scylla_client() -> eyre::Result<Arc<CachingSession>> {
-    let graph_db_config = GraphDbConfig::parse();
-
-    let mut scylla_config = scylla::SessionConfig::new();
-    scylla_config.add_known_nodes_addr(&graph_db_config.graph_db_addresses[..]);
-    scylla_config.auth_username = Some(graph_db_config.graph_db_auth_username.to_owned());
-    scylla_config.auth_password = Some(
-        graph_db_config
-            .graph_db_auth_password
-            .expose_secret()
-            .to_owned(),
-    );
-
-    let scylla_client = Arc::new(CachingSession::from(
-        scylla::Session::connect(scylla_config).await?,
-        10_000,
-    ));
-    Ok(scylla_client)
-}
-
 #[test_log::test(tokio::test)]
 async fn test_query_two_attached_nodes() -> eyre::Result<()> {
     let _span = tracing::info_span!(
@@ -183,16 +74,25 @@ async fn test_query_two_attached_nodes() -> eyre::Result<()> {
     let mutation_client_config = GraphMutationClientConfig::parse();
     let mut graph_mutation_client = build_grpc_client(mutation_client_config).await?;
 
-    // Only used to provision the keyspace. It's okay here to use the
-    // otherwise-unrecommended non-caching UidAllocator client.
-    let uid_allocator_client = build_grpc_client(UidAllocatorClientConfig::parse()).await?;
+    let provisioner_client_config = ScyllaProvisionerClientConfig::parse();
+    let mut provisioner_client = build_grpc_client(provisioner_client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     _span.record("tenant_id", &format!("{tenant_id}"));
 
-    let session = get_scylla_client().await?;
-    let _keyspace_name =
-        provision_keyspace(session.as_ref(), tenant_id, uid_allocator_client).await?;
+    provisioner_client
+        .provision_graph_for_tenant(scylla_provisioner_msgs::ProvisionGraphForTenantRequest {
+            tenant_id,
+        })
+        .await?;
+
+    // Only used to provision the keyspace. It's okay here to use the
+    // otherwise-unrecommended non-caching UidAllocator client.
+
+    let mut uid_allocator_client = build_grpc_client(UidAllocatorClientConfig::parse()).await?;
+    uid_allocator_client
+        .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
+        .await?;
 
     // Provision a Schema so we can test how edges work
     provision_example_graph_schema(tenant_id).await?;

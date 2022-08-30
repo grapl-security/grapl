@@ -363,6 +363,12 @@ FROM rust-dist AS pipeline-ingress-deploy
 COPY --from=build /outputs/pipeline-ingress /
 ENTRYPOINT ["/pipeline-ingress"]
 
+##### scylla-provisioner
+FROM rust-dist AS scylla-provisioner-deploy
+
+COPY --from=build /outputs/scylla-provisioner /
+ENTRYPOINT ["/scylla-provisioner"]
+
 ##### uid-allocator
 FROM rust-dist AS uid-allocator-deploy
 
