@@ -60,6 +60,7 @@ eyre = "0.6.8"
 
 [dev-dependencies]
 async-trait = "0.1"
-quickcheck = "1.0"
-quickcheck_macros = "1.0"
 test-context = "0.1"
+e2e-tests = { path = "../e2e-tests" }
+kafka = { path = "../kafka", features = ["test-utils"] }
+rand = "0.8"

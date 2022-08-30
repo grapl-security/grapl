@@ -47,6 +47,8 @@ tokio = { version = "1.17", features = [
 ] }
 tracing = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
+eyre = "0.6.8"
 
 [dev-dependencies]
 test-context = "0.1"
+e2e-tests = { path = "../e2e-tests" }

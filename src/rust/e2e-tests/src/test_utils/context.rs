@@ -93,10 +93,7 @@ pub struct SetupGeneratorOptions {
 }
 
 impl E2eTestContext {
-    pub async fn setup_sysmon_generator(
-        &mut self,
-        test_name: &str,
-    ) -> Result<SetupResult, Box<dyn std::error::Error>> {
+    pub async fn setup_sysmon_generator(&mut self, test_name: &str) -> eyre::Result<SetupResult> {
         let generator_artifact = test_fixtures::get_sysmon_generator()?;
         self.setup_generator(SetupGeneratorOptions {
             test_name: test_name.to_owned(),
@@ -109,7 +106,7 @@ impl E2eTestContext {
     pub async fn setup_generator(
         &mut self,
         options: SetupGeneratorOptions,
-    ) -> Result<SetupResult, Box<dyn std::error::Error>> {
+    ) -> eyre::Result<SetupResult> {
         tracing::info!(">> Generator Setup for {}", options.test_name);
 
         let tenant_id = Uuid::new_v4();

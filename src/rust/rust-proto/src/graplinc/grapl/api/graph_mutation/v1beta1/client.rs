@@ -1,5 +1,10 @@
-use std::fmt::{Debug, Formatter};
-use std::time::Duration;
+use std::{
+    fmt::{
+        Debug,
+        Formatter,
+    },
+    time::Duration,
+};
 
 use client_executor::{
     Executor,
@@ -34,8 +39,7 @@ pub struct GraphMutationClient {
 
 impl Debug for GraphMutationClient {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GraphMutationClient")
-            .finish()
+        f.debug_struct("GraphMutationClient").finish()
     }
 }
 

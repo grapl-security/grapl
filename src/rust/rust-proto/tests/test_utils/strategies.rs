@@ -82,11 +82,42 @@ pub mod common {
     use super::*;
     prop_compose! {
         pub fn edge_names()(
-            name in string_not_empty()
+            name in "[a-z]+(_[a-z]+)*"
         ) -> native::EdgeName {
+            let name = name.chars().take(32).collect::<String>();
             native::EdgeName{
                 value: name
             }
+        }
+    }
+
+    prop_compose! {
+        pub fn property_names()(
+            name in "[a-z]+(_[a-z]+)*"
+        ) -> native::PropertyName {
+            let name = name.chars().take(32).collect::<String>();
+            native::PropertyName {
+                value: name
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn node_types()(
+            name in "([A-Z][a-z]+)+"
+        ) -> native::NodeType {
+            let name = name.chars().take(32).collect::<String>();
+            native::NodeType {
+                value: name
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn uids()(
+            uid in 1u64..
+        ) -> native::Uid {
+            native::Uid::from_u64(uid).unwrap()
         }
     }
 }
@@ -101,6 +132,8 @@ pub mod graph {
         ExecutionHit,
         GraphDescription,
         IdStrategy,
+        IdentifiedEdge,
+        IdentifiedEdgeList,
         IdentifiedGraph,
         IdentifiedNode,
         ImmutableIntProp,
@@ -109,10 +142,6 @@ pub mod graph {
         IncrementOnlyIntProp,
         IncrementOnlyUintProp,
         Lens,
-        MergedEdge,
-        MergedEdgeList,
-        MergedGraph,
-        MergedNode,
         NodeDescription,
         NodeProperty,
         Property,
@@ -279,8 +308,8 @@ pub mod graph {
 
     prop_compose! {
         pub fn execution_hits()(
-            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
+            nodes in collection::hash_map(common::uids(), identified_nodes(), 10),
+            edges in collection::hash_map(common::uids(), identified_edge_lists(), 10),
             analyzer_name in any::<String>(),
             risk_score in any::<u64>(),
             lenses in collection::vec(lenses(), 10),
@@ -429,12 +458,12 @@ pub mod graph {
     prop_compose! {
         pub fn identified_nodes()(
             properties in collection::hash_map(any::<String>(), node_properties(), 10),
-            node_key in any::<String>(),
+            uid in common::uids(),
             node_type in any::<String>(),
         ) -> IdentifiedNode {
             IdentifiedNode {
                 properties,
-                node_key,
+                uid,
                 node_type
             }
         }
@@ -446,8 +475,8 @@ pub mod graph {
 
     prop_compose! {
         pub fn identified_graphs()(
-            nodes in collection::hash_map(any::<String>(), identified_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), edge_lists(), 10),
+            nodes in collection::hash_map(common::uids(), identified_nodes(), 10),
+            edges in collection::hash_map(common::uids(), identified_edge_lists(), 10),
         ) -> IdentifiedGraph {
             IdentifiedGraph {
                 nodes,
@@ -457,72 +486,32 @@ pub mod graph {
     }
 
     //
-    // MergedEdge
+    // IdentifiedEdge
     //
 
     prop_compose! {
-        pub fn merged_edges()(
-            from_uid in any::<String>(),
-            from_node_key in any::<String>(),
-            to_uid in any::<String>(),
-            to_node_key in any::<String>(),
+        pub fn identified_edges()(
+            from_uid in common::uids(),
+            to_uid in common::uids(),
             edge_name in any::<String>(),
-        ) -> MergedEdge {
-            MergedEdge {
+        ) -> IdentifiedEdge {
+            IdentifiedEdge {
                 from_uid,
-                from_node_key,
                 to_uid,
-                to_node_key,
                 edge_name
             }
         }
     }
 
     //
-    // MergedEdgeList
+    // IdentifiedEdgeList
     //
 
     prop_compose! {
-        pub fn merged_edge_lists()(
-            edges in collection::vec(merged_edges(), 10),
-        ) -> MergedEdgeList {
-            MergedEdgeList { edges }
-        }
-    }
-
-    //
-    // MergedNode
-    //
-
-    prop_compose! {
-        pub fn merged_nodes()(
-            properties in collection::hash_map(any::<String>(), node_properties(), 10),
-            uid in any::<u64>(),
-            node_key in any::<String>(),
-            node_type in any::<String>(),
-        ) -> MergedNode {
-            MergedNode {
-                properties,
-                uid,
-                node_key,
-                node_type
-            }
-        }
-    }
-
-    //
-    // MergedGraph
-    //
-
-    prop_compose! {
-        pub fn merged_graphs()(
-            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
-        ) -> MergedGraph {
-            MergedGraph {
-                nodes,
-                edges,
-            }
+        pub fn identified_edge_lists()(
+            edges in collection::vec(identified_edges(), 10),
+        ) -> IdentifiedEdgeList {
+            IdentifiedEdgeList { edges }
         }
     }
 }
@@ -1116,6 +1105,92 @@ pub mod graph_schema_manager {
                 schema,
                 schema_type,
                 schema_version
+            }
+        }
+    }
+}
+
+pub mod analyzer_sdk {
+    use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::{
+        self as native,
+        Update,
+    };
+
+    use super::{
+        common::{
+            edge_names,
+            property_names,
+            uids,
+        },
+        *,
+    };
+
+    prop_compose! {
+        pub fn string_property_updates()(
+            uid in uids(),
+            property_name in property_names(),
+        ) -> native::StringPropertyUpdate {
+            native::StringPropertyUpdate{
+                uid, property_name,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn uint_64_property_updates()(
+            uid in uids(),
+            property_name in property_names(),
+        ) -> native::UInt64PropertyUpdate {
+            native::UInt64PropertyUpdate {
+                uid, property_name,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn int_64_property_updates()(
+            uid in uids(),
+            property_name in property_names(),
+        ) -> native::Int64PropertyUpdate {
+            native::Int64PropertyUpdate {
+                uid, property_name,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn edge_updates()(
+            src_uid in uids(),
+            dst_uid in uids(),
+            forward_edge_name in edge_names(),
+            reverse_edge_name in edge_names(),
+        ) -> native::EdgeUpdate {
+            native::EdgeUpdate {
+                src_uid,
+                dst_uid,
+                forward_edge_name,
+                reverse_edge_name,
+            }
+        }
+    }
+
+    pub fn updates() -> impl Strategy<Value = Update> {
+        prop_oneof![
+            string_property_updates().prop_map(Update::StringProperty),
+            uint_64_property_updates().prop_map(Update::Uint64Property),
+            int_64_property_updates().prop_map(Update::Int64Property),
+            edge_updates().prop_map(Update::Edge),
+        ]
+    }
+
+    prop_compose! {
+        pub fn run_analyzer_requests()(
+            tenant_id in uuids(),
+            update in updates(),
+        ) -> native::RunAnalyzerRequest {
+            native::RunAnalyzerRequest {
+                tenant_id,
+                update,
             }
         }
     }

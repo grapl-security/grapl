@@ -14,19 +14,25 @@ use rusoto_dynamodb::{
     PutItemOutput,
 };
 use rust_proto::graplinc::grapl::{
-    api::graph::v1beta1::{
-        NodeDescription,
-        Static,
+    api::{
+        graph::v1beta1::{
+            NodeDescription,
+            Static,
+        },
+        graph_mutation::v1beta1::{
+            client::GraphMutationClient,
+            messages::CreateNodeRequest,
+        },
     },
-    common::v1beta1::types::Uid,
+    common::v1beta1::types::{
+        NodeType,
+        Uid,
+    },
 };
 use serde::{
     Deserialize,
     Serialize,
 };
-use rust_proto::graplinc::grapl::api::graph_mutation::v1beta1::client::GraphMutationClient;
-use rust_proto::graplinc::grapl::api::graph_mutation::v1beta1::messages::CreateNodeRequest;
-use rust_proto::graplinc::grapl::common::v1beta1::types::NodeType;
 use uid_allocator::client::CachingUidAllocatorServiceClient;
 
 type Blake2b16 = Blake2b<U16>;
@@ -73,9 +79,12 @@ where
         let uid = graph_mutation_client
             .create_node(CreateNodeRequest {
                 tenant_id,
-                node_type: NodeType { value: node.node_type.clone() },
+                node_type: NodeType {
+                    value: node.node_type.clone(),
+                },
             })
-            .await?.uid;
+            .await?
+            .uid;
 
         // todo: Retry this operation if it fails.
         self.store_uid_in_dynamodb(static_id, uid).await?;

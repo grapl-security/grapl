@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
+    graplinc::grapl::common::v1beta1::types::Uid,
     protobufs::graplinc::grapl::api::graph::v1beta1::{
         DecrementOnlyIntProp as DecrementOnlyIntPropProto,
         DecrementOnlyUintProp as DecrementOnlyUintPropProto,
@@ -8,9 +9,9 @@ use crate::{
         EdgeList as EdgeListProto,
         ExecutionHit as ExecutionHitProto,
         GraphDescription as GraphDescriptionProto,
+        IdStrategy as IdStrategyProto,
         IdentifiedEdge as IdentifiedEdgeProto,
         IdentifiedEdgeList as IdentifiedEdgeListProto,
-        IdStrategy as IdStrategyProto,
         IdentifiedGraph as IdentifiedGraphProto,
         IdentifiedNode as IdentifiedNodeProto,
         ImmutableIntProp as ImmutableIntPropProto,
@@ -28,7 +29,6 @@ use crate::{
     type_url,
     SerDeError,
 };
-use crate::graplinc::grapl::common::v1beta1::types::Uid;
 
 // A helper macro to generate `From` impl boilerplate.
 macro_rules ! impl_from_for_unit {
@@ -1150,7 +1150,10 @@ impl TryFrom<IdentifiedNodeProto> for IdentifiedNode {
     type Error = SerDeError;
 
     fn try_from(identified_node_proto: IdentifiedNodeProto) -> Result<Self, Self::Error> {
-        let uid = identified_node_proto.uid.ok_or(SerDeError::MissingField("IdentifiedNode.uid"))?.try_into()?;
+        let uid = identified_node_proto
+            .uid
+            .ok_or(SerDeError::MissingField("IdentifiedNode.uid"))?
+            .try_into()?;
 
         let mut properties = HashMap::with_capacity(identified_node_proto.properties.len());
         for (key, property) in identified_node_proto.properties {
@@ -1181,7 +1184,8 @@ impl From<IdentifiedNode> for IdentifiedNodeProto {
 }
 
 impl type_url::TypeUrl for IdentifiedNode {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdentifiedNode";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdentifiedNode";
 }
 
 impl serde_impl::ProtobufSerializable for IdentifiedNode {
@@ -1283,11 +1287,12 @@ pub struct IdentifiedEdge {
 impl TryFrom<IdentifiedEdgeProto> for IdentifiedEdge {
     type Error = SerDeError;
     fn try_from(identified_edge_proto: IdentifiedEdgeProto) -> Result<Self, Self::Error> {
-
-        let from_uid= identified_edge_proto.from_uid
+        let from_uid = identified_edge_proto
+            .from_uid
             .ok_or(SerDeError::MissingField("IdentifiedEdge.from_uid"))?
             .try_into()?;
-        let to_uid= identified_edge_proto.to_uid
+        let to_uid = identified_edge_proto
+            .to_uid
             .ok_or(SerDeError::MissingField("IdentifiedEdge.to_uid"))?
             .try_into()?;
 
@@ -1310,7 +1315,8 @@ impl From<IdentifiedEdge> for IdentifiedEdgeProto {
 }
 
 impl type_url::TypeUrl for IdentifiedEdge {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdentifiedEdge";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdentifiedEdge";
 }
 
 impl serde_impl::ProtobufSerializable for IdentifiedEdge {
@@ -1376,12 +1382,18 @@ impl TryFrom<ExecutionHitProto> for ExecutionHit {
     fn try_from(execution_hit_proto: ExecutionHitProto) -> Result<Self, Self::Error> {
         let mut nodes = HashMap::with_capacity(execution_hit_proto.nodes.len());
         for (key, identified_node) in execution_hit_proto.nodes {
-            nodes.insert(Uid::from_u64(key).unwrap(), IdentifiedNode::try_from(identified_node)?);
+            nodes.insert(
+                Uid::from_u64(key).unwrap(),
+                IdentifiedNode::try_from(identified_node)?,
+            );
         }
 
         let mut edges = HashMap::with_capacity(execution_hit_proto.edges.len());
         for (key, identified_edge_list) in execution_hit_proto.edges {
-            edges.insert(Uid::from_u64(key).unwrap(), IdentifiedEdgeList::try_from(identified_edge_list)?);
+            edges.insert(
+                Uid::from_u64(key).unwrap(),
+                IdentifiedEdgeList::try_from(identified_edge_list)?,
+            );
         }
 
         let mut lenses = Vec::with_capacity(execution_hit_proto.lenses.len());
@@ -1409,7 +1421,10 @@ impl From<ExecutionHit> for ExecutionHitProto {
 
         let mut edges = HashMap::with_capacity(execution_hit.edges.len());
         for (key, identified_edge_list) in execution_hit.edges {
-            edges.insert(key.as_u64(), IdentifiedEdgeListProto::from(identified_edge_list));
+            edges.insert(
+                key.as_u64(),
+                IdentifiedEdgeListProto::from(identified_edge_list),
+            );
         }
 
         let mut lenses = Vec::with_capacity(execution_hit.lenses.len());
@@ -1630,12 +1645,7 @@ impl IdentifiedGraph {
         };
     }
 
-    pub fn add_edge(
-        &mut self,
-        edge_name: impl Into<String>,
-        from_uid: Uid,
-        to_uid: Uid,
-    ) {
+    pub fn add_edge(&mut self, edge_name: impl Into<String>, from_uid: Uid, to_uid: Uid) {
         assert_ne!(from_uid, to_uid);
 
         let edge_name = edge_name.into();
@@ -1667,11 +1677,7 @@ impl IdentifiedGraph {
 
         for edge_list in other.edges.values() {
             for edge in edge_list.edges.iter() {
-                self.add_edge(
-                    edge.edge_name.clone(),
-                    edge.from_uid,
-                    edge.to_uid,
-                );
+                self.add_edge(edge.edge_name.clone(), edge.from_uid, edge.to_uid);
             }
         }
     }
@@ -1687,12 +1693,18 @@ impl TryFrom<IdentifiedGraphProto> for IdentifiedGraph {
     fn try_from(identified_graph_proto: IdentifiedGraphProto) -> Result<Self, Self::Error> {
         let mut nodes = HashMap::with_capacity(identified_graph_proto.nodes.len());
         for (key, identified_node) in identified_graph_proto.nodes {
-            nodes.insert(Uid::from_u64(key).unwrap(), IdentifiedNode::try_from(identified_node)?);
+            nodes.insert(
+                Uid::from_u64(key).unwrap(),
+                IdentifiedNode::try_from(identified_node)?,
+            );
         }
 
         let mut edges = HashMap::with_capacity(identified_graph_proto.edges.len());
         for (key, edge_list) in identified_graph_proto.edges {
-            edges.insert(Uid::from_u64(key).unwrap(), IdentifiedEdgeList::try_from(edge_list)?);
+            edges.insert(
+                Uid::from_u64(key).unwrap(),
+                IdentifiedEdgeList::try_from(edge_list)?,
+            );
         }
 
         Ok(IdentifiedGraph { nodes, edges })
@@ -1722,262 +1734,4 @@ impl type_url::TypeUrl for IdentifiedGraph {
 
 impl serde_impl::ProtobufSerializable for IdentifiedGraph {
     type ProtobufMessage = IdentifiedGraphProto;
-}
-
-
-#[cfg(test)]
-pub mod test {
-    // TODO: refactor these tests to use proptest instead of quickcheck
-
-    use std::{
-        collections::HashMap,
-        hash::Hasher,
-    };
-
-    use quickcheck::{
-        Arbitrary,
-        Gen,
-    };
-    use quickcheck_macros::quickcheck;
-    use tracing_subscriber::{
-        EnvFilter,
-        FmtSubscriber,
-    };
-
-    use super::*;
-
-    impl Arbitrary for IncrementOnlyIntProp {
-        fn arbitrary(g: &mut Gen) -> Self {
-            Self {
-                prop: i64::arbitrary(g),
-            }
-        }
-    }
-
-    impl Arbitrary for DecrementOnlyIntProp {
-        fn arbitrary(g: &mut Gen) -> Self {
-            Self {
-                prop: i64::arbitrary(g),
-            }
-        }
-    }
-
-    impl Arbitrary for ImmutableIntProp {
-        fn arbitrary(g: &mut Gen) -> Self {
-            Self {
-                prop: i64::arbitrary(g),
-            }
-        }
-    }
-
-    impl Arbitrary for IncrementOnlyUintProp {
-        fn arbitrary(g: &mut Gen) -> Self {
-            Self {
-                prop: u64::arbitrary(g),
-            }
-        }
-    }
-
-    impl Arbitrary for DecrementOnlyUintProp {
-        fn arbitrary(g: &mut Gen) -> Self {
-            Self {
-                prop: u64::arbitrary(g),
-            }
-        }
-    }
-
-    impl Arbitrary for ImmutableUintProp {
-        fn arbitrary(g: &mut Gen) -> Self {
-            Self {
-                prop: u64::arbitrary(g),
-            }
-        }
-    }
-
-    impl Arbitrary for ImmutableStrProp {
-        fn arbitrary(g: &mut Gen) -> Self {
-            Self {
-                prop: String::arbitrary(g),
-            }
-        }
-    }
-
-    impl Arbitrary for Property {
-        fn arbitrary(g: &mut Gen) -> Self {
-            let props = &[
-                Property::IncrementOnlyIntProp(IncrementOnlyIntProp::arbitrary(g)),
-                Property::DecrementOnlyIntProp(DecrementOnlyIntProp::arbitrary(g)),
-                Property::ImmutableIntProp(ImmutableIntProp::arbitrary(g)),
-                Property::IncrementOnlyUintProp(IncrementOnlyUintProp::arbitrary(g)),
-                Property::DecrementOnlyUintProp(DecrementOnlyUintProp::arbitrary(g)),
-                Property::ImmutableUintProp(ImmutableUintProp::arbitrary(g)),
-                Property::ImmutableStrProp(ImmutableStrProp::arbitrary(g)),
-            ];
-            g.choose(props).unwrap().clone()
-        }
-    }
-
-    impl Arbitrary for NodeProperty {
-        fn arbitrary(g: &mut Gen) -> Self {
-            NodeProperty {
-                property: Property::arbitrary(g),
-            }
-        }
-    }
-
-    fn hash(bytes: &[impl AsRef<[u8]>]) -> u64 {
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
-        for _bytes in bytes {
-            hasher.write(_bytes.as_ref());
-        }
-        hasher.finish() as u64
-    }
-
-    fn choice<T: Clone>(bytes: impl AsRef<[u8]>, choices: &[T]) -> T {
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
-        hasher.write(bytes.as_ref());
-        let choice_index = (hasher.finish() as usize) % choices.len();
-        choices[choice_index].clone()
-    }
-
-    fn choose_property(node_key: &str, property_name: &str, g: &mut Gen) -> NodeProperty {
-        let s = format!("{}{}", node_key, property_name);
-
-        let props = &[
-            Property::IncrementOnlyIntProp(IncrementOnlyIntProp::arbitrary(g)),
-            Property::DecrementOnlyIntProp(DecrementOnlyIntProp::arbitrary(g)),
-            Property::IncrementOnlyUintProp(IncrementOnlyUintProp::arbitrary(g)),
-            Property::DecrementOnlyUintProp(DecrementOnlyUintProp::arbitrary(g)),
-            Property::ImmutableIntProp(ImmutableIntProp::from(
-                hash(&[node_key, property_name]) as i64
-            )),
-            Property::ImmutableUintProp(ImmutableUintProp::from(hash(&[node_key, property_name]))),
-            Property::ImmutableStrProp(ImmutableStrProp::from(s)),
-        ];
-        let p: Property = choice(node_key, props);
-        p.into()
-    }
-
-    impl Arbitrary for IdentifiedNode {
-        fn arbitrary(g: &mut Gen) -> Self {
-            let node_keys = &[
-                Uid::from_u64(1).unwrap(),
-                Uid::from_u64(2).unwrap(),
-                Uid::from_u64(3).unwrap(),
-                Uid::from_u64(4).unwrap(),
-            ];
-            let uid = g.choose(node_keys).unwrap().clone();
-
-            let node_types = &["Process", "File", "IpAddress"];
-            let node_type = choice(&node_key, node_types);
-            let mut properties = HashMap::new();
-            let property_names: Vec<String> = Vec::arbitrary(g);
-
-            for property_name in property_names {
-                let property = choose_property(&node_key, &property_name, g);
-                properties.insert(property_name.to_owned(), property);
-            }
-
-            IdentifiedNode {
-                uid: uid.to_owned(),
-                node_type: node_type.to_owned(),
-                properties,
-            }
-        }
-    }
-
-    fn init_test_env() {
-        let subscriber = FmtSubscriber::builder()
-            .with_env_filter(EnvFilter::from_default_env())
-            .finish();
-        let _ = tracing::subscriber::set_global_default(subscriber);
-    }
-
-    #[quickcheck]
-    fn test_merge_str(x: ImmutableStrProp, y: ImmutableStrProp) {
-        init_test_env();
-        let original = x;
-        let mut x = original.clone();
-        x.merge_property(&y);
-        assert_eq!(original, x);
-    }
-
-    #[quickcheck]
-    fn test_merge_immutable_int(mut x: ImmutableIntProp, y: ImmutableIntProp) {
-        init_test_env();
-        let original = x.clone();
-        x.merge_property(&y);
-        assert_eq!(x, original);
-    }
-
-    #[quickcheck]
-    fn test_merge_immutable_uint(mut x: ImmutableUintProp, y: ImmutableUintProp) {
-        init_test_env();
-        let original = x.clone();
-        x.merge_property(&y);
-        assert_eq!(x, original);
-    }
-
-    #[quickcheck]
-    fn test_merge_uint_max(mut x: IncrementOnlyUintProp, y: IncrementOnlyUintProp) {
-        init_test_env();
-        x.merge_property(&y);
-        assert_eq!(x.clone(), std::cmp::max(x, y));
-    }
-
-    #[quickcheck]
-    fn test_merge_int_max(mut x: IncrementOnlyIntProp, y: IncrementOnlyIntProp) {
-        init_test_env();
-        x.merge_property(&y);
-        assert_eq!(x.clone(), std::cmp::max(x, y));
-    }
-
-    #[quickcheck]
-    fn test_merge_uint_min(mut x: DecrementOnlyUintProp, y: DecrementOnlyUintProp) {
-        init_test_env();
-        x.merge_property(&y);
-        assert_eq!(x.clone(), std::cmp::min(x, y));
-    }
-
-    #[quickcheck]
-    fn test_merge_int_min(mut x: DecrementOnlyIntProp, y: DecrementOnlyIntProp) {
-        init_test_env();
-        x.merge_property(&y);
-        assert_eq!(x.clone(), std::cmp::min(x, y));
-    }
-
-    #[quickcheck]
-    fn test_merge_incr_uint_commutative(mut properties: Vec<IncrementOnlyUintProp>) {
-        init_test_env();
-        if properties.is_empty() {
-            return;
-        }
-        properties.sort_unstable();
-        let max_value = properties.iter().max().unwrap().to_owned();
-        let mut first_x = properties[0].clone();
-        for property in properties.iter() {
-            first_x.merge_property(property)
-        }
-
-        let properties: Vec<_> = properties.into_iter().rev().collect();
-        let mut first_y = properties[0].clone();
-        for property in properties.iter() {
-            first_y.merge_property(property)
-        }
-        assert_eq!(first_x, first_y);
-        assert_eq!(first_x, max_value);
-    }
-
-    #[quickcheck]
-    fn test_merge_identified_node(mut node_0: IdentifiedNode, node_1: IdentifiedNode) {
-        if node_0.node_key != node_1.node_key {
-            return;
-        }
-        // let original = node_0.clone();
-        node_0.merge(&node_1);
-
-        // for (_o_pred_name, o_pred_val) in original.iter() {
-        //     let mut copy = o_pred_val.clone();
-        // }
-    }
 }

@@ -5,17 +5,19 @@ use rust_proto::{
         build_grpc_client,
         services::UidAllocatorClientConfig,
     },
-    graplinc::grapl::api::uid_allocator::v1beta1::{
-        client::UidAllocatorServiceClientError,
-        messages::{
-            AllocateIdsRequest,
-            Allocation,
-            CreateTenantKeyspaceRequest,
+    graplinc::grapl::{
+        api::uid_allocator::v1beta1::{
+            client::UidAllocatorServiceClientError,
+            messages::{
+                AllocateIdsRequest,
+                Allocation,
+                CreateTenantKeyspaceRequest,
+            },
         },
+        common::v1beta1::types::Uid,
     },
     protocol::service_client::ConnectError,
 };
-use rust_proto::graplinc::grapl::common::v1beta1::types::Uid;
 
 #[derive(Clone)]
 pub struct CachingUidAllocatorServiceClient {

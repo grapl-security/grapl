@@ -3,15 +3,8 @@
 
 use clap::Parser;
 use futures::StreamExt;
-
-use rusoto_dynamodb::DynamoDbClient;
-use tracing::instrument::WithSubscriber;
-use rust_proto::protocol::service_client::Connectable;
-
 use grapl_config::env_helpers::FromEnv;
-
 use grapl_tracing::setup_tracing;
-
 use kafka::{
     config::{
         ConsumerConfig,
@@ -20,29 +13,32 @@ use kafka::{
     StreamProcessor,
     StreamProcessorError,
 };
-use rust_proto::graplinc::grapl::{
-    api::{
-        graph::v1beta1::{
-            GraphDescription,
-            IdentifiedGraph,
+use rusoto_dynamodb::DynamoDbClient;
+use rust_proto::{
+    graplinc::grapl::{
+        api::{
+            graph::v1beta1::{
+                GraphDescription,
+                IdentifiedGraph,
+            },
+            graph_mutation::v1beta1::client::GraphMutationClient,
         },
+        pipeline::v1beta1::Envelope,
+    },
+    protocol::{
+        endpoint::Endpoint,
+        service_client::Connectable,
     },
 };
-use rust_proto::graplinc::grapl::{
-    pipeline::v1beta1::Envelope,
-};
-use rust_proto::graplinc::grapl::api::graph_mutation::v1beta1::client::GraphMutationClient;
-use rust_proto::protocol::endpoint::Endpoint;
+use tracing::instrument::WithSubscriber;
 
 use crate::{
     config::NodeIdentifierConfig,
-    static_mapping_db::StaticMappingDb,
-};
-use crate::{
     dynamic_sessiondb::NodeDescriptionIdentifier,
     error::NodeIdentifierError,
     node_identifier::NodeIdentifier,
     sessiondb::SessionDb,
+    static_mapping_db::StaticMappingDb,
 };
 
 mod config;
@@ -54,7 +50,6 @@ mod sessions;
 mod static_mapping_db;
 
 const SERVICE_NAME: &'static str = "node-identifier";
-
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -68,9 +63,9 @@ async fn handler() -> eyre::Result<()> {
     let service_config = NodeIdentifierConfig::parse();
     let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(dynamo.clone(), service_config.grapl_dynamic_session_table);
-    let graph_mutation_client = GraphMutationClient::connect(
-        Endpoint::from_shared(service_config.graph_mutation_url)?
-    ).await?;
+    let graph_mutation_client =
+        GraphMutationClient::connect(Endpoint::from_shared(service_config.graph_mutation_url)?)
+            .await?;
 
     let static_mapping_db = StaticMappingDb::new(
         dynamo.clone(),

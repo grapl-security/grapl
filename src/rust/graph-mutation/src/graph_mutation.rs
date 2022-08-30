@@ -451,7 +451,6 @@ impl GraphMutationApi for GraphMutationManager {
             .uid_allocator_client
             .allocate_id(request.tenant_id)
             .await?;
-        let uid = Uid::from_u64(uid).ok_or_else(|| GraphMutationManagerError::ZeroUid)?;
 
         self.set_node_type(request.tenant_id, uid, request.node_type)
             .await?;

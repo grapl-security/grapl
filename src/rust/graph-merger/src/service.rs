@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 use std::{
     collections::HashMap,
     fmt::Debug,
@@ -161,15 +163,15 @@ impl GraphMerger {
                 if let MutationRedundancy::True = response.mutation_redundancy {
                     continue;
                 }
-                updates.push(Update::EdgeUpdate(EdgeUpdate {
-                    src_edge_name: EdgeName {
-                        value: edge_name.clone(),
-                    },
-                    src_node_type: NodeType {
-                        value: node_types[&from_uid].clone(),
-                    },
+                updates.push(Update::Edge(EdgeUpdate {
                     src_uid: from_uid,
                     dst_uid: to_uid,
+                    forward_edge_name: EdgeName {
+                        value: edge_name.clone(),
+                    },
+                    reverse_edge_name: EdgeName {
+                        value: edge_name.clone(),
+                    },
                 }));
             }
         }
@@ -179,43 +181,43 @@ impl GraphMerger {
 
 fn property_to_update(uid: Uid, property_name: String, property: &Property) -> Update {
     match property {
-        Property::IncrementOnlyUintProp(_) => Update::Uint64PropertyUpdate(UInt64PropertyUpdate {
+        Property::IncrementOnlyUintProp(_) => Update::Uint64Property(UInt64PropertyUpdate {
             uid,
             property_name: PropertyName {
                 value: property_name,
             },
         }),
-        Property::DecrementOnlyUintProp(_) => Update::Uint64PropertyUpdate(UInt64PropertyUpdate {
+        Property::DecrementOnlyUintProp(_) => Update::Uint64Property(UInt64PropertyUpdate {
             uid,
             property_name: PropertyName {
                 value: property_name,
             },
         }),
-        Property::ImmutableUintProp(_) => Update::Uint64PropertyUpdate(UInt64PropertyUpdate {
+        Property::ImmutableUintProp(_) => Update::Uint64Property(UInt64PropertyUpdate {
             uid,
             property_name: PropertyName {
                 value: property_name,
             },
         }),
-        Property::IncrementOnlyIntProp(_) => Update::Int64PropertyUpdate(Int64PropertyUpdate {
+        Property::IncrementOnlyIntProp(_) => Update::Int64Property(Int64PropertyUpdate {
             uid,
             property_name: PropertyName {
                 value: property_name,
             },
         }),
-        Property::DecrementOnlyIntProp(_) => Update::Int64PropertyUpdate(Int64PropertyUpdate {
+        Property::DecrementOnlyIntProp(_) => Update::Int64Property(Int64PropertyUpdate {
             uid,
             property_name: PropertyName {
                 value: property_name,
             },
         }),
-        Property::ImmutableIntProp(_) => Update::Int64PropertyUpdate(Int64PropertyUpdate {
+        Property::ImmutableIntProp(_) => Update::Int64Property(Int64PropertyUpdate {
             uid,
             property_name: PropertyName {
                 value: property_name,
             },
         }),
-        Property::ImmutableStrProp(_) => Update::StringPropertyUpdate(StringPropertyUpdate {
+        Property::ImmutableStrProp(_) => Update::StringProperty(StringPropertyUpdate {
             uid,
             property_name: PropertyName {
                 value: property_name,

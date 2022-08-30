@@ -32,7 +32,7 @@ impl UnidSession {
         node_type: String,
         pseudo_key: &str,
         timestamp: u64,
-        is_creation: bool
+        is_creation: bool,
     ) -> Self {
         let mut hasher = Blake2b16::new();
         hasher.update(tenant_id.as_bytes());

@@ -52,10 +52,10 @@ async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
     let mut uids = std::collections::HashSet::with_capacity(num_requested_uids as usize);
     for _ in 0u64..num_requested_uids {
         let next_id = allocator_client.allocate_id(tenant_id).await?;
-        assert!(uids.insert(next_id), "next_id {next_id} was not unique");
+        assert!(uids.insert(next_id), "next_id {next_id:?} was not unique");
         assert!(
-            next_id <= shouldnt_exceed,
-            "next_id {next_id} exceeded expected max {shouldnt_exceed}"
+            next_id.as_u64() <= shouldnt_exceed,
+            "next_id {next_id:?} exceeded expected max {shouldnt_exceed}"
         );
     }
 

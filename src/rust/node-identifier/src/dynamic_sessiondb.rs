@@ -9,14 +9,17 @@ use failure::{
 };
 use rusoto_dynamodb::DynamoDb;
 use rust_proto::graplinc::grapl::{
-    api::graph::v1beta1::{
-        GraphDescription,
-        IdentifiedGraph,
-        IdentifiedNode,
-        NodeDescription,
-        Session,
-        Static,
-        Strategy,
+    api::{
+        graph::v1beta1::{
+            GraphDescription,
+            IdentifiedGraph,
+            IdentifiedNode,
+            NodeDescription,
+            Session,
+            Static,
+            Strategy,
+        },
+        graph_mutation::v1beta1::client::GraphMutationClient,
     },
     common::v1beta1::types::Uid,
 };
@@ -28,7 +31,6 @@ use sha2::{
     Digest,
     Sha256,
 };
-use rust_proto::graplinc::grapl::api::graph_mutation::v1beta1::client::GraphMutationClient;
 
 use crate::{
     sessiondb::SessionDb,
@@ -133,7 +135,12 @@ where
 
         let session_id = self
             .dyn_session_db
-            .handle_unid_session(tenant_id, unid, &self.graph_mutation_client, self.should_guess)
+            .handle_unid_session(
+                tenant_id,
+                unid,
+                &self.graph_mutation_client,
+                self.should_guess,
+            )
             .await?;
 
         Ok(IdentifiedNode {

@@ -21,7 +21,7 @@ rdkafka = { version = "0.28", features = [
   "ssl-vendored",
   "gssapi-vendored",
   "tokio",
-#  "zstd-pkg-config"
+  #  "zstd-pkg-config"
   "zstd"
 ] }
 rust-proto = { path = "../rust-proto", version = "*" }

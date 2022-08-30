@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package graplinc.grapl.api.graph.v1beta1;
+
 import "graplinc/grapl/common/v1beta1/types.proto";
 
 // The Session Identity Strategy is used to derive a canonical identity for any node that has a
@@ -136,7 +137,6 @@ message IdentifiedNode {
   // The node type, as it exists in DGraph
   string node_type = 3;
 }
-
 
 // Represents a directed edge between two unidentified nodes
 // TODO: Rename this to EdgeDescription

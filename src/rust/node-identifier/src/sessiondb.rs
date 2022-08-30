@@ -19,15 +19,21 @@ use rusoto_dynamodb::{
     TransactWriteItemsInput,
     UpdateItemInput,
 };
-use rust_proto::graplinc::grapl::common::v1beta1::types::{NodeType, Uid};
+use rust_proto::graplinc::grapl::{
+    api::graph_mutation::v1beta1::{
+        client::GraphMutationClient,
+        messages::CreateNodeRequest,
+    },
+    common::v1beta1::types::{
+        NodeType,
+        Uid,
+    },
+};
 use tracing::{
     info,
     warn,
 };
-
 use uuid::Uuid;
-use rust_proto::graplinc::grapl::api::graph_mutation::v1beta1::client::GraphMutationClient;
-use rust_proto::graplinc::grapl::api::graph_mutation::v1beta1::messages::CreateNodeRequest;
 
 use crate::sessions::*;
 
@@ -414,9 +420,12 @@ where
         let uid = graph_mutation_client
             .create_node(CreateNodeRequest {
                 tenant_id,
-                node_type: NodeType { value: unid.node_type.clone() },
+                node_type: NodeType {
+                    value: unid.node_type.clone(),
+                },
             })
-            .await?.uid;
+            .await?
+            .uid;
 
         // Create new session, return new session id
         let session = Session {
@@ -491,9 +500,12 @@ where
             let uid = graph_mutation_client
                 .create_node(CreateNodeRequest {
                     tenant_id,
-                    node_type: NodeType { value: unid.node_type.clone() },
+                    node_type: NodeType {
+                        value: unid.node_type.clone(),
+                    },
                 })
-                .await?.uid;
+                .await?
+                .uid;
 
             let session = Session {
                 session_id: uid.as_u64(),

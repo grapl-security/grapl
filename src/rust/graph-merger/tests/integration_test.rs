@@ -3,138 +3,54 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use futures::StreamExt;
-use grapl_tracing::{
-    setup_tracing,
-    WorkerGuard,
+use e2e_tests::test_utils::context::{
+    E2eTestContext,
+    SetupResult,
 };
 use kafka::{
     config::ConsumerConfig,
-    Consumer,
-    ConsumerError,
+    test_utils::topic_scanner::KafkaTopicScanner,
 };
-use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::Updates;
-use rust_proto::{
-    graplinc::grapl::{
-        api::{
-            pipeline_ingress::v1beta1::{
-                client::PipelineIngressClient,
-                PublishRawLogRequest,
-            },
+use rust_proto::graplinc::grapl::{
+    api::{
+        pipeline_ingress::v1beta1::PublishRawLogRequest,
+        plugin_sdk::analyzers::v1beta1::messages::{
+            UInt64PropertyUpdate,
+            Update,
+            Updates,
         },
-        pipeline::v1beta2::Envelope,
     },
-    protocol::{
-        healthcheck::client::HealthcheckClient,
-        service_client::NamedService,
-    },
+    pipeline::v1beta1::Envelope,
 };
-use test_context::{
-    test_context,
-    AsyncTestContext,
-};
-use tokio::sync::oneshot;
-use tracing::Instrument;
+use test_context::test_context;
 use uuid::Uuid;
 
+const CONSUMER_TOPIC: &'static str = "merged-graphs";
 
-struct GraphMergerTestContext {
-    pipeline_ingress_client: PipelineIngressClient,
-    consumer_config: ConsumerConfig,
-    _guard: WorkerGuard,
-}
-
-const CONSUMER_TOPIC: &'static str = "graph-updates";
-const SERVICE_NAME: &'static str = "graph-merger-integration-tests";
-
-#[async_trait::async_trait]
-impl AsyncTestContext for GraphMergerTestContext {
-    async fn setup() -> Self {
-        let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
-
-        let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
-            .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
-
-        tracing::info!(
-            message = "waiting 10s for pipeline-ingress to report healthy",
-            endpoint = %endpoint,
-        );
-
-        HealthcheckClient::wait_until_healthy(
-            endpoint.clone(),
-            PipelineIngressClient::SERVICE_NAME,
-            Duration::from_secs(10),
-            Duration::from_millis(500),
-        )
-        .await
-        .expect("pipeline-ingress never reported healthy");
-
-        tracing::info!("connecting pipeline-ingress gRPC client");
-        let pipeline_ingress_client = PipelineIngressClient::connect(endpoint.clone())
-            .await
-            .expect("could not configure gRPC client");
-
-        let consumer_config = ConsumerConfig::with_topic(CONSUMER_TOPIC);
-
-        GraphMergerTestContext {
-            pipeline_ingress_client,
-            consumer_config,
-            _guard,
-        }
-    }
-}
-
-#[test_context(GraphMergerTestContext)]
+#[test_context(E2eTestContext)]
 #[tokio::test]
-async fn test_sysmon_event_produces_merged_graph(ctx: &mut GraphMergerTestContext) {
-    let event_source_id = Uuid::new_v4();
-    let tenant_id = Uuid::new_v4();
+async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> eyre::Result<()> {
+    let test_name = "test_sysmon_event_produces_merged_graph";
+    let SetupResult {
+        tenant_id,
+        plugin_id: _,
+        event_source_id,
+    } = ctx.setup_sysmon_generator(test_name).await?;
 
-    tracing::info!("configuring kafka consumer");
-    let kafka_consumer =
-        Consumer::new(ctx.consumer_config.clone()).expect("could not configure kafka consumer");
+    let kafka_scanner = KafkaTopicScanner::new(
+        ConsumerConfig::with_topic(CONSUMER_TOPIC),
+        Duration::from_secs(60),
+        Envelope::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Updates::new(),
+        ),
+    );
 
-    // we'll use this channel to communicate that the consumer is ready to
-    // consume messages
-    let (tx, rx) = oneshot::channel::<()>();
-
-    tracing::info!("creating kafka subscriber thread");
-    let kafka_subscriber = tokio::task::spawn(async move {
-        let stream = kafka_consumer.stream();
-
-        // notify the consumer that we're ready to receive messages
-        tx.send(())
-            .expect("failed to notify sender that consumer is consuming");
-
-        let contains_expected = stream.any(
-            |res: Result<Envelope<Updates>, ConsumerError>| async move {
-                let envelope = res.expect("error consuming message from kafka");
-                let metadata = envelope.metadata;
-                let _merged_graph = envelope.inner_message;
-
-                tracing::debug!(message = "consumed kafka message");
-
-                if metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id {
-                    // check the updates
-                    true // todo
-                } else {
-                    false
-                }
-            },
-        );
-
-        tracing::info!("consuming kafka messages for 30s");
-        assert!(
-            tokio::time::timeout(Duration::from_secs(30), contains_expected)
-                .await
-                .expect("failed to consume expected message within 30s")
-        );
-    });
-
-    // wait for the kafka consumer to start consuming
-    tracing::info!("waiting for kafka consumer to report ready");
-    rx.await
-        .expect("failed to receive notification that consumer is consuming");
+    let handle = kafka_scanner
+        .scan_for_tenant(tenant_id, 1, |_: Updates| true)
+        .await;
 
     let log_event: Bytes = r#"
 <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
@@ -181,19 +97,50 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut GraphMergerTestContex
 </Event>
 "#.into();
 
-    tracing::info!("sending publish_raw_log request");
+    tracing::info!(
+        message = "sending publish_raw_log request",
+        event_source_id =% event_source_id,
+        tenant_id =% tenant_id,
+    );
+
     ctx.pipeline_ingress_client
-        .publish_raw_log(PublishRawLogRequest {
+        .publish_raw_log(PublishRawLogRequest::new(
             event_source_id,
             tenant_id,
             log_event,
-        })
+        ))
         .await
         .expect("received error response");
 
-    tracing::info!("waiting for kafka_subscriber to complete");
-    kafka_subscriber
-        .instrument(tracing::debug_span!("kafka_subscriber"))
-        .await
-        .expect("could not join kafka subscriber");
+    tracing::info!("waiting for kafka_scanner to complete");
+
+    let envelopes = handle.await?;
+    assert_eq!(envelopes.len(), 1);
+
+    let envelope = envelopes[0].clone();
+    assert_eq!(envelope.tenant_id(), tenant_id);
+    assert_eq!(envelope.event_source_id(), event_source_id);
+
+    let updates = envelope.inner_message();
+
+    // Note that updates don't contain the updated value so we can't check that
+    // right now
+    let matching_updates = updates
+        .iter()
+        .filter(|update| {
+            matches!(update, Update::Uint64Property(UInt64PropertyUpdate {property_name, ..}) if {
+                property_name.value == "process_id"
+            })
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(matching_updates.len(), 2);
+    //
+    // let matching_updates = updates.iter().filter(|update| {
+    //     matches!(update, Update::Edge(Uint64Property {property_name, ..}) if {
+    //         property_name == "process_id"
+    //     })
+    // }).collect::<Vec<_>>();
+    // assert_eq!(matching_updates.len(), 2);
+
+    Ok(())
 }

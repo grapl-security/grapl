@@ -207,27 +207,15 @@ mod graph {
         }
 
         #[test]
-        fn test_merged_edge_encode_decode(merged_edge in st::merged_edges()) {
-            check_encode_decode_invariant(merged_edge)
+        fn test_identified_edge_encode_decode(identified_edge in st::identified_edges()) {
+            check_encode_decode_invariant(identified_edge)
         }
 
         #[test]
-        fn test_merged_edge_list_encode_decode(
-            merged_edge_list in st::merged_edge_lists()
+        fn test_identified_edge_list_encode_decode(
+            identified_edge_list in st::identified_edge_lists()
         ) {
-            check_encode_decode_invariant(merged_edge_list)
-        }
-
-        #[test]
-        fn test_merged_node_encode_decode(merged_node in st::merged_nodes()) {
-            check_encode_decode_invariant(merged_node)
-        }
-
-        #[test]
-        fn test_merged_graph_encode_decode(
-            merged_graph in st::merged_graphs()
-        ) {
-            check_encode_decode_invariant(merged_graph)
+            check_encode_decode_invariant(identified_edge_list)
         }
 
         #[test]
@@ -518,6 +506,20 @@ mod graph_schema_manager {
 
         #[test]
         fn test_get_edge_schema_responses(value in sm_strats::get_edge_schema_responses()) {
+            check_encode_decode_invariant(value)
+        }
+    }
+}
+
+mod analyzer_sdk {
+
+    use strategies::analyzer_sdk as as_strats;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_run_analyzer_request(value in as_strats::run_analyzer_requests()) {
             check_encode_decode_invariant(value)
         }
     }
