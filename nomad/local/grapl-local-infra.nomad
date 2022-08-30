@@ -27,12 +27,12 @@ locals {
   # `pulumi/grapl/__main__.py`; sorry for the duplication :(
   database_descriptors = [
     {
-      name   = "plugin-registry-db",
-      port   = 5432,
+      name = "plugin-registry-db",
+      port = 5432,
     },
     {
-      name = "plugin-work-queue-db",
-      port = 5433,
+      name   = "plugin-work-queue-db",
+      port   = 5433,
       memory = 1024,
     },
     {
