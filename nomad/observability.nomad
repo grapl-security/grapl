@@ -1,110 +1,96 @@
-# This contains the observability jobs.
-# First up is jaeger so that we can collect collect and see traces during local development.
+variable "otel_config" {
+  type        = string
+  description = <<EOF
+We inject the whole yaml config for the otel collector.
+Long-term, this will likely be done in-line with secrets grabbed dynamically from Vault.
+This requires that Nomad and Vault be hooked up first
+EOF
+}
+
 job "observability" {
   datacenters = ["dc1"]
-  type        = "service"
+  type        = "system"
 
-  # Jaeger
-  group "jaeger" {
+  group "otel-collector" {
+    count = 1
+
     network {
-      mode = "host"
-      # We currently expose the web frontend and then several endpoints that accept traces. There are additional
-      # endpoints that support traces whose ports we can open up as necessary
-      port "http-frontend" {
-        to     = 16686
-        static = 16686
+
+      port "metrics" {
+        to = 8888
       }
 
-      port "grpc" {
-        to     = 16685
-        static = 16685
+      # Receivers
+      port "otlp-grpc" {
+        to = 4317
       }
 
-      port "jaeger-thrift" {
-        to     = 14268
-        static = 14268
+      port "otlp-http" {
+        to = 4318
       }
 
-      # This supports zipkin compatible traces
-      port "zipkin" {
-        to     = 9411
-        static = 9411
-      }
-
-      // Rust services use the jaeger agent udp thrift ports
-      port "agent-thrift-compact" {
+      port "jaeger-thrift-compact" {
         to     = 6831
         static = 6831
       }
 
-      port "agent-thrift-binary" {
-        to     = 6832
-        static = 6832
-      }
-
-    }
-
-    service {
-      name = "jaeger-frontend"
-      port = "http-frontend"
-      tags = ["http"]
-
-      check {
-        type     = "http"
-        port     = "http-frontend"
-        path     = "/"
-        interval = "5s"
-        timeout  = "2s"
+      port "zipkin" {
+        to     = 9411
+        static = 9411
       }
     }
 
-    # Service for accepting zipkin format traces
     service {
-      name = "jaeger-zipkin"
+      port = "otlp-http"
+    }
+
+    service {
+      name = "otel-collector-zipkin"
       port = "zipkin"
       tags = ["zipkin"]
     }
 
     service {
-      name = "jaeger-thrift"
-      port = "jaeger-thrift"
-      tags = ["thrift"]
+      name = "otel-collector-jaeger-thrift-compact"
+      port = "jaeger-thrift-compact"
+      tags = ["jaeger"]
     }
 
     service {
-      name = "jaeger-agent-thrift-compact"
-      port = "agent-thrift-compact"
-      tags = ["thrift"]
+      name = "otel-agent-hc"
+      port = "metrics"
+      tags = ["metrics"]
     }
 
-    service {
-      name = "jaeger-agent-thrift-binary"
-      port = "agent-thrift-compact"
-      tags = ["thrift"]
-    }
-
-    service {
-      name = "grpc"
-      port = "grpc"
-      tags = ["grpc"]
-    }
-
-    task "jaeger-all-in-one" {
+    task "otel-collector" {
       driver = "docker"
 
       config {
-        image        = "jaegertracing/all-in-one:latest"
-        ports        = ["http-frontend", "zipkin", "grpc", "jaeger-thrift"]
-        network_mode = "host"
+        image      = "otel/opentelemetry-collector-contrib:0.40.0"
+        force_pull = true
+
+        entrypoint = [
+          "/otelcontribcol",
+          "--config=local/config/otel-collector-config.yaml",
+        ]
+        ports = [
+          "metrics",
+          "otlp-grpc",
+          "otlp-http",
+          "zipkin",
+          "jaeger-thrift-compact"
+        ]
       }
 
-      env {
-        COLLECTOR_ZIPKIN_HOST_PORT = 9411
-      }
 
       resources {
-        cpu    = 200
-        memory = 100
+        cpu    = 100
+        memory = 512
+      }
+
+      template {
+        data        = var.otel_config
+        destination = "local/config/otel-collector-config.yaml"
       }
     }
   }

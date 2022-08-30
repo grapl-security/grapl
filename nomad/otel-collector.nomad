@@ -1,165 +1,119 @@
-job "otel-collector" {
-  datacenters = ["dc1"]
-  type        = "service"
+job "otel-collector-gateway" {
 
-  group "otel-collector" {
+  datacenters = ["dc1"]
+
+  group "svc" {
     count = 1
 
     network {
+
+      port "otlp-grpc" {
+        to = 4317
+      }
+
+      port "otlp-http" {
+        to = 4318
+      }
+
       port "metrics" {
         to = 8888
       }
 
       # Receivers
-      port "otlp" {
-        to = 4317
-      }
-
-      port "jaeger-grpc" {
-        to = 14250
-      }
-
-      port "jaeger-thrift-http" {
-        to = 14268
+      port "prometheus" {
+        to = 9090
       }
 
       port "zipkin" {
         to = 9411
       }
 
-      # Extensions
-      port "health-check" {
-        to = 13133
+      port "jaeger-grpc" {
+        to = 14250
       }
 
-      port "zpages" {
-        to = 55679
-      }
-    }
-
-    service {
-      name = "otel-collector"
-      port = "health-check"
-      tags = ["health"]
-
-      check {
-        type     = "http"
-        port     = "health-check"
-        path     = "/"
-        interval = "5s"
-        timeout  = "2s"
+      port "jaeger-thrift" {
+        to = 14268
       }
     }
 
     service {
-      name = "otel-collector"
-      port = "otlp"
-      tags = ["otlp"]
+      port = "otlp-http"
     }
 
     service {
-      name = "otel-collector"
-      port = "jaeger-grpc"
-      tags = ["jaeger-grpc"]
+      name = "otel-collector-hc"
+      port = "prometheus"
+      tags = ["prometheus"]
     }
 
     service {
-      name = "otel-collector"
-      port = "jaeger-thrift-http"
-      tags = ["jaeger-thrift-http"]
-    }
-
-    service {
-      name = "otel-collector"
+      name = "otel-collector-zipkin"
       port = "zipkin"
       tags = ["zipkin"]
     }
 
     service {
-      name = "otel-agent"
+      name = "otel-agent-hc"
       port = "metrics"
       tags = ["metrics"]
     }
 
-    service {
-      name = "otel-agent"
-      port = "zpages"
-      tags = ["zpages"]
-    }
-
-    task "otel-collector" {
+    task "svc" {
       driver = "docker"
 
       config {
-        image   = "otel/opentelemetry-collector-contrib-dev:latest"
-        volumes = ["local/config/otel-collector-config.yaml:/etc/otel/otel-collector-config.yaml"]
+        image      = "otel/opentelemetry-collector-contrib:0.40.0"
+        force_pull = true
 
         entrypoint = [
           "/otelcontribcol",
-          "--config=/etc/otel/otel-collector-config.yaml",
-          # Memory Ballast size should be max 1/3 to 1/2 of memory.
-          "--mem-ballast-size-mib=683"
+          "--config=local/config/otel-collector-config.yaml",
         ]
-
         ports = [
           "metrics",
-          "otlp",
-          "jaeger-grpc",
-          "jaeger-thrift-http",
-          "zipkin",
-          "health-check",
-          "zpages",
+          "prometheus",
+          "otlp-grpc",
+          "otlp-http"
         ]
       }
 
+
       resources {
-        cpu    = 500
-        memory = 2048
+        cpu    = 100
+        memory = 512
       }
 
       template {
         data        = <<EOF
 receivers:
+  zipkin:
   otlp:
     protocols:
       grpc:
       http:
-  jaeger:
-    protocols:
-      grpc:
-      thrift_http:
-  zipkin: {}
+        endpoint: "0.0.0.0:4318"
 processors:
   batch:
+    timeout: 10s
   memory_limiter:
-    # Same as --mem-ballast-size-mib CLI argument
-    ballast_size_mib: 683
-    # 80% of maximum memory up to 2G
-    limit_mib: 1500
+    # 75% of maximum memory up to 4G
+    limit_mib: 1536
     # 25% of limit up to 2G
     spike_limit_mib: 512
     check_interval: 5s
-extensions:
-  health_check: {}
-  zpages: {}
 exporters:
-  zipkin:
-    endpoint: "http://somezipkin.target.com:9411/api/v2/spans" # Replace with a real endpoint.
-  jaeger:
-    endpoint: "somejaegergrpc.target.com:14250" # Replace with a real endpoint.
-    tls:
-      insecure: true
+  logging:
+    logLevel: debug
+  otlp/ls:
+    endpoint: ingest.lightstep.com:443
+    headers:
+      "lightstep-access-token": "leVpbNbMm++jqMMyA0N6Ko+Acuzw7xWTw3yxenVkVll4fzxY2VwmeQwPOIuTqUK/yhfxJeGsGorY4Qk891ngSipYm/agwwox2aggLY7h"
 service:
-  extensions: [health_check, zpages]
   pipelines:
-    traces/1:
-      receivers: [otlp, zipkin]
-      processors: [memory_limiter, batch]
-      exporters: [zipkin]
-    traces/2:
-      receivers: [otlp, jaeger]
-      processors: [memory_limiter, batch]
-      exporters: [jaeger]
+    traces:
+      receivers: [otlp]
+      exporters: [logging, otlp/ls]
 EOF
         destination = "local/config/otel-collector-config.yaml"
       }
