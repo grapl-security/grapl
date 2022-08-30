@@ -462,14 +462,6 @@ def main() -> None:
         )
         pulumi.export("stage-url", api_gateway.stage.invoke_url)
 
-    grapl_core_vars: Final[NomadVars] = dict(
-        event_source_db=event_source_db.to_nomad_service_db_args(),
-        organization_management_db=organization_management_db.to_nomad_service_db_args(),
-        plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
-        plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
-        **nomad_inputs,
-    )
-
     graph_db_args: Final[NomadVars] = dict(
         graph_db=graph_db.to_nomad_scylla_args(),
         graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
@@ -496,15 +488,20 @@ def main() -> None:
         ),
     )
 
+    grapl_core_vars: Final[NomadVars] = dict(
+        event_source_db=event_source_db.to_nomad_service_db_args(),
+        organization_management_db=organization_management_db.to_nomad_service_db_args(),
+        plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
+        plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+        **nomad_inputs,
+    )
+
     nomad_grapl_core = NomadJob(
         "grapl-core",
         jobspec=repository_path("nomad/grapl-core.nomad"),
         vars=grapl_core_vars,
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
-            depends_on=[
-                nomad_graph_db.job,
-            ],
             custom_timeouts=CustomTimeouts(
                 create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
             ),
