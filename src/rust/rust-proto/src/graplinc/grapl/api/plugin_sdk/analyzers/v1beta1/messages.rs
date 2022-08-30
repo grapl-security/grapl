@@ -25,6 +25,8 @@ use crate::{
         UInt64PropertyUpdate as UInt64PropertyUpdateProto,
         Update as UpdateProto,
     },
+    serde_impl::ProtobufSerializable,
+    type_url,
     SerDeError,
 };
 
@@ -219,6 +221,7 @@ pub struct LensRef {
 impl TryFrom<LensRefProto> for LensRef {
     type Error = SerDeError;
     fn try_from(value: LensRefProto) -> Result<Self, Self::Error> {
+        // todo: ensure lens_namespace and lens_name conform
         Ok(LensRef {
             lens_namespace: value.lens_namespace,
             lens_name: value.lens_name,
@@ -257,7 +260,6 @@ impl From<AnalyzerName> for AnalyzerNameProto {
 #[derive(Debug, Clone)]
 pub struct ExecutionHit {
     pub graph_view: GraphView,
-    pub root_uid: Uid,
     pub lens_refs: Vec<LensRef>,
     pub analyzer_name: AnalyzerName,
     pub time_of_match: SystemTime,
@@ -265,8 +267,68 @@ pub struct ExecutionHit {
     pub score: i32,
 }
 
+impl TryFrom<ExecutionHitProto> for ExecutionHit {
+    type Error = SerDeError;
+    fn try_from(value: ExecutionHitProto) -> Result<Self, Self::Error> {
+        // todo: Add check for length/ conformance defined in proto
+        Ok(Self {
+            graph_view: value
+                .graph_view
+                .ok_or(SerDeError::MissingField("ExecutionHit.graph_view"))?
+                .try_into()?,
+            lens_refs: value
+                .lens_refs
+                .into_iter()
+                .map(|lens_ref| lens_ref.try_into())
+                .collect::<Result<Vec<_>, _>>()?,
+            analyzer_name: value
+                .analyzer_name
+                .ok_or(SerDeError::MissingField("ExecutionHit.analyzer_name"))?
+                .try_into()?,
+            time_of_match: value
+                .time_of_match
+                .ok_or(SerDeError::MissingField("ExecutionHit.time_of_match"))?
+                .try_into()?,
+            idempotency_key: value.idempotency_key,
+            score: value.score,
+        })
+    }
+}
+
+impl From<ExecutionHit> for ExecutionHitProto {
+    fn from(value: ExecutionHit) -> Self {
+        Self {
+            graph_view: Some(value.graph_view.into()),
+            lens_refs: value
+                .lens_refs
+                .into_iter()
+                .map(|lens_ref| lens_ref.into())
+                .collect(),
+            analyzer_name: Some(value.analyzer_name.into()),
+            time_of_match: Some(value.time_of_match.try_into().unwrap()), // this can never actually fail
+            idempotency_key: value.idempotency_key.into(),
+            score: value.score.into(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecutionMiss {}
+
+impl TryFrom<ExecutionMissProto> for ExecutionMiss {
+    type Error = SerDeError;
+    fn try_from(value: ExecutionMissProto) -> Result<Self, Self::Error> {
+        let ExecutionMissProto {} = value;
+        Ok(Self {})
+    }
+}
+
+impl From<ExecutionMiss> for ExecutionMissProto {
+    fn from(value: ExecutionMiss) -> Self {
+        let ExecutionMiss {} = value;
+        Self {}
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum ExecutionResult {
@@ -274,7 +336,35 @@ pub enum ExecutionResult {
     ExecutionMiss(ExecutionMiss),
 }
 
-#[derive(Debug, Clone)]
+impl TryFrom<ExecutionResultProto> for ExecutionResult {
+    type Error = SerDeError;
+    fn try_from(value: ExecutionResultProto) -> Result<Self, Self::Error> {
+        match value.inner {
+            Some(ExecutionResultInnerProto::Hit(inner)) => {
+                Ok(Self::ExecutionHit(inner.try_into()?))
+            }
+            Some(ExecutionResultInnerProto::Miss(inner)) => {
+                Ok(Self::ExecutionMiss(inner.try_into()?))
+            }
+            None => Err(SerDeError::UnknownVariant("ExecutionResult")),
+        }
+    }
+}
+
+impl From<ExecutionResult> for ExecutionResultProto {
+    fn from(value: ExecutionResult) -> Self {
+        match value {
+            ExecutionResult::ExecutionHit(value) => Self {
+                inner: Some(ExecutionResultInnerProto::Hit(value.into())),
+            },
+            ExecutionResult::ExecutionMiss(value) => Self {
+                inner: Some(ExecutionResultInnerProto::Miss(value.into())),
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RunAnalyzerRequest {
     pub tenant_id: uuid::Uuid,
     pub update: Update,
@@ -283,14 +373,35 @@ pub struct RunAnalyzerRequest {
 impl TryFrom<RunAnalyzerRequestProto> for RunAnalyzerRequest {
     type Error = SerDeError;
     fn try_from(value: RunAnalyzerRequestProto) -> Result<Self, Self::Error> {
-        todo!()
+        Ok(Self {
+            tenant_id: value
+                .tenant_id
+                .ok_or(SerDeError::MissingField("RunAnalyzerRequest.tenant_id"))?
+                .try_into()?,
+            update: value
+                .update
+                .ok_or(SerDeError::MissingField("RunAnalyzerRequest.update"))?
+                .try_into()?,
+        })
     }
 }
 
 impl From<RunAnalyzerRequest> for RunAnalyzerRequestProto {
     fn from(value: RunAnalyzerRequest) -> Self {
-        todo!()
+        Self {
+            tenant_id: Some(value.tenant_id.into()),
+            update: Some(value.update.into()),
+        }
     }
+}
+
+impl type_url::TypeUrl for RunAnalyzerRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.RunAnalyzerRequest";
+}
+
+impl ProtobufSerializable for RunAnalyzerRequest {
+    type ProtobufMessage = RunAnalyzerRequestProto;
 }
 
 #[derive(Debug, Clone)]
@@ -301,12 +412,30 @@ pub struct RunAnalyzerResponse {
 impl TryFrom<RunAnalyzerResponseProto> for RunAnalyzerResponse {
     type Error = SerDeError;
     fn try_from(value: RunAnalyzerResponseProto) -> Result<Self, Self::Error> {
-        todo!()
+        Ok(Self {
+            execution_result: value
+                .execution_result
+                .ok_or(SerDeError::MissingField(
+                    "RunAnalyzerResponse.execution_result",
+                ))?
+                .try_into()?,
+        })
     }
 }
 
 impl From<RunAnalyzerResponse> for RunAnalyzerResponseProto {
     fn from(value: RunAnalyzerResponse) -> Self {
-        todo!()
+        Self {
+            execution_result: Some(value.execution_result.into()),
+        }
     }
+}
+
+impl type_url::TypeUrl for RunAnalyzerResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.RunAnalyzerResponse";
+}
+
+impl ProtobufSerializable for RunAnalyzerResponse {
+    type ProtobufMessage = RunAnalyzerResponseProto;
 }
