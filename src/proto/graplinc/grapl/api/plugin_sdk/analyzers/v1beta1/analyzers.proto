@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.plugin_sdk.analyzers.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+import "graplinc/grapl/api/graph_query_service/v1beta1/graph_query_service.proto";
+import "graplinc/grapl/common/v1beta1/types.proto";
+
+// Represents an update to a node's string property
+message StringPropertyUpdate {
+  // The uid of the node that was updated
+  graplinc.grapl.common.v1beta1.Uid uid = 1;
+  // The name of the string property that was updated
+  graplinc.grapl.common.v1beta1.PropertyName property_name = 2;
+}
+
+// Represents an update to a node's uint64 property
+message UInt64PropertyUpdate {
+  // The uid of the node that was updated
+  graplinc.grapl.common.v1beta1.Uid uid = 1;
+  // The name of the uint64 property that was updated
+  graplinc.grapl.common.v1beta1.PropertyName property_name = 2;
+}
+
+// Represents an update to a node's int64 property
+message Int64PropertyUpdate {
+  // The uid of the node that was updated
+  graplinc.grapl.common.v1beta1.Uid uid = 1;
+  // The name of the int64 property that was updated
+  graplinc.grapl.common.v1beta1.PropertyName property_name = 2;
+}
+
+// Represents an update to an edge between two nodes
+message EdgeUpdate {
+  // The uid of the node that had an edge created from it
+  graplinc.grapl.common.v1beta1.Uid src_uid = 1;
+  // The uid of the node that had an edge created to it
+  graplinc.grapl.common.v1beta1.Uid dst_uid = 2;
+  // The name of the forward edge from 'src' to 'dst'
+  graplinc.grapl.common.v1beta1.EdgeName forward_edge_name = 3;
+  // The name of the reverse edge from 'dst' to 'src'
+  graplinc.grapl.common.v1beta1.EdgeName reverse_edge_name = 4;
+}
+
+// Represents an update to the graph
+message Update {
+  // The internal update
+  oneof inner {
+    // An update to a node's string property
+    StringPropertyUpdate string_property = 1;
+    // An update to a node's uint64 property
+    UInt64PropertyUpdate uint64_property = 2;
+    // An update to a node's int64 property
+    Int64PropertyUpdate int64_property = 3;
+    // An update to an edge between two nodes
+    EdgeUpdate edge = 4;
+  }
+}
+
+// A reference to a Lens Node that
+// todo: Determine what limits to apply to fields
+message LensRef {
+  // The "namespace" of a lens, such as "AWS Region"
+  string lens_namespace = 1;
+  // The "name" of a lens, such as "us-east-1"
+  string lens_name = 2;
+}
+
+// The name of an Analyzer
+message AnalyzerName {
+  // Not empty, < 64 characters
+  // Ascii only, [a-zA-Z _-/]+
+  string value = 1;
+}
+
+// An ExecutionHit represents the output of an Analyzer, including
+message ExecutionHit {
+  // The graph that the Analyzer matched against as well as any context
+  graplinc.grapl.api.graph_query_service.v1beta1.GraphView graph_view = 1;
+  // Any lenses that the graph should be attached to and scored against
+  repeated LensRef lens_refs = 2;
+  // The name of the Analyzer that triggered
+  AnalyzerName analyzer_name = 3;
+  // The time that this match occurred
+  graplinc.common.v1beta1.Timestamp time_of_match = 4;
+  // A key that uniquely identifies this hit, used for idempotency
+  uint64 idempotency_key = 5;
+  // A score that represents the confidence of the Analyzer in this hit
+  int32 score = 6;
+}
+
+// Represents a 'miss', indicating that the Analyzer did not match any graph
+message ExecutionMiss {
+  // empty
+}
+
+// A request to execute an Analyzer against a specific update to a tenant's graph
+message RunAnalyzerRequest {
+  // The tenant that the graph belongs to
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The update that occurred
+  Update update = 2;
+}
+
+// The result of an Analyzer's execution
+message ExecutionResult {
+  oneof inner {
+    // The Analyzer matched against the graph
+    ExecutionHit hit = 1;
+    // The Analyzer did not match against the graph
+    ExecutionMiss miss = 2;
+  }
+}
+
+// The response to a RunAnalyzerRequest, containing the result of the execution
+message RunAnalyzerResponse {
+  // The result of the execution
+  ExecutionResult execution_result = 1;
+}
+
+// The AnalyzerService is the gRPC interface implemented by Analyzer plugins
+service AnalyzerService {
+  // RunAnalyzer is the driving RPC for Analyzer execution
+  rpc RunAnalyzer(RunAnalyzerRequest) returns (RunAnalyzerResponse);
+}

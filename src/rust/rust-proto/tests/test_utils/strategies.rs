@@ -82,11 +82,42 @@ pub mod common {
     use super::*;
     prop_compose! {
         pub fn edge_names()(
-            name in string_not_empty()
+            name in "[a-z]+(_[a-z]+)*"
         ) -> native::EdgeName {
+            let name = name.chars().take(32).collect::<String>();
             native::EdgeName{
                 value: name
             }
+        }
+    }
+
+    prop_compose! {
+        pub fn property_names()(
+            name in "[a-z]+(_[a-z]+)*"
+        ) -> native::PropertyName {
+            let name = name.chars().take(32).collect::<String>();
+            native::PropertyName {
+                value: name
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn node_types()(
+            name in "([A-Z][a-z]+)+"
+        ) -> native::NodeType {
+            let name = name.chars().take(32).collect::<String>();
+            native::NodeType {
+                value: name
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn uids()(
+            uid in 1u64..
+        ) -> native::Uid {
+            native::Uid::from_u64(uid).unwrap()
         }
     }
 }
@@ -1116,6 +1147,92 @@ pub mod graph_schema_manager {
                 schema,
                 schema_type,
                 schema_version
+            }
+        }
+    }
+}
+
+pub mod analyzer_sdk {
+    use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::{
+        self as native,
+        Update,
+    };
+
+    use super::{
+        common::{
+            edge_names,
+            property_names,
+            uids,
+        },
+        *,
+    };
+
+    prop_compose! {
+        pub fn string_property_updates()(
+            uid in uids(),
+            property_name in property_names(),
+        ) -> native::StringPropertyUpdate {
+            native::StringPropertyUpdate{
+                uid, property_name,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn uint_64_property_updates()(
+            uid in uids(),
+            property_name in property_names(),
+        ) -> native::UInt64PropertyUpdate {
+            native::UInt64PropertyUpdate {
+                uid, property_name,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn int_64_property_updates()(
+            uid in uids(),
+            property_name in property_names(),
+        ) -> native::Int64PropertyUpdate {
+            native::Int64PropertyUpdate {
+                uid, property_name,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn edge_updates()(
+            src_uid in uids(),
+            dst_uid in uids(),
+            forward_edge_name in edge_names(),
+            reverse_edge_name in edge_names(),
+        ) -> native::EdgeUpdate {
+            native::EdgeUpdate {
+                src_uid,
+                dst_uid,
+                forward_edge_name,
+                reverse_edge_name,
+            }
+        }
+    }
+
+    pub fn updates() -> impl Strategy<Value = Update> {
+        prop_oneof![
+            string_property_updates().prop_map(Update::StringProperty),
+            uint_64_property_updates().prop_map(Update::Uint64Property),
+            int_64_property_updates().prop_map(Update::Int64Property),
+            edge_updates().prop_map(Update::Edge),
+        ]
+    }
+
+    prop_compose! {
+        pub fn run_analyzer_requests()(
+            tenant_id in uuids(),
+            update in updates(),
+        ) -> native::RunAnalyzerRequest {
+            native::RunAnalyzerRequest {
+                tenant_id,
+                update,
             }
         }
     }

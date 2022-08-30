@@ -31,8 +31,9 @@ locals {
       port = 5432,
     },
     {
-      name = "plugin-work-queue-db",
-      port = 5433,
+      name   = "plugin-work-queue-db",
+      port   = 5433,
+      memory = 1024,
     },
     {
       name = "organization-management-db",
@@ -355,6 +356,12 @@ job "grapl-local-infra" {
           config {
             image = "postgres-ext:${var.image_tag}"
             ports = ["postgres"]
+
+            # A jab at solving our Postgres memory woes, as mentioned on
+            # https://hub.docker.com/_/postgres/
+            # We don't see the error it's about, so we could be completely
+            # barking up the wrong tree.
+            shm_size = 268435456 # 256MB in bytes
           }
 
           env {
@@ -382,7 +389,7 @@ job "grapl-local-infra" {
           }
 
           resources {
-            memory = 1024
+            memory = lookup(db_desc.value, "memory", 512) // (map, key, default) fyi
           }
         }
       }

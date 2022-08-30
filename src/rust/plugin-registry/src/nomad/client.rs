@@ -33,8 +33,8 @@ pub enum NomadClientError {
     CreateJobError(#[from] Error<jobs_api::PostJobError>),
     #[error("PlanJobError {0:?}")]
     PlanJobError(#[from] Error<jobs_api::PostJobPlanError>),
-    #[error("PlanJobAllocationFail")]
-    PlanJobAllocationFail,
+    #[error("PlanJobAllocationFail: {0:?}")]
+    PlanJobAllocationFail(Vec<models::AllocationMetric>),
     #[error("GetJobError {0:?}")]
     GetJobError(#[from] Error<jobs_api::GetJobError>),
     #[error("DeleteJobError {0:?}")]
@@ -168,7 +168,8 @@ impl CanEnsureAllocation for models::JobPlanResponse {
         if let Some(failed_allocs) = &self.failed_tg_allocs {
             if !failed_allocs.is_empty() {
                 tracing::warn!(message="Job failed to allocate", failed_allocs=?failed_allocs);
-                return Err(NomadClientError::PlanJobAllocationFail);
+                let failures = failed_allocs.clone().into_values().collect();
+                return Err(NomadClientError::PlanJobAllocationFail(failures));
             }
         }
         Ok(())
