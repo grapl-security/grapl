@@ -104,7 +104,8 @@ processors:
     check_interval: 5s
 exporters:
   logging:
-    logLevel: debug
+    # to see spans in logs update logLevel to debug
+    logLevel: info
   otlp/ls:
     endpoint: ingest.lightstep.com:443
     headers:
