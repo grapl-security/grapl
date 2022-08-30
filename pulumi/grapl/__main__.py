@@ -477,7 +477,6 @@ def main() -> None:
         **_get_subset(
             nomad_inputs,
             {
-                "aws_env_vars_for_local",
                 "container_images",
                 "observability_env_vars",
                 "rust_log",

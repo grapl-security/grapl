@@ -11,20 +11,6 @@ variable "container_images" {
 EOF
 }
 
-// TODO REMOVE????
-variable "aws_env_vars_for_local" {
-  type        = string
-  description = <<EOF
-With local-grapl, we have to inject:
-- an endpoint
-- an access key
-- a secret key
-With prod, these are all taken from the EC2 Instance Metadata in prod.
-We have to provide a default value in prod; otherwise you can end up with a
-weird nomad state parse error.
-EOF
-}
-
 variable "observability_env_vars" {
   type        = string
   description = <<EOF
@@ -336,13 +322,6 @@ job "grapl-graph-db" {
       config {
         image = var.container_images["graph-schema-manager"]
         ports = ["graph-schema-manager-port"]
-      }
-
-      // TODO remove??
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws_vars.env"
-        env         = true
       }
 
       template {
