@@ -319,9 +319,10 @@ def main() -> None:
         jobspec=repository_path("nomad/observability.nomad"),
         vars=dict(otel_config=otel_configuration),
         opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
             custom_timeouts=CustomTimeouts(
                 create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-            )
+            ),
         ),
     )
 
