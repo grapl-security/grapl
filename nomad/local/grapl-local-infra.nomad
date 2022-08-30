@@ -153,28 +153,6 @@ job "grapl-local-infra" {
     }
   }
 
-  group "ratel" {
-    network {
-      mode = "bridge"
-      port "ratel" {
-        static = 8000
-      }
-    }
-
-    task "ratel" {
-      driver = "docker"
-
-      config {
-        image = "dgraph/ratel:latest"
-        ports = ["ratel"]
-      }
-
-      service {
-        name = "ratel"
-      }
-    }
-  }
-
   group "kafka" {
     network {
       mode = "bridge"
