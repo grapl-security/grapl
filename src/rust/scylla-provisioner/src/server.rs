@@ -40,9 +40,7 @@ pub enum ScyllaProvisionerError {
 impl From<ScyllaProvisionerError> for Status {
     fn from(error: ScyllaProvisionerError) -> Self {
         match error {
-            ScyllaProvisionerError::ScyllaError(error) => {
-                Status::unknown(format!("Scylla Error: {}", error).as_str())
-            }
+            ScyllaProvisionerError::ScyllaError(error) => Status::unknown(error.to_string()),
         }
     }
 }
