@@ -47,8 +47,8 @@ pub enum PluginRegistryServiceError {
     NomadClientError(#[from] nomad::client::NomadClientError),
     #[error(transparent)]
     NomadCliError(#[from] nomad::cli::NomadCliError),
-    #[error("NomadJobAllocationError")]
-    NomadJobAllocationError,
+    #[error("Error allocating Nomad job: '{0}'")]
+    NomadJobAllocationError(nomad::client::NomadClientError),
     #[error("StreamInputError {0}")]
     StreamInputError(&'static str),
     #[error("DeploymentStateError {0}")]
