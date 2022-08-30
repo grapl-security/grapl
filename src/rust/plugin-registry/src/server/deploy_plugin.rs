@@ -111,7 +111,7 @@ pub fn get_job(
 }
 
 /// https://github.com/grapl-security/grapl-rfcs/blob/main/text/0000-plugins.md#deployplugin-details
-#[tracing::instrument(skip(client, cli, db_client, plugin), err)]
+#[tracing::instrument(skip(client, cli, db_client, plugin, service_config), err)]
 pub async fn deploy_plugin(
     client: &NomadClient,
     cli: &NomadCli,
@@ -146,7 +146,7 @@ pub async fn deploy_plugin(
         .await?;
     plan_result
         .ensure_allocation()
-        .map_err(|_| PluginRegistryServiceError::NomadJobAllocationError)?;
+        .map_err(|e| PluginRegistryServiceError::NomadJobAllocationError(e))?;
 
     // --- Start the job
     let job_result = client

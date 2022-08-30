@@ -66,7 +66,7 @@ async fn test_plan_job_with_too_much_memory() -> eyre::Result<()> {
     let job = NomadCli::default().parse_hcl2(job_hcl, HashMap::default())?;
     let plan_result = client.plan_job(&job, "too-much-memory-job", None).await?;
     match plan_result.ensure_allocation() {
-        Err(NomadClientError::PlanJobAllocationFail) => Ok(()),
+        Err(NomadClientError::PlanJobAllocationFail(_)) => Ok(()),
         _ => Err(eyre::eyre!("Expected failed allocation")),
     }
 }

@@ -27,8 +27,9 @@ locals {
   # `pulumi/grapl/__main__.py`; sorry for the duplication :(
   database_descriptors = [
     {
-      name = "plugin-registry-db",
-      port = 5432,
+      name   = "plugin-registry-db",
+      port   = 5432,
+      memory = 1024,
     },
     {
       name = "plugin-work-queue-db",
@@ -382,7 +383,7 @@ job "grapl-local-infra" {
           }
 
           resources {
-            memory = 1024
+            memory = lookup(db_desc.value, "memory", 512) // (map, key, default) fyi
           }
         }
       }
