@@ -29,11 +29,11 @@ locals {
     {
       name   = "plugin-registry-db",
       port   = 5432,
-      memory = 1024,
     },
     {
       name = "plugin-work-queue-db",
       port = 5433,
+      memory = 1024,
     },
     {
       name = "organization-management-db",
