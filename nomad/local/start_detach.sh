@@ -49,6 +49,16 @@ ensure_valid_nomad_env() {
     ensure_firecracker_driver_installed
 }
 
+# This sets memory oversubscription in Nomad
+# This setting allows containers to exceed memory limits if there is memory available
+set_nomad_memory_oversubscription() {
+    NOMAD_ADDR="http://127.0.0.1:4646"
+    echo "Setting memory oversubscription"
+    curl --silent "${NOMAD_ADDR}/v1/operator/scheduler/configuration" |
+        jq '.SchedulerConfig | .MemoryOversubscriptionEnabled=true' |
+        curl --request PUT "${NOMAD_ADDR}/v1/operator/scheduler/configuration" --data @-
+}
+
 configure_vault() {
     # We're using the root token for the POC of this
     VAULT_TOKEN=$(grep "Root Token" ${VAULT_LOGS_DEST} | awk '{ print $3 }')
@@ -197,6 +207,8 @@ EOF
 EOF
         )"
     )
+
+    set_nomad_memory_oversubscription
 
     "${THIS_DIR}/nomad_run_local_infra.sh"
     log "Deployment complete"
