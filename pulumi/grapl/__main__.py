@@ -86,6 +86,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
         "provisioner": builder.build_with_tag("provisioner"),
+        "scylla-provisioner": builder.build_with_tag("scylla-provisioner"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),
         "uid-allocator": builder.build_with_tag("uid-allocator"),
     }
@@ -319,9 +320,10 @@ def main() -> None:
         jobspec=repository_path("nomad/observability.nomad"),
         vars=dict(otel_config=otel_configuration),
         opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
             custom_timeouts=CustomTimeouts(
                 create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-            )
+            ),
         ),
     )
 
