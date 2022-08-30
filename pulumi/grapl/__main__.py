@@ -463,14 +463,38 @@ def main() -> None:
         pulumi.export("stage-url", api_gateway.stage.invoke_url)
 
     grapl_core_vars: Final[NomadVars] = dict(
-        graph_db=graph_db.to_nomad_scylla_args(),
         event_source_db=event_source_db.to_nomad_service_db_args(),
         organization_management_db=organization_management_db.to_nomad_service_db_args(),
         plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
         plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+        **nomad_inputs,
+    )
+
+    graph_db_args: Final[NomadVars] = dict(
+        graph_db=graph_db.to_nomad_scylla_args(),
         graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
         uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
-        **nomad_inputs,
+        **_get_subset(
+            nomad_inputs,
+            {
+                "aws_env_vars_for_local",
+                "container_images",
+                "observability_env_vars",
+                "rust_log",
+            },
+        ),
+    )
+
+    nomad_graph_db = NomadJob(
+        "grapl-graph-db",
+        jobspec=repository_path("nomad/grapl-graph-db.nomad"),
+        vars=graph_db_args,
+        opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
+            custom_timeouts=CustomTimeouts(
+                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
+            ),
+        ),
     )
 
     nomad_grapl_core = NomadJob(
@@ -479,6 +503,9 @@ def main() -> None:
         vars=grapl_core_vars,
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
+            depends_on=[
+                nomad_graph_db.job,
+            ],
             custom_timeouts=CustomTimeouts(
                 create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
             ),
@@ -490,10 +517,10 @@ def main() -> None:
         jobspec=repository_path("nomad/grapl-provision.nomad"),
         vars=provision_vars,
         opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
             depends_on=[
                 nomad_grapl_core.job,
             ],
-            provider=nomad_provider,
         ),
     )
 
