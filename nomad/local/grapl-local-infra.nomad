@@ -356,6 +356,12 @@ job "grapl-local-infra" {
           config {
             image = "postgres-ext:${var.image_tag}"
             ports = ["postgres"]
+
+            # A jab at solving our Postgres memory woes, as mentioned on
+            # https://hub.docker.com/_/postgres/
+            # We don't see the error it's about, so we could be completely
+            # barking up the wrong tree.
+            shm_size = 268435456 # 256MB in bytes
           }
 
           env {
