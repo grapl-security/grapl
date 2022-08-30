@@ -522,3 +522,17 @@ mod graph_schema_manager {
         }
     }
 }
+
+mod analyzer_sdk {
+
+    use strategies::analyzer_sdk as as_strats;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_run_analyzer_request(value in as_strats::run_analyzer_requests()) {
+            check_encode_decode_invariant(value)
+        }
+    }
+}
