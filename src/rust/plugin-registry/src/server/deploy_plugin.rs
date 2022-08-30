@@ -146,7 +146,7 @@ pub async fn deploy_plugin(
         .await?;
     plan_result
         .ensure_allocation()
-        .map_err(PluginRegistryServiceError::NomadJobAllocationError)?;
+        .map_err(|e| PluginRegistryServiceError::NomadJobAllocationError(e))?;
 
     // --- Start the job
     let job_result = client
