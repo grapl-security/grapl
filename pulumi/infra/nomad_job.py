@@ -126,7 +126,10 @@ class NomadJob(pulumi.ComponentResource):
             nomad_vars = {}
             for key, value in vars.items():
 
-                if isinstance(value, pulumi.Output):
+                # special case: otel_config expects a yaml string, which isn't a hcl2 type.
+                if key == "otel_config":
+                    value = "---\nkey: MOCK_STRING"
+                elif isinstance(value, pulumi.Output):
                     raw_type = hcl2_type_dict[key]["type"]
                     parsed_type = hcl2_parser.parse(raw_type)
                     # now we replace the strings
