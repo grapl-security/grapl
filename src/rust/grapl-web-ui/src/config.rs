@@ -24,10 +24,8 @@ pub enum ConfigError {
     Clap(#[from] clap::Error),
     #[error(transparent)]
     BindAddress(#[from] std::io::Error),
-    #[error("failed to initialize Plugin Regsitry client: {source}")]
-    PluginRegistryClient {
-        source: rust_proto::protocol::service_client::ConnectError,
-    },
+    #[error("failed to initialize Plugin Regsitry client: {0}")]
+    PluginRegistryClient(#[from] rust_proto::protocol::service_client::ConnectError),
 }
 
 pub struct Config {
@@ -47,9 +45,7 @@ impl Config {
 
         let listener = std::net::TcpListener::bind(builder.bind_address)?;
 
-        let plugin_registry_client = build_grpc_client(builder.plugin_registry_config)
-            .await
-            .map_err(|source| ConfigError::PluginRegistryClient { source })?;
+        let plugin_registry_client = build_grpc_client(builder.plugin_registry_config).await?;
 
         let dynamodb_client = DynamoDbClient::from_env();
 

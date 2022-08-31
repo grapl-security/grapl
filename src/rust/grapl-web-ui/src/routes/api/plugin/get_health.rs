@@ -19,7 +19,9 @@ pub(super) struct GetPluginHealthParameters {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 pub struct GetPluginHealthResponse {
-    pub health_status: String,
+    #[serde(serialize_with = "serialize_health_status")]
+    #[serde(deserialize_with = "deserialize_health_status")]
+    pub health_status: PluginHealthStatus,
 }
 
 #[tracing::instrument(skip(plugin_registry_client, data))]
@@ -40,18 +42,44 @@ pub(super) async fn get_health(
 
     let plugin_registry_response = plugin_registry_client.get_plugin_health(request).await?;
 
-    //TODO: It'd be great if rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginHealthStatus
-    // implemented Display, or serde::Serialize
-    let health_status = match plugin_registry_response.health_status() {
-        PluginHealthStatus::Dead => "dead",
-        PluginHealthStatus::NotDeployed => "not deployed",
-        PluginHealthStatus::Pending => "pending",
-        PluginHealthStatus::Running => "running",
-    };
-
     let web_response = GetPluginHealthResponse {
-        health_status: health_status.to_string(),
+        health_status: plugin_registry_response.health_status(),
     };
 
     Ok(HttpResponse::Ok().json(web_response))
+}
+
+//TODO: It'd be great if rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginHealthStatus
+// implemented Display, or serde::Serialize
+fn serialize_health_status<S>(health_status: &PluginHealthStatus, s: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::ser::Serializer,
+{
+    match *health_status {
+        PluginHealthStatus::NotDeployed => {
+            s.serialize_unit_variant("PluginHealthStatus", 0, "not_deployed")
+        }
+        PluginHealthStatus::Pending => s.serialize_unit_variant("PluginHealthStatus", 1, "pending"),
+        PluginHealthStatus::Running => s.serialize_unit_variant("PluginHealthStatus", 2, "running"),
+        PluginHealthStatus::Dead => s.serialize_unit_variant("PluginHealthStatus", 3, "dead"),
+    }
+}
+
+static PLUGIN_HEALTH_EXPECTED: &'static [&'static str] =
+    &["not_deployed", "pending", "running", "dead"];
+fn deserialize_health_status<'de, D>(deserializer: D) -> Result<PluginHealthStatus, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    let value: &str = serde::de::Deserialize::deserialize(deserializer)?;
+    match value {
+        "not_deployed" => Ok(PluginHealthStatus::NotDeployed),
+        "pending" => Ok(PluginHealthStatus::Pending),
+        "running" => Ok(PluginHealthStatus::Running),
+        "dead" => Ok(PluginHealthStatus::Dead),
+        value => Err(serde::de::Error::unknown_variant(
+            value,
+            PLUGIN_HEALTH_EXPECTED,
+        )),
+    }
 }

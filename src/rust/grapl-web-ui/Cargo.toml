@@ -65,3 +65,4 @@ reqwest = { version = "0.11", default-features = false, features = [
   "cookies",
   "multipart"
 ] }
+e2e-tests = { path = "../e2e-tests" }

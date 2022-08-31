@@ -3,9 +3,7 @@ use actix_web::{
     HttpResponse,
     Responder,
 };
-use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
-    PluginRegistryServiceClient,
-};
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryServiceClient;
 use uuid::Uuid;
 
 use super::PluginError;
@@ -33,7 +31,9 @@ pub(super) async fn get_metadata(
 
     let mut plugin_registry_client = plugin_registry_client.get_ref().clone();
 
-    let plugin_metadata = super::verify_plugin_ownership(&mut plugin_registry_client, &user, requested_plugin_id).await?;
+    let plugin_metadata =
+        super::verify_plugin_ownership(&mut plugin_registry_client, &user, requested_plugin_id)
+            .await?;
 
     let web_response = GetPluginMetadataResponse {
         plugin_id: requested_plugin_id,

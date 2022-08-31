@@ -1,4 +1,3 @@
-
 use actix_web::{
     web,
     HttpResponse,
@@ -31,9 +30,7 @@ pub(super) async fn deploy(
 
     tracing::debug!(message = "deploying plugin", ?request);
 
-    let response = plugin_registry_client
-        .deploy_plugin(request)
-        .await?;
+    let response = plugin_registry_client.deploy_plugin(request).await?;
 
     tracing::debug!(?response);
 

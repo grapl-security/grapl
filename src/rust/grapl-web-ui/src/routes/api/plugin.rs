@@ -1,6 +1,7 @@
 pub mod create;
 pub mod deploy;
 mod error;
+pub mod get_analyzers;
 pub mod get_deployment;
 pub mod get_health;
 pub mod get_metadata;
@@ -9,8 +10,8 @@ pub mod tear_down;
 use actix_web::web;
 pub use error::PluginError;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
-    PluginMetadata,
     GetPluginRequest,
+    PluginMetadata,
     PluginRegistryServiceClient,
 };
 
@@ -22,15 +23,16 @@ pub(super) fn config(cfg: &mut web::ServiceConfig) {
         web::get().to(get_deployment::get_deployment),
     );
     cfg.route(
-        "/get_health",
-        web::get().to(get_health::get_health),
+        "/get_analyzers",
+        web::get().to(get_analyzers::get_analyzers),
     );
+    cfg.route("/get_health", web::get().to(get_health::get_health));
     cfg.route("/get_metadata", web::get().to(get_metadata::get_metadata));
     cfg.route("/tear_down", web::post().to(tear_down::tear_down));
 }
 
 /// Validate the authenticated user has permissions to operate on the supplied plugin ID.
-/// 
+///
 /// Returns validated Plugin metadata.
 #[tracing::instrument(skip(client))]
 async fn verify_plugin_ownership<'a>(

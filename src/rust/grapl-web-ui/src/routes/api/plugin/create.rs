@@ -70,9 +70,7 @@ pub(super) async fn create(
 
     let plugin_id = response.plugin_id();
 
-    Ok(actix_web::HttpResponse::Ok().json(CreateResponse {
-        plugin_id: plugin_id,
-    }))
+    Ok(actix_web::HttpResponse::Ok().json(CreateResponse { plugin_id }))
 }
 
 async fn get_metadata(payload: &mut Multipart) -> Result<CreateParametersMetadata, PluginError> {
@@ -120,8 +118,6 @@ async fn get_metadata(payload: &mut Multipart) -> Result<CreateParametersMetadat
     })
 }
 
-// TODO: this almost copy pasta from get_metadata but it won't be once we can stream plugin artifact upstream
-// without first loading them all into memory first.
 async fn get_plugin_artifact(payload: &mut Multipart) -> Result<web::Bytes, PluginError> {
     if let Some(mut field) = payload.try_next().await? {
         let content_disposition = field.content_disposition();
@@ -155,7 +151,7 @@ async fn get_plugin_artifact(payload: &mut Multipart) -> Result<web::Bytes, Plug
     })
 }
 
-// It'd be greate if we didn't have to do this and PluginType jsut derived serde::Deserialize itself
+// It'd be greate if we didn't have to do this and PluginType just derived serde::Deserialize itself
 static PLUGIN_TYPE_EXPECTED: &'static [&'static str] = &["generator", "analyzer"];
 
 fn deserialize_plugin_type<'de, D>(deserializer: D) -> Result<PluginType, D::Error>

@@ -20,7 +20,9 @@ pub(super) struct GetDeploymentParameters {
 pub struct PluginDeploymentResponse {
     pub plugin_id: uuid::Uuid,
     pub timestamp: std::time::SystemTime,
-    pub status: String,
+    #[serde(serialize_with = "serialize_deployment_status")]
+    #[serde(deserialize_with = "deserialize_deployment_status")]
+    pub status: PluginDeploymentStatus,
     pub deployed: bool,
 }
 
@@ -42,20 +44,53 @@ pub(super) async fn get_deployment(
         .await?
         .plugin_deployment();
 
-    //TODO: It'd be great if rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginDeploymentStatus
-    // implemented Display, or serde::Serialize
-    let status = match response.status() {
-        PluginDeploymentStatus::Fail => "fail",
-        PluginDeploymentStatus::Success => "success",
-        PluginDeploymentStatus::Unspecified => "unspecified",
-    };
-
     let web_response = PluginDeploymentResponse {
         plugin_id: response.plugin_id(),
         timestamp: response.timestamp(),
-        status: status.to_string(),
+        status: response.status(),
         deployed: response.deployed(),
     };
 
     Ok(HttpResponse::Ok().json(web_response))
+}
+
+//TODO: It'd be great if rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginDeploymentStatus
+// implemented Display, or serde::Serialize
+fn serialize_deployment_status<S>(
+    health_status: &PluginDeploymentStatus,
+    s: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::ser::Serializer,
+{
+    match *health_status {
+        PluginDeploymentStatus::Unspecified => {
+            s.serialize_unit_variant("PluginDeploymentStatus", 0, "unspecified")
+        }
+        PluginDeploymentStatus::Success => {
+            s.serialize_unit_variant("PluginDeploymentStatus", 0, "success")
+        }
+        PluginDeploymentStatus::Fail => {
+            s.serialize_unit_variant("PluginDeploymentStatus", 0, "fail")
+        }
+    }
+}
+
+static DEPLOYMENT_STATUS_EXPECTED: &'static [&'static str] = &["unspecified", "success", "fail"];
+fn deserialize_deployment_status<'de, D>(
+    deserializer: D,
+) -> Result<PluginDeploymentStatus, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    let value: &str = serde::de::Deserialize::deserialize(deserializer)?;
+    match value {
+        "unspecified" => Ok(PluginDeploymentStatus::Unspecified),
+        "success" => Ok(PluginDeploymentStatus::Success),
+        "fail" => Ok(PluginDeploymentStatus::Fail),
+        value => Err(serde::de::Error::unknown_variant(
+            value,
+            DEPLOYMENT_STATUS_EXPECTED,
+        )),
+    }
 }

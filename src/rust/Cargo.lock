@@ -2106,6 +2106,7 @@ dependencies = [
  "awc",
  "chrono",
  "clap 3.2.13",
+ "e2e-tests",
  "eyre",
  "futures",
  "grapl-config",
