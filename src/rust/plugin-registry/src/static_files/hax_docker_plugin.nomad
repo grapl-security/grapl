@@ -80,9 +80,9 @@ job "grapl-plugin" {
     service {
       name = "plugin-execution-sidecar-${var.plugin_id}"
       tags = [
-        "serve_type:plugin-execution-sidecar",
-        "tenant_id:${var.tenant_id}",
-        "plugin_id:${var.plugin_id}"
+        "plugin-execution-sidecar",
+        "tenant-${var.tenant_id}",
+        "plugin-${var.plugin_id}"
       ]
 
       connect {
