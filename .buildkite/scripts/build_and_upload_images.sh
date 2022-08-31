@@ -90,7 +90,7 @@ fi
 # when a new image is available, rather than for every single
 # deployment).
 
-readonly sleep_seconds=60
+readonly sleep_seconds=80
 echo "--- :sleeping::sob: Sleeping for ${sleep_seconds} seconds to give CDNs time to update"
 # Lately, we've seen failures where images aren't showing up when we
 # run `docker manifest inspect` (see below), but rerunning the job
@@ -98,8 +98,7 @@ echo "--- :sleeping::sob: Sleeping for ${sleep_seconds} seconds to give CDNs tim
 #
 # Yes, I hate it, too.
 #
-# TODO: Unsure if this is still truly needed, but keeping it around to
-# be safe / paranoid.
+# As of 8/31/2022 this is still needed and in fact the sleep seconds needs to be increased :sob:
 sleep "${sleep_seconds}"
 
 # This is the list of services that actually have different images.
