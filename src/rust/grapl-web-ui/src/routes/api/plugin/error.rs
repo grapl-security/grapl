@@ -22,6 +22,8 @@ pub enum PluginError {
     // },
     #[error("unable to parse metadata: {0}")]
     DeserializeMetadata(#[from] serde_json::Error),
+    #[error("user request for a resource belonging to another organization")]
+    Unauthorized,
     #[error(transparent)]
     Io(#[from] std::io::Error),
 }
@@ -32,6 +34,7 @@ impl actix_web::error::ResponseError for PluginError {
             PluginError::Multipart(_)
             | PluginError::BadRequest { .. }
             | PluginError::UnexpectedPart { .. } => actix_web::HttpResponse::BadRequest().finish(),
+            PluginError::Unauthorized => actix_web::HttpResponse::Unauthorized().finish(),
             _ => actix_web::HttpResponse::InternalServerError().finish(),
         }
     }
@@ -41,6 +44,7 @@ impl actix_web::error::ResponseError for PluginError {
             PluginError::Multipart(_)
             | PluginError::BadRequest { .. }
             | PluginError::UnexpectedPart { .. } => actix_web::http::StatusCode::BAD_REQUEST,
+            PluginError::Unauthorized => actix_web::http::StatusCode::UNAUTHORIZED,
             _ => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
         }
     }

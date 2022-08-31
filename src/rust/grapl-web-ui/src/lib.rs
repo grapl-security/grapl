@@ -3,8 +3,6 @@ mod config;
 pub mod routes;
 mod upstream;
 
-use std::sync::Mutex;
-
 use actix_session::CookieSession;
 use actix_web::{
     dev::Server,
@@ -28,7 +26,7 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
             jsonwebtoken_google::Parser::new(&config.google_client_id),
         ));
         let graphql_endpoint = Data::new(config.graphql_endpoint.clone());
-        let plugin_registry_client = Data::new(Mutex::new(config.plugin_registry_client.clone()));
+        let plugin_registry_client = Data::new(config.plugin_registry_client.clone());
 
         App::new()
             .wrap(actix_web::middleware::Logger::default())

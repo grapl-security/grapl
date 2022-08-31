@@ -1,5 +1,3 @@
-use std::sync::Mutex;
-
 use actix_multipart::Multipart;
 use actix_web::web::{self,};
 use futures::{
@@ -45,11 +43,9 @@ pub struct CreateResponse {
 /// // Content-Type: application/octet-stream
 /// //
 /// // <bytes>
-#[tracing::instrument(skip(plugin_registry_client, user, payload), fields(
-    username = tracing::field::Empty
-))]
+#[tracing::instrument(skip(plugin_registry_client, payload))]
 pub(super) async fn create(
-    plugin_registry_client: web::Data<Mutex<PluginRegistryServiceClient>>,
+    plugin_registry_client: web::Data<PluginRegistryServiceClient>,
     user: crate::authn::AuthenticatedUser,
     mut payload: Multipart,
 ) -> Result<impl actix_web::Responder, PluginError> {
@@ -67,7 +63,7 @@ pub(super) async fn create(
         metadata.event_source_id,
     );
 
-    let mut plugin_registry_client = plugin_registry_client.lock().unwrap();
+    let mut plugin_registry_client = plugin_registry_client.get_ref().clone();
     let response = plugin_registry_client
         .create_plugin(plugin_metadata, plugin_artifact_stream)
         .await?;
