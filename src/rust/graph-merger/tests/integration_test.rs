@@ -46,7 +46,7 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
     let test_name = "test_sysmon_event_produces_merged_graph";
     let SetupResult {
         tenant_id,
-        plugin_id: _,
+        plugin_id,
         event_source_id,
     } = ctx.setup_sysmon_generator(test_name).await?;
 
@@ -165,6 +165,8 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
         .iter()
         .flat_map(|edge_list| edge_list.edges.iter())
         .any(|edge| edge.to_node_key == child_process.get_node_key()));
+
+    ctx.teardown_plugin(plugin_id).await?;
 
     Ok(())
 }

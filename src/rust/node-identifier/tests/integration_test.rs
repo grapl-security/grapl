@@ -46,7 +46,7 @@ async fn test_sysmon_event_produces_identified_graph(ctx: &mut E2eTestContext) -
     let test_name = "test_sysmon_event_produces_identified_graph";
     let SetupResult {
         tenant_id,
-        plugin_id: _,
+        plugin_id,
         event_source_id,
     } = ctx.setup_sysmon_generator(test_name).await?;
 
@@ -159,6 +159,8 @@ async fn test_sysmon_event_produces_identified_graph(ctx: &mut E2eTestContext) -
         .expect("missing edge from parent to child");
 
     assert_eq!(parent_to_child_edge.edge_name, "children");
+
+    ctx.teardown_plugin(plugin_id).await?;
 
     Ok(())
 }

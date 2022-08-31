@@ -29,8 +29,10 @@ use rust_proto::{
             PluginMetadata,
             PluginRegistryServiceClient,
             PluginType,
+            TearDownPluginRequest,
         },
     },
+    protocol::error::GrpcClientError,
 };
 use test_context::AsyncTestContext;
 use uuid::Uuid;
@@ -101,6 +103,16 @@ impl E2eTestContext {
             should_deploy_generator: true,
         })
         .await
+    }
+
+    /// This is the "be kind, please rewind" of the plugin world - we ask that
+    /// users manually call teardown on their plugin so we can claw back some
+    /// Nomad cpu/memory.
+    pub async fn teardown_plugin(&mut self, plugin_id: Uuid) -> Result<(), GrpcClientError> {
+        self.plugin_registry_client
+            .tear_down_plugin(TearDownPluginRequest::new(plugin_id))
+            .await
+            .map(|_| ())
     }
 
     pub async fn setup_generator(

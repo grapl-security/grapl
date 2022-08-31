@@ -79,9 +79,17 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
         .await?
         .plugin_deployment();
 
-    assert_eq!(plugin_deployment.plugin_id(), plugin_id);
-    assert!(plugin_deployment.deployed());
-    assert_eq!(plugin_deployment.status(), PluginDeploymentStatus::Success);
+    eyre::ensure!(plugin_deployment.plugin_id() == plugin_id, "plugins equal");
+    eyre::ensure!(plugin_deployment.deployed(), "plugin deployed");
+    eyre::ensure!(
+        plugin_deployment.status() == PluginDeploymentStatus::Success,
+        "deployment successful"
+    );
+
+    // Last, clean up the plugin to get back some Nomad resources.
+    client
+        .tear_down_plugin(TearDownPluginRequest::new(plugin_id))
+        .await?;
 
     Ok(())
 }
@@ -134,14 +142,21 @@ async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
     // and was unable to allocate it.
     assert_health(&mut client, plugin_id, PluginHealthStatus::Running).await?;
 
+    // Last, clean up the plugin to get back some Nomad resources.
+    client
+        .tear_down_plugin(TearDownPluginRequest::new(plugin_id))
+        .await?;
+
     Ok(())
 }
 
-fn assert_contains(input: &str, expected_substr: &str) {
-    assert!(
+fn assert_contains(input: &str, expected_substr: &str) -> eyre::Result<()> {
+    eyre::ensure!(
         input.contains(expected_substr),
         "Expected input '{input}' to contain '{expected_substr}'"
-    )
+    );
+
+    Ok(())
 }
 
 async fn assert_health(
@@ -180,16 +195,20 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
 
     match response {
         Err(GrpcClientError::ErrorStatus(s)) => {
-            assert_eq!(s.code(), Code::NotFound);
-            assert_contains(s.message(), &sqlx::Error::RowNotFound.to_string());
+            eyre::ensure!(
+                s.code() == Code::NotFound,
+                "expected code not-found but was {s}"
+            );
+            assert_contains(s.message(), &sqlx::Error::RowNotFound.to_string())?;
         }
-        _ => panic!("Expected an error"),
+        _ => eyre::bail!("Expected an error"),
     };
+
     Ok(())
 }
 
 #[test_log::test(tokio::test)]
-async fn test_teardown_plugin() {
+async fn test_teardown_plugin() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
     let mut client = build_grpc_client(client_config)
         .await
@@ -246,7 +265,17 @@ async fn test_teardown_plugin() {
         .expect("failed to get plugin deployment")
         .plugin_deployment();
 
-    assert_eq!(plugin_deployment.plugin_id(), plugin_id);
-    assert!(!plugin_deployment.deployed());
-    assert_eq!(plugin_deployment.status(), PluginDeploymentStatus::Success);
+    eyre::ensure!(plugin_deployment.plugin_id() == plugin_id, "plugins equal");
+    eyre::ensure!(plugin_deployment.deployed(), "plugin deployed");
+    eyre::ensure!(
+        plugin_deployment.status() == PluginDeploymentStatus::Success,
+        "deployment successful"
+    );
+
+    // Last, clean up the plugin to get back some Nomad resources.
+    client
+        .tear_down_plugin(TearDownPluginRequest::new(plugin_id))
+        .await?;
+
+    Ok(())
 }
