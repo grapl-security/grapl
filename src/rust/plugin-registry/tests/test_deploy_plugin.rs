@@ -266,16 +266,11 @@ async fn test_teardown_plugin() -> eyre::Result<()> {
         .plugin_deployment();
 
     eyre::ensure!(plugin_deployment.plugin_id() == plugin_id, "plugins equal");
-    eyre::ensure!(plugin_deployment.deployed(), "plugin deployed");
+    eyre::ensure!(!plugin_deployment.deployed(), "plugin not deployed");
     eyre::ensure!(
         plugin_deployment.status() == PluginDeploymentStatus::Success,
         "deployment successful"
     );
-
-    // Last, clean up the plugin to get back some Nomad resources.
-    client
-        .tear_down_plugin(TearDownPluginRequest::new(plugin_id))
-        .await?;
 
     Ok(())
 }
