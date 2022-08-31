@@ -246,7 +246,7 @@ job "grapl-graph-db" {
   }
 
   group "uid-allocator" {
-    count = 2 // Having this at 2 actually caught an error
+    count = 2
 
     network {
       mode = "bridge"
@@ -305,7 +305,7 @@ job "grapl-graph-db" {
   }
 
   group "graph-schema-manager" {
-    count = 1
+    count = 2
 
     network {
       mode = "bridge"

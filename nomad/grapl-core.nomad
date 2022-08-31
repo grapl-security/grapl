@@ -221,11 +221,6 @@ locals {
 
   # enabled
   rust_backtrace = 1
-
-  # This should equal the Kafka partition count.
-  count_for_kafka_services = 2
-  # For example, pure gRPC services. Saves us a little mem/cpu locally.
-  count_for_non_kafka_services = 1
 }
 
 job "grapl-core" {
@@ -572,7 +567,7 @@ job "grapl-core" {
   #######################################
 
   group "generator-dispatcher" {
-    count = local.count_for_kafka_services
+    count = 2
 
     network {
       mode = "bridge"
@@ -641,7 +636,7 @@ job "grapl-core" {
   }
 
   group "graph-merger" {
-    count = local.count_for_kafka_services
+    count = 2
 
     network {
       mode = "bridge"
@@ -708,7 +703,7 @@ job "grapl-core" {
   }
 
   group "node-identifier" {
-    count = local.count_for_kafka_services
+    count = 2
 
     network {
       mode = "bridge"
@@ -760,7 +755,7 @@ job "grapl-core" {
   }
 
   group "graphql-endpoint" {
-    count = local.count_for_non_kafka_services
+    count = 2
 
     network {
       mode = "bridge"
@@ -826,7 +821,7 @@ job "grapl-core" {
   }
 
   group "kafka-retry" {
-    count = local.count_for_kafka_services
+    count = 2
 
     network {
       mode = "bridge"
@@ -869,7 +864,7 @@ job "grapl-core" {
   }
 
   group "web-ui" {
-    count = local.count_for_non_kafka_services
+    count = 1
 
     network {
       mode = "bridge"
@@ -949,7 +944,7 @@ job "grapl-core" {
   }
 
   group "organization-management" {
-    count = local.count_for_non_kafka_services
+    count = 2
 
     network {
       mode = "bridge"
@@ -1005,7 +1000,7 @@ job "grapl-core" {
   }
 
   group "pipeline-ingress" {
-    count = local.count_for_kafka_services
+    count = 2
 
     network {
       mode = "bridge"
@@ -1068,7 +1063,7 @@ job "grapl-core" {
   }
 
   group "plugin-registry" {
-    count = local.count_for_non_kafka_services
+    count = 2
 
     network {
       mode = "bridge"
@@ -1146,7 +1141,7 @@ job "grapl-core" {
   }
 
   group "plugin-work-queue" {
-    count = local.count_for_kafka_services
+    count = 2
 
     network {
       mode = "bridge"
@@ -1217,7 +1212,7 @@ job "grapl-core" {
   }
 
   group "event-source" {
-    count = local.count_for_non_kafka_services
+    count = 2
 
     network {
       mode = "bridge"
