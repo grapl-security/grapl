@@ -1,5 +1,8 @@
 variable "otel_config" {
+  # We're setting a default here because of what appears to be a silent type error during preview
+  # Oddly, the reflection runs correctly, but the variable we pass in seems to be unset at some point?
   type        = string
+  default     = ""
   description = <<EOF
 We inject the whole yaml config for the otel collector.
 Long-term, this will likely be done in-line with secrets grabbed dynamically from Vault.
