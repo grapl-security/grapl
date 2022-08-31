@@ -271,6 +271,10 @@ job "grapl-core" {
           readonly = false
         }
       }
+
+      resources {
+        cpu = 50
+      }
     }
 
     service {
@@ -348,6 +352,11 @@ job "grapl-core" {
           }
         }
       }
+
+      resources {
+        cpu = 50
+      }
+
       service {
         name = "dgraph-zero-${zero.value.id}-grpc-private"
         port = "${zero.value.grpc_private_port}"
@@ -463,7 +472,8 @@ job "grapl-core" {
         }
 
         resources {
-          memory = 512
+          memory_max = 512
+          cpu        = 50
         }
 
       }
@@ -614,6 +624,10 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
       }
+
+      resources {
+        cpu = 50
+      }
     }
 
     service {
@@ -678,6 +692,10 @@ job "grapl-core" {
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["graph-merger"]
         KAFKA_CONSUMER_TOPIC      = "identified-graphs"
         KAFKA_PRODUCER_TOPIC      = "merged-graphs"
+      }
+
+      resources {
+        cpu = 50
       }
     }
 
@@ -748,6 +766,10 @@ job "grapl-core" {
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
       }
 
+      resources {
+        cpu = 50
+      }
+
       service {
         name = "node-identifier"
       }
@@ -795,6 +817,10 @@ job "grapl-core" {
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
         PORT                          = "${NOMAD_PORT_graphql-endpoint-port}"
+      }
+
+      resources {
+        cpu = 50
       }
     }
 
@@ -857,6 +883,10 @@ job "grapl-core" {
         RUST_LOG       = var.rust_log
       }
 
+      resources {
+        cpu = 50
+      }
+
       service {
         name = "generator-dispatcher-retry"
       }
@@ -913,7 +943,8 @@ job "grapl-core" {
       resources {
         # Can OOM with default limit of 300 MB and a number of connections at the same
         # time, which seems low, but is reliably produced with the its integration tests.
-        memory = 1024
+        memory_max = 1024
+        cpu        = 50
       }
     }
 
@@ -987,6 +1018,10 @@ job "grapl-core" {
 
         ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = var.organization_management_healthcheck_polling_interval_ms
       }
+
+      resources {
+        cpu = 50
+      }
     }
 
     service {
@@ -1042,6 +1077,10 @@ job "grapl-core" {
         KAFKA_SASL_USERNAME                              = var.kafka_credentials["pipeline-ingress"].sasl_username
         KAFKA_SASL_PASSWORD                              = var.kafka_credentials["pipeline-ingress"].sasl_password
         KAFKA_PRODUCER_TOPIC                             = "raw-logs"
+      }
+
+      resources {
+        cpu = 50
       }
     }
 
@@ -1119,7 +1158,8 @@ job "grapl-core" {
 
       resources {
         # Probably too much. Let's figure out buffered writes to s3
-        memory = 512
+        memory_max = 512
+        cpu        = 50
       }
     }
 
@@ -1192,6 +1232,10 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
       }
+
+      resources {
+        cpu = 50
+      }
     }
 
     service {
@@ -1255,6 +1299,10 @@ job "grapl-core" {
         # common Rust env vars
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
+      }
+
+      resources {
+        cpu = 50
       }
     }
 
