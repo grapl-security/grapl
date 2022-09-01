@@ -35,6 +35,7 @@ clap = { version = "3", default_features = false, features = [
 futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
+grapl-utils = { path = "../grapl-utils" }
 hmap = "0.1"
 jsonwebtoken-google = "0.1"
 opentelemetry = { version = "0.17", features = ["rt-tokio"] }

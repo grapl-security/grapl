@@ -2111,6 +2111,7 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-tracing",
+ "grapl-utils",
  "hmap",
  "jsonwebtoken-google",
  "opentelemetry 0.17.0",

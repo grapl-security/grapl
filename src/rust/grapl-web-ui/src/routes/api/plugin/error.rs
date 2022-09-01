@@ -24,6 +24,8 @@ pub enum PluginError {
     DeserializeMetadata(#[from] serde_json::Error),
     #[error("user request for a resource belonging to another organization")]
     Unauthorized,
+    #[error("gRPC client timeout: {0}")]
+    RcpTimeout(#[from] tokio::time::error::Elapsed),
     #[error(transparent)]
     Io(#[from] std::io::Error),
 }

@@ -32,6 +32,10 @@ async fn plugin_lifecycle() -> eyre::Result<()> {
 
     let create_response = create_plugin(&app, plugin_name).await?;
 
+    //TODO: this shouldn't be necessary, but we're seeing 50 errors without it.
+    // I'll file a task to look into it for now so we can unblock frontend work.
+    std::thread::sleep(std::time::Duration::from_secs(5));
+
     let plugin_metadata = get_plugin_metadata(&app, &create_response.plugin_id).await?;
 
     eyre::ensure!(
@@ -54,6 +58,10 @@ async fn plugin_lifecycle() -> eyre::Result<()> {
         plugin_health.health_status == PluginHealthStatus::NotDeployed,
         "plugin health expected to be 'not_deployed'"
     );
+
+    //TODO: this shouldn't be necessary, but we're seeing 50 errors without it.
+    // I'll file a task to look into it for now so we can unblock frontend work.
+    std::thread::sleep(std::time::Duration::from_secs(5));
 
     deploy_plugin(&app, &plugin_id).await?;
 

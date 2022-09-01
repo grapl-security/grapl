@@ -2,6 +2,7 @@ use actix_web::{
     web,
     HttpResponse,
 };
+use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginRegistryServiceClient,
     TearDownPluginRequest,
@@ -30,7 +31,10 @@ pub(super) async fn tear_down(
 
     tracing::debug!(message = "tearing down plugin", ?request);
 
-    let response = plugin_registry_client.tear_down_plugin(request).await?;
+    let response = plugin_registry_client
+        .tear_down_plugin(request)
+        .timeout(std::time::Duration::from_secs(5))
+        .await??;
 
     tracing::debug!(?response);
 

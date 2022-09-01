@@ -3,6 +3,7 @@ use actix_web::{
     HttpResponse,
     Responder,
 };
+use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     GetAnalyzersForTenantRequest,
     PluginRegistryServiceClient,
@@ -29,7 +30,8 @@ pub(super) async fn get_analyzers(
 
     let response = plugin_registry_client
         .get_analyzers_for_tenant(request)
-        .await?;
+        .timeout(std::time::Duration::from_secs(5))
+        .await??;
 
     let web_response = GetAnalyzersResponse {
         plugin_ids: response.plugin_ids().to_vec(),

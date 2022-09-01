@@ -4,6 +4,7 @@ use futures::{
     StreamExt,
     TryStreamExt,
 };
+use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginMetadata,
     PluginRegistryServiceClient,
@@ -66,7 +67,8 @@ pub(super) async fn create(
     let mut plugin_registry_client = plugin_registry_client.get_ref().clone();
     let response = plugin_registry_client
         .create_plugin(plugin_metadata, plugin_artifact_stream)
-        .await?;
+        .timeout(std::time::Duration::from_secs(5))
+        .await??;
 
     let plugin_id = response.plugin_id();
 

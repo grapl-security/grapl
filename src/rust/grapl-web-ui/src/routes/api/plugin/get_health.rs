@@ -3,6 +3,7 @@ use actix_web::{
     HttpResponse,
     Responder,
 };
+use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     GetPluginHealthRequest,
     PluginHealthStatus,
@@ -40,7 +41,10 @@ pub(super) async fn get_health(
 
     tracing::debug!(message = "getting plugin metadata", ?request);
 
-    let plugin_registry_response = plugin_registry_client.get_plugin_health(request).await?;
+    let plugin_registry_response = plugin_registry_client
+        .get_plugin_health(request)
+        .timeout(std::time::Duration::from_secs(5))
+        .await??;
 
     let web_response = GetPluginHealthResponse {
         health_status: plugin_registry_response.health_status(),
