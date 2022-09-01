@@ -196,6 +196,8 @@ report = ["xml"]
 # encounters, not on all the files in the repository; this counteracts
 # that.
 global_report = "true"
+# This should mirror the same global constraints above.
+interpreter_constraints = ["==3.10.*"]
 
 [hadolint]
 version = "v2.10.0"
