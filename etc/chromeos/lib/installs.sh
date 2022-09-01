@@ -410,3 +410,17 @@ install_sqlx_prepare_deps() {
     _cargo_install sqlx-cli --no-default-features --features postgres,rustls
     sudo apt install --yes netcat # used for `nc`
 }
+
+install_bk() {
+    echo_banner "Installing Buildkite's 'bk' CLI tool"
+
+    version="v2.0.0"
+
+    mkdir --parents ~/.local/bin
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --output ~/.local/bin/bk \
+        "https://github.com/buildkite/cli/releases/download/${version}/cli-linux-amd64"
+    chmod a+x ~/.local/bin/bk
+}
