@@ -232,3 +232,6 @@ ignore_adding_targets = [
   "pulumi/integration_tests:__main__",
   "devbox/provision:__main__",
 ]
+
+[cli.alias]
+bk-run = "run build-support:bk-run --"
