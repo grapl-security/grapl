@@ -10,7 +10,7 @@ This requires that Nomad and Vault be hooked up first
 EOF
 }
 
-job "observability" {
+job "otel-collector" {
   datacenters = ["dc1"]
   type        = "system"
 
