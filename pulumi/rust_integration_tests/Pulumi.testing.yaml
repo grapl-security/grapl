@@ -5,7 +5,7 @@ config:
     event-source: 20220901170226-d31d990
     firecracker_rootfs.tar.gz: 20220801204214-06bb008
     generator-dispatcher: 20220901170226-d31d990
-    generator-execution-sidecar: 20220901170226-d31d990
+    generator-execution-sidecar: 20220901173258-8450bff
     graph-merger: 20220901170226-d31d990
     graph-mutation: 20220901170226-d31d990
     graph-query: 20220901170226-d31d990
@@ -21,7 +21,7 @@ config:
     plugin-registry: 20220901170226-d31d990
     plugin-work-queue: 20220901170226-d31d990
     provisioner: 20220901170226-d31d990
-    rust-integration-tests: 20220901170226-d31d990
+    rust-integration-tests: 20220901173258-8450bff
     scylla-provisioner: 20220901170226-d31d990
     sysmon-generator: 20220809152144-3c3caf3
     uid-allocator: 20220901170226-d31d990
