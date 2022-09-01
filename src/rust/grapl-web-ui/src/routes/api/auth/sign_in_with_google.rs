@@ -17,9 +17,7 @@ struct SignInWithGoogleResponse {
     success: bool,
 }
 
-#[tracing::instrument(skip(auth_client, data, session), fields(
-    username = tracing::field::Empty
-))]
+#[tracing::instrument(skip(auth_client, data, session))]
 pub(super) async fn sign_in_with_google(
     auth_client: web::Data<crate::authn::WebAuthenticator>,
     session: actix_session::Session,
