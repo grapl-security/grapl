@@ -22,7 +22,7 @@ pub enum PluginError {
     // },
     #[error("unable to parse metadata: {0}")]
     DeserializeMetadata(#[from] serde_json::Error),
-    #[error("user request for a resource belonging to another organization")]
+    #[error("user request for a resource belonging to another tenant")]
     Unauthorized,
     #[error("gRPC client timeout: {0}")]
     RcpTimeout(#[from] tokio::time::error::Elapsed),

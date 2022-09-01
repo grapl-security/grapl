@@ -137,7 +137,7 @@ impl WebAuthenticator {
 
         let organization_id =
             uuid::Uuid::parse_str(user_row.get_organization_id()).map_err(|source| {
-                AuthenticationError::ParseOrgId {
+                AuthenticationError::ParseTenantId {
                     input: user_row.get_organization_id().to_string(),
                     source,
                 }

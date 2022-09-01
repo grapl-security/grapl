@@ -54,7 +54,7 @@ async fn verify_plugin_ownership<'a>(
 
     if authenticated_tenant_id != plugin_metadata.tenant_id() {
         tracing::warn!(
-            message = "user requested to deploy plugin owned by another tenant/organization",
+            message = "user requested to deploy plugin owned by another tenant",
             ?user
         );
 
