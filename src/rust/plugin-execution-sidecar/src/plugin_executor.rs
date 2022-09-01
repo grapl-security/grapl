@@ -92,19 +92,27 @@ where
                     );
                 }
 
-                // Inform plugin-work-queue whether it worked or if we need
-                // to retry
-                self.plugin_work_processor
-                    .ack_work(
-                        &self.config,
-                        &mut self.plugin_work_queue_client,
-                        process_result,
-                        request_id,
-                        tenant_id,
-                        trace_id,
-                        event_source_id,
-                    )
-                    .await?;
+                let should_ack = match process_result.as_ref() {
+                    // If it's retriable, just don't ack - PWQ will make the message
+                    // available again in 10 seconds.
+                    Err(e) if e.is_retriable() => false,
+                    // Otherwise, it's a perma-fail error or a success, so inform PWQ
+                    _ => true,
+                };
+
+                if should_ack {
+                    self.plugin_work_processor
+                        .ack_work(
+                            &self.config,
+                            &mut self.plugin_work_queue_client,
+                            process_result,
+                            request_id,
+                            tenant_id,
+                            trace_id,
+                            event_source_id,
+                        )
+                        .await?;
+                }
             } else {
                 let delay = Duration::from_secs(1);
                 tracing::warn!(
