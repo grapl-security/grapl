@@ -9,7 +9,6 @@ use rust_proto::{
         services::PluginWorkQueueClientConfig,
     },
     graplinc::grapl::api::plugin_work_queue::v1beta1::{
-        AcknowledgeGeneratorRequest,
         ExecutionJob,
         GetExecuteGeneratorRequest,
         PushExecuteGeneratorRequest,
@@ -95,11 +94,11 @@ async fn test_push_and_get_execute_generator() -> eyre::Result<()> {
     );
 
     // Fetch one more time, we should be out of work
-    let retrieve_job_None_for_plugin_id_2 = pwq_client
+    let retrieve_job_none_for_plugin_id_2 = pwq_client
         .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id_2))
         .await?;
 
-    assert_eq!(retrieve_job_None_for_plugin_id_2.execution_job(), None);
+    assert_eq!(retrieve_job_none_for_plugin_id_2.execution_job(), None);
 
     Ok(())
 }
@@ -119,40 +118,45 @@ async fn test_message_available_after_failure() -> eyre::Result<()> {
         plugin_id,
     );
 
-    pwq_client.push_execute_generator(request.clone()).await?;
+    pwq_client.push_execute_generator(job.clone()).await?;
 
-    async fn retrieve_job() -> eyre::Result<GetExecuteGeneratorRequest> {
-        pwq_client
-            .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id_1))
-            .await?
-    }
+    let retrieve_job = move || {
+        let mut pwq_client = pwq_client.clone();
+        async move {
+            pwq_client
+                .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id))
+                .await
+                .map_err(|e| eyre::eyre!(e))
+        }
+    };
 
     // Get the job
-    let retrieved_job = retrieve_job().await?;
+    let retrieved_job = retrieve_job().await?.execution_job();
     eyre::ensure!(
-        retrieve_job.execution_job() == Some(job.execution_job()),
+        retrieved_job == Some(job.clone().execution_job()),
         "Expected job equality: {:?}, {:?}",
-        retrieve_job,
+        retrieved_job,
         job
     );
 
     // If we get the job again, it should be None this time.
-    let retrieved_job = retrieve_job().await?;
+    let retrieved_job = retrieve_job().await?.execution_job();
     eyre::ensure!(
-        retrieve_job.execution_job() == None,
-        "Expected job equality: {:?}, {:?}",
-        retrieve_job,
-        None
+        retrieved_job == None,
+        "Expected None job: {:?}",
+        retrieved_job,
     );
 
     // If we haven't acknowledged it for 10 seconds, it becomes visible again
-    tokio::time::sleep(Duration::from_millis(10_500)).await?;
+    tokio::time::sleep(Duration::from_millis(10_500)).await;
 
-    let retrieved_job = retrieve_job().await?;
+    let retrieved_job = retrieve_job().await?.execution_job();
     eyre::ensure!(
-        retrieve_job.execution_job() == Some(job.execution_job()),
+        retrieved_job == Some(job.clone().execution_job()),
         "Expected job equality: {:?}, {:?}",
-        retrieve_job,
+        retrieved_job,
         job
     );
+
+    Ok(())
 }
