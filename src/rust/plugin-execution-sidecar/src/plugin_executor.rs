@@ -97,7 +97,8 @@ where
                     // available again in 10 seconds.
                     Err(e) if e.is_retriable() => false,
                     // Otherwise, it's a perma-fail error or a success, so inform PWQ
-                    _ => true,
+                    Err(_) => true,
+                    Ok(_) => true,
                 };
 
                 if should_ack {
