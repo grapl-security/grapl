@@ -442,15 +442,6 @@ def main() -> None:
             )
         )
 
-        NomadJob(
-            "grapl-observability",
-            jobspec=repository_path("nomad/observability.nomad"),
-            vars={},
-            opts=pulumi.ResourceOptions(
-                provider=nomad_provider,
-            ),
-        )
-
         api_gateway = ApiGateway(
             "grapl-api-gateway",
             nomad_agents_alb_security_group=nomad_agent_alb_security_group_id,
