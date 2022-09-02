@@ -31,9 +31,9 @@ locals {
       port = 5432,
     },
     {
-      name   = "plugin-work-queue-db",
-      port   = 5433,
-      memory = 1024,
+      name       = "plugin-work-queue-db",
+      port       = 5433,
+      memory_max = 1024,
     },
     {
       name = "organization-management-db",
@@ -129,6 +129,10 @@ job "grapl-local-infra" {
         AWS_SECRET_ACCESS_KEY = "test"
       }
 
+      resources {
+        cpu = 50
+      }
+
       service {
         name = "localstack"
         check {
@@ -198,7 +202,8 @@ job "grapl-local-infra" {
         }
 
         resources {
-          memory = 1256
+          memory_max = 1256
+          cpu        = 50
         }
 
         env {
@@ -274,6 +279,10 @@ job "grapl-local-infra" {
         ZOOKEEPER_CLIENT_PORT = var.zookeeper_port
         ZOOKEEPER_TICK_TIME   = 2000
         KAFKA_OPTS            = "-Dzookeeper.4lw.commands.whitelist=ruok,dump"
+      }
+
+      resources {
+        cpu = 50
       }
 
       service {
@@ -367,7 +376,8 @@ job "grapl-local-infra" {
           }
 
           resources {
-            memory = lookup(db_desc.value, "memory", 512) // (map, key, default) fyi
+            memory_max = lookup(db_desc.value, "memory_max", 512) // (map, key, default) fyi
+            cpu        = 50
           }
         }
       }
@@ -478,7 +488,10 @@ job "grapl-local-infra" {
             }
           }
         }
+      }
 
+      resources {
+        cpu = 50
       }
 
       service {
@@ -499,9 +512,7 @@ job "grapl-local-infra" {
             limit           = 3
             ignore_warnings = true
           }
-
         }
-
       }
     }
   }

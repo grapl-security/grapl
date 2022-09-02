@@ -89,6 +89,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-multipart"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9edfb0e7663d7fe18c8d5b668c9c1bcf79176b1dcc9d4da9592503209a6bfb0"
+dependencies = [
+ "actix-utils",
+ "actix-web",
+ "bytes",
+ "derive_more",
+ "futures-core",
+ "httparse",
+ "local-waker",
+ "log",
+ "mime",
+ "twoway",
+]
+
+[[package]]
 name = "actix-router"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -125,7 +143,7 @@ dependencies = [
  "futures-util",
  "mio",
  "num_cpus",
- "socket2 0.4.6",
+ "socket2 0.4.7",
  "tokio",
  "tracing",
 ]
@@ -220,7 +238,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "smallvec",
- "socket2 0.4.6",
+ "socket2 0.4.7",
  "time 0.3.14",
  "url",
 ]
@@ -392,9 +410,9 @@ checksum = "619743e34b5ba4e9703bba34deac3427c72507c7159f5fd030aea8cac0cfe341"
 
 [[package]]
 name = "async-io"
-version = "1.8.0"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ab006897723d9352f63e2b13047177c3982d8d79709d713ce7747a8f19fd1b0"
+checksum = "83e21f3a490c72b3b0cf44962180e60045de2925d8dff97918f7ee43c8f637c7"
 dependencies = [
  "autocfg 1.1.0",
  "concurrent-queue",
@@ -405,7 +423,7 @@ dependencies = [
  "parking",
  "polling",
  "slab",
- "socket2 0.4.6",
+ "socket2 0.4.7",
  "waker-fn",
  "winapi",
 ]
@@ -827,9 +845,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.19"
+version = "3.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68d43934757334b5c0519ff882e1ab9647ac0258b47c24c4f490d78e42697fd5"
+checksum = "23b71c3ce99b7611011217b366d923f1d0a7e07a92bb2dbf1e84508c673ca3bd"
 dependencies = [
  "atty",
  "bitflags",
@@ -948,7 +966,7 @@ checksum = "9d6f2aa4d0537bcc1c74df8755072bd31c1ef1a3a1b85a68e8404a8c353b7b8b"
 name = "consul-connect"
 version = "1.0.0"
 dependencies = [
- "clap 3.2.19",
+ "clap 3.2.20",
  "thiserror",
  "tokio",
  "tracing",
@@ -1402,7 +1420,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.19",
+ "clap 3.2.20",
  "eyre",
  "futures",
  "grapl-config",
@@ -1501,7 +1519,7 @@ name = "event-source"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "clap 3.2.19",
+ "clap 3.2.20",
  "env_logger 0.9.0",
  "eyre",
  "grapl-config",
@@ -1728,7 +1746,7 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.19",
+ "clap 3.2.20",
  "e2e-tests",
  "eyre",
  "futures",
@@ -1751,7 +1769,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.19",
+ "clap 3.2.20",
  "consul-connect",
  "grapl-tracing",
  "moka 0.8.6",
@@ -1814,7 +1832,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "bytes",
- "clap 3.2.19",
+ "clap 3.2.20",
  "e2e-tests",
  "eyre",
  "futures",
@@ -1843,7 +1861,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "blake2",
- "clap 3.2.19",
+ "clap 3.2.20",
  "dashmap",
  "grapl-tracing",
  "grapl-utils",
@@ -1867,7 +1885,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "clap 3.2.19",
+ "clap 3.2.20",
  "env_logger 0.9.0",
  "eyre",
  "futures",
@@ -1899,7 +1917,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.19",
+ "clap 3.2.20",
  "dashmap",
  "eyre",
  "grapl-config",
@@ -1928,7 +1946,7 @@ name = "grapl-config"
 version = "0.0.2"
 dependencies = [
  "async-trait",
- "clap 3.2.19",
+ "clap 3.2.20",
  "color-eyre",
  "eyre",
  "grapl-utils",
@@ -1947,7 +1965,7 @@ dependencies = [
 name = "grapl-graphql-codegen"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.19",
+ "clap 3.2.20",
  "color-eyre",
  "graphql-parser",
  "serde_json",
@@ -1984,17 +2002,20 @@ name = "grapl-web-ui"
 version = "0.1.0"
 dependencies = [
  "actix-files",
+ "actix-multipart",
  "actix-session",
  "actix-web",
  "actix-web-opentelemetry",
  "argon2",
  "awc",
  "chrono",
- "clap 3.2.19",
+ "clap 3.2.20",
+ "e2e-tests",
  "eyre",
- "futures-util",
+ "futures",
  "grapl-config",
  "grapl-tracing",
+ "grapl-utils",
  "hmap",
  "jsonwebtoken-google",
  "opentelemetry 0.17.0",
@@ -2002,6 +2023,7 @@ dependencies = [
  "reqwest",
  "rusoto_core",
  "rusoto_dynamodb",
+ "rust-proto",
  "secrecy",
  "serde",
  "serde_dynamodb",
@@ -2242,7 +2264,7 @@ dependencies = [
  "httpdate",
  "itoa 1.0.3",
  "pin-project-lite",
- "socket2 0.4.6",
+ "socket2 0.4.7",
  "tokio",
  "tower-service",
  "tracing",
@@ -2447,7 +2469,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "chrono",
- "clap 3.2.19",
+ "clap 3.2.20",
  "futures",
  "rdkafka",
  "rust-proto",
@@ -2462,7 +2484,7 @@ dependencies = [
 name = "kafka-retry"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.19",
+ "clap 3.2.20",
  "futures",
  "grapl-tracing",
  "kafka",
@@ -2788,7 +2810,7 @@ dependencies = [
  "blake2",
  "bytes",
  "chrono",
- "clap 3.2.19",
+ "clap 3.2.20",
  "e2e-tests",
  "eyre",
  "failure",
@@ -2959,9 +2981,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.13.1"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "074864da206b4973b84eb91683020dbefd6a8c3f0f38e054d93954e891935e4e"
+checksum = "2f7254b99e31cad77da24b08ebf628882739a608578bb1bcdfc1f9c21260d7c0"
 
 [[package]]
 name = "oorandom"
@@ -3136,7 +3158,7 @@ version = "0.1.0"
 dependencies = [
  "argon2",
  "async-trait",
- "clap 3.2.19",
+ "clap 3.2.20",
  "env_logger 0.9.0",
  "eyre",
  "grapl-config",
@@ -3334,7 +3356,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.19",
+ "clap 3.2.20",
  "eyre",
  "futures",
  "grapl-tracing",
@@ -3410,7 +3432,7 @@ name = "plugin-bootstrap"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.19",
+ "clap 3.2.20",
  "futures",
  "grapl-tracing",
  "grapl-utils",
@@ -3426,7 +3448,7 @@ name = "plugin-execution-sidecar"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "clap 3.2.19",
+ "clap 3.2.20",
  "grapl-tracing",
  "rust-proto",
  "thiserror",
@@ -3441,7 +3463,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.19",
+ "clap 3.2.20",
  "env_logger 0.9.0",
  "eyre",
  "futures",
@@ -3471,7 +3493,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "clap 3.2.19",
+ "clap 3.2.20",
  "eyre",
  "futures",
  "grapl-config",
@@ -4153,7 +4175,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.19",
+ "clap 3.2.20",
  "client-executor",
  "futures",
  "grapl-utils",
@@ -4336,9 +4358,9 @@ dependencies = [
 
 [[package]]
 name = "scylla"
-version = "0.4.7"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e16bd82cb3eb8961f45759695eee56f162e73c1e2e30042d9450dfa98d600ac1"
+checksum = "eed40c02a5c835d894044bbd6f454ef54b6937ec8af23efe3cdeaa57005bb00d"
 dependencies = [
  "arc-swap",
  "bigdecimal",
@@ -4353,6 +4375,7 @@ dependencies = [
  "num-bigint 0.3.3",
  "num_enum",
  "rand",
+ "scylla-cql",
  "scylla-macros",
  "smallvec",
  "snap",
@@ -4361,6 +4384,26 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "scylla-cql"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2e0ac8202660385589dba16123cc5916cf4eb3078e2dac0ab6af6903d7f5467"
+dependencies = [
+ "bigdecimal",
+ "byteorder",
+ "bytes",
+ "chrono",
+ "lz4_flex",
+ "num-bigint 0.3.3",
+ "num_enum",
+ "scylla-macros",
+ "snap",
+ "thiserror",
+ "tokio",
  "uuid",
 ]
 
@@ -4379,7 +4422,7 @@ name = "scylla-provisioner"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.19",
+ "clap 3.2.20",
  "env_logger 0.9.0",
  "grapl-tracing",
  "rust-proto",
@@ -4629,9 +4672,9 @@ dependencies = [
 
 [[package]]
 name = "socket2"
-version = "0.4.6"
+version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10c98bba371b9b22a71a9414e420f92ddeb2369239af08200816169d5e2dd7aa"
+checksum = "02e2d2db9033d13a1567121ddd7a095ee144db4e1ca1b1bda3419bc0da294ebd"
 dependencies = [
  "libc",
  "winapi",
@@ -4845,7 +4888,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "clap 3.2.19",
+ "clap 3.2.20",
  "endpoint-plugin",
  "eyre",
  "futures",
@@ -5077,9 +5120,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.20.1"
+version = "1.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a8325f63a7d4774dd041e363b2409ed1c5cbbd0f867795e661df066b2b0a581"
+checksum = "89797afd69d206ccd11fb0ea560a44bbb87731d020670e79416d442919257d42"
 dependencies = [
  "autocfg 1.1.0",
  "bytes",
@@ -5091,7 +5134,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "pin-project-lite",
  "signal-hook-registry",
- "socket2 0.4.6",
+ "socket2 0.4.7",
  "tokio-macros",
  "winapi",
 ]
@@ -5547,6 +5590,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 
 [[package]]
+name = "twoway"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c57ffb460d7c24cd6eda43694110189030a3d1dfe418416d9468fd1c1d290b47"
+dependencies = [
+ "memchr",
+ "unchecked-index",
+]
+
+[[package]]
 name = "twox-hash"
 version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5569,7 +5622,7 @@ dependencies = [
  "async-recursion",
  "async-trait",
  "chrono",
- "clap 3.2.19",
+ "clap 3.2.20",
  "dashmap",
  "env_logger 0.9.0",
  "eyre",
@@ -5597,6 +5650,12 @@ dependencies = [
  "tracing-subscriber",
  "uuid",
 ]
+
+[[package]]
+name = "unchecked-index"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eeba86d422ce181a719445e51872fa30f1f7413b62becb52e95ec91aa262d85c"
 
 [[package]]
 name = "unicase"

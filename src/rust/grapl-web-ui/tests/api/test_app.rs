@@ -19,7 +19,7 @@ pub struct TestApp {
 impl TestApp {
     /// Initialize a new instance of TestApp.
     ///
-    /// This provisinos a new test user to use for authentication.
+    /// This provisions a new test user to use for authentication.
     pub async fn init() -> eyre::Result<Self> {
         let config = TestConfig::from_env()?;
 
@@ -47,6 +47,11 @@ impl TestApp {
     pub fn post(&self, path: &str) -> reqwest::RequestBuilder {
         let endpoint_url = self.endpoint_url.as_str();
         self.client.post(format!("{endpoint_url}{path}"))
+    }
+
+    pub fn get(&self, path: &str) -> reqwest::RequestBuilder {
+        let endpoint_url = self.endpoint_url.as_str();
+        self.client.get(format!("{endpoint_url}{path}"))
     }
 
     /// Login with test user credentials. The web client will save session cookies and use

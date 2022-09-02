@@ -1,6 +1,7 @@
 mod authn;
 mod config;
-mod routes;
+pub mod routes;
+mod upstream;
 
 use actix_session::CookieSession;
 use actix_web::{
@@ -24,6 +25,8 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
             ),
             jsonwebtoken_google::Parser::new(&config.google_client_id),
         ));
+        let plugin_registry_client = Data::new(config.plugin_registry_client.clone());
+
         App::new()
             .wrap(actix_web::middleware::Logger::default())
             .wrap(actix_web_opentelemetry::RequestTracing::new())
@@ -45,6 +48,7 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
                 ),
             )))
             .app_data(web_client)
+            .app_data(plugin_registry_client)
             .app_data(web_authenticator)
             .configure(routes::config)
     })

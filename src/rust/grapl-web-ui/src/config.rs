@@ -2,6 +2,13 @@ use clap::Parser;
 use grapl_config::env_helpers::FromEnv;
 use rand::Rng;
 use rusoto_dynamodb::DynamoDbClient;
+use rust_proto::{
+    client_factory::{
+        build_grpc_client,
+        services::PluginRegistryClientConfig,
+    },
+    graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryServiceClient,
+};
 
 const KEY_SIZE: usize = 32;
 pub(crate) const SESSION_TOKEN: &'static str = "SESSION_TOKEN";
@@ -15,6 +22,8 @@ pub enum ConfigError {
     Clap(#[from] clap::Error),
     #[error(transparent)]
     BindAddress(#[from] std::io::Error),
+    #[error("failed to initialize Plugin Regsitry client: {0}")]
+    PluginRegistryClient(#[from] rust_proto::protocol::service_client::ConnectError),
 }
 
 pub struct Config {
@@ -23,14 +32,17 @@ pub struct Config {
     pub session_key: [u8; KEY_SIZE],
     pub user_auth_table_name: String,
     pub user_session_table_name: String,
+    pub plugin_registry_client: PluginRegistryServiceClient,
     pub google_client_id: String,
 }
 
 impl Config {
-    pub fn from_env() -> Result<Self, ConfigError> {
+    pub async fn from_env() -> Result<Self, ConfigError> {
         let builder = ConfigBuilder::try_parse()?;
 
         let listener = std::net::TcpListener::bind(builder.bind_address)?;
+
+        let plugin_registry_client = build_grpc_client(builder.plugin_registry_config).await?;
 
         let dynamodb_client = DynamoDbClient::from_env();
 
@@ -43,6 +55,7 @@ impl Config {
             session_key,
             user_auth_table_name: builder.user_auth_table_name,
             user_session_table_name: builder.user_session_table_name,
+            plugin_registry_client,
             google_client_id: builder.google_client_id,
         };
 
@@ -59,6 +72,8 @@ pub struct ConfigBuilder {
     pub user_auth_table_name: String,
     #[clap(env = "GRAPL_USER_SESSION_TABLE")]
     pub user_session_table_name: String,
+    #[clap(flatten)]
+    pub plugin_registry_config: PluginRegistryClientConfig,
     #[clap(env = "GRAPL_GOOGLE_CLIENT_ID")]
     pub google_client_id: String,
 }

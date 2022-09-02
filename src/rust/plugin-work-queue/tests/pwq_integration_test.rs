@@ -1,5 +1,7 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use clap::Parser;
 use rust_proto::{
     client_factory::{
@@ -82,21 +84,79 @@ async fn test_push_and_get_execute_generator() -> eyre::Result<()> {
     );
 
     // Fetch for plugin_id 2 again, we should get Job 3
-    let retrieve_job_for_plugin_id_2 = pwq_client
+    let retrieve_job_3_for_plugin_id_2 = pwq_client
         .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id_2))
         .await?;
 
     assert_eq!(
-        retrieve_job_for_plugin_id_2.execution_job(),
+        retrieve_job_3_for_plugin_id_2.execution_job(),
         Some(job_3.execution_job())
     );
 
     // Fetch one more time, we should be out of work
-    let retrieve_job_for_plugin_id_2 = pwq_client
+    let retrieve_job_none_for_plugin_id_2 = pwq_client
         .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id_2))
         .await?;
 
-    assert_eq!(retrieve_job_for_plugin_id_2.execution_job(), None);
+    assert_eq!(retrieve_job_none_for_plugin_id_2.execution_job(), None);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_message_available_after_failure() -> eyre::Result<()> {
+    let mut pwq_client = build_grpc_client(PluginWorkQueueClientConfig::parse()).await?;
+
+    // Send a job to Plugin Work Queue
+    let tenant_id = uuid::Uuid::new_v4();
+    let trace_id = uuid::Uuid::new_v4();
+    let event_source_id = uuid::Uuid::new_v4();
+    let plugin_id = uuid::Uuid::new_v4();
+
+    let job = PushExecuteGeneratorRequest::new(
+        ExecutionJob::new("the only job".into(), tenant_id, trace_id, event_source_id),
+        plugin_id,
+    );
+
+    pwq_client.push_execute_generator(job.clone()).await?;
+
+    let retrieve_job = move || {
+        let mut pwq_client = pwq_client.clone();
+        async move {
+            pwq_client
+                .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id))
+                .await
+                .map_err(|e| eyre::eyre!(e))
+        }
+    };
+
+    // Get the job
+    let retrieved_job = retrieve_job().await?.execution_job();
+    eyre::ensure!(
+        retrieved_job == Some(job.clone().execution_job()),
+        "Expected job equality: {:?}, {:?}",
+        retrieved_job,
+        job
+    );
+
+    // If we get the job again, it should be None this time.
+    let retrieved_job = retrieve_job().await?.execution_job();
+    eyre::ensure!(
+        retrieved_job == None,
+        "Expected None job: {:?}",
+        retrieved_job,
+    );
+
+    // If we haven't acknowledged it for 10 seconds, it becomes visible again
+    tokio::time::sleep(Duration::from_millis(10_500)).await;
+
+    let retrieved_job = retrieve_job().await?.execution_job();
+    eyre::ensure!(
+        retrieved_job == Some(job.clone().execution_job()),
+        "Expected job equality: {:?}, {:?}",
+        retrieved_job,
+        job
+    );
 
     Ok(())
 }

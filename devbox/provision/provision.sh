@@ -6,6 +6,8 @@ readonly GRAPL_ROOT="${PWD}"
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 # shellcheck source-path=SCRIPTDIR
 source "${THIS_DIR}/../lib.sh"
+# shellcheck source-path=SCRIPTDIR
+source "${THIS_DIR}/../../src/sh/log.sh"
 
 mkdir -p "${GRAPL_DEVBOX_DIR}"
 
@@ -94,7 +96,7 @@ EOF
         pulumi config set devbox:public-key -- < "${SSH_PUBLIC_KEY_FILE}"
     fi
     if ! has_key "${config}" "devbox:instance-volume-size-gb"; then
-        pulumi config set devbox:instance-volume-size-gb 100
+        pulumi config set devbox:instance-volume-size-gb 250
     fi
     if ! has_key "${config}" "devbox:instance-type"; then
         # 32GB RAM
@@ -159,8 +161,8 @@ EOF
     # There's a minor race condition here, where Pulumi starts the box but it's
     # not ready to take SSH-over-SSM commands quite yet.
     "${THIS_DIR}/../ssh.sh" -- "echo 'ensuring devbox reachable'" || (
-        echo "Wait 5m for the box to come up and rerun to complete provisioning"
-        exit 1
+        fatal "Wait 2-5m for the box to come up and rerun this script to complete provisioning!"
     )
     "${THIS_DIR}/../ssh.sh" -- "${CMD}"
+    info "Your devbox is set up!"
 )

@@ -26,4 +26,5 @@ install_firecracker
 install_nomad_chromeos_workaround
 install_nomad_firecracker
 install_sqlx_prepare_deps
+install_bk
 install_docker # Do this last since it's not idempotent

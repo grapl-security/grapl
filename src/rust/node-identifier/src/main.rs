@@ -63,9 +63,10 @@ async fn handler() -> eyre::Result<()> {
     let service_config = NodeIdentifierConfig::parse();
     let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(dynamo.clone(), service_config.grapl_dynamic_session_table);
-    let graph_mutation_client =
-        GraphMutationClient::connect(Endpoint::from_shared(service_config.graph_mutation_client_url)?)
-            .await?;
+    let graph_mutation_client = GraphMutationClient::connect(Endpoint::from_shared(
+        service_config.graph_mutation_client_url,
+    )?)
+    .await?;
 
     let static_mapping_db = StaticMappingDb::new(
         dynamo.clone(),
