@@ -8,6 +8,7 @@ botocore
 click
 confluent-kafka
 cookiecutter==1.7.3
+grpcio
 hypothesis
 lark-parser
 opentelemetry-api
