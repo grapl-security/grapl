@@ -41,20 +41,6 @@ variable "aws_region" {
   type = string
 }
 
-variable "dgraph_replicas" {
-  type    = number
-  default = 1
-  validation {
-    condition     = var.dgraph_replicas % 2 == 1
-    error_message = "This value must be odd. Otherwise dgraph_zero will exit."
-  }
-}
-
-variable "dgraph_shards" {
-  type    = number
-  default = 1
-}
-
 variable "kafka_bootstrap_servers" {
   type        = string
   description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
@@ -72,6 +58,11 @@ variable "schema_properties_table_name" {
 
 # https://github.com/grapl-security/grapl/blob/af6f2c197d52e9941047aab813c30d2cbfd54523/pulumi/infra/dynamodb.py#L118
 variable "session_table_name" {
+  type        = string
+  description = "What is the name of the session table?"
+}
+
+variable "static_mapping_table_name" {
   type        = string
   description = "What is the name of the session table?"
 }
@@ -104,16 +95,6 @@ variable "organization_management_db" {
     password = string
   })
   description = "Vars for organization-management database"
-}
-
-variable "graph_schema_manager_db" {
-  type = object({
-    hostname = string
-    port     = number
-    username = string
-    password = string
-  })
-  description = "Vars for graph-schema-manager database"
 }
 
 variable "organization_management_healthcheck_polling_interval_ms" {
@@ -149,25 +130,6 @@ variable "plugin_work_queue_db" {
     password = string
   })
   description = "Vars for plugin-work-queue database"
-}
-
-variable "graph_db" {
-  type = object({
-    addresses = string
-    username  = string
-    password  = string
-  })
-  description = "Vars for graph (scylla) database"
-}
-
-variable "uid_allocator_db" {
-  type = object({
-    hostname = string
-    port     = number
-    username = string
-    password = string
-  })
-  description = "Vars for uid-allocator database"
 }
 
 variable "event_source_db" {
@@ -211,38 +173,6 @@ variable "google_client_id" {
 }
 
 locals {
-  dgraph_zero_grpc_private_port_base  = 5080
-  dgraph_zero_http_private_port_base  = 6080
-  dgraph_alpha_grpc_private_port_base = 7080
-  dgraph_alpha_http_private_port_base = 8080
-  dgraph_alpha_grpc_public_port_base  = 9080
-
-  # DGraph Alphas (shards * replicas)
-  dgraph_alphas = [for alpha_id in range(0, var.dgraph_replicas * var.dgraph_shards) : {
-    id : alpha_id,
-    grpc_private_port : local.dgraph_alpha_grpc_private_port_base + alpha_id,
-    grpc_public_port : local.dgraph_alpha_grpc_public_port_base + alpha_id,
-    http_port : local.dgraph_alpha_http_private_port_base + alpha_id
-  }]
-
-  # DGraph Zeros (replicas)
-  dgraph_zeros = [for zero_id in range(1, var.dgraph_replicas) : {
-    id : zero_id,
-    grpc_private_port : local.dgraph_zero_grpc_private_port_base + zero_id,
-    http_port : local.dgraph_zero_http_private_port_base + zero_id,
-  }]
-
-  # String that contains all of the Zeros for the Alphas to talk to and ensure they don't go down when one dies
-  zero_alpha_connect_str = join(",", [for zero_id in range(0, var.dgraph_replicas) : "localhost:${local.dgraph_zero_grpc_private_port_base + zero_id}"])
-
-  # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
-  alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
-
-  dgraph_volume_args = {
-    target = "/dgraph"
-    source = "grapl-data-dgraph"
-  }
-
   dns_servers = [attr.unique.network.ip-address]
 
   # Grapl services
@@ -272,372 +202,9 @@ job "grapl-core" {
     min_healthy_time = "15s"
   }
 
-  group "dgraph-zero-0" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-    }
-
-    task "dgraph-zero" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["dgraph"]
-        args = [
-          "dgraph",
-          "zero",
-          "--my", "localhost:${local.dgraph_zero_grpc_private_port_base}",
-          "--replicas", "${var.dgraph_replicas}",
-          "--raft", "idx=1",
-        ]
-
-        mount {
-          type     = "volume"
-          target   = "${local.dgraph_volume_args.target}"
-          source   = "${local.dgraph_volume_args.source}"
-          readonly = false
-        }
-      }
-    }
-
-    service {
-      name = "dgraph-zero-0-grpc-private"
-      port = "${local.dgraph_zero_grpc_private_port_base}"
-      tags = ["dgraph", "zero", "grpc"]
-
-      connect {
-        sidecar_service {
-          proxy {
-            # Connect the Zero leader to the Zero followers
-            dynamic "upstreams" {
-              iterator = zero_follower
-              for_each = local.dgraph_zeros
-
-              content {
-                destination_name = "dgraph-zero-${zero_follower.value.id}-grpc-private"
-                local_bind_port  = zero_follower.value.grpc_private_port
-              }
-            }
-
-            # Connect this Zero leader to the Alphas
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = [for alpha in local.dgraph_alphas : alpha]
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-private"
-                local_bind_port  = alpha.value.grpc_private_port
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  # Create DGraph Zero followers
-  dynamic "group" {
-    iterator = zero
-    for_each = local.dgraph_zeros
-    labels   = ["dgraph-zero-${zero.value.id}"]
-
-    content {
-      network {
-        mode = "bridge"
-        dns {
-          servers = local.dns_servers
-        }
-        port "healthcheck" {
-          to = -1
-        }
-      }
-
-      task "dgraph-zero" {
-        driver = "docker"
-
-        config {
-          image = var.container_images["dgraph"]
-          args = [
-            "dgraph",
-            "zero",
-            "--my", "localhost:${zero.value.grpc_private_port}",
-            "--replicas", "${var.dgraph_replicas}",
-            "--raft", "idx=${zero.value.id + 1}",
-            "--port_offset", "${zero.value.id}",
-            "--peer", "localhost:${local.dgraph_zero_grpc_private_port_base}"
-          ]
-
-          mount {
-            type     = "volume"
-            target   = "${local.dgraph_volume_args.target}"
-            source   = "${local.dgraph_volume_args.source}"
-            readonly = false
-          }
-        }
-      }
-      service {
-        name = "dgraph-zero-${zero.value.id}-grpc-private"
-        port = "${zero.value.grpc_private_port}"
-        tags = ["dgraph", "zero", "grpc"]
-
-        connect {
-          sidecar_service {
-            proxy {
-              # Connect to the Zero leader
-              upstreams {
-                destination_name = "dgraph-zero-0-grpc-private"
-                local_bind_port  = local.dgraph_zero_grpc_private_port_base
-              }
-
-              # Connect this Zero follower to other Zero followers (but not to itself, obviously)
-              dynamic "upstreams" {
-                iterator = zero_follower
-                for_each = [for zero_follower in local.dgraph_zeros : zero_follower if zero_follower.id != zero.value.id]
-
-                content {
-                  destination_name = "dgraph-zero-${zero_follower.value.id}-grpc-private"
-                  local_bind_port  = zero_follower.value.grpc_private_port
-                }
-              }
-
-              # Connect this Zero follower to the Alphas
-              dynamic "upstreams" {
-                iterator = alpha
-                for_each = [for alpha in local.dgraph_alphas : alpha]
-
-                content {
-                  destination_name = "dgraph-alpha-${alpha.value.id}-grpc-private"
-                  local_bind_port  = alpha.value.grpc_private_port
-                }
-              }
-
-              # We need to expose the health check for consul to be able to reach it
-              expose {
-                path {
-                  path            = "/health"
-                  protocol        = "http"
-                  local_path_port = zero.value.http_port
-                  listener_port   = "healthcheck"
-                }
-              }
-
-            }
-          }
-        }
-
-        check {
-          type     = "http"
-          name     = "dgraph-zero-http-healthcheck"
-          path     = "/health"
-          port     = "healthcheck"
-          method   = "GET"
-          interval = "30s"
-          timeout  = "5s"
-
-          check_restart {
-            limit           = 3
-            grace           = "30s"
-            ignore_warnings = false
-          }
-        }
-      }
-    }
-  }
-
-  # Create DGraph Alphas
-  dynamic "group" {
-    iterator = alpha
-    for_each = local.dgraph_alphas
-    labels   = ["dgraph-alpha-${alpha.value.id}"]
-
-    content {
-      network {
-        mode = "bridge"
-        dns {
-          servers = local.dns_servers
-        }
-        port "healthcheck" {
-          to = -1
-        }
-        port "dgraph-alpha-port" {
-          # Primarily here to let us use ratel.
-          # Could be potentially replaced with a gateway stanza or something.
-          to = alpha.value.http_port
-        }
-      }
-
-      task "dgraph-alpha" {
-        driver = "docker"
-
-        config {
-          image = var.container_images["dgraph"]
-          args = [
-            "dgraph",
-            "alpha",
-            "--my", "localhost:${alpha.value.grpc_private_port}",
-            "--port_offset", "${alpha.value.id}",
-            "--zero", "${local.zero_alpha_connect_str}"
-          ]
-
-          mount {
-            type     = "volume"
-            target   = "${local.dgraph_volume_args.target}"
-            source   = "${local.dgraph_volume_args.source}"
-            readonly = false
-          }
-
-          ports = ["dgraph-alpha-port"]
-        }
-
-        resources {
-          memory = 512
-        }
-
-      }
-
-      service {
-        name = "dgraph-alpha-${alpha.value.id}-grpc-private"
-        port = "${alpha.value.grpc_private_port}"
-        tags = ["dgraph", "alpha", "grpc"]
-
-        connect {
-          sidecar_service {
-            proxy {
-              # Connect to the Zero leader
-              upstreams {
-                destination_name = "dgraph-zero-0-grpc-private"
-                local_bind_port  = local.dgraph_zero_grpc_private_port_base
-              }
-
-              # Connect this Alpha to Zero followers
-              dynamic "upstreams" {
-                iterator = zero_follower
-                for_each = [for zero_follower in local.dgraph_zeros : zero_follower]
-
-                content {
-                  destination_name = "dgraph-zero-${zero_follower.value.id}-grpc-private"
-                  local_bind_port  = zero_follower.value.grpc_private_port
-                }
-              }
-
-              # Connect this Alpha to Other Alphas (but not to itself, obviously)
-              dynamic "upstreams" {
-                iterator = alpha_peer
-                for_each = [for alpha_peer in local.dgraph_alphas : alpha_peer if alpha_peer.id != alpha.value.id]
-
-                content {
-                  destination_name = "dgraph-alpha-${alpha_peer.value.id}-grpc-private"
-                  local_bind_port  = alpha_peer.value.grpc_private_port
-                }
-              }
-            }
-          }
-        }
-      }
-
-      service {
-        name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-        port = "${alpha.value.grpc_public_port}"
-        tags = ["dgraph", "alpha", "grpc"]
-
-        connect {
-          sidecar_service {}
-        }
-      }
-
-      service {
-        name = "dgraph-alpha-${alpha.value.id}-http"
-        port = "${alpha.value.http_port}"
-        tags = ["dgraph", "alpha", "http"]
-
-        connect {
-          sidecar_service {
-            proxy {
-              config {
-                protocol = "http"
-              }
-
-              # We need to expose the health check for consul to be able to reach it
-              expose {
-                path {
-                  path            = "/health"
-                  protocol        = "http"
-                  local_path_port = alpha.value.http_port
-                  listener_port   = "healthcheck"
-                }
-              }
-            }
-          }
-        }
-
-        check {
-          type     = "http"
-          name     = "dgraph-alpha-http-healthcheck"
-          path     = "/health"
-          port     = "healthcheck"
-          method   = "GET"
-          interval = "30s"
-          timeout  = "5s"
-
-          check_restart {
-            limit           = 3
-            grace           = "30s"
-            ignore_warnings = false
-          }
-        }
-      }
-    }
-  }
-
   #######################################
   ## Begin actual Grapl core services ##
   #######################################
-
-  group "scylla-provisioner" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-      port "scylla-provisioner-port" {
-      }
-    }
-
-    task "scylla-provisioner" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["scylla-provisioner"]
-        ports = ["scylla-provisioner-port"]
-      }
-
-      env {
-        SCYLLA_PROVISIONER_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_scylla-provisioner-port}"
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
-        GRAPH_DB_ADDRESSES              = var.graph_db.addresses
-        GRAPH_DB_AUTH_PASSWORD          = var.graph_db.password
-        GRAPH_DB_AUTH_USERNAME          = var.graph_db.username
-      }
-    }
-
-    service {
-      name = "scylla-provisioner"
-      port = "scylla-provisioner-port"
-      connect {
-        sidecar_service {}
-      }
-
-      check {
-        type     = "grpc"
-        port     = "scylla-provisioner-port"
-        interval = "10s"
-        timeout  = "3s"
-      }
-    }
-  }
 
   group "generator-dispatcher" {
     count = 2
@@ -742,7 +309,7 @@ job "grapl-core" {
         AWS_REGION         = var.aws_region
         RUST_LOG           = var.rust_log
         RUST_BACKTRACE     = local.rust_backtrace
-        MG_ALPHAS          = local.alpha_grpc_connect_str
+        GRAPH_MUTATION_CLIENT_URL = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
         GRAPL_SCHEMA_TABLE = var.schema_table_name
 
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
@@ -760,196 +327,9 @@ job "grapl-core" {
       connect {
         sidecar_service {
           proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // todo: move to a new graph-db.nomad
-  group "graph-query" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-      port "graph-query-port" {
-      }
-    }
-
-    task "graph-query" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["graph-query"]
-        ports = ["graph-query-port"]
-      }
-
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
-      }
-
-      env {
-        GRAPH_QUERY_SERVICE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-port}"
-        RUST_BACKTRACE                   = local.rust_backtrace
-        RUST_LOG                         = var.rust_log
-        GRAPH_DB_ADDRESSES               = var.graph_db.addresses
-        GRAPH_DB_AUTH_PASSWORD           = var.graph_db.password
-        GRAPH_DB_AUTH_USERNAME           = var.graph_db.username
-      }
-    }
-
-    service {
-      name = "graph-query"
-      port = "graph-query-port"
-      connect {
-        sidecar_service {}
-      }
-
-      check {
-        type     = "grpc"
-        port     = "graph-query-port"
-        interval = "10s"
-        timeout  = "3s"
-      }
-    }
-  }
-
-  // todo: move to a new graph-db.nomad
-  group "graph-mutation" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-      port "graph-mutation-port" {
-      }
-    }
-
-    task "graph-mutation" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["graph-mutation"]
-        ports = ["graph-mutation-port"]
-      }
-
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
-      }
-
-      env {
-        GRAPH_MUTATION_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-mutation-port}"
-
-        RUST_BACKTRACE         = local.rust_backtrace
-        RUST_LOG               = var.rust_log
-        GRAPH_DB_ADDRESSES     = var.graph_db.addresses
-        GRAPH_DB_AUTH_PASSWORD = var.graph_db.password
-        GRAPH_DB_AUTH_USERNAME = var.graph_db.username
-
-        # upstreams
-        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
-        UID_ALLOCATOR_CLIENT_ADDRESS        = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
-      }
-    }
-
-    service {
-      name = "graph-mutation"
-      port = "graph-mutation-port"
-      connect {
-        sidecar_service {
-          proxy {
-            config {
-              protocol = "grpc"
-            }
-
             upstreams {
-              destination_name = "graph-schema-manager"
-              local_bind_port  = 1000
-            }
-
-            upstreams {
-              destination_name = "uid-allocator"
-              local_bind_port  = 1001
-            }
-          }
-        }
-      }
-
-      check {
-        type     = "grpc"
-        port     = "graph-mutation-port"
-        interval = "10s"
-        timeout  = "3s"
-      }
-    }
-  }
-
-  // todo: move to a new graph-db.nomad
-  group "graph-mutation-service" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-      port "graph-mutation-service-port" {
-      }
-    }
-
-    task "graph-mutation-service" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["graph-mutation-service"]
-        ports = ["graph-mutation-service-port"]
-      }
-
-      env {
-        GRAPH_MUTATION_SERVICE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-mutation-service-port}"
-        RUST_BACKTRACE                      = local.rust_backtrace
-        RUST_LOG                            = var.rust_log
-        GRAPH_DB_ADDRESSES                  = var.graph_db.addresses
-        GRAPH_DB_AUTH_PASSWORD              = var.graph_db.password
-        GRAPH_DB_AUTH_USERNAME              = var.graph_db.username
-        SCHEMA_MANAGER_ADDRESS              = "http://${NOMAD_UPSTREAM_ADDR_schema-manager}"
-        UID_ALLOCATOR_ADDRESS               = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
-        OTEL_EXPORTER_JAEGER_AGENT_HOST     = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT     = local.tracing_jaeger_endpoint_port
-      }
-    }
-
-    service {
-      name = "graph-mutation-service"
-      port = "graph-mutation-service-port"
-      connect {
-        sidecar_service {
-          proxy {
-            config {
-              protocol = "grpc"
-            }
-            # It'd be nice to dynamically use ports. Sadly, per https://github.com/hashicorp/nomad/issues/7135 its not
-            # to be. The ports chosen below can be changed at any time
-            upstreams {
-              destination_name = "schema-manager"
-              local_bind_port  = 9999
-            }
-
-            upstreams {
-              destination_name = "uid-allocator"
-              local_bind_port  = 9998
+              destination_name = "graph-mutation"
+              local_bind_port  = local.graphql_endpoint_port
             }
           }
         }
@@ -999,12 +379,25 @@ job "grapl-core" {
         KAFKA_CONSUMER_TOPIC      = "generated-graphs"
         KAFKA_PRODUCER_TOPIC      = "identified-graphs"
 
+        GRAPH_MUTATION_CLIENT_URL = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
+
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
+        GRAPL_STATIC_MAPPING_TABLE  = var.static_mapping_table_name
       }
+    }
+    service {
+      name = "node-identifier"
 
-      service {
-        name = "node-identifier"
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "graph-mutation"
+              local_bind_port  = local.graphql_endpoint_port
+            }
+          }
+        }
       }
     }
   }
@@ -1044,7 +437,6 @@ job "grapl-core" {
         RUST_LOG = var.rust_log
         # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
         AWS_REGION                    = var.aws_region
-        MG_ALPHAS                     = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         IS_LOCAL                      = "True"
@@ -1056,22 +448,6 @@ job "grapl-core" {
     service {
       name = "graphql-endpoint"
       port = "graphql-endpoint-port"
-
-      connect {
-        sidecar_service {
-          proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
-            }
-          }
-        }
-      }
     }
   }
 
@@ -1466,58 +842,6 @@ job "grapl-core" {
     }
   }
 
-  group "uid-allocator" {
-    count = 2
-
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-
-      port "uid-allocator-port" {
-      }
-    }
-
-    task "uid-allocator" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["uid-allocator"]
-        ports = ["uid-allocator-port"]
-      }
-
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
-      }
-
-      env {
-        UID_ALLOCATOR_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
-
-        COUNTER_DB_ADDRESS  = "${var.uid_allocator_db.hostname}:${var.uid_allocator_db.port}"
-        COUNTER_DB_PASSWORD = var.uid_allocator_db.password
-        COUNTER_DB_USERNAME = var.uid_allocator_db.username
-
-        DEFAULT_ALLOCATION_SIZE = 100
-        PREALLOCATION_SIZE      = 10000
-        MAXIMUM_ALLOCATION_SIZE = 1000
-        RUST_BACKTRACE          = local.rust_backtrace
-        RUST_LOG                = var.rust_log
-      }
-    }
-
-    service {
-      name = "uid-allocator"
-      port = "uid-allocator-port"
-      connect {
-        sidecar_service {
-        }
-      }
-    }
-  }
-
   group "event-source" {
     count = 2
 
@@ -1581,67 +905,4 @@ job "grapl-core" {
       }
     }
   }
-
-  group "graph-schema-manager" {
-    count = 2
-
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-      port "graph-schema-manager-port" {
-      }
-    }
-
-    task "graph-schema-manager" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["graph-schema-manager"]
-        ports = ["graph-schema-manager-port"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws_vars.env"
-        env         = true
-      }
-
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
-      }
-
-      env {
-        RUST_BACKTRACE = local.rust_backtrace
-        RUST_LOG       = var.rust_log
-
-        GRAPH_SCHEMA_MANAGER_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_graph-schema-manager-port}"
-        GRAPH_SCHEMA_MANAGER_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
-
-        GRAPH_SCHEMA_DB_ADDRESS  = "${var.graph_schema_manager_db.hostname}:${var.graph_schema_manager_db.port}"
-        GRAPH_SCHEMA_DB_PASSWORD = var.graph_schema_manager_db.password
-        GRAPH_SCHEMA_DB_USERNAME = var.graph_schema_manager_db.username
-      }
-    }
-
-    service {
-      name = "graph-schema-manager"
-      port = "graph-schema-manager-port"
-      connect {
-        sidecar_service {
-        }
-      }
-
-      check {
-        type     = "grpc"
-        port     = "graph-schema-manager-port"
-        interval = "10s"
-        timeout  = "3s"
-      }
-    }
-  }
-
 }

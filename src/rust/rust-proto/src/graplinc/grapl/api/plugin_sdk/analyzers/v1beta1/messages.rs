@@ -213,7 +213,7 @@ impl From<Update> for UpdateProto {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Updates {
     pub updates: Vec<Update>,
 }

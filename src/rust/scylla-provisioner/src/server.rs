@@ -23,7 +23,13 @@ use scylla::{
 };
 use tokio::net::TcpListener;
 
-use crate::config::ScyllaProvisionerServiceConfig;
+use crate::{
+    config::ScyllaProvisionerServiceConfig,
+    table_names::{
+        tenant_keyspace_name,
+        IMM_STRING_TABLE_NAME,
+    },
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ScyllaProvisionerError {
@@ -34,9 +40,7 @@ pub enum ScyllaProvisionerError {
 impl From<ScyllaProvisionerError> for Status {
     fn from(error: ScyllaProvisionerError) -> Self {
         match error {
-            ScyllaProvisionerError::ScyllaError(error) => {
-                Status::unknown(format!("Scylla Error: {}", error).as_str())
-            }
+            ScyllaProvisionerError::ScyllaError(error) => Status::unknown(error.to_string()),
         }
     }
 }
@@ -50,14 +54,14 @@ pub struct ScyllaProvisioner {
 impl ScyllaProvisionerApi for ScyllaProvisioner {
     type Error = ScyllaProvisionerError;
 
-    async fn deploy_graph_schemas(
+    async fn provision_graph_for_tenant(
         &self,
-        request: native::DeployGraphSchemasRequest,
-    ) -> Result<native::DeployGraphSchemasResponse, Self::Error> {
-        let native::DeployGraphSchemasRequest { tenant_id } = request;
+        request: native::ProvisionGraphForTenantRequest,
+    ) -> Result<native::ProvisionGraphForTenantResponse, Self::Error> {
+        let native::ProvisionGraphForTenantRequest { tenant_id } = request;
         let session = self.scylla_client.as_ref();
 
-        let tenant_ks = format!("tenant_keyspace_{}", tenant_id.simple());
+        let tenant_ks = tenant_keyspace_name(tenant_id);
 
         session.query(
             format!(
@@ -66,7 +70,7 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
             &[]
         ).await?;
 
-        let property_table_names = [("immutable_strings", "text")];
+        let property_table_names = [(IMM_STRING_TABLE_NAME, "text")];
 
         for (table_name, value_type) in property_table_names.into_iter() {
             session
@@ -113,7 +117,7 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
 
         session.await_schema_agreement().await?;
 
-        Ok(native::DeployGraphSchemasResponse {})
+        Ok(native::ProvisionGraphForTenantResponse {})
     }
 }
 

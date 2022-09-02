@@ -228,6 +228,12 @@ EOF
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
       }
+
+      // Each plugin should ideally have a very small footprint.
+      resources {
+        cpu    = 25  // MHz
+        memory = 128 // MB
+      }
     }
 
     restart {

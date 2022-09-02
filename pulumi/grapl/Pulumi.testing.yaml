@@ -4,6 +4,8 @@ config:
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
   grapl:env_vars:
+  grapl:lightstep-access-token:
+    secure: AAABAKxa4yxFSvciEOaqrBtoUWo6qQUGrDeba1ZGrxfW/yToz6ZjXXMrGCC+69aCZvTZhzWif6r+S2fEJJGbJz8WDuje825m0wxGI7hBOsrjPw/gIJ/huFVoTM7mOgRcPZwzkVaVN0ePtdkFQJOb/PD5dOgcEf+CCcYpRthO8T9YEzVowm9lzg==
   grapl:postgres-instance-type: db.t4g.small
   grapl:postgres-version: "13.4"
   grapl:scylla-addresses:

@@ -19,7 +19,7 @@ use plugin_registry::nomad::{
 pub static TOO_MUCH_MEMORY_NOMAD_JOB: &'static str = include_str!("too_much_memory.nomad");
 
 #[test_log::test(tokio::test)]
-async fn test_create_namespace() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_create_namespace() -> eyre::Result<()> {
     let client = NomadClient::from_env();
     client
         .create_update_namespace(models::Namespace {
@@ -32,7 +32,7 @@ async fn test_create_namespace() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test_log::test(tokio::test)]
-async fn test_create_namespace_2x_causes_update() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_create_namespace_2x_causes_update() -> eyre::Result<()> {
     let client = NomadClient::from_env();
     let name = "test-create-namespace-2x";
     let description1 = "im a namespace";
@@ -60,31 +60,25 @@ async fn test_create_namespace_2x_causes_update() -> Result<(), Box<dyn std::err
 }
 
 #[test_log::test(tokio::test)]
-async fn test_plan_job_with_too_much_memory() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_plan_job_with_too_much_memory() -> eyre::Result<()> {
     let client = NomadClient::from_env();
     let job_hcl = TOO_MUCH_MEMORY_NOMAD_JOB;
     let job = NomadCli::default().parse_hcl2(job_hcl, HashMap::default())?;
     let plan_result = client.plan_job(&job, "too-much-memory-job", None).await?;
     match plan_result.ensure_allocation() {
-        Err(NomadClientError::PlanJobAllocationFail) => Ok(()),
-        _ => Err("Expected failed allocation".into()),
+        Err(NomadClientError::PlanJobAllocationFail(_)) => Ok(()),
+        _ => Err(eyre::eyre!("Expected failed allocation")),
     }
 }
 
 #[async_trait]
 trait NomadClientTestFunctions {
-    async fn get_namespace(
-        &self,
-        namespace_name: &str,
-    ) -> Result<models::Namespace, Box<dyn std::error::Error>>;
+    async fn get_namespace(&self, namespace_name: &str) -> eyre::Result<models::Namespace>;
 }
 
 #[async_trait]
 impl NomadClientTestFunctions for NomadClient {
-    async fn get_namespace(
-        &self,
-        namespace_name: &str,
-    ) -> Result<models::Namespace, Box<dyn std::error::Error>> {
+    async fn get_namespace(&self, namespace_name: &str) -> eyre::Result<models::Namespace> {
         Ok(namespaces_api::get_namespace(
             &self.internal_config,
             namespaces_api::GetNamespaceParams {

@@ -1,20 +1,20 @@
 use crate::{
     protobufs::graplinc::grapl::api::scylla_provisioner::v1beta1::{
-        DeployGraphSchemasRequest as DeployGraphSchemasRequestProto,
-        DeployGraphSchemasResponse as DeployGraphSchemasResponseProto,
+        ProvisionGraphForTenantRequest as ProvisionGraphForTenantRequestProto,
+        ProvisionGraphForTenantResponse as ProvisionGraphForTenantResponseProto,
     },
     SerDeError,
 };
 
 #[derive(Debug, Clone)]
-pub struct DeployGraphSchemasRequest {
+pub struct ProvisionGraphForTenantRequest {
     pub tenant_id: uuid::Uuid,
 }
 
-impl TryFrom<DeployGraphSchemasRequestProto> for DeployGraphSchemasRequest {
+impl TryFrom<ProvisionGraphForTenantRequestProto> for ProvisionGraphForTenantRequest {
     type Error = SerDeError;
 
-    fn try_from(request: DeployGraphSchemasRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(request: ProvisionGraphForTenantRequestProto) -> Result<Self, Self::Error> {
         Ok(Self {
             tenant_id: request
                 .tenant_id
@@ -24,8 +24,8 @@ impl TryFrom<DeployGraphSchemasRequestProto> for DeployGraphSchemasRequest {
     }
 }
 
-impl From<DeployGraphSchemasRequest> for DeployGraphSchemasRequestProto {
-    fn from(request: DeployGraphSchemasRequest) -> Self {
+impl From<ProvisionGraphForTenantRequest> for ProvisionGraphForTenantRequestProto {
+    fn from(request: ProvisionGraphForTenantRequest) -> Self {
         Self {
             tenant_id: Some(request.tenant_id.into()),
         }
@@ -33,20 +33,20 @@ impl From<DeployGraphSchemasRequest> for DeployGraphSchemasRequestProto {
 }
 
 #[derive(Debug, Clone)]
-pub struct DeployGraphSchemasResponse {}
+pub struct ProvisionGraphForTenantResponse {}
 
-impl TryFrom<DeployGraphSchemasResponseProto> for DeployGraphSchemasResponse {
+impl TryFrom<ProvisionGraphForTenantResponseProto> for ProvisionGraphForTenantResponse {
     type Error = SerDeError;
 
-    fn try_from(request: DeployGraphSchemasResponseProto) -> Result<Self, Self::Error> {
-        let DeployGraphSchemasResponseProto {} = request;
+    fn try_from(request: ProvisionGraphForTenantResponseProto) -> Result<Self, Self::Error> {
+        let ProvisionGraphForTenantResponseProto {} = request;
         Ok(Self {})
     }
 }
 
-impl From<DeployGraphSchemasResponse> for DeployGraphSchemasResponseProto {
-    fn from(request: DeployGraphSchemasResponse) -> Self {
-        let DeployGraphSchemasResponse {} = request;
+impl From<ProvisionGraphForTenantResponse> for ProvisionGraphForTenantResponseProto {
+    fn from(request: ProvisionGraphForTenantResponse) -> Self {
+        let ProvisionGraphForTenantResponse {} = request;
         Self {}
     }
 }

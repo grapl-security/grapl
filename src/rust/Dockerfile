@@ -152,7 +152,6 @@ organization-management/integration_tests
 pipeline-ingress/integration_tests
 plugin-registry/integration_tests
 plugin-work-queue/integration_tests
-scylla-provisioner/integration_tests
 sysmon-generator/integration_tests
 uid-allocator/integration_tests
 )
@@ -261,7 +260,10 @@ COPY --from=build-test-integration /grapl/tests /tests
 # TODO: remove this when we can either a) rely on local service discovery to
 # finish setting up before we run our tests, or b) connect via the Nomad
 # ingress-service via HTTPS.
-ENTRYPOINT [ "sh", "-c", "sleep 10; find /tests -type f | parallel" ]
+#
+# Note: do not expand the following '-v' to '--verbose', the effect is
+# different and not desired.
+ENTRYPOINT [ "sh", "-c", "sleep 10; find /tests -type f | parallel -v '{}' '2>&1'" ]
 
 
 # images for running services
@@ -307,12 +309,6 @@ FROM rust-dist AS graph-mutation-deploy
 
 COPY --from=build /outputs/graph-mutation /
 ENTRYPOINT ["/graph-mutation"]
-
-##### graph-mutation-service
-FROM rust-dist AS graph-mutation-service-deploy
-
-COPY --from=build /outputs/graph-mutation-service /
-ENTRYPOINT ["/graph-mutation-service"]
 
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy

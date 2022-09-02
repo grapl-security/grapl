@@ -15,7 +15,7 @@ use rust_proto::{
 };
 
 #[test_log::test(tokio::test)]
-async fn test_create_user() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_create_user() -> eyre::Result<()> {
     tracing::debug!(
         env=?std::env::args(),
     );

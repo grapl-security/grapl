@@ -339,9 +339,9 @@ dependencies = [
 
 [[package]]
 name = "android_system_properties"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7ed72e1635e121ca3e79420540282af22da58be50de153d36f81ddc6b83aa9e"
+checksum = "819e7219dbd41043ac279b19830f2efc897156490d7fd6ea916720117ee66311"
 dependencies = [
  "libc",
 ]
@@ -357,9 +357,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.62"
+version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1485d4d2cc45e7b201ee3767015c96faa5904387c9d87c6efdd0fb511f12d305"
+checksum = "a26fa4d7e3f2eebadf743988fc8aec9fa9a9e82611acafd77c1462ed6262440a"
 
 [[package]]
 name = "arc-swap"
@@ -827,9 +827,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.17"
+version = "3.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29e724a68d9319343bb3328c9cc2dfde263f4b3142ee1059a9980580171c954b"
+checksum = "68d43934757334b5c0519ff882e1ab9647ac0258b47c24c4f490d78e42697fd5"
 dependencies = [
  "atty",
  "bitflags",
@@ -844,9 +844,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "3.2.17"
+version = "3.2.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13547f7012c01ab4a0e8f8967730ada8f9fdf419e8b6c792788f39cf4e46eefa"
+checksum = "ea0c8bce528c4be4da13ea6fead8965e95b6073585a2f05204bd8f4119f82a65"
 dependencies = [
  "heck 0.4.0",
  "proc-macro-error",
@@ -948,7 +948,7 @@ checksum = "9d6f2aa4d0537bcc1c74df8755072bd31c1ef1a3a1b85a68e8404a8c353b7b8b"
 name = "consul-connect"
 version = "1.0.0"
 dependencies = [
- "clap 3.2.17",
+ "clap 3.2.19",
  "thiserror",
  "tokio",
  "tracing",
@@ -973,7 +973,7 @@ dependencies = [
  "hmac 0.12.1",
  "percent-encoding",
  "rand",
- "sha2 0.10.2",
+ "sha2 0.10.3",
  "subtle",
  "time 0.3.14",
  "version_check",
@@ -1248,13 +1248,14 @@ dependencies = [
 
 [[package]]
 name = "dashmap"
-version = "5.3.4"
+version = "5.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3495912c9c1ccf2e18976439f4443f3fee0fd61f424ff99fde6a66b15ecb448f"
+checksum = "907076dfda823b0b36d2a1bb5f90c96660a5bbcd7729e10727f07858f22c4edc"
 dependencies = [
  "cfg-if 1.0.0",
  "hashbrown",
  "lock_api",
+ "once_cell",
  "parking_lot_core 0.9.3",
 ]
 
@@ -1376,9 +1377,9 @@ dependencies = [
 
 [[package]]
 name = "dotenvy"
-version = "0.15.2"
+version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d14217f19387ebd26b24ff4ecf93de2dbe68bab13957e43732127f19ca21a6d3"
+checksum = "da3db6fcad7c1fc4abdd99bf5276a4db30d6a819127903a709ed41e5ff016e84"
 dependencies = [
  "dirs",
 ]
@@ -1401,7 +1402,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.17",
+ "clap 3.2.19",
  "eyre",
  "futures",
  "grapl-config",
@@ -1500,8 +1501,9 @@ name = "event-source"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "clap 3.2.17",
+ "clap 3.2.19",
  "env_logger 0.9.0",
+ "eyre",
  "grapl-config",
  "grapl-tracing",
  "grapl-utils",
@@ -1726,8 +1728,9 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.17",
+ "clap 3.2.19",
  "e2e-tests",
+ "eyre",
  "futures",
  "grapl-tracing",
  "kafka",
@@ -1748,7 +1751,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.17",
+ "clap 3.2.19",
  "consul-connect",
  "grapl-tracing",
  "moka 0.8.6",
@@ -1811,7 +1814,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "bytes",
- "clap 3.2.17",
+ "clap 3.2.19",
  "e2e-tests",
  "eyre",
  "futures",
@@ -1840,7 +1843,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "blake2",
- "clap 3.2.17",
+ "clap 3.2.19",
  "dashmap",
  "grapl-tracing",
  "grapl-utils",
@@ -1864,8 +1867,9 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "clap 3.2.17",
+ "clap 3.2.19",
  "env_logger 0.9.0",
+ "eyre",
  "futures",
  "grapl-tracing",
  "itertools",
@@ -1895,8 +1899,9 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.17",
+ "clap 3.2.19",
  "dashmap",
+ "eyre",
  "grapl-config",
  "grapl-graphql-codegen",
  "grapl-tracing",
@@ -1923,7 +1928,7 @@ name = "grapl-config"
 version = "0.0.2"
 dependencies = [
  "async-trait",
- "clap 3.2.17",
+ "clap 3.2.19",
  "color-eyre",
  "eyre",
  "grapl-utils",
@@ -1942,7 +1947,7 @@ dependencies = [
 name = "grapl-graphql-codegen"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.17",
+ "clap 3.2.19",
  "color-eyre",
  "graphql-parser",
  "serde_json",
@@ -1985,7 +1990,7 @@ dependencies = [
  "argon2",
  "awc",
  "chrono",
- "clap 3.2.17",
+ "clap 3.2.19",
  "eyre",
  "futures-util",
  "grapl-config",
@@ -2204,9 +2209,9 @@ checksum = "0bfe8eed0a9285ef776bb792479ea3834e8b94e13d615c2f66d03dd50a435a29"
 
 [[package]]
 name = "httparse"
-version = "1.7.1"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "496ce29bb5a52785b44e0f7ca2847ae0bb839c9bd28f69acac9b99d461c0c04c"
+checksum = "d897f394bad6a705d5f4104762e116a75639e470d80901eed05a860a95cb1904"
 
 [[package]]
 name = "httpdate"
@@ -2288,13 +2293,14 @@ dependencies = [
 
 [[package]]
 name = "iana-time-zone"
-version = "0.1.46"
+version = "0.1.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad2bfd338099682614d3ee3fe0cd72e0b6a41ca6a87f6a74a3bd593c91650501"
+checksum = "4c495f162af0bf17656d0014a0eded5f3cd2f365fdd204548c2869db89359dc7"
 dependencies = [
  "android_system_properties",
  "core-foundation-sys",
  "js-sys",
+ "once_cell",
  "wasm-bindgen",
  "winapi",
 ]
@@ -2441,7 +2447,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "chrono",
- "clap 3.2.17",
+ "clap 3.2.19",
  "futures",
  "rdkafka",
  "rust-proto",
@@ -2456,7 +2462,7 @@ dependencies = [
 name = "kafka-retry"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.17",
+ "clap 3.2.19",
  "futures",
  "grapl-tracing",
  "kafka",
@@ -2644,9 +2650,9 @@ dependencies = [
 
 [[package]]
 name = "md-5"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "658646b21e0b72f7866c7038ab086d3d5e1cd6271f060fd37defb241949d0582"
+checksum = "274fd6bd98a3c75c9515d9393b063099f60f9b47f09ee20a34fd76287fd017f4"
 dependencies = [
  "digest 0.10.3",
 ]
@@ -2782,7 +2788,7 @@ dependencies = [
  "blake2",
  "bytes",
  "chrono",
- "clap 3.2.17",
+ "clap 3.2.19",
  "e2e-tests",
  "eyre",
  "failure",
@@ -3130,8 +3136,9 @@ version = "0.1.0"
 dependencies = [
  "argon2",
  "async-trait",
- "clap 3.2.17",
+ "clap 3.2.19",
  "env_logger 0.9.0",
+ "eyre",
  "grapl-config",
  "grapl-tracing",
  "grapl-utils",
@@ -3251,9 +3258,9 @@ dependencies = [
 
 [[package]]
 name = "paste"
-version = "1.0.8"
+version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9423e2b32f7a043629287a536f21951e8c6a82482d0acb1eeebfc90bc2225b22"
+checksum = "b1de2e551fb905ac83f73f7aedf2f0cb4a0da7e35efa24a202a936269f1f18e1"
 
 [[package]]
 name = "pem"
@@ -3327,7 +3334,8 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.17",
+ "clap 3.2.19",
+ "eyre",
  "futures",
  "grapl-tracing",
  "kafka",
@@ -3402,7 +3410,7 @@ name = "plugin-bootstrap"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.17",
+ "clap 3.2.19",
  "futures",
  "grapl-tracing",
  "grapl-utils",
@@ -3418,7 +3426,7 @@ name = "plugin-execution-sidecar"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "clap 3.2.17",
+ "clap 3.2.19",
  "grapl-tracing",
  "rust-proto",
  "thiserror",
@@ -3433,8 +3441,9 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.17",
+ "clap 3.2.19",
  "env_logger 0.9.0",
+ "eyre",
  "futures",
  "futures-retry",
  "grapl-config",
@@ -3462,7 +3471,8 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "clap 3.2.17",
+ "clap 3.2.19",
+ "eyre",
  "futures",
  "grapl-config",
  "grapl-tracing",
@@ -3511,9 +3521,9 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
 name = "prettyplease"
-version = "0.1.18"
+version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "697ae720ee02011f439e0701db107ffe2916d83f718342d65d7f8bf7b8a5fee9"
+checksum = "a49e86d2c26a24059894a3afa13fd17d063419b05dfb83f06d9c3566060c3f5a"
 dependencies = [
  "proc-macro2",
  "syn",
@@ -4143,7 +4153,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.17",
+ "clap 3.2.19",
  "client-executor",
  "futures",
  "grapl-utils",
@@ -4369,7 +4379,7 @@ name = "scylla-provisioner"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.17",
+ "clap 3.2.19",
  "env_logger 0.9.0",
  "grapl-tracing",
  "rust-proto",
@@ -4515,9 +4525,9 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.10.2"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55deaec60f81eefe3cce0dc50bda92d6d8e88f2a27df7c5033b42afeb1ed2676"
+checksum = "899bf02746a2c92bf1053d9327dadb252b01af1f81f90cdb902411f518bc7215"
 dependencies = [
  "cfg-if 1.0.0",
  "cpufeatures",
@@ -4694,7 +4704,7 @@ dependencies = [
  "itoa 1.0.3",
  "libc",
  "log",
- "md-5 0.10.1",
+ "md-5 0.10.2",
  "memchr",
  "once_cell",
  "paste",
@@ -4705,7 +4715,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha-1",
- "sha2 0.10.2",
+ "sha2 0.10.3",
  "smallvec",
  "sqlformat",
  "sqlx-rt",
@@ -4734,7 +4744,7 @@ dependencies = [
  "quote",
  "serde",
  "serde_json",
- "sha2 0.10.2",
+ "sha2 0.10.3",
  "sqlx-core",
  "sqlx-rt",
  "syn",
@@ -4835,8 +4845,9 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "clap 3.2.17",
+ "clap 3.2.19",
  "endpoint-plugin",
+ "eyre",
  "futures",
  "generator-sdk",
  "grapl-tracing",
@@ -4857,6 +4868,7 @@ dependencies = [
  "chrono",
  "criterion",
  "derive-into-owned",
+ "eyre",
  "memchr",
  "serde",
  "thiserror",
@@ -4948,18 +4960,18 @@ checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
 
 [[package]]
 name = "thiserror"
-version = "1.0.32"
+version = "1.0.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5f6586b7f764adc0231f4c79be7b920e766bb2f3e51b3661cdb263828f19994"
+checksum = "3d0a539a918745651435ac7db7a18761589a94cd7e94cd56999f828bf73c8a57"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.32"
+version = "1.0.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12bafc5b54507e0149cdf1b145a5d80ab80a90bcd9275df43d4fff68460f6c21"
+checksum = "c251e90f708e16c49a16f4917dc2131e75222b72edfa9cb7f7c58ae56aae0c09"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5557,9 +5569,10 @@ dependencies = [
  "async-recursion",
  "async-trait",
  "chrono",
- "clap 3.2.17",
+ "clap 3.2.19",
  "dashmap",
  "env_logger 0.9.0",
+ "eyre",
  "futures",
  "grapl-config",
  "grapl-tracing",
@@ -5874,13 +5887,13 @@ dependencies = [
 
 [[package]]
 name = "which"
-version = "4.2.5"
+version = "4.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c4fb54e6113b6a8772ee41c3404fb0301ac79604489467e0a9ce1f3e97c24ae"
+checksum = "1c831fbbee9e129a8cf93e7747a82da9d95ba8e16621cae60ec2cdc849bacb7b"
 dependencies = [
  "either",
- "lazy_static",
  "libc",
+ "once_cell",
 ]
 
 [[package]]

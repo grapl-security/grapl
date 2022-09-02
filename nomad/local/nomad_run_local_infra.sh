@@ -4,7 +4,6 @@ set -euo pipefail
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 LOCAL_INFRA_NOMAD_FILE="${GRAPL_ROOT}/nomad/local/grapl-local-infra.nomad"
-OBSERVABILITY_NOMAD_FILE="${GRAPL_ROOT}/nomad/observability.nomad"
 
 declare -a NOMAD_VARS=(
     -var "image_tag=${IMAGE_TAG}"
@@ -39,7 +38,6 @@ done
 # Kick off all your nomad jobs in parallel
 nomad_evals=()
 nomad_evals+=("$(nomad_run "${NOMAD_VARS[@]}" "${LOCAL_INFRA_NOMAD_FILE}")")
-nomad_evals+=("$(nomad_run "${OBSERVABILITY_NOMAD_FILE}")")
 
 # `-monitor` will wait for each one to complete
 for eval_id in "${nomad_evals[@]}"; do
@@ -48,6 +46,5 @@ for eval_id in "${nomad_evals[@]}"; do
 done
 
 check_for_task_failures_in_job "grapl-local-infra"
-check_for_task_failures_in_job "observability"
 
 echo "Nomad Local Infra deployed!"

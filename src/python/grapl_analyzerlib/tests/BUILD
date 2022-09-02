@@ -3,6 +3,5 @@ python_tests(
     extra_env_vars=[
         "GRAPL_LOG_LEVEL",
         "STACK_NAME",
-        "MG_ALPHAS",
     ],
 )

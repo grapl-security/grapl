@@ -12,7 +12,7 @@ use rust_proto::{
 };
 
 #[test_log::test(tokio::test)]
-async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_create_organization() -> eyre::Result<()> {
     tracing::debug!(
         env=?std::env::args(),
     );

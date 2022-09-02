@@ -30,7 +30,7 @@ from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
-from infra.observability_env_vars import observability_env_vars_for_local
+from infra.observability_env_vars import observability_env_vars_for_local, otel_config
 from infra.postgres import Postgres
 from infra.scylla import ScyllaInstance
 
@@ -39,7 +39,7 @@ from infra.scylla import ScyllaInstance
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
 from infra.upstream_stacks import UpstreamStacks
-from pulumi.resource import CustomTimeouts, ResourceOptions
+from pulumi.resource import CustomTimeouts
 from typing_extensions import Final
 
 import pulumi
@@ -66,7 +66,6 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
 
     return {
         "analyzer-execution-sidecar": DockerImageId("TODO implement analzyer executor"),
-        "scylla-provisioner": builder.build_with_tag("scylla-provisioner"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
@@ -87,6 +86,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
         "provisioner": builder.build_with_tag("provisioner"),
+        "scylla-provisioner": builder.build_with_tag("scylla-provisioner"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),
         "uid-allocator": builder.build_with_tag("uid-allocator"),
     }
@@ -239,6 +239,7 @@ def main() -> None:
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
+        static_mapping_table_name=dynamodb_tables.static_mapping_table.name,
         test_user_name=config.GRAPL_TEST_USER_NAME,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
@@ -309,6 +310,24 @@ def main() -> None:
 
     graph_db = ScyllaInstance("graph-db")
 
+    # TODO migrate secret lookups to dynamic vault lookups inline Nomad.
+    #  This requires Nomad to have been hooked up to Vault first
+    lightstep_access_token = pulumi.Output.secret(
+        pulumi_config.get(key="lightstep-access-token") or ""
+    )
+    otel_configuration = otel_config(lightstep_access_token)
+    NomadJob(
+        "otel-collector",
+        jobspec=repository_path("nomad/observability.nomad"),
+        vars=dict(otel_config=otel_configuration),
+        opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
+            custom_timeouts=CustomTimeouts(
+                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
+            ),
+        ),
+    )
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -357,39 +376,9 @@ def main() -> None:
         # Once we're using dns addresses we can create it for everything
         ConsulConfig(
             "grapl-core",
-            tracing_endpoint="jaeger-zipkin.service.consul",
+            tracing_endpoint="otel-collector-zipkin.service.consul",
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
-
-        local_grapl_core_vars: Final[NomadVars] = dict(
-            graph_db=graph_db.to_nomad_scylla_args(),
-            event_source_db=event_source_db.to_nomad_service_db_args(),
-            organization_management_db=organization_management_db.to_nomad_service_db_args(),
-            plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
-            plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
-            graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
-            uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
-            **nomad_inputs,
-        )
-
-        nomad_grapl_core = NomadJob(
-            "grapl-core",
-            jobspec=repository_path("nomad/grapl-core.nomad"),
-            vars=local_grapl_core_vars,
-            opts=ResourceOptions(
-                custom_timeouts=CustomTimeouts(
-                    create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-                )
-            ),
-        )
-
-        nomad_grapl_provision = NomadJob(
-            "grapl-provision",
-            jobspec=repository_path("nomad/grapl-provision.nomad"),
-            vars=provision_vars,
-            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
-        )
-
     else:
         ###################################
         # AWS Grapl
@@ -454,45 +443,6 @@ def main() -> None:
             )
         )
 
-        prod_grapl_core_vars: Final[NomadVars] = dict(
-            graph_db=graph_db.to_nomad_scylla_args(),
-            event_source_db=event_source_db.to_nomad_service_db_args(),
-            organization_management_db=organization_management_db.to_nomad_service_db_args(),
-            plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
-            plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
-            graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
-            uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
-            **nomad_inputs,
-        )
-
-        # make it easy to debug nomad var issues
-        if pulumi.runtime.is_dry_run():
-            pulumi.export("prod-grapl-core-vars", prod_grapl_core_vars)
-
-        nomad_grapl_core = NomadJob(
-            "grapl-core",
-            jobspec=repository_path("nomad/grapl-core.nomad"),
-            vars=prod_grapl_core_vars,
-            opts=pulumi.ResourceOptions(
-                provider=nomad_provider,
-                custom_timeouts=CustomTimeouts(
-                    create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-                ),
-            ),
-        )
-
-        nomad_grapl_provision = NomadJob(
-            "grapl-provision",
-            jobspec=repository_path("nomad/grapl-provision.nomad"),
-            vars=provision_vars,
-            opts=pulumi.ResourceOptions(
-                depends_on=[
-                    nomad_grapl_core.job,
-                ],
-                provider=nomad_provider,
-            ),
-        )
-
         NomadJob(
             "grapl-observability",
             jobspec=repository_path("nomad/observability.nomad"),
@@ -513,18 +463,84 @@ def main() -> None:
         )
         pulumi.export("stage-url", api_gateway.stage.invoke_url)
 
-        # Describes resources that should be destroyed/updated between
-        # E2E-in-AWS runs.
-        pulumi.export(
-            "stateful-resource-urns",
-            [
-                # We need to re-provision
-                nomad_grapl_provision.urn,
-                dynamodb_tables.urn,
+    graph_db_args: Final[NomadVars] = dict(
+        graph_db=graph_db.to_nomad_scylla_args(),
+        graph_schema_manager_db=graph_schema_manager_db.to_nomad_service_db_args(),
+        uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
+        **_get_subset(
+            nomad_inputs,
+            {
+                "container_images",
+                "observability_env_vars",
+                "rust_log",
+            },
+        ),
+    )
+
+    nomad_graph_db = NomadJob(
+        "grapl-graph-db",
+        jobspec=repository_path("nomad/grapl-graph-db.nomad"),
+        vars=graph_db_args,
+        opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
+            custom_timeouts=CustomTimeouts(
+                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
+            ),
+        ),
+    )
+
+    grapl_core_vars: Final[NomadVars] = dict(
+        event_source_db=event_source_db.to_nomad_service_db_args(),
+        organization_management_db=organization_management_db.to_nomad_service_db_args(),
+        plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
+        plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+        **nomad_inputs,
+    )
+
+    nomad_grapl_core = NomadJob(
+        "grapl-core",
+        jobspec=repository_path("nomad/grapl-core.nomad"),
+        vars=grapl_core_vars,
+        opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
+            custom_timeouts=CustomTimeouts(
+                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
+            ),
+        ),
+    )
+
+    nomad_grapl_provision = NomadJob(
+        "grapl-provision",
+        jobspec=repository_path("nomad/grapl-provision.nomad"),
+        vars=provision_vars,
+        opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
+            depends_on=[
+                nomad_grapl_core.job,
             ],
-        )
+        ),
+    )
 
     OpsAlarms(name="ops-alarms")
+
+    ##############################
+    # EXPORTS
+    ##############################
+
+    # make it easy to debug nomad var issues
+    if (not config.LOCAL_GRAPL) and pulumi.runtime.is_dry_run():
+        pulumi.export("prod-grapl-core-vars", grapl_core_vars)
+
+    # Describes resources that should be destroyed/updated between
+    # E2E-in-AWS runs.
+    pulumi.export(
+        "stateful-resource-urns",
+        [
+            # We need to re-provision
+            nomad_grapl_provision.urn,
+            dynamodb_tables.urn,
+        ],
+    )
 
     pulumi.export(
         "organization-management-db",

@@ -14,7 +14,7 @@ use test_context::test_context;
 #[tokio::test]
 async fn test_dispatcher_inserts_job_into_plugin_work_queue(
     ctx: &mut E2eTestContext,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> eyre::Result<()> {
     let test_name = "test_dispatcher_inserts_job_into_plugin_work_queue";
     let generator_artifact = Bytes::from("arbitrary binary");
     let SetupResult {
