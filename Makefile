@@ -609,7 +609,7 @@ docker-kill-all:  # Kill all currently running Docker containers except registry
 
 .PHONY: repl
 repl: ## Run an interactive ipython repl that can import from grapl-common etc
-	./pants --no-pantsd repl --shell=ipython src/python/repl
+	./pants --no-pantsd repl --shell=ipython src/python/python-proto/python_proto
 
 .PHONY: build-docs
 build-docs: ## Build the Sphinx docs
