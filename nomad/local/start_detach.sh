@@ -79,12 +79,12 @@ create_dynamic_consul_config() {
     cat << EOF > "${THIS_DIR}/consul-dynamic-conf.hcl"
 encrypt = "$GOSSIP_KEY"
 connect {
-  enabled = true
+  enabled     = true
   ca_provider = "vault"
   ca_config {
-    address = "http://127.0.0.1:8200"
-    token = "$VAULT_TOKEN"
-    root_pki_path = "connect-root"
+    address               = "http://127.0.0.1:8200"
+    token                 = "$VAULT_TOKEN"
+    root_pki_path         = "connect-root"
     intermediate_pki_path = "connect-intermediate"
   }
 }
