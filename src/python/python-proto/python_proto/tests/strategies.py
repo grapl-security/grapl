@@ -3,8 +3,7 @@ import uuid
 from typing import Mapping, Sequence
 
 import hypothesis.strategies as st
-from python_proto import SerDe
-from python_proto.api import (
+from python_proto.api.graph.v1beta1.messages import (
     DecrementOnlyIntProp,
     DecrementOnlyUintProp,
     Edge,
@@ -39,6 +38,7 @@ from python_proto.metrics import (
     MetricWrapper,
 )
 from python_proto.pipeline import Envelope, RawLog
+from python_proto.serde import SerDe
 
 #
 # constants
