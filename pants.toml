@@ -66,7 +66,6 @@ root_patterns = [
   "/etc",  # Some of our tests use sample data from here
   "/pulumi",
   "/src/proto",
-  "/src/python/graphql_endpoint_tests",
   "/src/python/grapl_analyzerlib",
   "/src/python/grapl-common",
   "/src/python/graplctl",

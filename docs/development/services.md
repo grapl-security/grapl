@@ -122,15 +122,10 @@ Generator work to which Plugin we think should process it.
 Provides the main customer interaction with Grapl. This is not actually a
 standalone service, but hosted as static assets inside Grapl Web UI.
 
-### Graphql Endpoint
-
-Graphql interface into our Dgraph database.
-
 ### Grapl Web UI
 
 Provides authn/authz functions, and acts as a router to other services:
 
-- Graphql Endpoint (/graphqlEndpoint)
 - Model Plugin Deployer (current undergoing rewrite)
 
 Also, hosts static assets like Engagement View.

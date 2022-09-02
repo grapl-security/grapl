@@ -1,6 +1,5 @@
 mod authn;
 mod config;
-mod graphql;
 mod routes;
 
 use actix_session::CookieSession;
@@ -11,7 +10,6 @@ use actix_web::{
     HttpServer,
 };
 pub use config::Config;
-pub use graphql::GraphQlEndpointUrl;
 
 pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
     let listener = config.listener;
@@ -26,7 +24,6 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
             ),
             jsonwebtoken_google::Parser::new(&config.google_client_id),
         ));
-        let graphql_endpoint = Data::new(config.graphql_endpoint.clone());
         App::new()
             .wrap(actix_web::middleware::Logger::default())
             .wrap(actix_web_opentelemetry::RequestTracing::new())
@@ -48,7 +45,6 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
                 ),
             )))
             .app_data(web_client)
-            .app_data(graphql_endpoint)
             .app_data(web_authenticator)
             .configure(routes::config)
     })
