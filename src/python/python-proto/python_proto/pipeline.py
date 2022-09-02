@@ -8,8 +8,8 @@ from typing import Generic, cast
 from google.protobuf.any_pb2 import Any as _Any
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Envelope as _Envelope
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import RawLog as _RawLog
-from python_proto import I, SerDe, SerDeWithInner
 from python_proto.common import Timestamp, Uuid
+from python_proto.serde import I, SerDe, SerDeWithInner
 
 
 @dataclasses.dataclass(frozen=True)

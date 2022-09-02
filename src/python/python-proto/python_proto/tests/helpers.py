@@ -2,7 +2,7 @@ from typing import cast
 
 import hypothesis.strategies as st
 from hypothesis import given
-from python_proto import I, P, SerDe, SerDeWithInner
+from python_proto.serde import I, P, SerDe, SerDeWithInner
 
 
 def check_encode_decode_invariant(
