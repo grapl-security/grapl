@@ -7,7 +7,7 @@ import uuid
 from graplinc.common.v1beta1.types_pb2 import Duration as _Duration
 from graplinc.common.v1beta1.types_pb2 import Timestamp as _Timestamp
 from graplinc.common.v1beta1.types_pb2 import Uuid as _Uuid
-from python_proto import SerDe
+from python_proto.serde import SerDe
 
 SECONDS_PER_DAY = 60 * 60 * 24
 EPOCH = datetime.datetime.fromisoformat("1970-01-01T00:00:00.000")
