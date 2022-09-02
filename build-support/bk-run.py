@@ -94,7 +94,7 @@ def _push(commit: str, branch: str) -> None:
         f"{commit}:{branch}",
     ]
     err_console.print(f"Executing: [bold white]{' '.join(command)}[/bold white]")
-    subprocess.run(command, check=True)
+    subprocess.run(command, check=True, capture_output=True)
 
 
 def _trigger(pipeline: str, branch: str, commit: str, message: str) -> None:
@@ -115,7 +115,7 @@ def _trigger(pipeline: str, branch: str, commit: str, message: str) -> None:
         message,
     ]
     err_console.print(f"Executing: [bold white]{' '.join(command)}[/bold white]")
-    subprocess.run(command, check=True)
+    subprocess.run(command, check=True, capture_output=True)
 
 
 @app.command()
