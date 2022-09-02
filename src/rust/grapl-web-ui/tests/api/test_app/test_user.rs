@@ -54,7 +54,7 @@ impl TestUser {
                 ..Default::default()
             },
             "organization_id".to_owned() => AttributeValue {
-                s: Some("test".to_owned()),
+                s: Some("00000000-0000-0000-0000-000000000000".to_owned()),
                 ..Default::default()
             }
         };

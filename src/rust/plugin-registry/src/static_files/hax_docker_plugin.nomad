@@ -80,9 +80,9 @@ job "grapl-plugin" {
     service {
       name = "plugin-execution-sidecar-${var.plugin_id}"
       tags = [
-        "serve_type:plugin-execution-sidecar",
-        "tenant_id:${var.tenant_id}",
-        "plugin_id:${var.plugin_id}"
+        "plugin-execution-sidecar",
+        "tenant-${var.tenant_id}",
+        "plugin-${var.plugin_id}"
       ]
 
       connect {
@@ -227,6 +227,12 @@ EOF
         # Should we make these eventually customizable?
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
+      }
+
+      // Each plugin should ideally have a very small footprint.
+      resources {
+        cpu    = 25  // MHz
+        memory = 128 // MB
       }
     }
 

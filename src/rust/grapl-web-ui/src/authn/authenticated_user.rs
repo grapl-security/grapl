@@ -8,7 +8,7 @@ use actix_web::{
     HttpRequest,
     ResponseError,
 };
-use futures_util::future::Future;
+use futures::future::Future;
 
 use super::{
     GraplRole,
@@ -43,11 +43,11 @@ impl ResponseError for SessionValidationError {
 pub struct AuthenticatedUser {
     username: String,
     role: GraplRole,
-    organization_id: String,
+    organization_id: uuid::Uuid,
 }
 
 impl AuthenticatedUser {
-    pub(super) fn new(username: String, role: GraplRole, organization_id: String) -> Self {
+    pub(super) fn new(username: String, role: GraplRole, organization_id: uuid::Uuid) -> Self {
         Self {
             username,
             role,
@@ -63,7 +63,7 @@ impl AuthenticatedUser {
         &self.role
     }
 
-    pub fn get_organization_id(&self) -> &str {
+    pub fn get_organization_id(&self) -> &uuid::Uuid {
         &self.organization_id
     }
 }
@@ -100,7 +100,7 @@ impl FromRequest for AuthenticatedUser {
                 message = "validated user session",
                 username = user.get_username(),
                 role = user.get_role().to_string(),
-                organization_id = user.get_organization_id()
+                organization_id =% user.get_organization_id()
             );
 
             Ok(user)

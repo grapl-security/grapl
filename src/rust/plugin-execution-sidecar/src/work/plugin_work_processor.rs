@@ -16,9 +16,20 @@ pub type RequestId = i64;
 pub enum PluginWorkProcessorError {
     #[error("GrpcClientError {0}")]
     GrpcClientError(#[from] GrpcClientError),
-    // Likely want one for Analyzer as well once that SDK exists
-    #[error("ProcessJob {0}")]
-    ProcessJob(String),
+    #[error("Processing job failed, marking failed: {0}")]
+    ProcessingJobFailed(String),
+    #[error("Processing job failed, PWQ will retry: {0}")]
+    ProcessingJobFailedRetriable(String),
+}
+
+impl PluginWorkProcessorError {
+    pub fn is_retriable(&self) -> bool {
+        match self {
+            PluginWorkProcessorError::GrpcClientError(_) => true,
+            PluginWorkProcessorError::ProcessingJobFailedRetriable(_) => true,
+            PluginWorkProcessorError::ProcessingJobFailed(_) => false,
+        }
+    }
 }
 
 // Abstract out between Get[Generator/Analyzer]ExecutionResponse,
