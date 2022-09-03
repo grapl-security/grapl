@@ -3,7 +3,6 @@ import pytest
 pytest.register_assert_rewrite("python_proto.tests.helpers")
 
 import hypothesis.strategies as st
-from python_proto import common
 from python_proto.grapl.common.v1beta1 import messages
 from python_proto.tests import strategies
 from python_proto.tests.helpers import check_encode_decode_invariant

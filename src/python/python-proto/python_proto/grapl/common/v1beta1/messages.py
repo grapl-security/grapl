@@ -3,12 +3,11 @@ from __future__ import annotations
 import dataclasses
 
 from graplinc.grapl.common.v1beta1 import types_pb2 as proto
-from python_proto.serde import P, NewSerDe
-
+from python_proto.serde import SerDe
 
 
 @dataclasses.dataclass(frozen=True)
-class Uid(NewSerDe[proto.Uid]):
+class Uid(SerDe[proto.Uid]):
     value: int
 
     proto_cls: type[proto.Uid] = proto.Uid
