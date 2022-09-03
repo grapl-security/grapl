@@ -1,5 +1,55 @@
 {
   "db": "PostgreSQL",
+  "04ed4ac93838bbbd1bc6925f5a835752621ef867f47e866400ea8a4234e9a6e0": {
+    "describe": {
+      "columns": [
+        {
+          "name": "plugin_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "tenant_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "display_name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "plugin_type",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "artifact_s3_key",
+          "ordinal": 4,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "event_source_id",
+          "ordinal": 5,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            SELECT\n            plugin_id,\n            tenant_id,\n            display_name,\n            plugin_type,\n            artifact_s3_key,\n            event_source_id\n            FROM plugins\n            WHERE plugin_id = $1;\n            "
+  },
   "0f04a764a6348444101c900b5f63e5f96b7480c679de5d732a12ae732b856aed": {
     "describe": {
       "columns": [],
@@ -77,6 +127,57 @@
     },
     "query": "\n            INSERT INTO plugin_deployment (\n                plugin_id,\n                status\n            )\n            VALUES ($1::uuid, $2);\n            "
   },
+  "607ef020faaeeb20def7e660db8703cd1d7877df94df0f9074e4e837eba19917": {
+    "describe": {
+      "columns": [
+        {
+          "name": "plugin_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "tenant_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "display_name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "plugin_type",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "artifact_s3_key",
+          "ordinal": 4,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "event_source_id",
+          "ordinal": 5,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            SELECT\n                plugin_id,\n                tenant_id,\n                display_name,\n                plugin_type,\n                artifact_s3_key,\n                event_source_id\n            FROM plugins\n            WHERE\n                tenant_id = $1 AND plugin_type = $2;\n            "
+  },
   "93bdfbb157510d24a4fd8b0b88d24940089be7a3c3b4310de3f895aa8962f816": {
     "describe": {
       "columns": [],
@@ -153,56 +254,6 @@
       }
     },
     "query": "\n            SELECT\n                id,\n                plugin_id,\n                timestamp,\n                status AS \"status: PluginDeploymentStatus\",\n                deployed\n            FROM plugin_deployment\n            WHERE plugin_id = $1\n            ORDER BY id desc limit 1;\n            "
-  },
-  "cd302b0299a3919aa7fcd34ec60877e8a3189560b9485dc9f75b3ca0368afcc8": {
-    "describe": {
-      "columns": [
-        {
-          "name": "plugin_id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "tenant_id",
-          "ordinal": 1,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "display_name",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "plugin_type",
-          "ordinal": 3,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "artifact_s3_key",
-          "ordinal": 4,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "event_source_id",
-          "ordinal": 5,
-          "type_info": "Uuid"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n            SELECT\n            plugin_id,\n            tenant_id,\n            display_name,\n            plugin_type,\n            artifact_s3_key,\n            event_source_id\n            FROM plugins\n            WHERE plugin_id = $1\n            "
   },
   "ee70c580b98542fdf5cc49230ba968c926009e5cbba9b85b93af277927e92cb9": {
     "describe": {

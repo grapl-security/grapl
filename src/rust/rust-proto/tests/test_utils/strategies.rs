@@ -702,6 +702,7 @@ pub mod event_source {
 }
 
 pub mod plugin_registry {
+    use proptest::collection;
     use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
         CreatePluginResponse,
@@ -717,6 +718,8 @@ pub mod plugin_registry {
         GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
+        ListPluginsRequest,
+        ListPluginsResponse,
         PluginDeployment,
         PluginDeploymentStatus,
         PluginHealthStatus,
@@ -834,6 +837,23 @@ pub mod plugin_registry {
             plugin_metadata in plugin_metadatas(),
         ) -> GetPluginResponse {
             GetPluginResponse::new(plugin_id, plugin_metadata)
+        }
+    }
+
+    prop_compose! {
+        pub fn list_plugins_requests()(
+            tenant_id in uuids(),
+            plugin_type in plugin_types(),
+        ) -> ListPluginsRequest {
+            ListPluginsRequest::new(tenant_id, plugin_type)
+        }
+    }
+
+    prop_compose! {
+        pub fn list_plugins_responses()(
+            plugins in collection::vec(get_plugin_responses(), 10),
+        ) -> ListPluginsResponse {
+            ListPluginsResponse::new(plugins)
         }
     }
 
