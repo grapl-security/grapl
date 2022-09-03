@@ -1,5 +1,8 @@
 python_requirements(
     module_mapping={
+        # grpcio can be removed once Pants is upgraded to 2.14:
+        # https://github.com/pantsbuild/pants/pull/16605
+        "grpcio": ["grpc"],
         "pyjwt": ["jwt"],
         "python-hcl2": ["hcl2"],
         "python-nomad": ["nomad"],

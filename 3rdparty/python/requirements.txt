@@ -8,6 +8,7 @@ botocore
 click
 confluent-kafka
 cookiecutter==1.7.3
+grpcio
 hypothesis
 lark-parser
 opentelemetry-api
@@ -34,6 +35,6 @@ python-nomad==1.4.1
 requests
 setuptools
 toml==0.10.2
-typer==0.3.2
+typer[all]
 typing_extensions
 zstd

@@ -267,7 +267,7 @@ install_hashicorp_tools() {
     echo_banner "Installing hashicorp tools: consul nomad packer"
 
     CONSUL_VERSION="1.12.3-1"
-    NOMAD_VERSION="1.3.4-1"
+    NOMAD_VERSION="1.3.5-1"
     PACKER_VERSION="1.8.2-1"
     VAULT_VERSION="1.10.4-1"
 
@@ -409,4 +409,18 @@ install_git_hooks() {
 install_sqlx_prepare_deps() {
     _cargo_install sqlx-cli --no-default-features --features postgres,rustls
     sudo apt install --yes netcat # used for `nc`
+}
+
+install_bk() {
+    echo_banner "Installing Buildkite's 'bk' CLI tool"
+
+    version="v2.0.0"
+
+    mkdir --parents ~/.local/bin
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --output ~/.local/bin/bk \
+        "https://github.com/buildkite/cli/releases/download/${version}/cli-linux-amd64"
+    chmod a+x ~/.local/bin/bk
 }

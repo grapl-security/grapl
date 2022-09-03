@@ -315,17 +315,17 @@ def main() -> None:
         pulumi_config.get(key="lightstep-access-token") or ""
     )
     otel_configuration = otel_config(lightstep_access_token)
-    NomadJob(
-        "otel-collector",
-        jobspec=repository_path("nomad/observability.nomad"),
-        vars=dict(otel_config=otel_configuration),
-        opts=pulumi.ResourceOptions(
-            provider=nomad_provider,
-            custom_timeouts=CustomTimeouts(
-                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-            ),
-        ),
-    )
+    # NomadJob(
+    #     "otel-collector",
+    #     jobspec=repository_path("nomad/observability.nomad"),
+    #     vars=dict(otel_config=otel_configuration),
+    #     opts=pulumi.ResourceOptions(
+    #         provider=nomad_provider,
+    #         custom_timeouts=CustomTimeouts(
+    #             create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
+    #         ),
+    #     ),
+    # )
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -440,15 +440,6 @@ def main() -> None:
                 "event-source-db",
                 "graph-schema-manager-db",
             )
-        )
-
-        NomadJob(
-            "grapl-observability",
-            jobspec=repository_path("nomad/observability.nomad"),
-            vars={},
-            opts=pulumi.ResourceOptions(
-                provider=nomad_provider,
-            ),
         )
 
         api_gateway = ApiGateway(

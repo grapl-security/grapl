@@ -9,7 +9,7 @@ from graplinc.grapl.metrics.v1.metric_types_pb2 import Gauge as _Gauge
 from graplinc.grapl.metrics.v1.metric_types_pb2 import Histogram as _Histogram
 from graplinc.grapl.metrics.v1.metric_types_pb2 import Label as _Label
 from graplinc.grapl.metrics.v1.metric_types_pb2 import MetricWrapper as _MetricWrapper
-from python_proto import SerDe
+from python_proto.serde import SerDe
 
 
 @dataclasses.dataclass(frozen=True)
