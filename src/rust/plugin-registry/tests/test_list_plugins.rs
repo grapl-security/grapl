@@ -27,7 +27,6 @@ async fn test_list_plugins() -> eyre::Result<()> {
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_1_id = uuid::Uuid::new_v4();
     let event_source_2_id = uuid::Uuid::new_v4();
-    let event_source_3_id = uuid::Uuid::new_v4();
 
     let generator_1_create_response = {
         let display_name = "generator 1";
@@ -78,7 +77,7 @@ async fn test_list_plugins() -> eyre::Result<()> {
             tenant_id,
             display_name.to_string(),
             PluginType::Analyzer,
-            Some(event_source_3_id.clone()),
+            None,
         );
 
         client
