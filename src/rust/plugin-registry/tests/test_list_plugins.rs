@@ -77,7 +77,7 @@ async fn test_list_plugins() -> eyre::Result<()> {
         let metadata = PluginMetadata::new(
             tenant_id,
             display_name.to_string(),
-            PluginType::Generator,
+            PluginType::Analyzer,
             Some(event_source_3_id.clone()),
         );
 
