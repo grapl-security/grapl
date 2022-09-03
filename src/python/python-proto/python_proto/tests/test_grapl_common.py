@@ -16,5 +16,15 @@ def uids(
     return st.builds(messages.Uid, value=value)
 
 
+def property_names(
+    value: st.SearchStrategy[str] = st.text(),
+) -> st.SearchStrategy[messages.PropertyName]:
+    return st.builds(messages.PropertyName, value=value)
+
+
 def test_uids() -> None:
     check_encode_decode_invariant(uids())
+
+
+def test_property_names() -> None:
+    check_encode_decode_invariant(property_names())

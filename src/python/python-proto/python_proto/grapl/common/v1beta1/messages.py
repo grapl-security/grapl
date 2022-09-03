@@ -22,6 +22,24 @@ class Uid(SerDe[proto.Uid]):
         return proto_value
 
 
+@dataclasses.dataclass(frozen=True)
+class PropertyName(SerDe[proto.PropertyName]):
+    value: int
+
+    proto_cls: type[proto.PropertyName] = proto.PropertyName
+
+    @classmethod
+    def from_proto(cls, proto_value: proto.PropertyName) -> PropertyName:
+        return cls(value=proto_value.value)
+
+    def into_proto(self) -> proto.PropertyName:
+        proto_value = self.proto_cls()
+        proto_value.value = self.value
+        return proto_value
+
+
+# TODO: PropertyName, EdgeName, NodeType
+
 """
 syntax = "proto3";
 
