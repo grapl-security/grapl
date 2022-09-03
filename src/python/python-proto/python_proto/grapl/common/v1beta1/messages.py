@@ -1,31 +1,24 @@
 from __future__ import annotations
 
 import dataclasses
-from typing_extensions import Self
 
 from graplinc.grapl.common.v1beta1 import types_pb2 as proto
-from python_proto.serde import P, SerDe
+from python_proto.serde import P, NewSerDe
 
 
 
 @dataclasses.dataclass(frozen=True)
-class Uid(SerDe[proto.Uid]):
+class Uid(NewSerDe[proto.Uid]):
     value: int
 
     proto_cls: type[proto.Uid] = proto.Uid
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> proto.Uid:
-        proto_value = proto.Uid()
-        proto_value.ParseFromString(bytes_)
-        return Uid.from_proto(proto_value)
-
-    @staticmethod
-    def from_proto(proto_value: P) -> Self:
-        return Uid(value=proto_value.value)
+    @classmethod
+    def from_proto(cls, proto_value: proto.Uid) -> Uid:
+        return cls(value=proto_value.value)
 
     def into_proto(self) -> proto.Uid:
-        proto_value = proto.Uid()
+        proto_value = self.proto_cls()
         proto_value.value = self.value
         return proto_value
 
