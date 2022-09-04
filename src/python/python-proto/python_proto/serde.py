@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import Generic, TypeVar, Union
+from typing import ClassVar, Generic, TypeVar, Union
 
 from google.protobuf.message import Message as _Message
 
 P = TypeVar("P", bound=_Message)
-T = TypeVar("T", bound=Union["SerDe", "SerDeWithInner"])
+T = TypeVar("T", bound="SerDe")
+TInner = TypeVar("TInner", bound = "SerDeWithInner")
 
 
 class SerDe(Generic[P], metaclass=ABCMeta):
-    proto_cls: type[P]
+    proto_cls: ClassVar[type[P]]
 
     @classmethod
     def __subclasshook__(cls, subclass: SerDe[P]) -> bool:
@@ -49,7 +50,7 @@ I = TypeVar("I", bound=SerDe)
 
 
 class SerDeWithInner(Generic[P, I]):
-    proto_cls: type[P]
+    proto_cls: ClassVar[type[P]]
     inner_message: I
 
     @classmethod
@@ -68,7 +69,7 @@ class SerDeWithInner(Generic[P, I]):
         )
 
     @classmethod
-    def deserialize(cls: type[T], bytes_: bytes, inner_cls: type[I]) -> T:
+    def deserialize(cls: type[TInner], bytes_: bytes, inner_cls: type[I]) -> SerDeWithInner[P, I]:
         proto_value = cls.proto_cls()
         proto_value.ParseFromString(bytes_)
         return cls.from_proto(proto_value, inner_cls)

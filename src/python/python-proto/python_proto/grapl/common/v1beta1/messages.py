@@ -10,7 +10,7 @@ from python_proto.serde import SerDe
 class Uid(SerDe[proto.Uid]):
     value: int
 
-    proto_cls: type[proto.Uid] = proto.Uid
+    proto_cls = proto.Uid
 
     @classmethod
     def from_proto(cls, proto_value: proto.Uid) -> Uid:
@@ -24,9 +24,9 @@ class Uid(SerDe[proto.Uid]):
 
 @dataclasses.dataclass(frozen=True)
 class PropertyName(SerDe[proto.PropertyName]):
-    value: int
+    value: str
 
-    proto_cls: type[proto.PropertyName] = proto.PropertyName
+    proto_cls = proto.PropertyName
 
     @classmethod
     def from_proto(cls, proto_value: proto.PropertyName) -> PropertyName:
@@ -38,44 +38,33 @@ class PropertyName(SerDe[proto.PropertyName]):
         return proto_value
 
 
-# TODO: PropertyName, EdgeName, NodeType
+@dataclasses.dataclass(frozen=True)
+class EdgeName(SerDe[proto.EdgeName]):
+    value: str
 
-"""
-syntax = "proto3";
+    proto_cls = proto.EdgeName
 
-package graplinc.grapl.common.v1beta1;
+    @classmethod
+    def from_proto(cls, proto_value: proto.EdgeName) -> EdgeName:
+        return cls(value=proto_value.value)
 
-// A wrapper type for property names
-message PropertyName {
-  // The property name must:
-  // - Be non-empty
-  // - Snake case, `^[a-z]+(_[a-z]+)*$`
-  // - Less than 32 characters
-  string value = 1;
-}
+    def into_proto(self) -> proto.EdgeName:
+        proto_value = self.proto_cls()
+        proto_value.value = self.value
+        return proto_value
 
-// A wrapper type for edge names
-message EdgeName {
-  // The edge name must:
-  // - Be non-empty
-  // - Snake case, `^[a-z]+(_[a-z]+)*$`
-  // - Less than 32 characters
-  string value = 1;
-}
 
-// A wrapper type for node type names
-message NodeType {
-  // The node type must:
-  // - Be non-empty
-  // - PascalCase, `^([A-Z][a-z]+)+$`
-  // - Less than 32 characters
-  string value = 1;
-}
+@dataclasses.dataclass(frozen=True)
+class NodeType(SerDe[proto.NodeType]):
+    value: str
 
-// A wrapper type for a node's uid
-message Uid {
-  // Can never be 0
-  uint64 value = 1;
-}
+    proto_cls = proto.NodeType
 
-"""
+    @classmethod
+    def from_proto(cls, proto_value: proto.NodeType) -> NodeType:
+        return cls(value=proto_value.value)
+
+    def into_proto(self) -> proto.NodeType:
+        proto_value = self.proto_cls()
+        proto_value.value = self.value
+        return proto_value

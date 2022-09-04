@@ -14,7 +14,7 @@ class Session(SerDe[proto.Session]):
     create_time: int
     last_seen_time: int
     terminate_time: int
-    proto_cls: type[proto.Session] = proto.Session
+    proto_cls = proto.Session
 
     @classmethod
     def from_proto(cls, proto_session: proto.Session) -> Session:
@@ -41,7 +41,7 @@ class Session(SerDe[proto.Session]):
 class Static(SerDe[proto.Static]):
     primary_key_properties: Sequence[str]
     primary_key_requires_asset_id: bool
-    proto_cls: type[proto.Static] = proto.Static
+    proto_cls = proto.Static
 
     @classmethod
     def from_proto(cls, proto_static: proto.Static) -> Static:
@@ -61,7 +61,7 @@ class Static(SerDe[proto.Static]):
 @dataclasses.dataclass(frozen=True)
 class IdStrategy(SerDe[proto.IdStrategy]):
     strategy: Session | Static
-    proto_cls: type[proto.IdStrategy] = proto.IdStrategy
+    proto_cls = proto.IdStrategy
 
     @classmethod
     def from_proto(cls, proto_id_strategy: proto.IdStrategy) -> IdStrategy:
@@ -90,7 +90,7 @@ class IdStrategy(SerDe[proto.IdStrategy]):
 @dataclasses.dataclass(frozen=True)
 class IncrementOnlyUintProp(SerDe[proto.IncrementOnlyUintProp]):
     prop: int
-    proto_cls: type[proto.IncrementOnlyUintProp] = proto.IncrementOnlyUintProp
+    proto_cls = proto.IncrementOnlyUintProp
 
     @classmethod
     def from_proto(
@@ -108,7 +108,7 @@ class IncrementOnlyUintProp(SerDe[proto.IncrementOnlyUintProp]):
 @dataclasses.dataclass(frozen=True)
 class ImmutableUintProp(SerDe[proto.ImmutableUintProp]):
     prop: int
-    proto_cls: type[proto.ImmutableUintProp] = proto.ImmutableUintProp
+    proto_cls = proto.ImmutableUintProp
 
     @classmethod
     def from_proto(
@@ -126,7 +126,7 @@ class ImmutableUintProp(SerDe[proto.ImmutableUintProp]):
 @dataclasses.dataclass(frozen=True)
 class DecrementOnlyUintProp(SerDe[proto.DecrementOnlyUintProp]):
     prop: int
-    proto_cls: type[proto.DecrementOnlyUintProp] = proto.DecrementOnlyUintProp
+    proto_cls = proto.DecrementOnlyUintProp
 
     @classmethod
     def from_proto(
@@ -144,7 +144,7 @@ class DecrementOnlyUintProp(SerDe[proto.DecrementOnlyUintProp]):
 @dataclasses.dataclass(frozen=True)
 class IncrementOnlyIntProp(SerDe[proto.IncrementOnlyIntProp]):
     prop: int
-    proto_cls: type[proto.IncrementOnlyIntProp] = proto.IncrementOnlyIntProp
+    proto_cls = proto.IncrementOnlyIntProp
 
     @classmethod
     def from_proto(
@@ -162,7 +162,7 @@ class IncrementOnlyIntProp(SerDe[proto.IncrementOnlyIntProp]):
 @dataclasses.dataclass(frozen=True)
 class DecrementOnlyIntProp(SerDe[proto.DecrementOnlyIntProp]):
     prop: int
-    proto_cls: type[proto.DecrementOnlyIntProp] = proto.DecrementOnlyIntProp
+    proto_cls = proto.DecrementOnlyIntProp
 
     @classmethod
     def from_proto(
@@ -180,7 +180,7 @@ class DecrementOnlyIntProp(SerDe[proto.DecrementOnlyIntProp]):
 @dataclasses.dataclass(frozen=True)
 class ImmutableIntProp(SerDe[proto.ImmutableIntProp]):
     prop: int
-    proto_cls: type[proto.ImmutableIntProp] = proto.ImmutableIntProp
+    proto_cls = proto.ImmutableIntProp
 
     @classmethod
     def from_proto(
@@ -198,7 +198,7 @@ class ImmutableIntProp(SerDe[proto.ImmutableIntProp]):
 @dataclasses.dataclass(frozen=True)
 class ImmutableStrProp(SerDe[proto.ImmutableStrProp]):
     prop: str
-    proto_cls: type[proto.ImmutableStrProp] = proto.ImmutableStrProp
+    proto_cls = proto.ImmutableStrProp
 
     @classmethod
     def from_proto(
@@ -224,7 +224,7 @@ class NodeProperty(SerDe[proto.NodeProperty]):
         | ImmutableIntProp
         | ImmutableStrProp
     )
-    proto_cls: type[proto.NodeProperty] = proto.NodeProperty
+    proto_cls = proto.NodeProperty
 
     @classmethod
     def from_proto(cls, proto_node_property: proto.NodeProperty) -> NodeProperty:
@@ -310,7 +310,7 @@ class NodeDescription(SerDe[proto.NodeDescription]):
     node_key: str
     node_type: str
     id_strategy: Sequence[IdStrategy]
-    proto_cls: type[proto.NodeDescription] = proto.NodeDescription
+    proto_cls = proto.NodeDescription
 
     @classmethod
     def from_proto(
@@ -344,7 +344,7 @@ class IdentifiedNode(SerDe[proto.IdentifiedNode]):
     properties: Mapping[str, NodeProperty]
     node_key: str
     node_type: str
-    proto_cls: type[proto.IdentifiedNode] = proto.IdentifiedNode
+    proto_cls = proto.IdentifiedNode
 
     @classmethod
     def from_proto(cls, proto_identified_node: proto.IdentifiedNode) -> IdentifiedNode:
@@ -372,7 +372,7 @@ class MergedNode(SerDe[proto.MergedNode]):
     uid: int
     node_key: str
     node_type: str
-    proto_cls: type[proto.MergedNode] = proto.MergedNode
+    proto_cls = proto.MergedNode
 
     @classmethod
     def from_proto(cls, proto_merged_node: proto.MergedNode) -> MergedNode:
@@ -401,7 +401,7 @@ class Edge(SerDe[proto.Edge]):
     from_node_key: str
     to_node_key: str
     edge_name: str
-    proto_cls: type[proto.Edge] = proto.Edge
+    proto_cls = proto.Edge
 
     @classmethod
     def from_proto(cls, proto_edge: proto.Edge) -> Edge:
@@ -422,7 +422,7 @@ class Edge(SerDe[proto.Edge]):
 @dataclasses.dataclass(frozen=True)
 class EdgeList(SerDe[proto.EdgeList]):
     edges: Sequence[Edge]
-    proto_cls: type[proto.EdgeList] = proto.EdgeList
+    proto_cls = proto.EdgeList
 
     @classmethod
     def from_proto(cls, proto_edge_list: proto.EdgeList) -> EdgeList:
@@ -442,7 +442,7 @@ class MergedEdge(SerDe[proto.MergedEdge]):
     to_uid: str
     to_node_key: str
     edge_name: str
-    proto_cls: type[proto.MergedEdge] = proto.MergedEdge
+    proto_cls = proto.MergedEdge
 
     @classmethod
     def from_proto(cls, proto_merged_edge: proto.MergedEdge) -> MergedEdge:
@@ -470,7 +470,7 @@ class MergedEdgeList(SerDe[proto.MergedEdgeList]):
     # /src/python/grapl_analyzerlib/grapl_analyzerlib/view_from_proto.py
     # /src/python/grapl_analyzerlib/grapl_analyzerlib/subgraph_view.py
     edges: Sequence[MergedEdge]
-    proto_cls: type[proto.MergedEdgeList] = proto.MergedEdgeList
+    proto_cls = proto.MergedEdgeList
 
     @classmethod
     def from_proto(cls, proto_merged_edge_list: proto.MergedEdgeList) -> MergedEdgeList:
@@ -489,7 +489,7 @@ class MergedEdgeList(SerDe[proto.MergedEdgeList]):
 class GraphDescription(SerDe[proto.GraphDescription]):
     nodes: Mapping[str, NodeDescription]
     edges: Mapping[str, EdgeList]
-    proto_cls: type[proto.GraphDescription] = proto.GraphDescription
+    proto_cls = proto.GraphDescription
 
     @classmethod
     def from_proto(
@@ -519,7 +519,7 @@ class GraphDescription(SerDe[proto.GraphDescription]):
 class IdentifiedGraph(SerDe[proto.IdentifiedGraph]):
     nodes: Mapping[str, IdentifiedNode]
     edges: Mapping[str, EdgeList]
-    proto_cls: type[proto.IdentifiedGraph] = proto.IdentifiedGraph
+    proto_cls = proto.IdentifiedGraph
 
     @classmethod
     def from_proto(
@@ -549,7 +549,7 @@ class IdentifiedGraph(SerDe[proto.IdentifiedGraph]):
 class MergedGraph(SerDe[proto.MergedGraph]):
     nodes: Mapping[str, MergedNode]
     edges: Mapping[str, MergedEdgeList]
-    proto_cls: type[proto.MergedGraph] = proto.MergedGraph
+    proto_cls = proto.MergedGraph
 
     @classmethod
     def from_proto(cls, proto_merged_graph: proto.MergedGraph) -> MergedGraph:
@@ -579,7 +579,7 @@ class Lens(SerDe[proto.Lens]):
     lens_name: str
     uid: int | None = None
     score: int | None = None
-    proto_cls: type[proto.Lens] = proto.Lens
+    proto_cls = proto.Lens
 
     @classmethod
     def from_proto(cls, proto_lens: proto.Lens) -> Lens:
@@ -609,7 +609,7 @@ class ExecutionHit(SerDe[proto.ExecutionHit]):
     risk_score: int
     lenses: Sequence[Lens]
     risky_node_keys: Sequence[str]
-    proto_cls: type[proto.ExecutionHit] = proto.ExecutionHit
+    proto_cls = proto.ExecutionHit
 
     @classmethod
     def from_proto(cls, proto_execution_hit: proto.ExecutionHit) -> ExecutionHit:

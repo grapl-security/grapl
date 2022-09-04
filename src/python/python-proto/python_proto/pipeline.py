@@ -21,7 +21,7 @@ class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
     created_time: datetime.datetime
     last_updated_time: datetime.datetime
     inner_message: I
-    proto_cls: type[_Envelope] = _Envelope
+    proto_cls = _Envelope
 
     @classmethod
     def from_proto(cls, proto_envelope: _Envelope, inner_cls: type[I]) -> Envelope[I]:
@@ -68,7 +68,7 @@ class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
 @dataclasses.dataclass(frozen=True)
 class RawLog(SerDe[_RawLog]):
     log_event: bytes
-    proto_cls: type[_RawLog] = _RawLog
+    proto_cls = _RawLog
 
     @classmethod
     def from_proto(cls, proto_raw_log: _RawLog) -> RawLog:

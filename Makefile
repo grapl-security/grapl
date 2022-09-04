@@ -294,7 +294,7 @@ test-unit-rust-coverage: ## Run Rust unit tests and gather coverage statistics (
 
 .PHONY: typecheck
 typecheck: ## Typecheck Python Code
-	./pants check ::
+	./pants check src/python/python-proto::
 
 .PHONY: test-integration-python
 test-integration-python: build-local-infrastructure
