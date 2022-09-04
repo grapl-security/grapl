@@ -1,14 +1,15 @@
 use std::time::Duration;
 
+use async_cache::{
+    AsyncCache,
+    AsyncCacheError,
+};
+use clap::Parser;
 use config::GeneratorDispatcherConfig;
 use futures::{
     pin_mut,
     StreamExt,
     TryStreamExt,
-};
-use generator_ids_cache::{
-    GeneratorIdsCache,
-    GeneratorIdsCacheError,
 };
 use kafka::{
     CommitError,
@@ -18,27 +19,44 @@ use kafka::{
     ProducerError,
     RetryProducer,
 };
+use rand::prelude::*;
 use rust_proto::{
+    client_factory::{
+        build_grpc_client,
+        services::PluginRegistryClientConfig,
+    },
     graplinc::grapl::{
-        api::plugin_work_queue::v1beta1::{
-            ExecutionJob,
-            PluginWorkQueueServiceClient,
-            PluginWorkQueueServiceClientError,
-            PushExecuteGeneratorRequest,
+        api::{
+            plugin_registry::v1beta1::{
+                GetGeneratorsForEventSourceRequest,
+                GetGeneratorsForEventSourceResponse,
+            },
+            plugin_work_queue::v1beta1::{
+                ExecutionJob,
+                PluginWorkQueueServiceClient,
+                PluginWorkQueueServiceClientError,
+                PushExecuteGeneratorRequest,
+            },
         },
         pipeline::v1beta1::{
             Envelope,
             RawLog,
         },
     },
-    protocol::service_client::ConnectError,
+    protocol::{
+        error::GrpcClientError,
+        service_client::ConnectError,
+        status::{
+            Code,
+            Status,
+        },
+    },
 };
 use thiserror::Error;
 use tracing::Instrument;
 use uuid::Uuid;
 
 pub mod config;
-pub mod generator_ids_cache;
 
 #[derive(Debug, Error)]
 pub enum ConfigurationError {
@@ -52,7 +70,7 @@ pub enum ConfigurationError {
 #[derive(Debug, Error)]
 pub enum GeneratorDispatcherError {
     #[error("plugin registry client error {0}")]
-    GeneratorIdsCacheError(#[from] GeneratorIdsCacheError),
+    GeneratorIdsCacheError(#[from] AsyncCacheError),
 
     // FIXME: don't crash the service when this happens
     #[error("error sending data to plugin-work-queue {0}")]
@@ -70,7 +88,7 @@ pub struct GeneratorDispatcher {
     plugin_work_queue_client: PluginWorkQueueServiceClient,
     raw_logs_consumer: Consumer<RawLog>,
     raw_logs_retry_producer: RetryProducer<RawLog>,
-    generator_ids_cache: GeneratorIdsCache,
+    generator_ids_cache: AsyncCache<Uuid, Vec<Uuid>>,
 }
 
 impl GeneratorDispatcher {
@@ -82,13 +100,81 @@ impl GeneratorDispatcher {
         let raw_logs_consumer: Consumer<RawLog> = Consumer::new(config.kafka_config)?;
         let raw_logs_retry_producer: RetryProducer<RawLog> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
-        let generator_ids_cache = GeneratorIdsCache::new(
+        let client_config = PluginRegistryClientConfig::parse();
+        let plugin_registry_client = build_grpc_client(client_config).await?;
+        let generator_ids_cache = AsyncCache::new(
             config.params.generator_ids_cache_capacity,
             Duration::from_millis(config.params.generator_ids_cache_ttl_ms),
             config.params.generator_ids_cache_updater_pool_size,
             config.params.generator_ids_cache_updater_queue_depth,
+            move |event_source_id| {
+                let mut plugin_registry_client = plugin_registry_client.clone();
+
+                async move {
+                    match plugin_registry_client
+                        .get_generators_for_event_source(GetGeneratorsForEventSourceRequest::new(
+                            event_source_id,
+                        ))
+                        .await
+                    {
+                        Ok(response) => response.plugin_ids().to_vec(),
+                        Err(GrpcClientError::ErrorStatus(Status {
+                            code: Code::NotFound,
+                            ..
+                        })) => {
+                            tracing::warn!(
+                                message = "found no generators for event source",
+                                event_source_id =% event_source_id,
+                            );
+                            vec![]
+                        }
+                        Err(e) => {
+                            // received an error response from the
+                            // plugin-registry service, so we'll retry
+                            // indefinitely using a truncated binary
+                            // exponential backoff with jitter, capped
+                            // at 5s.
+
+                            let mut result: Result<
+                                GetGeneratorsForEventSourceResponse,
+                                GrpcClientError,
+                            > = Err(e);
+                            let mut n = 0;
+                            while let Err(ref e) = result {
+                                n += 1;
+                                let millis = 2_u64.pow(n)
+                                    + rand::thread_rng().gen_range(0..2_u64.pow(n - 1));
+                                let backoff = if millis < 5000 {
+                                    Duration::from_millis(millis)
+                                } else {
+                                    Duration::from_millis(10000)
+                                };
+
+                                tracing::error!(
+                                    message = "error retrieving generator IDs from plugin-registry",
+                                    error =% e,
+                                    retry_delay =? backoff,
+                                );
+
+                                tokio::time::sleep(backoff).await;
+
+                                result = plugin_registry_client
+                                    .get_generators_for_event_source(
+                                        GetGeneratorsForEventSourceRequest::new(event_source_id),
+                                    )
+                                    .await;
+                            }
+
+                            result
+                                .expect("fatal error, unknown state")
+                                .plugin_ids()
+                                .to_vec()
+                        }
+                    }
+                }
+            },
         )
-        .await?;
+        .await;
 
         Ok(Self {
             plugin_work_queue_client,
@@ -122,7 +208,7 @@ impl GeneratorDispatcher {
                             Ok((span, envelope)) => {
                                 match generator_ids_cache
                                     .clone()
-                                    .generator_ids_for_event_source(envelope.event_source_id())
+                                    .get(envelope.event_source_id())
                                     .instrument(span.clone())
                                     .await
                                 {
@@ -162,7 +248,7 @@ impl GeneratorDispatcher {
 
                                         Ok(())
                                     },
-                                    Err(GeneratorIdsCacheError::Retryable(reason)) => {
+                                    Err(AsyncCacheError::Retryable(reason)) => {
                                         // retryable cache error, so we'll retry
                                         // the message
                                         let _guard = span.enter();

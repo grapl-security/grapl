@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "./async-cache",
   "./client-executor",
   "./consul-connect",
   "./derive-dynamic-node",
