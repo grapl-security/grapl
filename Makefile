@@ -294,7 +294,7 @@ test-unit-rust-coverage: ## Run Rust unit tests and gather coverage statistics (
 
 .PHONY: typecheck
 typecheck: ## Typecheck Python Code
-	./pants check src/python/python-proto::
+	./pants check ::
 
 .PHONY: test-integration-python
 test-integration-python: build-local-infrastructure
@@ -609,7 +609,7 @@ docker-kill-all:  # Kill all currently running Docker containers except registry
 
 .PHONY: repl
 repl: ## Run an interactive ipython repl that can import from grapl-common etc
-	./pants --no-pantsd repl --shell=ipython src/python/python-proto/python_proto
+	./pants --no-pantsd repl --shell=ipython src/python/repl
 
 .PHONY: build-docs
 build-docs: ## Build the Sphinx docs
