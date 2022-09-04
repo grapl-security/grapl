@@ -13,22 +13,25 @@ from python_proto.serde import I, SerDe, SerDeWithInner
 
 
 @dataclasses.dataclass(frozen=True)
-class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
+class Envelope(SerDeWithInner[I, _Envelope], Generic[I]):
     trace_id: uuid.UUID
     tenant_id: uuid.UUID
     event_source_id: uuid.UUID
     retry_count: int
     created_time: datetime.datetime
     last_updated_time: datetime.datetime
+
     inner_message: I
     proto_cls = _Envelope
 
     @classmethod
-    def from_proto(cls, proto_envelope: _Envelope, inner_cls: type[I]) -> Envelope[I]:
+    def from_proto(
+        cls: type[Envelope[I]], proto_envelope: _Envelope, inner_cls: type[I]
+    ) -> Envelope[I]:
         inner_message_proto = inner_cls.proto_cls()
         proto_envelope.inner_message.Unpack(inner_message_proto)
         inner_message = cast(I, inner_cls.from_proto(inner_message_proto))  # fuck it
-        return Envelope(
+        return cls(
             trace_id=Uuid.from_proto(proto_envelope.trace_id).into_uuid(),
             tenant_id=Uuid.from_proto(proto_envelope.tenant_id).into_uuid(),
             event_source_id=Uuid.from_proto(proto_envelope.event_source_id).into_uuid(),

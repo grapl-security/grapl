@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import ClassVar, Generic, TypeVar, Union
+from typing import ClassVar, Generic, TypeVar
 
 from google.protobuf.message import Message as _Message
 
 P = TypeVar("P", bound=_Message)
 T = TypeVar("T", bound="SerDe")
-TInner = TypeVar("TInner", bound = "SerDeWithInner")
+TInner = TypeVar("TInner", bound="SerDeWithInner")
 
 
 class SerDe(Generic[P], metaclass=ABCMeta):
@@ -49,12 +49,12 @@ class SerDe(Generic[P], metaclass=ABCMeta):
 I = TypeVar("I", bound=SerDe)
 
 
-class SerDeWithInner(Generic[P, I]):
+class SerDeWithInner(Generic[I, P]):
     proto_cls: ClassVar[type[P]]
     inner_message: I
 
     @classmethod
-    def __subclasshook__(cls, subclass: SerDeWithInner[P, I]) -> bool:
+    def __subclasshook__(cls, subclass: SerDeWithInner[I, P]) -> bool:
         return (
             hasattr(subclass, "proto_cls")
             and hasattr(subclass, "inner_cls")
@@ -69,7 +69,7 @@ class SerDeWithInner(Generic[P, I]):
         )
 
     @classmethod
-    def deserialize(cls: type[TInner], bytes_: bytes, inner_cls: type[I]) -> SerDeWithInner[P, I]:
+    def deserialize(cls: type[TInner], bytes_: bytes, inner_cls: type[I]) -> TInner:
         proto_value = cls.proto_cls()
         proto_value.ParseFromString(bytes_)
         return cls.from_proto(proto_value, inner_cls)
@@ -77,9 +77,9 @@ class SerDeWithInner(Generic[P, I]):
     def serialize(self) -> bytes:
         return self.into_proto().SerializeToString()
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def from_proto(proto: P, inner_cls: type[I]) -> SerDeWithInner[P, I]:
+    def from_proto(cls: type[TInner], proto: P, inner_cls: type[I]) -> TInner:
         raise NotImplementedError
 
     @abstractmethod

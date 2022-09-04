@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
-from typing import ClassVar
 import uuid
+from typing import ClassVar
 
 from graplinc.common.v1beta1.types_pb2 import Duration as _Duration
 from graplinc.common.v1beta1.types_pb2 import Timestamp as _Timestamp
