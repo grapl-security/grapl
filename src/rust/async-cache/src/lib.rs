@@ -158,5 +158,21 @@ where
 
 #[cfg(test)]
 mod tests {
-    // FIXME
+    use std::time::Duration;
+
+    use super::AsyncCache;
+
+    #[tokio::test]
+    async fn test_cache_hit() {
+        let mut async_cache =
+            AsyncCache::new(10, Duration::from_millis(100), 10, 10, |_| async { 42 }).await;
+
+        let foo = async_cache.get(3).await.expect("should be successful");
+        assert_eq!(foo, None); // empty but update has been enqueued
+
+        tokio::time::sleep(Duration::from_millis(1)).await; // "short delay"
+
+        let foo = async_cache.get(3).await.expect("should be successful");
+        assert_eq!(foo, Some(42)); // cache updated and value is present
+    }
 }
