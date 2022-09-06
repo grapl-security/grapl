@@ -13,28 +13,25 @@ from python_proto.serde import I, SerDe, SerDeWithInner
 
 
 @dataclasses.dataclass(frozen=True)
-class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
+class Envelope(SerDeWithInner[I, _Envelope], Generic[I]):
     trace_id: uuid.UUID
     tenant_id: uuid.UUID
     event_source_id: uuid.UUID
     retry_count: int
     created_time: datetime.datetime
     last_updated_time: datetime.datetime
+
     inner_message: I
-    proto_cls: type[_Envelope] = _Envelope
+    proto_cls = _Envelope
 
-    @staticmethod
-    def deserialize(bytes_: bytes, inner_cls: type[I]) -> Envelope[I]:
-        proto_envelope = _Envelope()
-        proto_envelope.ParseFromString(bytes_)
-        return Envelope.from_proto(proto_envelope=proto_envelope, inner_cls=inner_cls)
-
-    @staticmethod
-    def from_proto(proto_envelope: _Envelope, inner_cls: type[I]) -> Envelope[I]:
+    @classmethod
+    def from_proto(
+        cls: type[Envelope[I]], proto_envelope: _Envelope, inner_cls: type[I]
+    ) -> Envelope[I]:
         inner_message_proto = inner_cls.proto_cls()
         proto_envelope.inner_message.Unpack(inner_message_proto)
         inner_message = cast(I, inner_cls.from_proto(inner_message_proto))  # fuck it
-        return Envelope(
+        return cls(
             trace_id=Uuid.from_proto(proto_envelope.trace_id).into_uuid(),
             tenant_id=Uuid.from_proto(proto_envelope.tenant_id).into_uuid(),
             event_source_id=Uuid.from_proto(proto_envelope.event_source_id).into_uuid(),
@@ -74,16 +71,10 @@ class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
 @dataclasses.dataclass(frozen=True)
 class RawLog(SerDe[_RawLog]):
     log_event: bytes
-    proto_cls: type[_RawLog] = _RawLog
+    proto_cls = _RawLog
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> RawLog:
-        proto_raw_log = _RawLog()
-        proto_raw_log.ParseFromString(bytes_)
-        return RawLog.from_proto(proto_raw_log=proto_raw_log)
-
-    @staticmethod
-    def from_proto(proto_raw_log: _RawLog) -> RawLog:
+    @classmethod
+    def from_proto(cls, proto_raw_log: _RawLog) -> RawLog:
         return RawLog(log_event=proto_raw_log.log_event)
 
     def into_proto(self) -> _RawLog:
