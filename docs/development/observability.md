@@ -1,10 +1,11 @@
 # Observability
 
-We currently use [Lightstep](www.lightstep.com) as our observability platform.
+We currently use [Lightstep](https://lightstep.com) as our observability
+platform.
 
 ## Local tracing
 
-1. Go to [www.lightstep.com](www.lightstep.com)
+1. Go to [lightstep.com](https://lightstep.com)
 1. Log into lightstep using google.
 1. On the left-hand side menu go to developer mode (the angle brackets `< >`).
 1. Copy the command and run that locally. This will spin up a docker container
