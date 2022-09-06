@@ -393,7 +393,7 @@ def main() -> None:
         assert upstream_stacks, "Upstream stacks previously initialized"
 
         vpc_id = upstream_stacks.networking.require_output("grapl-vpc")
-        subnet_ids = upstream_stacks.networking.require_output(
+        subnet_ids: pulumi.Input[list[str]] = upstream_stacks.networking.require_output(
             "grapl-private-subnet-ids"
         )
         nomad_agent_security_group_id = upstream_stacks.nomad_agents.require_output(
