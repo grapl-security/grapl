@@ -31,8 +31,16 @@ def observability_env_vars_for_local() -> str:
 
 # lightstep_token should be pulumi.Output[str], but the additional type causes pulumi.Output.all to blow up during
 # typechecking
-def otel_config(lightstep_token: pulumi.Output) -> pulumi.Output[str]:
-    return pulumi.Output.all(lightstep_token=lightstep_token).apply(
+def otel_config(
+    lightstep_token: pulumi.Output,
+    lightstep_endpoint: str = "ingest.lightstep.com:443",
+    lightstep_is_endpoint_secure: str = "true",
+) -> pulumi.Output[str]:
+    return pulumi.Output.all(
+        lightstep_endpoint=lightstep_endpoint,
+        lightstep_token=lightstep_token,
+        lightstep_is_endpoint_secure=lightstep_is_endpoint_secure,
+    ).apply(
         lambda args: f"""
 receivers:
   zipkin:
@@ -58,7 +66,9 @@ exporters:
   logging:
     logLevel: debug
   otlp/ls:
-    endpoint: ingest.lightstep.com:443
+    endpoint: {args['lightstep_endpoint']}
+    tls:
+      insecure: {args['lightstep_is_endpoint_secure']}
     headers:
       "lightstep-access-token": {args['lightstep_token']}
 service:

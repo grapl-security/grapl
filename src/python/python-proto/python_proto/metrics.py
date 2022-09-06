@@ -16,7 +16,7 @@ from python_proto.serde import SerDe
 class Label(SerDe[_Label]):
     key: str
     value: str
-    proto_cls = _Label
+    _proto_cls = _Label
 
     @classmethod
     def from_proto(cls, proto_label: _Label) -> Label:
@@ -34,7 +34,7 @@ class Counter(SerDe[_Counter]):
     name: str
     increment: int
     labels: Sequence[Label]
-    proto_cls = _Counter
+    _proto_cls = _Counter
 
     @classmethod
     def from_proto(cls, proto_counter: _Counter) -> Counter:
@@ -66,7 +66,7 @@ class Gauge(SerDe[_Gauge]):
     name: str
     value: float
     labels: Sequence[Label]
-    proto_cls = _Gauge
+    _proto_cls = _Gauge
 
     @classmethod
     def from_proto(cls, proto_gauge: _Gauge) -> Gauge:
@@ -92,7 +92,7 @@ class Histogram(SerDe):
     name: str
     value: float
     labels: Sequence[Label]
-    proto_cls = _Histogram
+    _proto_cls = _Histogram
 
     @classmethod
     def from_proto(cls, proto_histogram: _Histogram) -> Histogram:
@@ -114,7 +114,7 @@ class Histogram(SerDe):
 @dataclasses.dataclass(frozen=True)
 class MetricWrapper(SerDe):
     metric: Counter | Gauge | Histogram
-    proto_cls = _MetricWrapper
+    _proto_cls = _MetricWrapper
 
     @classmethod
     def from_proto(cls, proto_metric_wrapper: _MetricWrapper) -> MetricWrapper:

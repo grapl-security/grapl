@@ -314,7 +314,13 @@ def main() -> None:
     lightstep_access_token = pulumi.Output.secret(
         pulumi_config.get(key="lightstep-access-token") or ""
     )
-    otel_configuration = otel_config(lightstep_access_token)
+    lightstep_endpoint = pulumi_config.require(key="lightstep-endpoint")
+    lightstep_is_endpoint_secure = (
+        pulumi_config.get(key="lightstep-is-endpoint-secure") or "true"
+    )
+    otel_configuration = otel_config(
+        lightstep_access_token, lightstep_endpoint, lightstep_is_endpoint_secure
+    )
     NomadJob(
         "otel-collector",
         jobspec=repository_path("nomad/observability.nomad"),
@@ -387,7 +393,7 @@ def main() -> None:
         assert upstream_stacks, "Upstream stacks previously initialized"
 
         vpc_id = upstream_stacks.networking.require_output("grapl-vpc")
-        subnet_ids = upstream_stacks.networking.require_output(
+        subnet_ids: pulumi.Input[list[str]] = upstream_stacks.networking.require_output(
             "grapl-private-subnet-ids"
         )
         nomad_agent_security_group_id = upstream_stacks.nomad_agents.require_output(

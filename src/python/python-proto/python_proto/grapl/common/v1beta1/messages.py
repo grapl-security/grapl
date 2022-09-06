@@ -10,14 +10,14 @@ from python_proto.serde import SerDe
 class Uid(SerDe[proto.Uid]):
     value: int
 
-    proto_cls = proto.Uid
+    _proto_cls = proto.Uid
 
     @classmethod
     def from_proto(cls, proto_value: proto.Uid) -> Uid:
         return cls(value=proto_value.value)
 
     def into_proto(self) -> proto.Uid:
-        proto_value = self.proto_cls()
+        proto_value = self.new_proto()
         proto_value.value = self.value
         return proto_value
 
@@ -26,14 +26,14 @@ class Uid(SerDe[proto.Uid]):
 class PropertyName(SerDe[proto.PropertyName]):
     value: str
 
-    proto_cls = proto.PropertyName
+    _proto_cls = proto.PropertyName
 
     @classmethod
     def from_proto(cls, proto_value: proto.PropertyName) -> PropertyName:
         return cls(value=proto_value.value)
 
     def into_proto(self) -> proto.PropertyName:
-        proto_value = self.proto_cls()
+        proto_value = self.new_proto()
         proto_value.value = self.value
         return proto_value
 
@@ -42,14 +42,14 @@ class PropertyName(SerDe[proto.PropertyName]):
 class EdgeName(SerDe[proto.EdgeName]):
     value: str
 
-    proto_cls = proto.EdgeName
+    _proto_cls = proto.EdgeName
 
     @classmethod
     def from_proto(cls, proto_value: proto.EdgeName) -> EdgeName:
         return cls(value=proto_value.value)
 
     def into_proto(self) -> proto.EdgeName:
-        proto_value = self.proto_cls()
+        proto_value = self.new_proto()
         proto_value.value = self.value
         return proto_value
 
@@ -58,13 +58,13 @@ class EdgeName(SerDe[proto.EdgeName]):
 class NodeType(SerDe[proto.NodeType]):
     value: str
 
-    proto_cls = proto.NodeType
+    _proto_cls = proto.NodeType
 
     @classmethod
     def from_proto(cls, proto_value: proto.NodeType) -> NodeType:
         return cls(value=proto_value.value)
 
     def into_proto(self) -> proto.NodeType:
-        proto_value = self.proto_cls()
+        proto_value = self.new_proto()
         proto_value.value = self.value
         return proto_value
