@@ -180,8 +180,6 @@ class Update(SerDe[proto.Update]):
 
     def into_proto(self) -> proto.Update:
         msg = self.new_proto()
-        # I had surprising issues using structural pattern matching here - any
-        # type would fall into `case`
         match self.inner:
             case StringPropertyUpdate() as inner:
                 msg.string_property.CopyFrom(inner.into_proto())
