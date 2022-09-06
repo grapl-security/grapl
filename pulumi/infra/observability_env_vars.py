@@ -34,8 +34,15 @@ def observability_env_vars_for_local() -> str:
 def otel_config(
     lightstep_token: pulumi.Output, lightstep_endpoint: str = "ingest.lightstep.com:443"
 ) -> pulumi.Output[str]:
+    # use the endpoint as a way to figure out if we're in local dev or not
+    if lightstep_endpoint == "ingest.lightstep.com:443":
+        is_endpoint_insecure = "false"
+    else:
+        is_endpoint_insecure = "true"
     return pulumi.Output.all(
-        lightstep_endpoint=lightstep_endpoint, lightstep_token=lightstep_token
+        lightstep_endpoint=lightstep_endpoint,
+        lightstep_token=lightstep_token,
+        is_endpoint_insecure=is_endpoint_insecure,
     ).apply(
         lambda args: f"""
 receivers:
@@ -63,6 +70,8 @@ exporters:
     logLevel: debug
   otlp/ls:
     endpoint: {args['lightstep_endpoint']}
+    tls:
+      insecure: {args['is_endpoint_insecure']}
     headers:
       "lightstep-access-token": {args['lightstep_token']}
 service:

@@ -29,7 +29,7 @@ config:
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-c595a79
     firecracker_rootfs.tar.gz: 20220405165304-c595a79
   grapl:confluent-environment-name: "local-grapl"
-  grapl:lightstep-endpoint: "http://localhost:8360"
+  grapl:lightstep-endpoint: 'http://{{ env "attr.unique.network.ip-address" }}:8360'
   grapl:scylla-username: "cassandra"
   grapl:scylla-password: "cassandra" # In prod this is a secret!
   grapl:scylla-addresses:
