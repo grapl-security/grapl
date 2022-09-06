@@ -184,16 +184,12 @@ class Update(SerDe[proto.Update]):
         # type would fall into `case`
         match self.inner:
             case StringPropertyUpdate() as inner:
-                print(f"hey {self.inner}")
                 msg.string_property.CopyFrom(inner.into_proto())
             case UInt64PropertyUpdate() as inner:
-                print("hey2")
                 msg.uint64_property.CopyFrom(inner.into_proto())
             case Int64PropertyUpdate() as inner:
-                print("hay3")
                 msg.int64_property.CopyFrom(inner.into_proto())
             case EdgeUpdate() as inner:
-                print("hey4")
                 msg.edge.CopyFrom(inner.into_proto())
             case _:
                 raise Exception(f"Unknown variant: {self.inner}")
