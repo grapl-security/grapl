@@ -318,8 +318,6 @@ class ExecutionResult(SerDe[proto.ExecutionResult]):
 
     def into_proto(self) -> proto.ExecutionResult:
         msg = self.new_proto()
-        # I had surprising issues using structural pattern matching here - any
-        # type would fall into `case`
         match self.inner:
             case ExecutionHit() as inner:
                 msg.hit.CopyFrom(inner.into_proto())
