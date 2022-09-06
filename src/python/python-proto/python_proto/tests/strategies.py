@@ -58,6 +58,9 @@ INT64_MAX = 2**63 - 1
 INT32_MIN = -(2**31) + 1
 INT32_MAX = 2**31 - 1
 
+UINT32_MIN = 0
+UINT32_MAX = 2**32 - 1
+
 DURATION_SECONDS_MIN = 0
 DURATION_SECONDS_MAX = UINT64_MAX
 DURATION_NANOS_MIN = 0
@@ -74,14 +77,14 @@ MAX_LOG_EVENT_SIZE = 1024
 # common
 #
 
+uint64s = st.integers(min_value=UINT64_MIN, max_value=UINT64_MAX)
+int32s = st.integers(min_value=INT32_MIN, max_value=INT32_MAX)
+uint32s = st.integers(min_value=UINT32_MIN, max_value=UINT32_MAX)
+
 
 def uuids(
-    lsbs: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
-    msbs: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    lsbs: st.SearchStrategy[int] = uint64s,
+    msbs: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[Uuid]:
     return st.builds(Uuid, lsb=lsbs, msb=msbs)
 
@@ -122,9 +125,7 @@ def envelopes(
     trace_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
     tenant_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
     event_source_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
-    retry_counts: st.SearchStrategy[int] = st.integers(
-        min_value=0, max_value=INT32_MAX
-    ),
+    retry_counts: st.SearchStrategy[int] = uint32s,
     created_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
     last_updated_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
     inner_messages: st.SearchStrategy[SerDe] = uuids()
@@ -154,15 +155,9 @@ def sessions(
         st.text(), max_size=MAX_LIST_SIZE
     ),
     primary_key_requires_asset_ids: st.SearchStrategy[bool] = st.booleans(),
-    create_times: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
-    last_seen_times: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
-    terminate_times: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    create_times: st.SearchStrategy[int] = uint64s,
+    last_seen_times: st.SearchStrategy[int] = uint64s,
+    terminate_times: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[Session]:
     return st.builds(
         Session,
@@ -197,25 +192,19 @@ def id_strategies(
 
 
 def increment_only_uint_props(
-    props: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    props: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[IncrementOnlyUintProp]:
     return st.builds(IncrementOnlyUintProp, prop=props)
 
 
 def immutable_uint_props(
-    props: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    props: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[ImmutableUintProp]:
     return st.builds(ImmutableUintProp, prop=props)
 
 
 def decrement_only_uint_props(
-    props: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    props: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[DecrementOnlyUintProp]:
     return st.builds(DecrementOnlyUintProp, prop=props)
 
@@ -312,9 +301,7 @@ def merged_nodes(
     properties: st.SearchStrategy[Mapping[str, NodeProperty]] = st.dictionaries(
         keys=st.text(), values=node_properties(), max_size=MAX_DICT_SIZE
     ),
-    uids: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    uids: st.SearchStrategy[int] = uint64s,
     node_keys: st.SearchStrategy[str] = st.text(),
     node_types: st.SearchStrategy[str] = st.text(),
 ) -> st.SearchStrategy[MergedNode]:
@@ -427,12 +414,8 @@ def merged_graphs(
 def lenses(
     lens_types: st.SearchStrategy[str] = st.text(),
     lens_names: st.SearchStrategy[str] = st.text(),
-    uids: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
-    scores: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    uids: st.SearchStrategy[int] = uint64s,
+    scores: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[Lens]:
     return st.builds(
         Lens,
@@ -451,9 +434,7 @@ def execution_hits(
         keys=st.text(), values=merged_edge_lists(), max_size=MAX_DICT_SIZE
     ),
     analyzer_names: st.SearchStrategy[str] = st.text(),
-    risk_scores: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    risk_scores: st.SearchStrategy[int] = uint64s,
     lenses: st.SearchStrategy[Sequence[Lens]] = st.lists(
         lenses(), max_size=MAX_LIST_SIZE
     ),
@@ -486,9 +467,7 @@ def labels(
 
 def counters(
     names: st.SearchStrategy[str] = st.text(),
-    increments: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    increments: st.SearchStrategy[int] = uint64s,
     labels: st.SearchStrategy[Sequence[Label]] = st.lists(
         labels(), max_size=MAX_LIST_SIZE
     ),

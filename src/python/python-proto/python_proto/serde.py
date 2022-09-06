@@ -24,20 +24,6 @@ class SerDe(Generic[P], metaclass=ABCMeta):
         return cast(P, cls._proto_cls())
 
     @classmethod
-    def __subclasshook__(cls, subclass: SerDe[P]) -> bool:
-        return (
-            hasattr(subclass, "_proto_cls")
-            and hasattr(subclass, "deserialize")
-            and callable(subclass.deserialize)
-            and hasattr(subclass, "serialize")
-            and callable(subclass.serialize)
-            and hasattr(subclass, "from_proto")
-            and callable(subclass.from_proto)
-            and hasattr(subclass, "into_proto")
-            and callable(subclass.into_proto)
-        )
-
-    @classmethod
     def deserialize(cls: type[T], bytes_: bytes) -> T:
         proto_value = cls.new_proto()
         proto_value.ParseFromString(bytes_)
@@ -72,21 +58,6 @@ class SerDeWithInner(Generic[I, P]):
         https://github.com/python/mypy/issues/5144
         """
         return cast(P, cls._proto_cls())
-
-    @classmethod
-    def __subclasshook__(cls, subclass: SerDeWithInner[I, P]) -> bool:
-        return (
-            hasattr(subclass, "_proto_cls")
-            and hasattr(subclass, "inner_cls")
-            and hasattr(subclass, "deserialize")
-            and callable(subclass.deserialize)
-            and hasattr(subclass, "serialize")
-            and callable(subclass.serialize)
-            and hasattr(subclass, "from_proto")
-            and callable(subclass.from_proto)
-            and hasattr(subclass, "into_proto")
-            and callable(subclass.into_proto)
-        )
 
     @classmethod
     def deserialize(cls: type[TInner], bytes_: bytes, inner_cls: type[I]) -> TInner:

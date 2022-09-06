@@ -9,9 +9,7 @@ from python_proto.tests.helpers import check_encode_decode_invariant
 
 
 def uids(
-    value: st.SearchStrategy[int] = st.integers(
-        min_value=strategies.UINT64_MIN, max_value=strategies.UINT64_MAX
-    ),
+    value: st.SearchStrategy[int] = strategies.uint64s,
 ) -> st.SearchStrategy[messages.Uid]:
     return st.builds(messages.Uid, value=value)
 
