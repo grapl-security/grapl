@@ -17,7 +17,7 @@ EPOCH = datetime.datetime.fromisoformat("1970-01-01T00:00:00.000")
 class Uuid(SerDe[_Uuid]):
     lsb: int
     msb: int
-    proto_cls = _Uuid
+    _proto_cls = _Uuid
 
     @staticmethod
     def from_uuid(uuid_: uuid.UUID) -> Uuid:
@@ -47,7 +47,7 @@ class Uuid(SerDe[_Uuid]):
 class Duration(SerDe[_Duration]):
     seconds: int
     nanos: int
-    proto_cls = _Duration
+    _proto_cls = _Duration
 
     def __post_init__(self) -> None:
         if self.seconds < 0 or self.nanos < 0:
@@ -88,7 +88,7 @@ class Duration(SerDe[_Duration]):
 class Timestamp(SerDe[_Timestamp]):
     duration: Duration
     before_epoch: bool
-    proto_cls = _Timestamp
+    _proto_cls = _Timestamp
 
     @staticmethod
     def from_datetime(datetime_: datetime.datetime) -> Timestamp:

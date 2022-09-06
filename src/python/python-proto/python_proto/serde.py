@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import ClassVar, Generic, TypeVar
+from typing import ClassVar, Generic, TypeVar, cast
 
 from google.protobuf.message import Message as _Message
 
@@ -11,12 +11,22 @@ TInner = TypeVar("TInner", bound="SerDeWithInner")
 
 
 class SerDe(Generic[P], metaclass=ABCMeta):
-    proto_cls: ClassVar[type[P]]
+    _proto_cls: ClassVar[type]
+
+    @classmethod
+    def new_proto(cls) -> P:
+        """
+        An awful hack to get around the fact that you cannot have a TypeVar
+        inside of a ClassVar (in this case, _proto_cls).
+        Ideally we'd just have `proto_cls: ClassVar[type[P]]`
+        https://github.com/python/mypy/issues/5144
+        """
+        return cast(P, cls._proto_cls())
 
     @classmethod
     def __subclasshook__(cls, subclass: SerDe[P]) -> bool:
         return (
-            hasattr(subclass, "proto_cls")
+            hasattr(subclass, "_proto_cls")
             and hasattr(subclass, "deserialize")
             and callable(subclass.deserialize)
             and hasattr(subclass, "serialize")
@@ -29,7 +39,7 @@ class SerDe(Generic[P], metaclass=ABCMeta):
 
     @classmethod
     def deserialize(cls: type[T], bytes_: bytes) -> T:
-        proto_value = cls.proto_cls()
+        proto_value = cls.new_proto()
         proto_value.ParseFromString(bytes_)
         return cls.from_proto(proto_value)
 
@@ -50,13 +60,23 @@ I = TypeVar("I", bound=SerDe)
 
 
 class SerDeWithInner(Generic[I, P]):
-    proto_cls: ClassVar[type[P]]
+    _proto_cls: ClassVar[type]
     inner_message: I
+
+    @classmethod
+    def new_proto(cls) -> P:
+        """
+        An awful hack to get around the fact that you cannot have a TypeVar
+        inside of a ClassVar (in this case, _proto_cls).
+        Ideally we'd just have `proto_cls: ClassVar[type[P]]`
+        https://github.com/python/mypy/issues/5144
+        """
+        return cast(P, cls._proto_cls())
 
     @classmethod
     def __subclasshook__(cls, subclass: SerDeWithInner[I, P]) -> bool:
         return (
-            hasattr(subclass, "proto_cls")
+            hasattr(subclass, "_proto_cls")
             and hasattr(subclass, "inner_cls")
             and hasattr(subclass, "deserialize")
             and callable(subclass.deserialize)
@@ -70,7 +90,7 @@ class SerDeWithInner(Generic[I, P]):
 
     @classmethod
     def deserialize(cls: type[TInner], bytes_: bytes, inner_cls: type[I]) -> TInner:
-        proto_value = cls.proto_cls()
+        proto_value = cls.new_proto()
         proto_value.ParseFromString(bytes_)
         return cls.from_proto(proto_value, inner_cls)
 

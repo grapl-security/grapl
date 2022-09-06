@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import uuid
-from typing import Generic, cast
+from typing import Generic
 
 from google.protobuf.any_pb2 import Any as _Any
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Envelope as _Envelope
@@ -22,15 +22,15 @@ class Envelope(SerDeWithInner[I, _Envelope], Generic[I]):
     last_updated_time: datetime.datetime
 
     inner_message: I
-    proto_cls = _Envelope
+    _proto_cls = _Envelope
 
     @classmethod
     def from_proto(
         cls: type[Envelope[I]], proto_envelope: _Envelope, inner_cls: type[I]
     ) -> Envelope[I]:
-        inner_message_proto = inner_cls.proto_cls()
+        inner_message_proto = inner_cls.new_proto()
         proto_envelope.inner_message.Unpack(inner_message_proto)
-        inner_message = cast(I, inner_cls.from_proto(inner_message_proto))  # fuck it
+        inner_message = inner_cls.from_proto(inner_message_proto)
         return cls(
             trace_id=Uuid.from_proto(proto_envelope.trace_id).into_uuid(),
             tenant_id=Uuid.from_proto(proto_envelope.tenant_id).into_uuid(),
@@ -71,7 +71,7 @@ class Envelope(SerDeWithInner[I, _Envelope], Generic[I]):
 @dataclasses.dataclass(frozen=True)
 class RawLog(SerDe[_RawLog]):
     log_event: bytes
-    proto_cls = _RawLog
+    _proto_cls = _RawLog
 
     @classmethod
     def from_proto(cls, proto_raw_log: _RawLog) -> RawLog:
