@@ -37,10 +37,21 @@ job "otel-collector" {
         static = 6831
       }
 
+      port "prometheus" {
+        to     = 9090
+        static = 9090
+      }
+
       port "zipkin" {
         to     = 9411
         static = 9411
       }
+    }
+
+    service {
+      name = "prometheus"
+      port = "prometheus"
+      tags = ["prometheus"]
     }
 
     service {
@@ -77,11 +88,12 @@ job "otel-collector" {
           "--config=local/config/otel-collector-config.yaml",
         ]
         ports = [
+          "jaeger-thrift-compact",
           "metrics",
           "otlp-grpc",
           "otlp-http",
-          "zipkin",
-          "jaeger-thrift-compact"
+          "prometheus",
+          "zipkin"
         ]
       }
 
