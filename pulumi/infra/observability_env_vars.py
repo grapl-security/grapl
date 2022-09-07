@@ -57,7 +57,7 @@ receivers:
     config:
       scrape_configs:
         - job_name: 'nomad-server'
-          scrape_inteval: 10s
+          scrape_interval: 10s
           scrape_timeout: 20s
           metrics_path: '/v1/metrics?format=prometheus'
           params:
