@@ -5,10 +5,10 @@
     "jest": true
   },
   "extends": [
-      "react-app",
-      "react-app/jest",
-//      "prettier",
-      "plugin:import/typescript"
+    "react-app",
+    "react-app/jest",
+    "plugin:import/typescript",
+    "plugin:prettier/recommended"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -21,7 +21,13 @@
   },
   "plugins": [
     "react",
-    "@typescript-eslint"
+    "@typescript-eslint",
+    "prettier" // prettier needs to be the last in the plugin list
   ],
-  "rules": {}
+  "rules": {
+    "react/jsx-uses-react": ["off"],
+    "react/react-in-jsx-scope": ["off"],
+    "react/jsx-props-no-spreading":["warn"],
+    "no-shadow": "off"
+  }
 }
