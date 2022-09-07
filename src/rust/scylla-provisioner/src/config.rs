@@ -4,7 +4,7 @@ use secrecy::ExposeSecret;
 
 #[derive(clap::Parser, Clone, Debug)]
 pub struct GraphDbConfig {
-    #[clap(long, env)]
+    #[clap(long, env, value_delimiter = ',')]
     /// The address of the graph database
     pub graph_db_addresses: Vec<SocketAddr>,
     #[clap(long, env)]

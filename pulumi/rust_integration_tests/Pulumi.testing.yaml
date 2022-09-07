@@ -7,7 +7,7 @@ config:
     generator-dispatcher: 20220907162319-3ebc56b
     generator-execution-sidecar: 20220907162319-3ebc56b
     graph-merger: 20220907162319-3ebc56b
-    graph-mutation: 20220907162319-3ebc56b
+    graph-mutation: 20220907175401-cafc860
     graph-query: 20220907162319-3ebc56b
     graph-query-service: 20220826220940-9c5575d
     graph-schema-manager: 20220907162319-3ebc56b
@@ -22,7 +22,7 @@ config:
     plugin-work-queue: 20220907162319-3ebc56b
     provisioner: 20220907162319-3ebc56b
     rust-integration-tests: 20220907162319-3ebc56b
-    scylla-provisioner: 20220907162319-3ebc56b
+    scylla-provisioner: 20220907175401-cafc860
     sysmon-generator: 20220809152144-3c3caf3
     uid-allocator: 20220907162319-3ebc56b
   rust-integration-tests:cloudsmith-repository-name: grapl/testing
