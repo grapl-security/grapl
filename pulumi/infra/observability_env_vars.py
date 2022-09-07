@@ -53,6 +53,17 @@ receivers:
       grpc:
       http:
         endpoint: "0.0.0.0:4318"
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'nomad-server'
+          scrape_inteval: 10s
+          scrape_timeout: 20s
+          metrics_path: '/v1/metrics?format=prometheus'
+          params:
+            format: ['prometheus']
+          static_configs:
+            - targets: ['localhost:4646']
 processors:
   batch:
     timeout: 10s
@@ -77,7 +88,7 @@ service:
       level: "debug"
   pipelines:
     traces:
-      receivers: [otlp, jaeger, zipkin]
+      receivers: [jaeger, otlp, prometheus, zipkin]
       exporters: [logging, otlp/ls]
 """
     )
