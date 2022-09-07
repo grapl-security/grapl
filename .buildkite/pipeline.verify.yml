@@ -252,4 +252,4 @@ steps:
     command:
       - make dist/firecracker_rootfs.tar.gz
     agents:
-      queue: "packer"
+      queue: "beefy"
