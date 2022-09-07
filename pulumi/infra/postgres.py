@@ -84,6 +84,7 @@ class Postgres(pulumi.ComponentResource):
         # Allow communication between nomad-agents and RDS
         aws.ec2.SecurityGroupRule(
             f"{name}-nomad-agents-egress-to-rds",
+            description=f"Connect to {name} RDS",
             type="egress",
             security_group_id=nomad_agent_security_group_id,
             from_port=postgres_port,
@@ -95,6 +96,7 @@ class Postgres(pulumi.ComponentResource):
 
         aws.ec2.SecurityGroupRule(
             f"{name}-rds-ingress-from-nomad-agents",
+            description="Nomad Agents",
             type="ingress",
             security_group_id=self.security_group.id,
             from_port=postgres_port,
@@ -106,11 +108,12 @@ class Postgres(pulumi.ComponentResource):
 
         aws.ec2.SecurityGroupRule(
             f"{name}-rds-egress-to-nomad-agents",
+            description="Nomad Agents",
             type="egress",
             security_group_id=self.security_group.id,
-            from_port=postgres_port,
-            to_port=postgres_port,
-            protocol="tcp",
+            from_port=0,
+            to_port=0,
+            protocol="all",
             source_security_group_id=nomad_agent_security_group_id,
             opts=pulumi.ResourceOptions(parent=self.security_group),
         )
