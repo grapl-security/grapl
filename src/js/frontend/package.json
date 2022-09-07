@@ -27,13 +27,9 @@
     "prettier": "prettier --ignore-path .gitignore --write \"**/*.+(js|json|ts|tsx)\"",
     "format": "yarn run prettier -- --write",
     "check-types": "tsc --project tsconfig.json --pretty --noEmit",
-    "check-format": "yarn run prettier -- --list-different"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "check-format": "yarn run prettier -- --list-different",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
   },
   "browserslist": {
     "production": [
@@ -46,5 +42,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "description": "Grapl Frontend",
+  "main": "index.tsx",
+  "license": "MIT"
 }
