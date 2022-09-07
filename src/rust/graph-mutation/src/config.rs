@@ -7,7 +7,7 @@ use rust_proto::client_factory::services::{
 
 #[derive(clap::Parser, Debug, Clone)]
 pub struct GraphDbConfig {
-    #[clap(long, env)]
+    #[clap(long, env, value_delimiter = ',')]
     /// The address of the graph database
     pub graph_db_addresses: Vec<SocketAddr>,
     #[clap(env)]
