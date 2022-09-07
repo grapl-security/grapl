@@ -104,6 +104,17 @@ class Postgres(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.security_group),
         )
 
+        aws.ec2.SecurityGroupRule(
+            f"{name}-rds-egress-to-nomad-agents",
+            type="egress",
+            security_group_id=self.security_group.id,
+            from_port=postgres_port,
+            to_port=postgres_port,
+            protocol="tcp",
+            source_security_group_id=nomad_agent_security_group_id,
+            opts=pulumi.ResourceOptions(parent=self.security_group),
+        )
+
         # Parameter Groups are what we use to preload pg libraries
         parameter_group = aws.rds.ParameterGroup(
             name,
