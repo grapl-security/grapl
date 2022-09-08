@@ -65,6 +65,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
     )
 
     return {
+        "analyzer-dispatcher": builder.build_with_tag("analyzer-dispatcher"),
         "analyzer-execution-sidecar": DockerImageId("TODO implement analzyer executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "event-source": builder.build_with_tag("event-source"),
@@ -186,6 +187,8 @@ def main() -> None:
     pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
 
     kafka_services = (
+        "analyzer-dispatcher",
+        "analyzer-dispatcher-retry",
         "generator-dispatcher",
         "generator-dispatcher-retry",
         "graph-generator",
@@ -201,6 +204,8 @@ def main() -> None:
         for service in kafka_services
     }
     kafka_consumer_services = (
+        "analyzer-dispatcher",
+        "analyzer-dispatcher-retry",
         "generator-dispatcher",
         "generator-dispatcher-retry",
         "graph-generator",

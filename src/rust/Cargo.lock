@@ -356,6 +356,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "analyzer-dispatcher"
+version = "0.1.0"
+dependencies = [
+ "async-cache",
+ "async-trait",
+ "bytes",
+ "clap 3.2.13",
+ "e2e-tests",
+ "eyre",
+ "futures",
+ "grapl-tracing",
+ "kafka",
+ "plugin-work-queue",
+ "rand 0.8.5",
+ "rust-proto",
+ "test-context",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "ansi_term"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
