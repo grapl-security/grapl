@@ -69,7 +69,7 @@ pub enum ConfigurationError {
 
 #[derive(Debug, Error)]
 pub enum GeneratorDispatcherError {
-    #[error("plugin registry client error {0}")]
+    #[error("generator IDs cache error {0}")]
     GeneratorIdsCacheError(#[from] AsyncCacheError),
 
     // FIXME: don't crash the service when this happens
@@ -216,7 +216,7 @@ impl GeneratorDispatcher {
                                         if generator_ids.is_empty() {
                                             let _guard = span.enter();
                                             tracing::warn!(
-                                                message = "unrecognized event source",
+                                                message = "no generators for event source",
                                             );
                                         } else {
                                             // cache hit
