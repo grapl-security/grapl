@@ -576,6 +576,78 @@ job "grapl-core" {
   ## Begin actual Grapl core services ##
   #######################################
 
+  group "analyzer-dispatcher" {
+    count = 2
+
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+    }
+
+    task "analyzer-dispatcher" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["analyzer-dispatcher"]
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
+      env {
+        # Upstreams
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+        PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+
+        # Kafka
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["analyzer-dispatcher"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["analyzer-dispatcher"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["analyzer-dispatcher"]
+        KAFKA_CONSUMER_TOPIC      = "merged-graphs"
+        KAFKA_RETRY_TOPIC         = "merged-graphs-retry"
+
+        # should equal number of merged-graphs partitions
+        WORKER_POOL_SIZE = 2
+
+        ANALYZER_IDS_CACHE_CAPACITY            = 10000
+        ANALYZER_IDS_CACHE_TTL_MS              = 5000
+        ANALYZER_IDS_CACHE_UPDATER_POOL_SIZE   = 10
+        ANALYZER_IDS_CACHE_UPDATER_QUEUE_DEPTH = 1000
+
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
+      }
+
+      resources {
+        cpu = 50
+      }
+    }
+
+    service {
+      name = "analyzer-dispatcher"
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "plugin-work-queue"
+              local_bind_port  = 1000
+            }
+            upstreams {
+              destination_name = "plugin-registry"
+              local_bind_port  = 1001
+            }
+          }
+        }
+      }
+    }
+  }
+
   group "generator-dispatcher" {
     count = 2
 
@@ -610,11 +682,10 @@ job "grapl-core" {
         KAFKA_SASL_PASSWORD       = var.kafka_credentials["generator-dispatcher"].sasl_password
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher"]
         KAFKA_CONSUMER_TOPIC      = "raw-logs"
-        KAFKA_PRODUCER_TOPIC      = "generated-graphs"
         KAFKA_RETRY_TOPIC         = "raw-logs-retry"
 
-        # TODO: should equal number of raw-logs partitions
-        WORKER_POOL_SIZE = 10
+        # should equal number of raw-logs partitions
+        WORKER_POOL_SIZE = 2
 
         GENERATOR_IDS_CACHE_CAPACITY            = 10000
         GENERATOR_IDS_CACHE_TTL_MS              = 5000
@@ -853,6 +924,42 @@ job "grapl-core" {
       mode = "bridge"
       dns {
         servers = local.dns_servers
+      }
+    }
+
+    task "analyzer-dispatcher-retry" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["kafka-retry"]
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
+      env {
+        # Kafka
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["analyzer-dispatcher-retry"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["analyzer-dispatcher-retry"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["analyzer-dispatcher-retry"]
+        KAFKA_RETRY_TOPIC         = "merged-graphs-retry"
+        KAFKA_RETRY_DELAY_MS      = 500
+        KAFKA_PRODUCER_TOPIC      = "merged-graphs"
+
+        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG       = var.rust_log
+      }
+
+      resources {
+        cpu = 50
+      }
+
+      service {
+        name = "analyzer-dispatcher-retry"
       }
     }
 

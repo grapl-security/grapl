@@ -5,13 +5,16 @@ use async_cache::{
     AsyncCacheError,
 };
 use clap::Parser;
-use config::GeneratorDispatcherConfig;
 use futures::{
     pin_mut,
     StreamExt,
     TryStreamExt,
 };
 use kafka::{
+    config::{
+        ConsumerConfig,
+        RetryProducerConfig,
+    },
     CommitError,
     ConfigurationError as KafkaConfigurationError,
     Consumer,
@@ -22,22 +25,23 @@ use kafka::{
 use rust_proto::{
     client_factory::{
         build_grpc_client,
-        services::PluginRegistryClientConfig,
+        services::{
+            PluginRegistryClientConfig,
+            PluginWorkQueueClientConfig,
+        },
     },
     graplinc::grapl::{
         api::{
-            plugin_registry::v1beta1::GetGeneratorsForEventSourceRequest,
+            graph::v1beta1::MergedGraph,
+            plugin_registry::v1beta1::GetAnalyzersForTenantRequest,
             plugin_work_queue::v1beta1::{
                 ExecutionJob,
                 PluginWorkQueueServiceClient,
                 PluginWorkQueueServiceClientError,
-                PushExecuteGeneratorRequest,
+                PushExecuteAnalyzerRequest,
             },
         },
-        pipeline::v1beta1::{
-            Envelope,
-            RawLog,
-        },
+        pipeline::v1beta1::Envelope,
     },
     protocol::{
         error::GrpcClientError,
@@ -47,70 +51,107 @@ use rust_proto::{
             Status,
         },
     },
+    SerDe,
+    SerDeError,
 };
 use thiserror::Error;
 use tracing::Instrument;
 use uuid::Uuid;
 
-pub mod config;
+#[derive(clap::Parser, Clone, Debug)]
+struct AnalyzerDispatcherConfigParams {
+    #[clap(long, env = "WORKER_POOL_SIZE")]
+    pub worker_pool_size: usize,
 
-#[derive(Debug, Error)]
-pub enum ConfigurationError {
-    #[error("error configuring kafka client")]
-    KafkaConfigurationError(#[from] KafkaConfigurationError),
+    #[clap(long, env = "ANALYZER_IDS_CACHE_CAPACITY")]
+    pub analyzer_ids_cache_capacity: u64,
 
-    #[error("error configuring generator IDs cache")]
-    GeneratorIdsCacheConfigurationError(#[from] ConnectError),
+    #[clap(long, env = "ANALYZER_IDS_CACHE_TTL_MS")]
+    pub analyzer_ids_cache_ttl_ms: u64,
+
+    #[clap(long, env = "ANALYZER_IDS_CACHE_UPDATER_POOL_SIZE")]
+    pub analyzer_ids_cache_updater_pool_size: usize,
+
+    #[clap(long, env = "ANALYZER_IDS_CACHE_UPDATER_QUEUE_DEPTH")]
+    pub analyzer_ids_cache_updater_queue_depth: usize,
+}
+
+#[derive(Clone, Debug)]
+struct AnalyzerDispatcherConfig {
+    pub kafka_config: ConsumerConfig,
+    pub kafka_retry_producer_config: RetryProducerConfig,
+    pub params: AnalyzerDispatcherConfigParams,
+}
+
+impl AnalyzerDispatcherConfig {
+    pub fn parse() -> Self {
+        Self {
+            kafka_config: ConsumerConfig::parse(),
+            kafka_retry_producer_config: RetryProducerConfig::parse(),
+            params: AnalyzerDispatcherConfigParams::parse(),
+        }
+    }
 }
 
 #[derive(Debug, Error)]
-pub enum GeneratorDispatcherError {
-    #[error("generator IDs cache error {0}")]
-    GeneratorIdsCacheError(#[from] AsyncCacheError),
+enum ConfigurationError {
+    #[error("error configuring kafka client")]
+    KafkaConfiguration(#[from] KafkaConfigurationError),
+
+    #[error("error configuring analyzer IDs cache")]
+    AnalyzerIdsCacheConfiguration(#[from] ConnectError),
+}
+
+#[derive(Debug, Error)]
+enum AnalyzerDispatcherError {
+    #[error("analyzer IDs cache error {0}")]
+    AnalyzerIdsCache(#[from] AsyncCacheError),
 
     // FIXME: don't crash the service when this happens
     #[error("error sending data to plugin-work-queue {0}")]
-    PluginWorkQueueClientError(#[from] PluginWorkQueueServiceClientError),
+    PluginWorkQueueClient(#[from] PluginWorkQueueServiceClientError),
 
     // FIXME: also don't crash the service when this happens
     #[error("error trying to send message to kafka {0}")]
-    ProducerError(#[from] ProducerError),
+    Producer(#[from] ProducerError),
 
     #[error("error committing kafka consumer offsets {0}")]
-    CommitError(#[from] CommitError),
+    Commit(#[from] CommitError),
+
+    #[error("error serializing or deserializing protobuf data {0}")]
+    SerDe(#[from] SerDeError),
 }
 
-pub struct GeneratorDispatcher {
+struct AnalyzerDispatcher {
     plugin_work_queue_client: PluginWorkQueueServiceClient,
-    raw_logs_consumer: Consumer<RawLog>,
-    raw_logs_retry_producer: RetryProducer<RawLog>,
-    generator_ids_cache: AsyncCache<Uuid, Vec<Uuid>>,
+    merged_graphs_consumer: Consumer<MergedGraph>,
+    merged_graphs_retry_producer: RetryProducer<MergedGraph>,
+    analyzer_ids_cache: AsyncCache<Uuid, Vec<Uuid>>,
 }
 
-impl GeneratorDispatcher {
-    #[tracing::instrument(skip(plugin_work_queue_client), err)]
+impl AnalyzerDispatcher {
     pub async fn new(
-        config: GeneratorDispatcherConfig,
+        config: AnalyzerDispatcherConfig,
         plugin_work_queue_client: PluginWorkQueueServiceClient,
     ) -> Result<Self, ConfigurationError> {
-        let raw_logs_consumer: Consumer<RawLog> = Consumer::new(config.kafka_config)?;
-        let raw_logs_retry_producer: RetryProducer<RawLog> =
+        let merged_graphs_consumer: Consumer<MergedGraph> = Consumer::new(config.kafka_config)?;
+        let merged_graphs_retry_producer: RetryProducer<MergedGraph> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
         let client_config = PluginRegistryClientConfig::parse();
+
         let plugin_registry_client = build_grpc_client(client_config).await?;
-        let generator_ids_cache = AsyncCache::new(
-            config.params.generator_ids_cache_capacity,
-            Duration::from_millis(config.params.generator_ids_cache_ttl_ms),
-            config.params.generator_ids_cache_updater_pool_size,
-            config.params.generator_ids_cache_updater_queue_depth,
-            move |event_source_id| {
+
+        let analyzer_ids_cache = AsyncCache::new(
+            config.params.analyzer_ids_cache_capacity,
+            Duration::from_millis(config.params.analyzer_ids_cache_ttl_ms),
+            config.params.analyzer_ids_cache_updater_pool_size,
+            config.params.analyzer_ids_cache_updater_queue_depth,
+            move |tenant_id| {
                 let mut plugin_registry_client = plugin_registry_client.clone();
 
                 async move {
                     match plugin_registry_client
-                        .get_generators_for_event_source(GetGeneratorsForEventSourceRequest::new(
-                            event_source_id,
-                        ))
+                        .get_analyzers_for_tenant(GetAnalyzersForTenantRequest::new(tenant_id))
                         .await
                     {
                         Ok(response) => Some(response.plugin_ids().to_vec()),
@@ -119,8 +160,8 @@ impl GeneratorDispatcher {
                             ..
                         })) => {
                             tracing::warn!(
-                                message = "found no generators for event source",
-                                event_source_id =% event_source_id,
+                                message = "found no analyzers for tenant",
+                                tenant_id =% tenant_id,
                             );
                             Some(vec![])
                         }
@@ -128,8 +169,8 @@ impl GeneratorDispatcher {
                             // failed to update the cache, but the message will
                             // be retried via the kafka retry topic
                             tracing::error!(
-                                message = "error retrieving generators for event source",
-                                event_source_id =% event_source_id,
+                                message = "error retrieving analyzers for tenant",
+                                tenant_id =% tenant_id,
                                 reason =% e,
                             );
 
@@ -143,52 +184,50 @@ impl GeneratorDispatcher {
 
         Ok(Self {
             plugin_work_queue_client,
-            raw_logs_consumer,
-            raw_logs_retry_producer,
-            generator_ids_cache,
+            merged_graphs_consumer,
+            merged_graphs_retry_producer,
+            analyzer_ids_cache,
         })
     }
 
-    #[tracing::instrument(skip(self), err)]
-    pub async fn run(&mut self, pool_size: usize) -> Result<(), GeneratorDispatcherError> {
-        let generator_ids_cache = self.generator_ids_cache.clone();
+    pub async fn run(&mut self, pool_size: usize) -> Result<(), AnalyzerDispatcherError> {
+        let analyzer_ids_cache = self.analyzer_ids_cache.clone();
         let plugin_work_queue_client = self.plugin_work_queue_client.clone();
-        let raw_logs_retry_producer = self.raw_logs_retry_producer.clone();
+        let merged_graphs_retry_producer = self.merged_graphs_retry_producer.clone();
 
         loop {
-            let generator_ids_cache = generator_ids_cache.clone();
+            let analyzer_ids_cache = analyzer_ids_cache.clone();
             let plugin_work_queue_client = plugin_work_queue_client.clone();
-            let raw_logs_retry_producer = raw_logs_retry_producer.clone();
+            let merged_graphs_retry_producer = merged_graphs_retry_producer.clone();
 
-            let stream = self.raw_logs_consumer
+            let stream = self.merged_graphs_consumer
                 .stream()
                 .take(pool_size)
-                .then(move |raw_log_result: Result<(tracing::Span, Envelope<RawLog>), ConsumerError>| {
-                    let generator_ids_cache = generator_ids_cache.clone();
+                .then(move |merged_graphs_result: Result<(tracing::Span, Envelope<MergedGraph>), ConsumerError>| {
+                    let analyzer_ids_cache = analyzer_ids_cache.clone();
                     let plugin_work_queue_client = plugin_work_queue_client.clone();
-                    let raw_logs_retry_producer = raw_logs_retry_producer.clone();
+                    let merged_graphs_retry_producer = merged_graphs_retry_producer.clone();
 
                     async move {
-                        match raw_log_result {
+                        match merged_graphs_result {
                             Ok((span, envelope)) => {
-                                match generator_ids_cache
+                                match analyzer_ids_cache
                                     .clone()
-                                    .get(envelope.event_source_id())
+                                    .get(envelope.tenant_id())
                                     .instrument(span.clone())
                                     .await
                                 {
-                                    Ok(Some(generator_ids)) => {
-                                        if generator_ids.is_empty() {
+                                    Ok(Some(analyzer_ids)) => {
+                                        if analyzer_ids.is_empty() {
                                             let _guard = span.enter();
                                             tracing::warn!(
-                                                message = "no generators for event source",
+                                                message = "no analyzers for tenant",
                                             );
                                         } else {
-                                            // cache hit
                                             enqueue_plugin_work(
                                                 plugin_work_queue_client.clone(),
-                                                generator_ids,
-                                                envelope
+                                                analyzer_ids,
+                                                envelope,
                                             )
                                                 .instrument(span)
                                                 .await?;
@@ -202,14 +241,16 @@ impl GeneratorDispatcher {
                                         // the message
                                         let _guard = span.enter();
                                         tracing::debug!(
-                                            message = "generator IDs cache miss, retrying message",
+                                            message = "analyzer IDs cache miss, retrying message",
                                         );
                                         drop(_guard);
 
                                         retry_message(
-                                            &raw_logs_retry_producer,
-                                            envelope
-                                        ).instrument(span).await?;
+                                            &merged_graphs_retry_producer,
+                                            envelope,
+                                        )
+                                            .instrument(span)
+                                            .await?;
 
                                         Ok(())
                                     },
@@ -218,14 +259,14 @@ impl GeneratorDispatcher {
                                         // the message
                                         let _guard = span.enter();
                                         tracing::warn!(
-                                            message = "generator IDs cache error, retrying message",
+                                            message = "analyzer IDs cache error, retrying message",
                                             reason =% reason,
                                         );
                                         drop(_guard);
 
                                         retry_message(
-                                            &raw_logs_retry_producer,
-                                            envelope
+                                            &merged_graphs_retry_producer,
+                                            envelope,
                                         )
                                             .instrument(span)
                                             .await?;
@@ -234,23 +275,23 @@ impl GeneratorDispatcher {
                                     },
                                     Err(cache_err) => {
                                         // fatal error, bailing out
-                                        Err(GeneratorDispatcherError::from(cache_err))
+                                        Err(AnalyzerDispatcherError::from(cache_err))
                                     }
                                 }
                             },
                             Err(e) => {
                                 tracing::error!(
-                                    message="error processing kafka message",
-                                    reason=%e,
+                                    message = "error processing kafka message",
+                                    reason =% e,
                                 );
 
                                 Ok(())
-                            }
+                            },
                         }
                     }
                 })
                 .then(|result| async {
-                    self.raw_logs_consumer.commit()?;
+                    self.merged_graphs_consumer.commit()?;
                     result
                 });
 
@@ -270,27 +311,27 @@ impl GeneratorDispatcher {
 }
 
 async fn retry_message(
-    raw_logs_retry_producer: &RetryProducer<RawLog>,
-    envelope: Envelope<RawLog>,
+    merged_graphs_retry_producer: &RetryProducer<MergedGraph>,
+    envelope: Envelope<MergedGraph>,
 ) -> Result<(), ProducerError> {
     // TODO: be a little smarter about handling ProducerError here
-    raw_logs_retry_producer.send(envelope).await
+    merged_graphs_retry_producer.send(envelope).await
 }
 
-#[tracing::instrument(skip(plugin_work_queue_client, generator_ids, envelope), err)]
+#[tracing::instrument(skip(plugin_work_queue_client, analyzer_ids, envelope), err)]
 async fn enqueue_plugin_work(
     plugin_work_queue_client: PluginWorkQueueServiceClient,
-    generator_ids: Vec<Uuid>,
-    envelope: Envelope<RawLog>,
-) -> Result<(), GeneratorDispatcherError> {
-    let pool_size = generator_ids.len();
+    analyzer_ids: Vec<Uuid>,
+    envelope: Envelope<MergedGraph>,
+) -> Result<(), AnalyzerDispatcherError> {
+    let pool_size = analyzer_ids.len();
     let tenant_id = envelope.tenant_id();
     let trace_id = envelope.trace_id();
     let event_source_id = envelope.event_source_id();
-    let payload = envelope.inner_message().log_event();
-    futures::stream::iter(generator_ids)
-        .map(|generator_id| Ok(generator_id))
-        .try_for_each_concurrent(pool_size, move |generator_id| {
+    let payload = envelope.inner_message().serialize()?;
+    futures::stream::iter(analyzer_ids)
+        .map(|analyzer_id| Ok(analyzer_id))
+        .try_for_each_concurrent(pool_size, move |analyzer_id| {
             let payload = payload.clone();
             let mut plugin_work_queue_client = plugin_work_queue_client.clone();
 
@@ -299,20 +340,34 @@ async fn enqueue_plugin_work(
                     ExecutionJob::new(payload.clone(), tenant_id, trace_id, event_source_id);
 
                 tracing::debug!(
-                    message = "enqueueing generator execution job",
-                    generator_id =% generator_id,
+                    message = "enqueueing analyzer execution job",
+                    analyzer_id =% analyzer_id,
                 );
 
                 // TODO: retries, backpressure signalling, etc.
                 plugin_work_queue_client
-                    .push_execute_generator(PushExecuteGeneratorRequest::new(
+                    .push_execute_analyzer(PushExecuteAnalyzerRequest::new(
                         execution_job,
-                        generator_id,
+                        analyzer_id,
                     ))
                     .await
                     .map(|_| ())
-                    .map_err(|e| GeneratorDispatcherError::from(e))
+                    .map_err(|e| AnalyzerDispatcherError::from(e))
             }
         })
         .await
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _guard = grapl_tracing::setup_tracing("analyzer-dispatcher");
+    let config = AnalyzerDispatcherConfig::parse();
+    let plugin_work_queue_client_config = PluginWorkQueueClientConfig::parse();
+    let plugin_work_queue_client = build_grpc_client(plugin_work_queue_client_config).await?;
+    let worker_pool_size = config.params.worker_pool_size;
+    let mut analyzer_dispatcher = AnalyzerDispatcher::new(config, plugin_work_queue_client).await?;
+
+    analyzer_dispatcher.run(worker_pool_size).await?;
+
+    Ok(())
 }
