@@ -221,7 +221,7 @@ graplctl: ## Build graplctl and install it to ./bin
 dump-artifacts-local:  ## Run the script that dumps Nomad/Docker logs after test runs
 	# Rarely needed, but you can temporarily append
 	# `--dump-connect-proxy-logs` to debug Consul Connect.
-	./pants run ./etc/ci_scripts/dump_artifacts -- \
+	./pants dump-artifacts \
 		--compose-project="${COMPOSE_PROJECT_NAME}" \
 		--dump-agent-logs
 
@@ -606,10 +606,6 @@ docker-kill-all:  # Kill all currently running Docker containers except registry
 	# https://stackoverflow.com/a/46208493
 	TO_KILL=$$(docker ps --all --quiet | grep -v -E $$(docker ps -aq --filter='name=grapl_local_registry' | paste -sd "|" -))
 	docker kill $${TO_KILL}
-
-.PHONY: repl
-repl: ## Run an interactive ipython repl that can import from grapl-common etc
-	./pants --no-pantsd repl --shell=ipython src/python/repl
 
 .PHONY: build-docs
 build-docs: ## Build the Sphinx docs

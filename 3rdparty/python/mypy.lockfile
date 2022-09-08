@@ -54,11 +54,6 @@
               "algorithm": "sha256",
               "hash": "3a3e525cd76c2c4f90f1449fd034ba21fcca68050ff7c8397bb7dd25dd8b8248",
               "url": "https://files.pythonhosted.org/packages/a7/1c/ac13b5d83aa025adc9d7e525b8eea180f3600ac40d47b6ad7746cf796a9a/mypy-0.960-cp310-cp310-macosx_10_9_universal2.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "925aa84369a07846b7f3b8556ccade1f371aa554f2bd4fb31cb97a24b73b036e",
-              "url": "https://files.pythonhosted.org/packages/f1/8f/1cf7aaad4957c3e329e160d993353b440da7499365d2f639cf973ab0f235/mypy-0.960-cp310-cp310-win_amd64.whl"
             }
           ],
           "project_name": "mypy",
@@ -131,15 +126,11 @@
           "version": "4.3"
         }
       ],
-      "platform_tag": [
-        "cp310",
-        "cp310",
-        "manylinux_2_31_x86_64"
-      ]
+      "platform_tag": null
     }
   ],
   "path_mappings": {},
-  "pex_version": "2.1.90",
+  "pex_version": "2.1.102",
   "prefer_older_binary": false,
   "requirements": [
     "mypy==0.960"
@@ -149,6 +140,10 @@
   ],
   "resolver_version": "pip-2020-resolver",
   "style": "universal",
+  "target_systems": [
+    "linux",
+    "mac"
+  ],
   "transitive": true,
   "use_pep517": null
 }

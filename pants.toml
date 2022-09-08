@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.12.0"
+pants_version = "2.13.0"
 backend_packages = [
   "pants.backend.codegen.protobuf.lint.buf",
   "pants.backend.codegen.protobuf.python",
@@ -17,6 +17,7 @@ backend_packages = [
   "pants.backend.shell.lint.shellcheck",
   "pants.backend.shell.lint.shfmt"
 ]
+use_deprecated_directory_cli_args_semantics = false
 
 pants_ignore=[
     "!.buildkite",
@@ -85,14 +86,10 @@ requirement_constraints = "3rdparty/python/constraints.txt"
 # If you update these constraints, also update the ones in the
 # `[black]` section below; see there for further background.
 interpreter_constraints = ["==3.10.*"]
+tailor_pex_binary_targets = false
 
 [python-bootstrap]
 search_path = ["<PYENV_LOCAL>", "<PYENV>", "<PATH>"]
-
-# We have at least one __init__.py file that has code in it.
-# See https://www.pantsbuild.org/docs/python-backend
-[python-infer]
-inits = true
 
 [python-protobuf]
 mypy_plugin = true
@@ -234,8 +231,10 @@ ignore_adding_targets = [
   # `pex_binary` targets for our `__main__.py` files.
   "pulumi/grapl:__main__",
   "pulumi/integration_tests:__main__",
+  "pulumi/policies/grapl:__main__",
   "devbox/provision:__main__",
 ]
 
 [cli.alias]
 bk-run = "run build-support:bk-run --"
+dump-artifacts = "run etc/ci_scripts/dump_artifacts:dump_artifacts --"
