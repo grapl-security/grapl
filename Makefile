@@ -88,6 +88,9 @@ RUST_MAKE = $(MAKE) --directory=src/rust
 # Helper macro for invoking a target from src/js/engagement_view/Makefile
 ENGAGEMENT_VIEW_MAKE = $(MAKE) --directory=src/js/engagement_view
 
+# Helper macro for invoking a target from src/js/frontend/Makefile
+FRONTEND_MAKE = $(MAKE) --directory=src/js/frontend
+
 # Use a single shell for each of our targets, which allows us to use the 'trap'
 # built-in in our targets. We set the 'errexit' shell option to preserve
 # execution behavior, where failure from one line in a target will result in
@@ -172,6 +175,16 @@ build-engagement-view: ## Build website assets to include in grapl-web-ui
 		"src/js/engagement_view/build/." \
 		"$${TARGET_FRONTEND_DIR}"
 
+.PHONY: build-frontend
+build-frontend: ## Build website assets to include in grapl-web-ui
+	@echo "--- Building the engagement view"
+	$(FRONTEND_MAKE) build-code
+	TARGET_FRONTEND_DIR="dist/frontend"
+	rm -rf "$${TARGET_FRONTEND_DIR}/*"  # Clear out old artifacts
+	cp -r \
+		"src/js/frontend/build/." \
+		"$${TARGET_FRONTEND_DIR}"
+
 
 .PHONY: build-grapl-service-prerequisites
 
@@ -180,6 +193,8 @@ build-grapl-service-prerequisites: ## Build all assets needed for the creation o
 build-grapl-service-prerequisites: build-service-pex-files
 # The grapl-web-ui service needs website assets
 build-grapl-service-prerequisites: build-engagement-view
+# The grapl-web-ui service needs website assets from frontend
+build-grapl-service-prerequisites: build-frontend
 
 # This is used in our CI pipeline; see build_and_upload_images.sh
 #
@@ -239,6 +254,7 @@ test-unit: test-unit-shell
 test-unit: ## Build and run all unit tests
 
 .PHONY: test-unit-js
+test-unit-js: test-unit-frontend
 test-unit-js: test-unit-engagement-view
 test-unit-js: test-unit-graphql-endpoint
 test-unit-js: ## Build and run unit tests - JavaScript only
@@ -254,6 +270,11 @@ test-unit-graphql-endpoint: ## Test Graphql Endpoint
 .PHONY: test-unit-engagement-view
 test-unit-engagement-view: ## Test Engagement View
 	$(ENGAGEMENT_VIEW_MAKE) run-tests
+
+.PHONY: test-unit-frontend
+test-unit-frontend: ## Test Frontend
+	$(FRONTEND_MAKE) run-tests
+
 
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
@@ -499,6 +520,12 @@ restart-web-ui: build-engagement-view  ## Rebuild web-ui image, and restart web-
 	source ./nomad/lib/nomad_cli_tools.sh
 	nomad alloc restart "$$(nomad_get_alloc_id_for_task grapl-core web-ui)"
 
+.PHONY: restart-web-ui-frontend
+restart-web-ui-frontend: build-frontend  ## Rebuild web-ui image, and restart web-ui task in Nomad
+	$(DOCKER_BUILDX_BAKE) grapl-web-ui
+	source ./nomad/lib/nomad_cli_tools.sh
+	nomad alloc restart "$$(nomad_get_alloc_id_for_task grapl-core web-ui)"
+
 ##@ Venv Management
 ########################################################################
 .PHONY: generate-constraints
@@ -520,6 +547,8 @@ dist:
 clean: clean-dist
 clean: clean-artifacts
 clean: clean-engagement-view
+clean: clean-frontend
+
 clean: ## Clean all generated artifacts
 
 .PHONY: clean-all
@@ -582,6 +611,11 @@ clean-docker-dgraph: ## Remove dgraph images
 .PHONY: clean-engagement-view
 clean-engagement-view:
 	$(ENGAGEMENT_VIEW_MAKE) clean
+
+.PHONY: clean-frontend
+clean-frontend:
+	$(FRONTEND_MAKE) clean
+
 
 clean-all-rust:
 	$(RUST_MAKE) clean-all

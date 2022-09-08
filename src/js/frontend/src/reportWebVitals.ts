@@ -1,3 +1,9 @@
+// Our reportWebVitals file is created using with Create React App's bootstrapping process.
+// This includes a performance relayer that allows for measuring and analyzing the performance
+// of our application using different metrics.
+
+// See: https://create-react-app.dev/docs/measuring-performance/#:%7E:text=reportWebVitals
+
 import { ReportHandler } from "web-vitals";
 
 const reportWebVitals = (onPerfEntry?: ReportHandler) => {
