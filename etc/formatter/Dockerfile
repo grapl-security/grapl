@@ -1,4 +1,4 @@
-FROM node:17.9.0-bullseye-slim as formatter
+FROM node:18-bullseye-slim as formatter
 
 RUN npm install --global \
     prettier@2.6.2 \
