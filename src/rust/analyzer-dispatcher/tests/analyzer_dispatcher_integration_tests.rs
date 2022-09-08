@@ -1,11 +1,13 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use bytes::Bytes;
 use e2e_tests::{
     test_fixtures,
     test_utils::context::E2eTestContext,
 };
-use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
+use plugin_work_queue::test_utils::scan_analyzer_messages;
 use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::PublishRawLogRequest;
 use test_context::test_context;
 
@@ -100,9 +102,14 @@ async fn test_analyzer_dispatcher_inserts_job_into_plugin_work_queue(
         ))
         .await?;
 
-    let matching_job =
-        scan_for_plugin_message_in_pwq(ctx.plugin_work_queue_psql_client.clone(), analyzer_id)
-            .await;
+    let matching_job = scan_analyzer_messages(
+        ctx.plugin_work_queue_psql_client.clone(),
+        Duration::from_secs(30),
+        analyzer_id,
+    )
+    .await;
+
     assert!(matching_job.is_some());
+
     Ok(())
 }
