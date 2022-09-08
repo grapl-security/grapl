@@ -41,6 +41,7 @@ BUILD @christophermaier
 /.rustfmt.toml @christophermaier
 /scylladb/ @twunderlich-grapl
 /src/js/engagement_view/ @andrea-grapl
+/src/js/frontend/ @andrea-grapl
 /src/js/graphql_endpoint/ @andrea-grapl
 /src/proto/ @grapl-security/wg-data-infra
 /src/python/graphql_endpoint_tests/ @wimax-grapl
