@@ -28,7 +28,7 @@ steps:
 
       - label: ":pants: All files are covered by Pants"
         command:
-          - ./pants tailor --check
+          - "./pants tailor --check ::"
 
   - group: ":lint-roller: Lints"
     # Lints are various code quality checks; formatting, style guide
