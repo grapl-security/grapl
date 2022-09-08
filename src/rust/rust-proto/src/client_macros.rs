@@ -30,8 +30,15 @@ impl Default for RpcBackoffConfig {
         Self {
             initial_millis: 100,
             max_delay_millis: 5000,
-            num_retries: 10,
+            num_retries: 9, // so 10 total tries
         }
+    }
+}
+
+impl RpcBackoffConfig {
+    pub fn num_tries(self) -> usize {
+        // Account for the initial try.
+        self.num_retries + 1
     }
 }
 
@@ -80,7 +87,7 @@ macro_rules! execute_client_rpc {
             let tonic_response: tonic::Response<_> = $self
                 .executor
                 .spawn_conditional(
-                    backoff.take(backoff_opts.num_retries),
+                    backoff.take(backoff_opts.num_tries()),
                     || {
                         let mut proto_client = proto_client.clone();
                         let proto_request = proto_request.clone();
