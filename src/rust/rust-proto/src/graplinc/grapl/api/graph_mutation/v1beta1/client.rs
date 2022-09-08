@@ -7,7 +7,7 @@ use client_executor::{
 use tonic::transport::Endpoint;
 
 use crate::{
-    client_macros::ExecuteClientRpcOptions,
+    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::graph_mutation::v1beta1::messages as native,
@@ -63,7 +63,7 @@ impl GraphMutationClient {
             create_node,
             proto::CreateNodeRequest,
             native::CreateNodeResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
     pub async fn set_node_property(
@@ -76,7 +76,7 @@ impl GraphMutationClient {
             set_node_property,
             proto::SetNodePropertyRequest,
             native::SetNodePropertyResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
     pub async fn create_edge(
@@ -89,7 +89,7 @@ impl GraphMutationClient {
             create_edge,
             proto::CreateEdgeRequest,
             native::CreateEdgeResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 }
