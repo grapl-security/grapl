@@ -91,7 +91,7 @@ impl PluginRegistryDbClient {
             artifact_s3_key,
             event_source_id
             FROM plugins
-            WHERE plugin_id = $1
+            WHERE plugin_id = $1;
             ",
             plugin_id
         )
@@ -99,7 +99,33 @@ impl PluginRegistryDbClient {
         .await
     }
 
-    #[allow(dead_code)]
+    #[tracing::instrument(skip(self), err)]
+    pub async fn list_plugins(
+        &self,
+        tenant_id: &uuid::Uuid,
+        plugin_type: &PluginType,
+    ) -> Result<Vec<PluginRow>, sqlx::Error> {
+        sqlx::query_as!(
+            PluginRow,
+            r"
+            SELECT
+                plugin_id,
+                tenant_id,
+                display_name,
+                plugin_type,
+                artifact_s3_key,
+                event_source_id
+            FROM plugins
+            WHERE
+                tenant_id = $1 AND plugin_type = $2;
+            ",
+            tenant_id,
+            plugin_type.type_name()
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
+
     #[tracing::instrument(skip(self), err)]
     pub async fn get_plugin_deployment(
         &self,

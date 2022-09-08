@@ -8,7 +8,7 @@ use generator_service_client::GeneratorServiceClient as GeneratorServiceClientPr
 
 pub use crate::protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1::generator_service_client;
 use crate::{
-    client_macros::ExecuteClientRpcOptions,
+    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::plugin_sdk::generators::v1beta1 as native,
@@ -60,7 +60,7 @@ impl GeneratorServiceClient {
             run_generator,
             proto::RunGeneratorRequest,
             native::RunGeneratorResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 }

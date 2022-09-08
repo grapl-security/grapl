@@ -7,7 +7,7 @@ use client_executor::{
 use tonic::transport::Endpoint;
 
 use crate::{
-    client_macros::ExecuteClientRpcOptions,
+    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::graph_schema_manager::v1beta1::messages as native,
@@ -64,7 +64,7 @@ impl GraphSchemaManagerClient {
             deploy_schema,
             proto::DeploySchemaRequest,
             native::DeploySchemaResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 
@@ -78,7 +78,7 @@ impl GraphSchemaManagerClient {
             get_edge_schema,
             proto::GetEdgeSchemaRequest,
             native::GetEdgeSchemaResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 }
