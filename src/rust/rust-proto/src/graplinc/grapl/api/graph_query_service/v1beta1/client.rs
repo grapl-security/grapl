@@ -7,7 +7,7 @@ use client_executor::{
 use tonic::transport::Endpoint;
 
 use crate::{
-    client_macros::ExecuteClientRpcOptions,
+    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::graph_query_service::v1beta1::messages as native,
@@ -63,7 +63,7 @@ impl GraphQueryClient {
             query_graph_with_uid,
             proto::QueryGraphWithUidRequest,
             native::QueryGraphWithUidResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
     pub async fn query_graph_from_uid(
@@ -76,7 +76,7 @@ impl GraphQueryClient {
             query_graph_from_uid,
             proto::QueryGraphFromUidRequest,
             native::QueryGraphFromUidResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 }

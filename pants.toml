@@ -141,6 +141,7 @@ extra_requirements = [
 args = [ "--suppress-no-test-exit-code" ]
 
 [mypy]
+version = "mypy==0.960"
 lockfile = "3rdparty/python/mypy.lockfile"
 config = "src/python/mypy.ini"
 # read this section of the mypy docs:
@@ -152,6 +153,7 @@ config = "src/python/mypy.ini"
 args = [ "--show-error-codes", "--namespace-packages" ] #, "--verbose" ]
 
 extra_type_stubs = [
+  "grpc-stubs",
   "mypy_boto3_cloudwatch==1.20.35.post1",
   "mypy_boto3_dynamodb==1.20.35.post1",
   "mypy_boto3_ec2==1.20.35.post1",

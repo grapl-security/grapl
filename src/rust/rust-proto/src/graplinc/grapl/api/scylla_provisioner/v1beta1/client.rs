@@ -7,7 +7,7 @@ use client_executor::{
 use tonic::transport::Endpoint;
 
 use crate::{
-    client_macros::ExecuteClientRpcOptions,
+    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::scylla_provisioner::v1beta1::messages::{self as native,},
@@ -63,7 +63,7 @@ impl ScyllaProvisionerClient {
             provision_graph_for_tenant,
             proto::ProvisionGraphForTenantRequest,
             native::ProvisionGraphForTenantResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 }

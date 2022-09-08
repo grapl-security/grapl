@@ -26,6 +26,8 @@ use rust_proto::{
         GetPluginHealthResponse,
         GetPluginRequest,
         GetPluginResponse,
+        ListPluginsRequest,
+        ListPluginsResponse,
         PluginDeployment,
         PluginMetadata,
         PluginRegistryApi,
@@ -230,6 +232,34 @@ impl PluginRegistryApi for PluginRegistry {
         );
 
         Ok(response)
+    }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn list_plugins(
+        &self,
+        request: ListPluginsRequest,
+    ) -> Result<ListPluginsResponse, Self::Error> {
+        let plugin_rows = self
+            .db_client
+            .list_plugins(&request.tenant_id(), &request.plugin_type())
+            .await?;
+
+        let plugins: Result<Vec<GetPluginResponse>, Self::Error> = plugin_rows
+            .iter()
+            .map(|plugin_row| {
+                Ok(GetPluginResponse::new(
+                    plugin_row.plugin_id,
+                    PluginMetadata::new(
+                        plugin_row.tenant_id,
+                        plugin_row.display_name.clone(),
+                        try_from(&plugin_row.plugin_type)?,
+                        plugin_row.event_source_id,
+                    ),
+                ))
+            })
+            .collect();
+
+        Ok(ListPluginsResponse::new(plugins?))
     }
 
     #[tracing::instrument(skip(self, request), err)]

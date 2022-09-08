@@ -1,1 +1,1 @@
-python_sources(sources=["**/*.py"], dependencies=["src/proto:graplinc"])
+python_sources(sources=["**/*.py", "!tests/"], dependencies=["src/proto:graplinc"])
