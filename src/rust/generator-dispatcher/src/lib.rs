@@ -19,7 +19,6 @@ use kafka::{
     ProducerError,
     RetryProducer,
 };
-use rand::prelude::*;
 use rust_proto::{
     client_factory::{
         build_grpc_client,
@@ -27,10 +26,7 @@ use rust_proto::{
     },
     graplinc::grapl::{
         api::{
-            plugin_registry::v1beta1::{
-                GetGeneratorsForEventSourceRequest,
-                GetGeneratorsForEventSourceResponse,
-            },
+            plugin_registry::v1beta1::GetGeneratorsForEventSourceRequest,
             plugin_work_queue::v1beta1::{
                 ExecutionJob,
                 PluginWorkQueueServiceClient,
@@ -131,6 +127,12 @@ impl GeneratorDispatcher {
                         Err(e) => {
                             // failed to update the cache, but the message will
                             // be retried via the kafka retry topic
+                            tracing::error!(
+                                message = "error retrieving generators for event source",
+                                event_source_id =% event_source_id,
+                                reason =% e,
+                            );
+
                             None
                         }
                     }

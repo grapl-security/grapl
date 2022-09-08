@@ -22,7 +22,6 @@ use kafka::{
     ProducerError,
     RetryProducer,
 };
-use rand::Rng;
 use rust_proto::{
     client_factory::{
         build_grpc_client,
@@ -34,10 +33,7 @@ use rust_proto::{
     graplinc::grapl::{
         api::{
             graph::v1beta1::MergedGraph,
-            plugin_registry::v1beta1::{
-                GetAnalyzersForTenantRequest,
-                GetAnalyzersForTenantResponse,
-            },
+            plugin_registry::v1beta1::GetAnalyzersForTenantRequest,
             plugin_work_queue::v1beta1::{
                 ExecutionJob,
                 PluginWorkQueueServiceClient,
@@ -172,6 +168,12 @@ impl AnalyzerDispatcher {
                         Err(e) => {
                             // failed to update the cache, but the message will
                             // be retried via the kafka retry topic
+                            tracing::error!(
+                                message = "error retrieving analyzers for tenant",
+                                tenant_id =% tenant_id,
+                                reason =% e,
+                            );
+
                             None
                         }
                     }

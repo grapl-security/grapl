@@ -165,8 +165,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_cache_hit() {
-        let mut async_cache =
-            AsyncCache::new(10, Duration::from_millis(100), 10, 10, |_| async { Some(42) }).await;
+        let mut async_cache = AsyncCache::new(10, Duration::from_millis(100), 10, 10, |_| async {
+            Some(42)
+        })
+        .await;
 
         let foo = async_cache.get(3).await.expect("should be successful");
         assert_eq!(foo, None); // empty but update has been enqueued
