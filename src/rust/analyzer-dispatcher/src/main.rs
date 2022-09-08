@@ -158,7 +158,7 @@ impl AnalyzerDispatcher {
                         .get_analyzers_for_tenant(GetAnalyzersForTenantRequest::new(tenant_id))
                         .await
                     {
-                        Ok(response) => response.plugin_ids().to_vec(),
+                        Ok(response) => Some(response.plugin_ids().to_vec()),
                         Err(GrpcClientError::ErrorStatus(Status {
                             code: Code::NotFound,
                             ..
@@ -167,47 +167,12 @@ impl AnalyzerDispatcher {
                                 message = "found no analyzers for tenant",
                                 tenant_id =% tenant_id,
                             );
-                            vec![]
+                            Some(vec![])
                         }
                         Err(e) => {
-                            // received an error response from the
-                            // plugin-registry service, so we'll retry
-                            // indefinitely using a truncated binary
-                            // exponential backoff with jitter, capped
-                            // at 5s.
-
-                            let mut result: Result<GetAnalyzersForTenantResponse, GrpcClientError> =
-                                Err(e);
-                            let mut n = 0;
-                            while let Err(ref e) = result {
-                                n += 1;
-                                let millis = 2_u64.pow(n)
-                                    + rand::thread_rng().gen_range(0..2_u64.pow(n - 1));
-                                let backoff = if millis < 5000 {
-                                    Duration::from_millis(millis)
-                                } else {
-                                    Duration::from_millis(10000)
-                                };
-
-                                tracing::error!(
-                                    message = "error retrieving analyzer IDs from plugin-registry",
-                                    error =% e,
-                                    retry_delay =? backoff,
-                                );
-
-                                tokio::time::sleep(backoff).await;
-
-                                result = plugin_registry_client
-                                    .get_analyzers_for_tenant(GetAnalyzersForTenantRequest::new(
-                                        tenant_id,
-                                    ))
-                                    .await;
-                            }
-
-                            result
-                                .expect("fatal error, unknown state")
-                                .plugin_ids()
-                                .to_vec()
+                            // failed to update the cache, but the message will
+                            // be retried via the kafka retry topic
+                            None
                         }
                     }
                 }

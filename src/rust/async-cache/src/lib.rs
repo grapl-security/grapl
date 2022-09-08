@@ -83,7 +83,7 @@ where
     ) -> Self
     where
         U: FnMut(K) -> F + Send + Clone + 'static,
-        F: Future<Output = V> + Send,
+        F: Future<Output = Option<V>> + Send,
     {
         let cache = Cache::builder()
             .max_capacity(capacity)
@@ -104,8 +104,9 @@ where
                     let mut updater = updater.clone();
 
                     async move {
-                        let value = updater(key.clone()).await;
-                        cache.insert(key, value).await;
+                        if let Some(value) = updater(key.clone()).await {
+                            cache.insert(key, value).await;
+                        }
                     }
                 })
                 .await;
@@ -165,7 +166,7 @@ mod tests {
     #[tokio::test]
     async fn test_cache_hit() {
         let mut async_cache =
-            AsyncCache::new(10, Duration::from_millis(100), 10, 10, |_| async { 42 }).await;
+            AsyncCache::new(10, Duration::from_millis(100), 10, 10, |_| async { Some(42) }).await;
 
         let foo = async_cache.get(3).await.expect("should be successful");
         assert_eq!(foo, None); // empty but update has been enqueued
