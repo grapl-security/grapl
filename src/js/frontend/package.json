@@ -45,6 +45,10 @@
       "last 1 safari version"
     ]
   },
+  "engines": {
+    "npm": "please-use-yarn-add",
+    "yarn": ">= 1.22.5"
+  },
   "description": "Grapl Frontend",
   "main": "index.tsx",
   "license": "MIT"
