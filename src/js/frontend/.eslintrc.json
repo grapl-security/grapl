@@ -6,7 +6,7 @@
   },
   "extends": [
     "react-app",
-    //    "react-app/jest",
+    "react-app/jest",
     "plugin:import/typescript",
     "plugin:prettier/recommended"
   ],

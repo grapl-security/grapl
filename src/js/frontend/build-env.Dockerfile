@@ -14,7 +14,7 @@ SHELL ["/bin/bash", "-c"]
 #`typescript@patch:typescript@npm%3A4.6.2#~builtin<compat/typescript>::version=4.6.2&hash=493e53: Cannot apply hunk #11`
 # error is fixed. Apparently corepack applies a strict setting, which yarn set doesn't.
 
-ENV YARN_VERSION 3.1.1
+ENV YARN_VERSION 3.2.3
 
 # Don't think this is necessarily an issue for us:
 # hadolint ignore=SC2174
