@@ -1,12 +1,12 @@
 {
   "env": {
     "browser": true,
-    "es2021": true,
-    "jest": true
+    "es2021": true
+    //    "jest": false
   },
   "extends": [
     "react-app",
-    "react-app/jest",
+    //    "react-app/jest",
     "plugin:import/typescript",
     "plugin:prettier/recommended"
   ],

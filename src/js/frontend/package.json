@@ -20,9 +20,10 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "prettier": "prettier --ignore-path .gitignore --write \"**/*.+(js|json|ts|tsx)\"",
-    "format": "yarn run prettier -- --write",
+    "format": "yarn run prettier --write",
     "check-types": "tsc --project tsconfig.json --pretty --noEmit",
-    "check-format": "yarn run prettier -- --list-different",
+    "check-format": "yarn run prettier --check \"src/**/*.ts\"\n",
+    "check-different": "yarn run prettier --single-quote --list-different \"src/**/*.ts\"",
     "lint": "eslint",
     "lint:fix": "eslint --fix"
   },
