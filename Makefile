@@ -66,7 +66,7 @@ DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
 DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
 # This filter should differentiate between data volumes, such as those used for
 # DGraph (grapl-data-dgraph), and those used for caching builds
-# (grapl-engagement-view-yarn).
+# (grapl-frontend-view-yarn).
 #
 # Multiple filter arguments can be supplied here.
 #
@@ -84,9 +84,6 @@ PANTS_SHELL_FILTER := ./pants filter --target-type=shell_sources,shunit2_tests :
 
 # Helper macro for invoking a target from src/rust/Makefile
 RUST_MAKE = $(MAKE) --directory=src/rust
-
-# Helper macro for invoking a target from src/js/engagement_view/Makefile
-ENGAGEMENT_VIEW_MAKE = $(MAKE) --directory=src/js/engagement_view
 
 # Helper macro for invoking a target from src/js/frontend/Makefile
 FRONTEND_MAKE = $(MAKE) --directory=src/js/frontend
@@ -158,26 +155,16 @@ build-test-unit-js:
 # Dockerfiles) are defined here. The image builds are defined in
 # docker-bake.hcl using groups. Similarly, the prerequisites that
 # Pants knows how to build are defined using tags. The grapl-web-ui
-# needs the compiled engagement-view assets in order for it to build.
+# needs the compiled frontend assets in order for it to build.
 
 .PHONY: build-service-pex-files
 build-service-pex-files: ## Build all PEX files needed by Grapl SaaS services
 	@echo "--- Building Grapl service PEX files"
 	./pants --tag="service-pex" package ::
 
-.PHONY: build-engagement-view
-build-engagement-view: ## Build website assets to include in grapl-web-ui
-	@echo "--- Building the engagement view"
-	$(ENGAGEMENT_VIEW_MAKE) build-code
-	TARGET_FRONTEND_DIR="dist/frontend"
-	rm -rf "$${TARGET_FRONTEND_DIR}/*"  # Clear out old artifacts
-	cp -r \
-		"src/js/engagement_view/build/." \
-		"$${TARGET_FRONTEND_DIR}"
-
 .PHONY: build-frontend
 build-frontend: ## Build website assets to include in grapl-web-ui
-	@echo "--- Building the engagement view"
+	@echo "--- Building the frontend"
 	$(FRONTEND_MAKE) build-code
 	TARGET_FRONTEND_DIR="dist/frontend"
 	rm -rf "$${TARGET_FRONTEND_DIR}/*"  # Clear out old artifacts
@@ -253,7 +240,6 @@ test-unit: ## Build and run all unit tests
 
 .PHONY: test-unit-js
 test-unit-js: test-unit-frontend
-test-unit-js: test-unit-engagement-view
 test-unit-js: test-unit-graphql-endpoint
 test-unit-js: ## Build and run unit tests - JavaScript only
 
@@ -264,10 +250,6 @@ test-unit-graphql-endpoint: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
 test-unit-graphql-endpoint: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
 test-unit-graphql-endpoint: ## Test Graphql Endpoint
 	test/docker-compose-with-error.sh
-
-.PHONY: test-unit-engagement-view
-test-unit-engagement-view: ## Test Engagement View
-	$(ENGAGEMENT_VIEW_MAKE) run-tests
 
 .PHONY: test-unit-frontend
 test-unit-frontend: ## Test Frontend
@@ -506,19 +488,13 @@ stop: ## docker compose stop - stops (but preserves) the containers
 	docker compose $(EVERY_COMPOSE_FILE) stop
 
 # This is a convenience target for our frontend engineers, to make the dev loop
-# slightly less arduous for grapl-web-ui/engagement-view development.
+# slightly less arduous for grapl-web-ui/frontend development.
 # It will *rebuild* the JS/Rust grapl-web-ui dependences, and then
 # restart a currently-running `make up` web ui allocation, which will then
 # retrieve the latest, newly-rebuilt Docker container.
 #
 # Will only work as expected as long as tag is "dev".
 .PHONY: restart-web-ui
-restart-web-ui: build-engagement-view  ## Rebuild web-ui image, and restart web-ui task in Nomad
-	$(DOCKER_BUILDX_BAKE) grapl-web-ui
-	source ./nomad/lib/nomad_cli_tools.sh
-	nomad alloc restart "$$(nomad_get_alloc_id_for_task grapl-core web-ui)"
-
-.PHONY: restart-web-ui-frontend
 restart-web-ui-frontend: build-frontend  ## Rebuild web-ui image, and restart web-ui task in Nomad
 	$(DOCKER_BUILDX_BAKE) grapl-web-ui
 	source ./nomad/lib/nomad_cli_tools.sh
@@ -544,7 +520,6 @@ dist:
 .PHONY: clean
 clean: clean-dist
 clean: clean-artifacts
-clean: clean-engagement-view
 clean: clean-frontend
 
 clean: ## Clean all generated artifacts
@@ -605,10 +580,6 @@ clean-docker-dgraph: ## Remove dgraph images
 		--quiet \
 	| xargs --no-run-if-empty docker rmi --force
 
-
-.PHONY: clean-engagement-view
-clean-engagement-view:
-	$(ENGAGEMENT_VIEW_MAKE) clean
 
 .PHONY: clean-frontend
 clean-frontend:
