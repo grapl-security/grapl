@@ -214,7 +214,8 @@ locals {
     source = "grapl-data-dgraph"
   }
 
-  dns_servers = [attr.unique.network.ip-address]
+  # Use Consul agent's dns on port 8600
+  dns_servers = ["${attr.unique.network.ip-address}:8600"]
 
   # Grapl services
   graphql_endpoint_port = 5000

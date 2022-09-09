@@ -91,7 +91,8 @@ variable "plugin_work_queue_db" {
 }
 
 locals {
-  dns_servers = [attr.unique.network.ip-address]
+  # Use Consul agent's dns on port 8600
+  dns_servers = ["${attr.unique.network.ip-address}:8600"]
 }
 
 job "rust-integration-tests" {

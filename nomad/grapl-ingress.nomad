@@ -1,6 +1,7 @@
 locals {
   web_ui_port = 1234
-  dns_servers = [attr.unique.network.ip-address]
+  # Use Consul agent's dns on port 8600
+  dns_servers = ["${attr.unique.network.ip-address}:8600"]
 }
 
 job "grapl-ingress" {

@@ -49,7 +49,8 @@ variable "uid_allocator_db" {
 }
 
 locals {
-  dns_servers = [attr.unique.network.ip-address]
+  # Use Consul agent's dns on port 8600
+  dns_servers = ["${attr.unique.network.ip-address}:8600"]
   # enabled
   rust_backtrace = 1
 }
