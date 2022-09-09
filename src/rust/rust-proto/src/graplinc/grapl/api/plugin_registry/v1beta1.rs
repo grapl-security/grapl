@@ -14,10 +14,7 @@ pub use crate::graplinc::grapl::api::plugin_registry::{
     },
 };
 use crate::{
-    protobufs::graplinc::grapl::api::plugin_registry::{
-        v1beta1 as proto,
-        v1beta1::get_plugin_health_response::PluginHealthStatus as PluginHealthStatusProto,
-    },
+    protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
     serde_impl::ProtobufSerializable,
     type_url,
     SerDeError,
@@ -936,6 +933,128 @@ impl ProtobufSerializable for GetPluginResponse {
 }
 
 //
+// ListPluginsRequest
+//
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ListPluginsRequest {
+    tenant_id: uuid::Uuid,
+    plugin_type: PluginType,
+}
+
+impl ListPluginsRequest {
+    pub fn new(tenant_id: uuid::Uuid, plugin_type: PluginType) -> Self {
+        Self {
+            tenant_id,
+            plugin_type,
+        }
+    }
+
+    pub fn tenant_id(&self) -> uuid::Uuid {
+        self.tenant_id
+    }
+
+    pub fn plugin_type(&self) -> PluginType {
+        self.plugin_type
+    }
+}
+
+impl type_url::TypeUrl for ListPluginsRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.ListPluginsRequest";
+}
+
+impl TryFrom<proto::ListPluginsRequest> for ListPluginsRequest {
+    type Error = SerDeError;
+
+    fn try_from(
+        proto_list_plugins_request: proto::ListPluginsRequest,
+    ) -> Result<Self, Self::Error> {
+        let plugin_type = proto_list_plugins_request.plugin_type().try_into()?;
+
+        let tenant_id = proto_list_plugins_request
+            .tenant_id
+            .ok_or(SerDeError::MissingField("tenant_id"))?
+            .into();
+
+        Ok(Self::new(tenant_id, plugin_type))
+    }
+}
+
+impl From<ListPluginsRequest> for proto::ListPluginsRequest {
+    fn from(list_plugins_request: ListPluginsRequest) -> Self {
+        let plugin_type: proto::PluginType = list_plugins_request.plugin_type().into();
+        Self {
+            tenant_id: Some(list_plugins_request.tenant_id().into()),
+            plugin_type: Some(plugin_type as i32),
+        }
+    }
+}
+
+impl ProtobufSerializable for ListPluginsRequest {
+    type ProtobufMessage = proto::ListPluginsRequest;
+}
+
+//
+// ListPluginResponse
+//
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ListPluginsResponse {
+    plugins: Vec<GetPluginResponse>,
+}
+
+impl ListPluginsResponse {
+    pub fn new(plugins: Vec<GetPluginResponse>) -> Self {
+        Self { plugins }
+    }
+
+    pub fn plugins(self) -> Vec<GetPluginResponse> {
+        self.plugins
+    }
+}
+
+impl type_url::TypeUrl for ListPluginsResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.ListPluginsResponse";
+}
+
+impl TryFrom<proto::ListPluginsResponse> for ListPluginsResponse {
+    type Error = SerDeError;
+
+    fn try_from(
+        proto_list_plugins_response: proto::ListPluginsResponse,
+    ) -> Result<Self, Self::Error> {
+        let results: Result<Vec<GetPluginResponse>, SerDeError> = proto_list_plugins_response
+            .plugins
+            .iter()
+            .map(|response| GetPluginResponse::try_from(response.clone()))
+            .collect();
+
+        match results {
+            Ok(plugins) => Ok(Self { plugins }),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+impl From<ListPluginsResponse> for proto::ListPluginsResponse {
+    fn from(list_plugins_response: ListPluginsResponse) -> Self {
+        Self {
+            plugins: list_plugins_response
+                .plugins()
+                .iter()
+                .map(|response| proto::GetPluginResponse::from(response.clone()))
+                .collect(),
+        }
+    }
+}
+
+impl ProtobufSerializable for ListPluginsResponse {
+    type ProtobufMessage = proto::ListPluginsResponse;
+}
+
+//
 // TearDownPluginRequest
 //
 
@@ -1075,29 +1194,29 @@ pub enum PluginHealthStatus {
     Dead,
 }
 
-impl TryFrom<PluginHealthStatusProto> for PluginHealthStatus {
+impl TryFrom<proto::PluginHealthStatus> for PluginHealthStatus {
     type Error = SerDeError;
 
-    fn try_from(value: PluginHealthStatusProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::PluginHealthStatus) -> Result<Self, Self::Error> {
         match value {
-            PluginHealthStatusProto::Unspecified => {
+            proto::PluginHealthStatus::Unspecified => {
                 Err(SerDeError::UnknownVariant("PluginHealthStatus"))
             }
-            PluginHealthStatusProto::NotDeployed => Ok(PluginHealthStatus::NotDeployed),
-            PluginHealthStatusProto::Pending => Ok(PluginHealthStatus::Pending),
-            PluginHealthStatusProto::Running => Ok(PluginHealthStatus::Running),
-            PluginHealthStatusProto::Dead => Ok(PluginHealthStatus::Dead),
+            proto::PluginHealthStatus::NotDeployed => Ok(PluginHealthStatus::NotDeployed),
+            proto::PluginHealthStatus::Pending => Ok(PluginHealthStatus::Pending),
+            proto::PluginHealthStatus::Running => Ok(PluginHealthStatus::Running),
+            proto::PluginHealthStatus::Dead => Ok(PluginHealthStatus::Dead),
         }
     }
 }
 
-impl From<PluginHealthStatus> for PluginHealthStatusProto {
+impl From<PluginHealthStatus> for proto::PluginHealthStatus {
     fn from(value: PluginHealthStatus) -> Self {
         match value {
-            PluginHealthStatus::NotDeployed => PluginHealthStatusProto::NotDeployed,
-            PluginHealthStatus::Pending => PluginHealthStatusProto::Pending,
-            PluginHealthStatus::Running => PluginHealthStatusProto::Running,
-            PluginHealthStatus::Dead => PluginHealthStatusProto::Dead,
+            PluginHealthStatus::NotDeployed => proto::PluginHealthStatus::NotDeployed,
+            PluginHealthStatus::Pending => proto::PluginHealthStatus::Pending,
+            PluginHealthStatus::Running => proto::PluginHealthStatus::Running,
+            PluginHealthStatus::Dead => proto::PluginHealthStatus::Dead,
         }
     }
 }
@@ -1138,7 +1257,7 @@ impl TryFrom<proto::GetPluginHealthResponse> for GetPluginHealthResponse {
 
 impl From<GetPluginHealthResponse> for proto::GetPluginHealthResponse {
     fn from(value: GetPluginHealthResponse) -> Self {
-        let health_status: PluginHealthStatusProto = value.health_status.into();
+        let health_status: proto::PluginHealthStatus = value.health_status.into();
         Self {
             health_status: health_status as i32,
         }

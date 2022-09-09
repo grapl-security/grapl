@@ -28,38 +28,33 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "ac609cf8ef5e7115ddd07d85d988d074ed00e10fbc3445aee393e70164a2219c",
-              "url": "https://files.pythonhosted.org/packages/2b/70/1d0e33a4df4ed73e9f02f698a29b5d94ff58e39f029c939ecf96a10fb1f3/black-22.6.0-py3-none-any.whl"
+              "hash": "d2c21d439b2baf7aa80d6dd4e3659259be64c6f49dfd0f32091063db0e006db4",
+              "url": "https://files.pythonhosted.org/packages/c6/63/a852b07abc942dc069b5457af40feca82667cf5ed9faec7d4688a4d9c7da/black-22.8.0-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "6797f58943fceb1c461fb572edbe828d811e719c24e03375fd25170ada53825e",
-              "url": "https://files.pythonhosted.org/packages/1a/84/203163902ee26bcf1beaef582ee0c8df3f325da3e961b68d2ece959e19d3/black-22.6.0-cp310-cp310-macosx_11_0_arm64.whl"
+              "hash": "e8166b7bfe5dcb56d325385bd1d1e0f635f24aae14b3ae437102dedc0c186747",
+              "url": "https://files.pythonhosted.org/packages/0e/08/daaae4173461abc664563e651a1e3c5edc9570ca03283793a444becb9c2f/black-22.8.0-cp310-cp310-macosx_11_0_arm64.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "6c6d39e28aed379aec40da1c65434c77d75e65bb59a1e1c283de545fb4e7c6c9",
-              "url": "https://files.pythonhosted.org/packages/61/11/551b0d067a7e6836fc0997ab36ee46ec65259fea8f30104f4870092f3301/black-22.6.0.tar.gz"
+              "hash": "792f7eb540ba9a17e8656538701d3eb1afcb134e3b45b71f20b25c77a8db7e6e",
+              "url": "https://files.pythonhosted.org/packages/3a/1b/38a013f75022fae724ed766fdac5f6777544c45eecbe00a6d8fd91a2a26b/black-22.8.0.tar.gz"
             },
             {
               "algorithm": "sha256",
-              "hash": "b270a168d69edb8b7ed32c193ef10fd27844e5c60852039599f9184460ce0807",
-              "url": "https://files.pythonhosted.org/packages/63/96/814e02033701f51701444d5505b5e2594453b1f7e913764a097b1f701633/black-22.6.0-cp310-cp310-macosx_10_9_x86_64.whl"
+              "hash": "ce957f1d6b78a8a231b18e0dd2d94a33d2ba738cd88a7fe64f53f659eea49fdd",
+              "url": "https://files.pythonhosted.org/packages/67/e9/d6e8365eae2dd2b0d9fcdff129a88ab316a545ab44445c92ae8353c7f5ef/black-22.8.0-cp310-cp310-macosx_10_9_universal2.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "f586c26118bc6e714ec58c09df0157fe2d9ee195c764f630eb0d8e7ccce72e69",
-              "url": "https://files.pythonhosted.org/packages/80/ff/cfcfa4cdb42d8fff75b6b4dc355a1186a95de4714df8cc2a60f69f7b17f8/black-22.6.0-cp310-cp310-macosx_10_9_universal2.whl"
+              "hash": "5107ea36b2b61917956d018bd25129baf9ad1125e39324a9b18248d362156a27",
+              "url": "https://files.pythonhosted.org/packages/b9/d2/7476c40f3ed871047e5ef4e27a6e946b3aac5357fe9a2e08548c95b79327/black-22.8.0-cp310-cp310-macosx_10_9_x86_64.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "f6fe02afde060bbeef044af7996f335fbe90b039ccf3f5eb8f16df8b20f77666",
-              "url": "https://files.pythonhosted.org/packages/86/9c/2a8a13993bc63a50bda7436ecba902231fd9a88dd1cd233e6e3f534e071c/black-22.6.0-cp310-cp310-win_amd64.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "c85928b9d5f83b23cee7d0efcb310172412fbf7cb9d9ce963bd67fd141781def",
-              "url": "https://files.pythonhosted.org/packages/a7/51/d0acd9f74a946a825a148dcc392433c2332ae405967d76292b9e64712dc8/black-22.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+              "hash": "dd82842bb272297503cbec1a2600b6bfb338dae017186f8f215c8958f8acf869",
+              "url": "https://files.pythonhosted.org/packages/d5/0a/c86b68b24812deaceb48dc7e335fde0f1289e04171ef2fc5ff8eecc50102/black-22.8.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
             }
           ],
           "project_name": "black",
@@ -79,7 +74,7 @@
             "uvloop>=0.15.2; extra == \"uvloop\""
           ],
           "requires_python": ">=3.6.2",
-          "version": "22.6"
+          "version": "22.8"
         },
         {
           "artifacts": [
@@ -106,24 +101,6 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "854bf444933e37f5824ae7bfc1e98d5bce2ebe4160d46b5edf346a89358e99da",
-              "url": "https://files.pythonhosted.org/packages/77/8b/7550e87b2d308a1b711725dfaddc19c695f8c5fa413c640b2be01662f4e6/colorama-0.4.5-py2.py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "e6c6b4334fc50988a639d9b98aa429a0b57da6e17b9a44f0451f930b6967b7a4",
-              "url": "https://files.pythonhosted.org/packages/2b/65/24d033a9325ce42ccbfa3ca2d0866c7e89cc68e5b9d92ecaba9feef631df/colorama-0.4.5.tar.gz"
-            }
-          ],
-          "project_name": "colorama",
-          "requires_dists": [],
-          "requires_python": "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7",
-          "version": "0.4.5"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
               "hash": "090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d",
               "url": "https://files.pythonhosted.org/packages/5c/eb/975c7c080f3223a5cdaff09612f3a5221e4ba534f7039db34c35d95fa6a5/mypy_extensions-0.4.3-py2.py3-none-any.whl"
             },
@@ -144,19 +121,19 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "7d15c4ddb0b5c802d161efc417ec1a2558ea2653c2e8ad9c19098201dc1c993a",
-              "url": "https://files.pythonhosted.org/packages/42/ba/a9d64c7bcbc7e3e8e5f93a52721b377e994c22d16196e2b0f1236774353a/pathspec-0.9.0-py2.py3-none-any.whl"
+              "hash": "46846318467efc4556ccfd27816e004270a9eeeeb4d062ce5e6fc7a87c573f93",
+              "url": "https://files.pythonhosted.org/packages/63/82/2179fdc39bc1bb43296f638ae1dfe2581ec2617b4e87c28b0d23d44b997f/pathspec-0.10.1-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "e564499435a2673d586f6b2130bb5b95f04a3ba06f81b8f895b651a3c76aabb1",
-              "url": "https://files.pythonhosted.org/packages/f6/33/436c5cb94e9f8902e59d1d544eb298b83c84b9ec37b5b769c5a0ad6edb19/pathspec-0.9.0.tar.gz"
+              "hash": "7ace6161b621d31e7902eb6b5ae148d12cfd23f4a249b9ffb6b9fee12084323d",
+              "url": "https://files.pythonhosted.org/packages/24/9f/a9ae1e6efa11992dba2c4727d94602bd2f6ee5f0dedc29ee2d5d572c20f7/pathspec-0.10.1.tar.gz"
             }
           ],
           "project_name": "pathspec",
           "requires_dists": [],
-          "requires_python": "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7",
-          "version": "0.9"
+          "requires_python": ">=3.7",
+          "version": "0.10.1"
         },
         {
           "artifacts": [
@@ -204,15 +181,11 @@
           "version": "2.0.1"
         }
       ],
-      "platform_tag": [
-        "cp310",
-        "cp310",
-        "manylinux_2_31_x86_64"
-      ]
+      "platform_tag": null
     }
   ],
   "path_mappings": {},
-  "pex_version": "2.1.90",
+  "pex_version": "2.1.102",
   "prefer_older_binary": false,
   "requirements": [
     "black>=22.3.0",
@@ -223,6 +196,10 @@
   ],
   "resolver_version": "pip-2020-resolver",
   "style": "universal",
+  "target_systems": [
+    "linux",
+    "mac"
+  ],
   "transitive": true,
   "use_pep517": null
 }

@@ -15,19 +15,19 @@ def uids(
 
 
 def property_names(
-    value: st.SearchStrategy[str] = st.text(),
+    value: st.SearchStrategy[str] = strategies.small_text,
 ) -> st.SearchStrategy[messages.PropertyName]:
     return st.builds(messages.PropertyName, value=value)
 
 
 def edge_names(
-    value: st.SearchStrategy[str] = st.text(),
+    value: st.SearchStrategy[str] = strategies.small_text,
 ) -> st.SearchStrategy[messages.EdgeName]:
     return st.builds(messages.EdgeName, value=value)
 
 
 def node_types(
-    value: st.SearchStrategy[str] = st.text(),
+    value: st.SearchStrategy[str] = strategies.small_text,
 ) -> st.SearchStrategy[messages.NodeType]:
     return st.builds(messages.NodeType, value=value)
 

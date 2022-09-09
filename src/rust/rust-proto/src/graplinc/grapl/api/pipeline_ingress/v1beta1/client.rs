@@ -6,7 +6,7 @@ use client_executor::{
 };
 
 use crate::{
-    client_macros::ExecuteClientRpcOptions,
+    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
     protocol::{
@@ -66,7 +66,7 @@ impl PipelineIngressClient {
             publish_raw_log,
             proto::PublishRawLogRequest,
             native::PublishRawLogResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 }

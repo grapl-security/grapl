@@ -74,6 +74,56 @@
     },
     "query": "\n            SELECT\n                 execution_key AS \"execution_key!: ExecutionId\",\n                 plugin_id,\n                 pipeline_message,\n                 tenant_id,\n                 trace_id,\n                 event_source_id\n            FROM plugin_work_queue.generator_plugin_executions\n            WHERE plugin_id = $1\n            "
   },
+  "56207b075cdcb87b8828bc58356be52e58861757cd693c7cf9b420a6c31d1977": {
+    "describe": {
+      "columns": [
+        {
+          "name": "execution_key!: ExecutionId",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "plugin_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "pipeline_message",
+          "ordinal": 2,
+          "type_info": "Bytea"
+        },
+        {
+          "name": "tenant_id",
+          "ordinal": 3,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "trace_id",
+          "ordinal": 4,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "event_source_id",
+          "ordinal": 5,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            SELECT\n                 execution_key AS \"execution_key!: ExecutionId\",\n                 plugin_id,\n                 pipeline_message,\n                 tenant_id,\n                 trace_id,\n                 event_source_id\n            FROM plugin_work_queue.analyzer_plugin_executions\n            WHERE plugin_id = $1\n            "
+  },
   "7a3eff0f2833d5c44e592b83e62da1ef1f5e2f3aaa7f155e8223a00115e3fd40": {
     "describe": {
       "columns": [

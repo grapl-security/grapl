@@ -1,15 +1,12 @@
 [package]
-name = "generator-dispatcher"
-version = "0.0.1"
+name = "analyzer-dispatcher"
+version = "0.1.0"
 edition = "2021"
-
-[lib]
-name = "generator_dispatcher"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-async-cache = { path = "../async-cache" }
 async-trait = "0.1"
+async-cache = { path = "../async-cache" }
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",

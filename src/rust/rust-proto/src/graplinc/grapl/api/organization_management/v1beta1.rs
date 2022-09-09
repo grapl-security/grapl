@@ -200,7 +200,7 @@ pub mod client {
     };
 
     use crate::{
-        client_macros::ExecuteClientRpcOptions,
+        client_macros::RpcConfig,
         create_proto_client,
         execute_client_rpc,
         graplinc::grapl::api::organization_management::v1beta1 as native,
@@ -258,7 +258,7 @@ pub mod client {
                 create_organization,
                 proto::CreateOrganizationRequest,
                 native::CreateOrganizationResponse,
-                ExecuteClientRpcOptions::default(),
+                RpcConfig::default(),
             )
         }
 
@@ -273,7 +273,7 @@ pub mod client {
                 create_user,
                 proto::CreateUserRequest,
                 native::CreateUserResponse,
-                ExecuteClientRpcOptions::default(),
+                RpcConfig::default(),
             )
         }
     }
