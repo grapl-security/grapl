@@ -191,8 +191,6 @@ build-frontend: ## Build website assets to include in grapl-web-ui
 build-grapl-service-prerequisites: ## Build all assets needed for the creation of Grapl SaaS service container images
 # The Python services need the PEX files
 build-grapl-service-prerequisites: build-service-pex-files
-# The grapl-web-ui service needs website assets
-build-grapl-service-prerequisites: build-engagement-view
 # The grapl-web-ui service needs website assets from frontend
 build-grapl-service-prerequisites: build-frontend
 
