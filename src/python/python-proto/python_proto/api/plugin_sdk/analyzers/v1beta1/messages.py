@@ -345,3 +345,7 @@ class RunAnalyzerResponse(SerDe[proto.RunAnalyzerResponse]):
         proto_value = self.new_proto()
         proto_value.execution_result.CopyFrom(self.execution_result.into_proto())
         return proto_value
+
+    @classmethod
+    def miss(cls) -> RunAnalyzerResponse:
+        return cls(execution_result=ExecutionResult(inner=ExecutionMiss()))

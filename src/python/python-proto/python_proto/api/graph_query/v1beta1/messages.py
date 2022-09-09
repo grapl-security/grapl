@@ -4,7 +4,7 @@ import enum
 import os
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import DefaultDict, Iterable, Iterator, Mapping, Sequence
+from typing import DefaultDict, Iterable, Iterator, Mapping, Optional, Sequence
 
 from graplinc.grapl.api.graph_query_service.v1beta1 import (
     graph_query_service_pb2 as proto,
@@ -813,6 +813,13 @@ class MaybeMatchWithUid(SerDe[proto.MaybeMatchWithUid]):
             case NoMatchWithUid() as inner:
                 msg.missed.CopyFrom(inner.into_proto())
         return msg
+
+    def as_optional(self) -> Optional[MatchedGraphWithUid]:
+        match self.inner:
+            case MatchedGraphWithUid() as inner:
+                return inner
+            case NoMatchWithUid() as inner:
+                return None
 
 
 @dataclass(frozen=True, slots=True)
