@@ -47,9 +47,9 @@ pub enum Code {
 impl Code {
     /// Get description of this `Code`.
     /// ```
-    /// fn make_rpc_request() -> rust_proto::protocol::status::Code {
+    /// fn make_rpc_request() -> rust_proto::graplinc::grapl::api::protocol::status::Code {
     ///     // ...
-    ///     rust_proto::protocol::status::Code::Ok
+    ///     rust_proto::graplinc::grapl::api::protocol::status::Code::Ok
     /// }
     /// let code = make_rpc_request();
     /// println!("Operation completed. Human readable description: {}", code.description());
