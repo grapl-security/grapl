@@ -23,15 +23,15 @@ use kafka::{
     RetryProducer,
 };
 use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::{
-            PluginRegistryClientConfig,
-            PluginWorkQueueClientConfig,
-        },
-    },
     graplinc::grapl::{
         api::{
+            client_factory::{
+                build_grpc_client,
+                services::{
+                    PluginRegistryClientConfig,
+                    PluginWorkQueueClientConfig,
+                },
+            },
             graph::v1beta1::MergedGraph,
             plugin_registry::v1beta1::GetAnalyzersForTenantRequest,
             plugin_work_queue::v1beta1::{
@@ -40,16 +40,16 @@ use rust_proto::{
                 PluginWorkQueueServiceClientError,
                 PushExecuteAnalyzerRequest,
             },
+            protocol::{
+                error::GrpcClientError,
+                service_client::ConnectError,
+                status::{
+                    Code,
+                    Status,
+                },
+            },
         },
         pipeline::v1beta1::Envelope,
-    },
-    protocol::{
-        error::GrpcClientError,
-        service_client::ConnectError,
-        status::{
-            Code,
-            Status,
-        },
     },
     SerDe,
     SerDeError,

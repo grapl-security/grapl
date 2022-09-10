@@ -7,20 +7,22 @@ use client_executor::{
 use tonic::transport::Endpoint;
 
 use crate::{
-    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
-    graplinc::grapl::api::scylla_provisioner::v1beta1::messages::{self as native,},
+    graplinc::grapl::api::{
+        client_macros::RpcConfig,
+        protocol::{
+            error::GrpcClientError,
+            service_client::{
+                ConnectError,
+                Connectable,
+            },
+        },
+        scylla_provisioner::v1beta1::messages::{self as native,},
+    },
     protobufs::graplinc::grapl::api::scylla_provisioner::v1beta1::{
         self as proto,
         scylla_provisioner_service_client::ScyllaProvisionerServiceClient,
-    },
-    protocol::{
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
-            Connectable,
-        },
     },
 };
 

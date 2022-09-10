@@ -2,12 +2,12 @@ use clap::Parser;
 use grapl_config::env_helpers::FromEnv;
 use rand::Rng;
 use rusoto_dynamodb::DynamoDbClient;
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::{
         build_grpc_client,
         services::PluginRegistryClientConfig,
     },
-    graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryServiceClient,
+    plugin_registry::v1beta1::PluginRegistryServiceClient,
 };
 
 use crate::upstream::GraphQlEndpointUrl;
@@ -25,7 +25,9 @@ pub enum ConfigError {
     #[error(transparent)]
     BindAddress(#[from] std::io::Error),
     #[error("failed to initialize Plugin Regsitry client: {0}")]
-    PluginRegistryClient(#[from] rust_proto::protocol::service_client::ConnectError),
+    PluginRegistryClient(
+        #[from] rust_proto::graplinc::grapl::api::protocol::service_client::ConnectError,
+    ),
 }
 
 pub struct Config {

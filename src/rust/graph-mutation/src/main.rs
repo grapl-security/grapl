@@ -10,9 +10,9 @@ use graph_mutation::{
     graph_mutation::GraphMutationManager,
     reverse_edge_resolver::ReverseEdgeResolver,
 };
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::build_grpc_client,
-    graplinc::grapl::api::graph_mutation::v1beta1::server::GraphMutationServer,
+    graph_mutation::v1beta1::server::GraphMutationServer,
     protocol::healthcheck::HealthcheckStatus,
 };
 use scylla::CachingSession;

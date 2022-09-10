@@ -12,20 +12,20 @@ use kafka::{
     config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
 };
-use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::PipelineIngressClientConfig,
-    },
-    graplinc::grapl::{
-        api::pipeline_ingress::v1beta1::{
+use rust_proto::graplinc::grapl::{
+    api::{
+        client_factory::{
+            build_grpc_client,
+            services::PipelineIngressClientConfig,
+        },
+        pipeline_ingress::v1beta1::{
             client::PipelineIngressClient,
             PublishRawLogRequest,
         },
-        pipeline::v1beta1::{
-            Envelope,
-            RawLog,
-        },
+    },
+    pipeline::v1beta1::{
+        Envelope,
+        RawLog,
     },
 };
 use test_context::{

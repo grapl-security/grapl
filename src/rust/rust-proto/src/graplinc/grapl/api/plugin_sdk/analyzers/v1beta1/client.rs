@@ -7,21 +7,23 @@ use client_executor::{
 use tracing::instrument;
 
 use crate::{
-    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
-    graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages as native,
+    graplinc::grapl::api::{
+        client_macros::RpcConfig,
+        plugin_sdk::analyzers::v1beta1::messages as native,
+        protocol::{
+            endpoint::Endpoint,
+            error::GrpcClientError,
+            service_client::{
+                ConnectError,
+                Connectable,
+            },
+        },
+    },
     protobufs::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::{
         self as proto,
         analyzer_service_client::AnalyzerServiceClient as AnalyzerServiceClientProto,
-    },
-    protocol::{
-        endpoint::Endpoint,
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
-            Connectable,
-        },
     },
 };
 

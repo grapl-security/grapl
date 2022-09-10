@@ -1,7 +1,7 @@
 use tokio::time::error::Elapsed;
 
 use super::healthcheck::HealthcheckError;
-use crate::protocol::endpoint::Endpoint;
+use crate::graplinc::grapl::api::protocol::endpoint::Endpoint;
 
 /// Every service should implement Connectable.
 #[async_trait::async_trait]

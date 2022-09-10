@@ -1,35 +1,35 @@
-mod event_source;
+pub(crate) mod event_source;
 pub use event_source::EventSourceClientConfig;
 
-mod generator;
+pub(crate) mod generator;
 pub use generator::GeneratorClientConfig;
 
-mod graph_query;
+pub(crate) mod graph_query;
 pub use graph_query::GraphQueryClientConfig;
 
-mod organization_management;
+pub(crate) mod organization_management;
 pub use organization_management::OrganizationManagementClientConfig;
 
-mod pipeline_ingress;
+pub(crate) mod pipeline_ingress;
 pub use pipeline_ingress::PipelineIngressClientConfig;
 
-mod plugin_bootstrap;
+pub(crate) mod plugin_bootstrap;
 pub use plugin_bootstrap::PluginBootstrapClientConfig;
 
-mod plugin_registry;
+pub(crate) mod plugin_registry;
 pub use plugin_registry::PluginRegistryClientConfig;
 
-mod plugin_work_queue;
+pub(crate) mod plugin_work_queue;
 pub use plugin_work_queue::PluginWorkQueueClientConfig;
 
-mod graph_schema_manager;
+pub(crate) mod graph_schema_manager;
 pub use graph_schema_manager::GraphSchemaManagerClientConfig;
 
-mod scylla_provisioner;
+pub(crate) mod scylla_provisioner;
 pub use scylla_provisioner::ScyllaProvisionerClientConfig;
 
-mod uid_allocator;
+pub(crate) mod uid_allocator;
 pub use uid_allocator::UidAllocatorClientConfig;
 
-mod graph_mutation;
+pub(crate) mod graph_mutation;
 pub use graph_mutation::GraphMutationClientConfig;

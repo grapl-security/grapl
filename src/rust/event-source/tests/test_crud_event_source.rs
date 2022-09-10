@@ -3,12 +3,12 @@
 use std::time::SystemTime;
 
 use clap::Parser;
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::{
         build_grpc_client,
         services::EventSourceClientConfig,
     },
-    graplinc::grapl::api::event_source::v1beta1 as es_api,
+    event_source::v1beta1 as es_api,
 };
 
 #[test_log::test(tokio::test)]

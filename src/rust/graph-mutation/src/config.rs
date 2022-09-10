@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use rust_proto::client_factory::services::{
+use rust_proto::graplinc::grapl::api::client_factory::services::{
     GraphSchemaManagerClientConfig,
     UidAllocatorClientConfig,
 };

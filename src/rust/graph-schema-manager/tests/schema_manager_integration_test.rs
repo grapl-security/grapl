@@ -2,15 +2,15 @@
 
 use bytes::Bytes;
 use clap::Parser;
-use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::GraphSchemaManagerClientConfig,
+use rust_proto::graplinc::grapl::{
+    api::{
+        client_factory::{
+            build_grpc_client,
+            services::GraphSchemaManagerClientConfig,
+        },
+        graph_schema_manager::v1beta1::messages as sm_api,
     },
-    graplinc::grapl::{
-        api::graph_schema_manager::v1beta1::messages as sm_api,
-        common::v1beta1::types as common_api,
-    },
+    common::v1beta1::types as common_api,
 };
 
 pub fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {

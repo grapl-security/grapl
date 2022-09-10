@@ -7,19 +7,21 @@ use client_executor::{
 use proto::plugin_work_queue_service_client::PluginWorkQueueServiceClient as PluginWorkQueueServiceClientProto;
 
 use crate::{
-    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
-    graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
-    protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
-    protocol::{
-        endpoint::Endpoint,
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
-            Connectable,
+    graplinc::grapl::api::{
+        client_macros::RpcConfig,
+        plugin_work_queue::v1beta1 as native,
+        protocol::{
+            endpoint::Endpoint,
+            error::GrpcClientError,
+            service_client::{
+                ConnectError,
+                Connectable,
+            },
         },
     },
+    protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
 };
 
 pub type PluginWorkQueueServiceClientError = GrpcClientError;

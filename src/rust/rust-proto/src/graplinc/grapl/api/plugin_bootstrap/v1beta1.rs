@@ -167,12 +167,20 @@ pub mod client {
 
     use crate::{
         protobufs::graplinc::grapl::api::plugin_bootstrap::v1beta1::plugin_bootstrap_service_client::PluginBootstrapServiceClient as PluginBootstrapServiceClientProto,
-        protocol::{service_client::{Connectable, ConnectError}},
+        graplinc::grapl::api::protocol::{
+            endpoint::Endpoint,
+            service_client::{
+                Connectable,
+                ConnectError
+            },
+        },
         SerDeError,
     };
 
-    use super::{GetBootstrapRequest, GetBootstrapResponse};
-    use crate::protocol::endpoint::Endpoint;
+    use super::{
+        GetBootstrapRequest,
+        GetBootstrapResponse
+    };
 
     #[non_exhaustive]
     #[derive(Debug, Error)]
@@ -242,6 +250,18 @@ pub mod server {
         GetBootstrapResponse,
     };
     use crate::{
+        graplinc::grapl::api::{
+            protocol::{
+                error::ServeError,
+                healthcheck::{
+                    server::init_health_service,
+                    HealthcheckError,
+                    HealthcheckStatus,
+                },
+                status::Status,
+            },
+            server::GrpcApi,
+        },
         protobufs::graplinc::grapl::api::plugin_bootstrap::v1beta1::{
             plugin_bootstrap_service_server::{
                 PluginBootstrapService as PluginBootstrapServiceProto,
@@ -250,16 +270,6 @@ pub mod server {
             GetBootstrapRequest as GetBootstrapRequestProto,
             GetBootstrapResponse as GetBootstrapResponseProto,
         },
-        protocol::{
-            error::ServeError,
-            healthcheck::{
-                server::init_health_service,
-                HealthcheckError,
-                HealthcheckStatus,
-            },
-            status::Status,
-        },
-        server_internals::GrpcApi,
         SerDeError,
     };
 

@@ -1,9 +1,9 @@
-use crate::{
+use crate::graplinc::grapl::api::{
     client_factory::grpc_client_config::{
         GenericGrpcClientConfig,
         GrpcClientConfig,
     },
-    graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::GeneratorServiceClient,
+    plugin_sdk::generators::v1beta1::client::GeneratorServiceClient,
 };
 
 #[derive(clap::Parser, Debug)]

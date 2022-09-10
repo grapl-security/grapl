@@ -7,20 +7,22 @@ use client_executor::{
 use tonic::transport::Endpoint;
 
 use crate::{
-    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
-    graplinc::grapl::api::graph_schema_manager::v1beta1::messages as native,
+    graplinc::grapl::api::{
+        client_macros::RpcConfig,
+        graph_schema_manager::v1beta1::messages as native,
+        protocol::{
+            error::GrpcClientError,
+            service_client::{
+                ConnectError,
+                Connectable,
+            },
+        },
+    },
     protobufs::graplinc::grapl::api::graph_schema_manager::{
         v1beta1 as proto,
         v1beta1::graph_schema_manager_service_client::GraphSchemaManagerServiceClient as GraphSchemaManagerServiceClientProto,
-    },
-    protocol::{
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
-            Connectable,
-        },
     },
 };
 

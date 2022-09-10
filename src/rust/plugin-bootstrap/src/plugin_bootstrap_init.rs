@@ -2,12 +2,12 @@ use std::os::unix::fs::PermissionsExt;
 
 use clap::Parser;
 use grapl_tracing::setup_tracing;
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::{
         build_grpc_client,
         services::PluginBootstrapClientConfig,
     },
-    graplinc::grapl::api::plugin_bootstrap::v1beta1::{
+    plugin_bootstrap::v1beta1::{
         GetBootstrapRequest,
         GetBootstrapResponse,
     },

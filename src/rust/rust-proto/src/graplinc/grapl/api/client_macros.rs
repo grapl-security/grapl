@@ -1,5 +1,6 @@
 /// Return true if this RPC should be retried.
 type RetryPredicate = fn(&tonic::Status) -> bool;
+
 pub struct RpcConfig {
     pub retry_predicate: RetryPredicate,
     pub backoff: RpcBackoffConfig,
@@ -62,8 +63,8 @@ macro_rules! execute_client_rpc {
     ) => {{
         {
             // Bind the macro arguments to well typed things.
-            let rpc_config: $crate::client_macros::RpcConfig = $rpc_config;
-            let backoff_opts: $crate::client_macros::RpcBackoffConfig = rpc_config.backoff;
+            let rpc_config: $crate::graplinc::grapl::api::client_macros::RpcConfig = $rpc_config;
+            let backoff_opts: $crate::graplinc::grapl::api::client_macros::RpcBackoffConfig = rpc_config.backoff;
             let proto_client = $self.proto_client.clone();
             type ProtoRequestType = $proto_request_type;
             type NativeResponseType = $native_response_type;
@@ -141,7 +142,7 @@ macro_rules! create_proto_client {
                     async move {
                         <$proto_client_type>::connect(endpoint)
                             .await
-                            .map_err($crate::protocol::service_client::ConnectError::from)
+                            .map_err($crate::graplinc::grapl::api::protocol::service_client::ConnectError::from)
                     }
                 })
                 .await?;

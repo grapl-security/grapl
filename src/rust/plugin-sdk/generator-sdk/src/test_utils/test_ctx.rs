@@ -1,23 +1,23 @@
-use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::GeneratorClientConfig,
-    },
-    graplinc::{
-        common::v1beta1::Duration,
-        grapl::api::plugin_sdk::generators::v1beta1::{
+use rust_proto::graplinc::{
+    common::v1beta1::Duration,
+    grapl::api::{
+        client_factory::{
+            build_grpc_client,
+            services::GeneratorClientConfig,
+        },
+        plugin_sdk::generators::v1beta1::{
             client::GeneratorServiceClient,
             server::{
                 GeneratorApi,
                 GeneratorServer,
             },
         },
-    },
-    protocol::{
-        error::ServeError,
-        healthcheck::{
-            client::HealthcheckClient,
-            HealthcheckStatus,
+        protocol::{
+            error::ServeError,
+            healthcheck::{
+                client::HealthcheckClient,
+                HealthcheckStatus,
+            },
         },
     },
 };

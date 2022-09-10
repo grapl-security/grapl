@@ -13,20 +13,22 @@ use proto::plugin_registry_service_client::PluginRegistryServiceClient as Plugin
 use tracing::instrument;
 
 use crate::{
-    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
-    graplinc::grapl::api::plugin_registry::v1beta1 as native,
-    protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
-    protocol::{
-        endpoint::Endpoint,
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
-            Connectable,
+    graplinc::grapl::api::{
+        client_macros::RpcConfig,
+        plugin_registry::v1beta1 as native,
+        protocol::{
+            endpoint::Endpoint,
+            error::GrpcClientError,
+            service_client::{
+                ConnectError,
+                Connectable,
+            },
+            status::Status,
         },
-        status::Status,
     },
+    protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
 };
 
 #[derive(Clone)]

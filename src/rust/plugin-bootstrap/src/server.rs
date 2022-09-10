@@ -3,8 +3,8 @@ use std::{
     sync::atomic::Ordering,
 };
 
-use rust_proto::{
-    graplinc::grapl::api::plugin_bootstrap::v1beta1::{
+use rust_proto::graplinc::grapl::api::{
+    plugin_bootstrap::v1beta1::{
         server::PluginBootstrapApi,
         ClientCertificate,
         GetBootstrapRequest,

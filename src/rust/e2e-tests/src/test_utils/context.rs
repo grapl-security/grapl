@@ -9,7 +9,7 @@ use plugin_work_queue::{
     psql_queue::PsqlQueue,
     PluginWorkQueueDbConfig,
 };
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::{
         build_grpc_client,
         services::{
@@ -18,18 +18,16 @@ use rust_proto::{
             PluginRegistryClientConfig,
         },
     },
-    graplinc::grapl::api::{
-        event_source::v1beta1::{
-            client::EventSourceServiceClient,
-            CreateEventSourceRequest,
-        },
-        pipeline_ingress::v1beta1::client::PipelineIngressClient,
-        plugin_registry::v1beta1::{
-            DeployPluginRequest,
-            PluginMetadata,
-            PluginRegistryServiceClient,
-            PluginType,
-        },
+    event_source::v1beta1::{
+        client::EventSourceServiceClient,
+        CreateEventSourceRequest,
+    },
+    pipeline_ingress::v1beta1::client::PipelineIngressClient,
+    plugin_registry::v1beta1::{
+        DeployPluginRequest,
+        PluginMetadata,
+        PluginRegistryServiceClient,
+        PluginType,
     },
 };
 use test_context::AsyncTestContext;

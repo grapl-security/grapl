@@ -1,8 +1,8 @@
 #![allow(warnings)]
 use std::sync::Arc;
 
-use rust_proto::{
-    graplinc::grapl::api::graph_query_service::v1beta1::{
+use rust_proto::graplinc::grapl::api::{
+    graph_query_service::v1beta1::{
         messages::{
             GraphQuery,
             GraphView,

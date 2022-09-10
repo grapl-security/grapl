@@ -200,21 +200,23 @@ pub mod client {
     };
 
     use crate::{
-        client_macros::RpcConfig,
         create_proto_client,
         execute_client_rpc,
-        graplinc::grapl::api::organization_management::v1beta1 as native,
+        graplinc::grapl::api::{
+            client_macros::RpcConfig,
+            organization_management::v1beta1 as native,
+            protocol::{
+                endpoint::Endpoint,
+                error::GrpcClientError,
+                service_client::{
+                    ConnectError,
+                    Connectable,
+                },
+            },
+        },
         protobufs::graplinc::grapl::api::organization_management::{
             v1beta1 as proto,
             v1beta1::organization_management_service_client::OrganizationManagementServiceClient as OrganizationManagementServiceClientProto,
-        },
-        protocol::{
-            endpoint::Endpoint,
-            error::GrpcClientError,
-            service_client::{
-                ConnectError,
-                Connectable,
-            },
         },
     };
 
@@ -312,6 +314,18 @@ pub mod server {
         CreateUserResponse,
     };
     use crate::{
+        graplinc::grapl::api::{
+            protocol::{
+                error::ServeError,
+                healthcheck::{
+                    server::init_health_service,
+                    HealthcheckError,
+                    HealthcheckStatus,
+                },
+                status::Status,
+            },
+            server::GrpcApi,
+        },
         protobufs::graplinc::grapl::api::organization_management::v1beta1::{
             organization_management_service_server::{
                 OrganizationManagementService as OrganizationManagementServiceProto,
@@ -322,16 +336,6 @@ pub mod server {
             CreateUserRequest as CreateUserRequestProto,
             CreateUserResponse as CreateUserResponseProto,
         },
-        protocol::{
-            error::ServeError,
-            healthcheck::{
-                server::init_health_service,
-                HealthcheckError,
-                HealthcheckStatus,
-            },
-            status::Status,
-        },
-        server_internals::GrpcApi,
         SerDeError,
     };
 

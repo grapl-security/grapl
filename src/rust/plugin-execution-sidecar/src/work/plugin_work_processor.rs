@@ -1,9 +1,11 @@
 use rust_proto::{
-    graplinc::grapl::api::plugin_work_queue::v1beta1::{
-        ExecutionJob,
-        PluginWorkQueueServiceClient,
+    graplinc::grapl::api::{
+        plugin_work_queue::v1beta1::{
+            ExecutionJob,
+            PluginWorkQueueServiceClient,
+        },
+        protocol::error::GrpcClientError,
     },
-    protocol::error::GrpcClientError,
     SerDe,
 };
 use uuid::Uuid;

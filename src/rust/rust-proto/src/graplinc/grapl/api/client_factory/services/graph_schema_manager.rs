@@ -1,9 +1,9 @@
-use crate::{
+use crate::graplinc::grapl::api::{
     client_factory::grpc_client_config::{
         GenericGrpcClientConfig,
         GrpcClientConfig,
     },
-    graplinc::grapl::api::graph_schema_manager::v1beta1::client::GraphSchemaManagerClient,
+    graph_schema_manager::v1beta1::client::GraphSchemaManagerClient,
 };
 
 #[derive(clap::Parser, Debug, Clone)]

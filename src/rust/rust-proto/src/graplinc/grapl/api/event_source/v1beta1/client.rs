@@ -6,21 +6,23 @@ use client_executor::{
 };
 
 use crate::{
-    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
-    graplinc::grapl::api::event_source::v1beta1 as native,
+    graplinc::grapl::api::{
+        client_macros::RpcConfig,
+        event_source::v1beta1 as native,
+        protocol::{
+            endpoint::Endpoint,
+            error::GrpcClientError,
+            service_client::{
+                ConnectError,
+                Connectable,
+            },
+        },
+    },
     protobufs::graplinc::grapl::api::event_source::v1beta1::{
         self as proto,
         event_source_service_client::EventSourceServiceClient as EventSourceServiceClientProto,
-    },
-    protocol::{
-        endpoint::Endpoint,
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
-            Connectable,
-        },
     },
 };
 

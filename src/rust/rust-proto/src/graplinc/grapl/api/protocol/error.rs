@@ -12,7 +12,7 @@ pub enum ServeError {
 #[derive(Debug, thiserror::Error)]
 pub enum GrpcClientError {
     #[error("encountered protocol error {0}")]
-    ErrorStatus(#[from] crate::protocol::status::Status),
+    ErrorStatus(#[from] crate::graplinc::grapl::api::protocol::status::Status),
     #[error("encountered SerDeError {0}")]
     SerDeError(#[from] crate::SerDeError),
     #[error("circuit breaker is open")]

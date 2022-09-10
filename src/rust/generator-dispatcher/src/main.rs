@@ -3,7 +3,7 @@ use generator_dispatcher::{
     config::GeneratorDispatcherConfig,
     GeneratorDispatcher,
 };
-use rust_proto::client_factory::{
+use rust_proto::graplinc::grapl::api::client_factory::{
     build_grpc_client,
     services::PluginWorkQueueClientConfig,
 };

@@ -27,7 +27,7 @@ pub mod client {
     use std::time::Duration;
 
     use super::*;
-    use crate::protocol::service_client::ConnectError;
+    use crate::graplinc::grapl::api::protocol::service_client::ConnectError;
 
     pub struct HealthcheckClient {
         proto_client: HealthClientProto<tonic::transport::Channel>,
@@ -156,7 +156,7 @@ pub mod server {
         HealthServer,
     };
 
-    use crate::protocol::healthcheck::{
+    use crate::graplinc::grapl::api::protocol::healthcheck::{
         HealthcheckError,
         HealthcheckStatus,
     };

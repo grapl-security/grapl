@@ -9,8 +9,8 @@ use plugin_bootstrap::{
     },
     PluginBootstrapServiceConfig,
 };
-use rust_proto::{
-    graplinc::grapl::api::plugin_bootstrap::v1beta1::server::PluginBootstrapServer,
+use rust_proto::graplinc::grapl::api::{
+    plugin_bootstrap::v1beta1::server::PluginBootstrapServer,
     protocol::healthcheck::HealthcheckStatus,
 };
 use tokio::net::TcpListener;

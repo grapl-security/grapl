@@ -19,33 +19,31 @@ use kafka::{
     ProducerError,
     RetryProducer,
 };
-use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::PluginRegistryClientConfig,
-    },
-    graplinc::grapl::{
-        api::{
-            plugin_registry::v1beta1::GetGeneratorsForEventSourceRequest,
-            plugin_work_queue::v1beta1::{
-                ExecutionJob,
-                PluginWorkQueueServiceClient,
-                PluginWorkQueueServiceClientError,
-                PushExecuteGeneratorRequest,
+use rust_proto::graplinc::grapl::{
+    api::{
+        client_factory::{
+            build_grpc_client,
+            services::PluginRegistryClientConfig,
+        },
+        plugin_registry::v1beta1::GetGeneratorsForEventSourceRequest,
+        plugin_work_queue::v1beta1::{
+            ExecutionJob,
+            PluginWorkQueueServiceClient,
+            PluginWorkQueueServiceClientError,
+            PushExecuteGeneratorRequest,
+        },
+        protocol::{
+            error::GrpcClientError,
+            service_client::ConnectError,
+            status::{
+                Code,
+                Status,
             },
         },
-        pipeline::v1beta1::{
-            Envelope,
-            RawLog,
-        },
     },
-    protocol::{
-        error::GrpcClientError,
-        service_client::ConnectError,
-        status::{
-            Code,
-            Status,
-        },
+    pipeline::v1beta1::{
+        Envelope,
+        RawLog,
     },
 };
 use thiserror::Error;

@@ -7,20 +7,22 @@ use client_executor::{
 use tonic::transport::Endpoint;
 
 use crate::{
-    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
-    graplinc::grapl::api::graph_mutation::v1beta1::messages as native,
+    graplinc::grapl::api::{
+        client_macros::RpcConfig,
+        graph_mutation::v1beta1::messages as native,
+        protocol::{
+            error::GrpcClientError,
+            service_client::{
+                ConnectError,
+                Connectable,
+            },
+        },
+    },
     protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
         self as proto,
         graph_mutation_service_client::GraphMutationServiceClient,
-    },
-    protocol::{
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
-            Connectable,
-        },
     },
 };
 pub type GraphMutationClientError = GrpcClientError;
@@ -66,6 +68,7 @@ impl GraphMutationClient {
             RpcConfig::default(),
         )
     }
+
     pub async fn set_node_property(
         &mut self,
         request: native::SetNodePropertyRequest,
@@ -79,6 +82,7 @@ impl GraphMutationClient {
             RpcConfig::default(),
         )
     }
+
     pub async fn create_edge(
         &mut self,
         request: native::CreateEdgeRequest,

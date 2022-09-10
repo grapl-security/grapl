@@ -1,4 +1,4 @@
-use rust_proto::protocol::status::Status;
+use rust_proto::graplinc::grapl::api::protocol::status::Status;
 
 #[derive(thiserror::Error, Debug)]
 pub enum EventSourceError {

@@ -2,41 +2,39 @@
 use bytes::Bytes;
 use clap::Parser;
 use graph_query::node_query::NodeQuery;
-use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::{
-            GraphMutationClientConfig,
-            GraphQueryClientConfig,
-            GraphSchemaManagerClientConfig,
-            ScyllaProvisionerClientConfig,
-            UidAllocatorClientConfig,
+use rust_proto::graplinc::grapl::{
+    api::{
+        client_factory::{
+            build_grpc_client,
+            services::{
+                GraphMutationClientConfig,
+                GraphQueryClientConfig,
+                GraphSchemaManagerClientConfig,
+                ScyllaProvisionerClientConfig,
+                UidAllocatorClientConfig,
+            },
         },
+        graph::v1beta1::{
+            ImmutableStrProp,
+            NodeProperty,
+            Property,
+        },
+        graph_mutation::v1beta1::messages as mutation,
+        graph_query_service::v1beta1::messages::{
+            MatchedGraphWithUid,
+            MaybeMatchWithUid,
+            NodePropertyQuery,
+            QueryGraphFromUidRequest,
+            QueryGraphWithUidRequest,
+            StringCmp,
+        },
+        graph_schema_manager::v1beta1::messages as graph_schema_manager_api,
+        scylla_provisioner::v1beta1::messages as scylla_provisioner_msgs,
+        uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
     },
-    graplinc::grapl::{
-        api::{
-            graph::v1beta1::{
-                ImmutableStrProp,
-                NodeProperty,
-                Property,
-            },
-            graph_mutation::v1beta1::messages as mutation,
-            graph_query_service::v1beta1::messages::{
-                MatchedGraphWithUid,
-                MaybeMatchWithUid,
-                NodePropertyQuery,
-                QueryGraphFromUidRequest,
-                QueryGraphWithUidRequest,
-                StringCmp,
-            },
-            graph_schema_manager::v1beta1::messages as graph_schema_manager_api,
-            scylla_provisioner::v1beta1::messages as scylla_provisioner_msgs,
-            uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
-        },
-        common::v1beta1::types::{
-            EdgeName,
-            NodeType,
-        },
+    common::v1beta1::types::{
+        EdgeName,
+        NodeType,
     },
 };
 

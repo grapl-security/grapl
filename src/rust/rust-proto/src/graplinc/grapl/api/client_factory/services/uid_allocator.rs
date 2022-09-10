@@ -1,9 +1,9 @@
-use crate::{
+use crate::graplinc::grapl::api::{
     client_factory::grpc_client_config::{
         GenericGrpcClientConfig,
         GrpcClientConfig,
     },
-    graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorServiceClient,
+    uid_allocator::v1beta1::client::UidAllocatorServiceClient,
 };
 
 #[derive(clap::Parser, Debug, Clone)]

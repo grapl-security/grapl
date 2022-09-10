@@ -1,4 +1,4 @@
-use rust_proto::protocol::status::Status;
+use rust_proto::graplinc::grapl::api::protocol::status::Status;
 use thiserror::Error;
 
 /// This represents all possible errors that can occur in this generator.

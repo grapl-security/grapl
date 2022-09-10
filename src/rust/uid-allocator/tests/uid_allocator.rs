@@ -1,9 +1,9 @@
 #![cfg(all(test, feature = "integration_tests"))]
 
 use clap::Parser;
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::services::UidAllocatorClientConfig,
-    graplinc::grapl::api::uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
+    uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
 };
 use uid_allocator::client::CachingUidAllocatorServiceClient;
 

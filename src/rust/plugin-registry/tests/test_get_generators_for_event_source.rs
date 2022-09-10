@@ -3,12 +3,12 @@
 use bytes::Bytes;
 use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::{
         build_grpc_client,
         services::PluginRegistryClientConfig,
     },
-    graplinc::grapl::api::plugin_registry::v1beta1::{
+    plugin_registry::v1beta1::{
         GetGeneratorsForEventSourceRequest,
         PluginMetadata,
         PluginType,

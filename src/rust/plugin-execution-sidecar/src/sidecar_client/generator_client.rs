@@ -1,9 +1,9 @@
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::{
         build_grpc_client,
         services::GeneratorClientConfig,
     },
-    graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::GeneratorServiceClient,
+    plugin_sdk::generators::v1beta1::client::GeneratorServiceClient,
     protocol::service_client::ConnectError,
 };
 

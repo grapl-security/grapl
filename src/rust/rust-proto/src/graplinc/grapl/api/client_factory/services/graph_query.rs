@@ -1,9 +1,9 @@
-use crate::{
+use crate::graplinc::grapl::api::{
     client_factory::grpc_client_config::{
         GenericGrpcClientConfig,
         GrpcClientConfig,
     },
-    graplinc::grapl::api::graph_query_service::v1beta1::client::GraphQueryClient,
+    graph_query_service::v1beta1::client::GraphQueryClient,
 };
 
 #[derive(clap::Parser, Debug)]

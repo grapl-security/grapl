@@ -1,4 +1,4 @@
-use crate::protocol::service_client::Connectable;
+use crate::graplinc::grapl::api::protocol::service_client::Connectable;
 
 pub struct GenericGrpcClientConfig {
     pub address: String,

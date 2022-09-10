@@ -1,18 +1,20 @@
 use rust_proto::{
     graplinc::grapl::{
-        api::graph_schema_manager::v1beta1::{
-            messages::{
-                DeploySchemaRequest,
-                DeploySchemaResponse,
-                GetEdgeSchemaRequest,
-                GetEdgeSchemaResponse,
-                SchemaType,
+        api::{
+            graph_schema_manager::v1beta1::{
+                messages::{
+                    DeploySchemaRequest,
+                    DeploySchemaResponse,
+                    GetEdgeSchemaRequest,
+                    GetEdgeSchemaResponse,
+                    SchemaType,
+                },
+                server::GraphSchemaManagerApi,
             },
-            server::GraphSchemaManagerApi,
+            protocol::status::Status,
         },
         common::v1beta1::types::EdgeName,
     },
-    protocol::status::Status,
     SerDeError,
 };
 

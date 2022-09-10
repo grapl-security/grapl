@@ -1,11 +1,12 @@
 use dashmap::DashMap;
 pub use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorServiceClient;
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::{
         build_grpc_client,
         services::UidAllocatorClientConfig,
     },
-    graplinc::grapl::api::uid_allocator::v1beta1::{
+    protocol::service_client::ConnectError,
+    uid_allocator::v1beta1::{
         client::UidAllocatorServiceClientError,
         messages::{
             AllocateIdsRequest,
@@ -13,7 +14,6 @@ use rust_proto::{
             CreateTenantKeyspaceRequest,
         },
     },
-    protocol::service_client::ConnectError,
 };
 
 #[derive(Clone)]

@@ -1,4 +1,4 @@
-use rust_proto::protocol::error::GrpcClientError;
+use rust_proto::graplinc::grapl::api::protocol::error::GrpcClientError;
 
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]

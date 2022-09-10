@@ -21,11 +21,23 @@ pub mod server {
 
     use crate::{
         execute_rpc,
-        graplinc::grapl::api::uid_allocator::v1beta1::messages::{
-            AllocateIdsRequest,
-            AllocateIdsResponse,
-            CreateTenantKeyspaceRequest,
-            CreateTenantKeyspaceResponse,
+        graplinc::grapl::api::{
+            protocol::{
+                error::ServeError,
+                healthcheck::{
+                    server::init_health_service,
+                    HealthcheckError,
+                    HealthcheckStatus,
+                },
+                status::Status,
+            },
+            server::GrpcApi,
+            uid_allocator::v1beta1::messages::{
+                AllocateIdsRequest,
+                AllocateIdsResponse,
+                CreateTenantKeyspaceRequest,
+                CreateTenantKeyspaceResponse,
+            },
         },
         protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
             uid_allocator_service_server::{
@@ -37,16 +49,6 @@ pub mod server {
             CreateTenantKeyspaceRequest as CreateTenantKeyspaceRequestProto,
             CreateTenantKeyspaceResponse as CreateTenantKeyspaceResponseProto,
         },
-        protocol::{
-            error::ServeError,
-            healthcheck::{
-                server::init_health_service,
-                HealthcheckError,
-                HealthcheckStatus,
-            },
-            status::Status,
-        },
-        server_internals::GrpcApi,
     };
 
     #[async_trait::async_trait]
@@ -192,20 +194,22 @@ pub mod client {
     use tonic::transport::Endpoint;
 
     use crate::{
-        client_macros::RpcConfig,
         create_proto_client,
         execute_client_rpc,
-        graplinc::grapl::api::uid_allocator::v1beta1::messages as native,
+        graplinc::grapl::api::{
+            client_macros::RpcConfig,
+            protocol::{
+                error::GrpcClientError,
+                service_client::{
+                    ConnectError,
+                    Connectable,
+                },
+            },
+            uid_allocator::v1beta1::messages as native,
+        },
         protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
             self as proto,
             uid_allocator_service_client::UidAllocatorServiceClient as UidAllocatorServiceClientProto,
-        },
-        protocol::{
-            error::GrpcClientError,
-            service_client::{
-                ConnectError,
-                Connectable,
-            },
         },
     };
 

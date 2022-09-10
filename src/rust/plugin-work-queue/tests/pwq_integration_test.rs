@@ -3,12 +3,12 @@
 use std::time::Duration;
 
 use clap::Parser;
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::{
         build_grpc_client,
         services::PluginWorkQueueClientConfig,
     },
-    graplinc::grapl::api::plugin_work_queue::v1beta1::{
+    plugin_work_queue::v1beta1::{
         ExecutionJob,
         GetExecuteGeneratorRequest,
         PushExecuteGeneratorRequest,

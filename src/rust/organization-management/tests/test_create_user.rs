@@ -3,12 +3,12 @@
 use clap::Parser;
 use grapl_config::ToPostgresUrl;
 use organization_management::OrganizationManagementServiceConfig;
-use rust_proto::{
+use rust_proto::graplinc::grapl::api::{
     client_factory::{
         build_grpc_client,
         services::OrganizationManagementClientConfig,
     },
-    graplinc::grapl::api::organization_management::v1beta1::{
+    organization_management::v1beta1::{
         CreateOrganizationRequest,
         CreateUserRequest,
     },
