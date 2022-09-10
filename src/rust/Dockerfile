@@ -229,6 +229,11 @@ COPY --from=etc-ctx example_schemas /test-fixtures/example_schemas
 # hadolint ignore=DL3022
 COPY --from=etc-ctx sample_data/36_eventlog.xml /test-fixtures
 
+# Copy in an example Analyzer, suspicious_svchost, for integration testing.
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=dist-ctx suspicious_svchost_analyzer.pex /test-fixtures
+
 # Copy in the example generator so we can deploy it in test_deploy_plugin
 COPY --from=build /outputs/example-generator /test-fixtures
 COPY --from=build /outputs/sysmon-generator /test-fixtures

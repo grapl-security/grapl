@@ -41,6 +41,7 @@ class AnalyzerContext:
         self._start_time = datetime.now()
 
 
+# TODO: would be nice to have query() -> ProcessQuery, analyze(ProcessView, ...)
 class Analyzer(Protocol):
     @staticmethod
     def query() -> NodeQuery:

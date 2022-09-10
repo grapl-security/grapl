@@ -162,6 +162,12 @@ build-service-pex-files: ## Build all PEX files needed by Grapl SaaS services
 	@echo "--- Building Grapl service PEX files"
 	./pants --tag="service-pex" package ::
 
+# We copy built Analyzers from dist/ into our Rust integration tests so we can deploy them.
+.PHONY: build-test-fixture-pex-files
+build-test-fixture-pex-files: ## Build all PEX files needed by integration tests, e.g. analyzers
+	@echo "--- Building Python test fixture PEX files"
+	./pants --tag="test-fixture-pex" package ::
+
 .PHONY: build-frontend
 build-frontend: ## Build website assets to include in grapl-web-ui
 	@echo "--- Building the frontend"
@@ -196,7 +202,7 @@ build-local-infrastructure: build-grapl-service-prerequisites
 	$(DOCKER_BUILDX_BAKE) local-infrastructure
 
 .PHONY: build-test-integration-rust
-build-test-integration-rust:
+build-test-integration-rust: build-test-fixture-pex-files
 	@echo "--- Building rust integration test images"
 	$(DOCKER_BUILDX_BAKE) rust-integration-tests
 
