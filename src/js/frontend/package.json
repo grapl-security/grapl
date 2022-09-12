@@ -7,6 +7,7 @@
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^13.2.1",
     "axios": "^0.27.2",
+    "http-proxy-middleware": "^2.0.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.3.0",
@@ -20,10 +21,11 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "check-types": "tsc --project tsconfig.json --pretty --noEmit",
-    "check-format": "yarn run prettier --check \"src/**/*.ts\"\n",
-    "check-different": "yarn run prettier --single-quote --list-different \"src/**/*.ts\"",
-    "lint": "eslint .",
-    "lint:fix": "eslint --fix ."
+    "lint": "npx eslint src test",
+    "lint:fix": "yarn run lint --fix",
+    "prettier": "npx prettier src test --check",
+    "prettier:fix": "yarn run prettier --write",
+    "format": "yarn run prettier:fix && yarn run lint:fix"
   },
   "browserslist": {
     "production": [
@@ -42,8 +44,12 @@
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "latest",
+    "@typescript-eslint/parser": "latest",
+    "eslint": "latest",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "latest",
     "prettier": "^2.7.1"
   },
   "engines": {
