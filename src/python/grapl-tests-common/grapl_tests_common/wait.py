@@ -6,10 +6,7 @@ from time import sleep
 from typing import Any, Callable, Mapping, Sequence
 
 import botocore
-from grapl_analyzerlib.grapl_client import GraphClient
-from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
 from grapl_common.grapl_logger import get_module_grapl_logger
-from grapl_common.retry import retry
 from typing_extensions import Protocol
 
 LOGGER = get_module_grapl_logger()
@@ -96,20 +93,6 @@ class WaitForNoException(WaitForResource):
 
     def failure_reason(self) -> Exception | None:
         return self.last_failure
-
-
-class WaitForQuery(WaitForResource):
-    def __init__(self, query: BaseQuery, graph_client: GraphClient = None) -> None:
-        self.query = query
-        self.graph_client = graph_client or GraphClient()
-
-    @retry(exception_cls=Exception, logger=LOGGER)
-    def acquire(self) -> BaseView | None:
-        result = self.query.query_first(self.graph_client)
-        return result
-
-    def __str__(self) -> str:
-        return f"WaitForLens({self.query})"
 
 
 def wait_for(

@@ -45,8 +45,18 @@ struct Opt {
 
     /// Generated code will be passed to the system Python interpreter, and mypy will be executed
     /// against the code as well
-    #[clap(long = "validate", parse(from_flag))]
+    #[clap(long, parse(from_flag))]
     validate: bool,
+
+    /// This entire binary was basically broken by the removal of the legacy
+    /// grapl-analyzerlib on Sep 12 2022, but the existing tests are useful in
+    /// that they model how we want this utility to eventually be tested.
+    /// So I've added this temporary "yes, I'm aware this binary is broken"
+    /// option so that this broken-ness has a traceable explanation
+    /// instead of just surprising the next unlucky soul who runs
+    /// grapl-graphql-codegen.
+    #[clap(long, parse(from_flag))]
+    acknowledge_this_tool_needs_to_be_updated_for_new_grapl_analyzerlib: bool,
 }
 
 fn read_in_schema(input: &Option<PathBuf>) -> Result<String> {
@@ -81,6 +91,15 @@ fn main() -> Result<()> {
     color_eyre::install()?;
 
     let opt = Opt::parse();
+
+    if !opt.acknowledge_this_tool_needs_to_be_updated_for_new_grapl_analyzerlib {
+        panic!(
+            r"#This tool is currently broken.
+Please read the documentation on 
+`acknowledge_this_tool_needs_to_be_updated_for_new_grapl_analyzerlib`
+#"
+        )
+    }
 
     tracing::debug!(message="Executing grapl-graphql-codegen", options=?opt);
     let raw_schema = read_in_schema(&opt.input)?;
