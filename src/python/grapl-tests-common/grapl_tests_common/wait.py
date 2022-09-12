@@ -7,7 +7,6 @@ from typing import Any, Callable, Mapping, Sequence
 
 import botocore
 from grapl_common.grapl_logger import get_module_grapl_logger
-from grapl_common.retry import retry
 from typing_extensions import Protocol
 
 LOGGER = get_module_grapl_logger()

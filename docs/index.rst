@@ -25,13 +25,6 @@ with the data in Grapl.
     plugins/index
 
 .. toctree::
-    :caption: Nodes
-    :maxdepth: 1
-    :glob:
-
-    nodes/*
-
-.. toctree::
     :caption: Development
     :maxdepth: 1
     :glob:
