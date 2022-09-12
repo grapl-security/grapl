@@ -18,7 +18,6 @@ import os
 import sys
 
 py_roots = [
-    "../src/python/grapl_analyzerlib/",
     "../src/python/grapl-common/",
 ]
 for py_root in py_roots:
