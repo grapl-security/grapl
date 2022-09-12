@@ -52,24 +52,37 @@ class AnalyzerServiceImpl:
         tenant_id = request.tenant_id
         update = request.update
 
-        if isinstance(update.inner, PropertyUpdate) and (
-            prop_name := update.inner.property_name
-        ):
-            if not check_for_string_property(self._graph_query, prop_name):
-                return MISS_RESPONSE
+        match update.inner:
+            case PropertyUpdate() as prop_update:
+                # optimization
+                # i.e. if the update is for process_name, and you're not querying for
+                # process_name, that's obviously a miss
+                prop_name = prop_update.property_name
+                if not check_for_string_property(self._graph_query, prop_name):
+                    return MISS_RESPONSE
 
-        root_uid = update.inner.uid
+                updated_node_uid = prop_update.uid
+            case analyzer_messages.EdgeUpdate() as edge_update:
+                raise NotImplementedError(
+                    "I'll implement Edge Updates after we can do tests"
+                )
+                # updated_node_uid = TODO
+
+        # Now we have the UID of nodes recently updated, and a
+        # query. check if the UID could match any in the query.
         matched_graph: graph_query_messages.MatchedGraphWithUid | None = (
             self._graph_query_client.query_with_uid(
                 tenant_id=tenant_id,
-                node_uid=root_uid,
+                node_uid=updated_node_uid,
                 graph_query=self._graph_query,
             ).maybe_match.as_optional()
         )
+        # if matched_graphs empty, that's a textbook miss
         if not matched_graph:
             return MISS_RESPONSE
 
         graph_view: graph_query_messages.GraphView = matched_graph.matched_graph
+        root_uid = matched_graph.root_uid
 
         root_node_properties = graph_view.get_node(root_uid)
         if not root_node_properties:
