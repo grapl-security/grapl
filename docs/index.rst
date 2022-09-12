@@ -44,12 +44,14 @@ of its edges.
 Let's query for some processes with the name "svchost".
 
 .. code-block:: python
+
     # TODO replace with instructions for next-gen grapl_analyzerlib
 
 
 Now we can pivot around that data. Let's look at the parent processes of these svchosts:
 
 .. code-block:: python
+
     # TODO replace with instructions for next-gen grapl_analyzerlib
 
 
