@@ -8,34 +8,20 @@ edition = "2021"
 bytes = "1.1"
 rust-proto = { path = "../rust-proto" }
 grapl-tracing = { path = "../grapl-tracing" }
-chrono = "0.4.19"
 serde = { version = "1.0.136", features = ["derive"] }
 tokio = { version = "1.17.0", features = ["full"] }
 uuid = { version = "1.0", features = ["v4"] }
-maplit = "1.0.2"
 tracing = "0.1.32"
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "fmt"
 ] }
-test-log = { version = "0.2.8", features = ["trace"] }
-env_logger = "0.9.0"
-rand = "0.8.5"
 futures = "0.3.21"
 prost = "0.9.0"
-prost-types = "0.9.0"
 tonic = "0.6.1"
 thiserror = "1.0.31"
-async-recursion = "1.0.0"
 async-trait = "0.1.56"
 clap = { version = "3.2.13", features = ["std", "env", "derive"] }
-
-[build-dependencies]
-tonic-build = { version = "0.6.0", features = ["prost"] }
-
-[dev-dependencies]
-test-log = { version = "0.2", default-features = false, features = ["trace"] }
-eyre = "0.6"
 
 [features]
 integration_tests = []
