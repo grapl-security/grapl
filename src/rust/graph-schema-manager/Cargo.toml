@@ -11,7 +11,6 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
-dashmap = "5.3"
 grapl-config = { path = "../grapl-config" }
 grapl-graphql-codegen = { path = "../grapl-graphql-codegen" }
 grapl-tracing = { path = "../grapl-tracing" }

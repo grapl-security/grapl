@@ -73,7 +73,6 @@ where
     ///
     /// * updater - the function responsible for producing an up-to-date value
     ///   for a given key.
-    //#[tracing::instrument]
     pub async fn new<U, F>(
         capacity: u64,
         ttl: Duration,
