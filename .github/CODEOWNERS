@@ -42,7 +42,6 @@ BUILD @christophermaier
 /scylladb/ @twunderlich-grapl
 /src/js/engagement_view/ @andrea-grapl
 /src/proto/ @grapl-security/wg-data-infra
-/src/python/grapl_analyzerlib/ @colin-grapl
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
 /src/python/grapl-tests-common/ @wimax-grapl
