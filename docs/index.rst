@@ -22,14 +22,6 @@ with the data in Grapl.
     queryable
     analyzers/index
     setup/index
-    plugins/index
-
-.. toctree::
-    :caption: Nodes
-    :maxdepth: 1
-    :glob:
-
-    nodes/*
 
 .. toctree::
     :caption: Development

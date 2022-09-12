@@ -4,7 +4,7 @@ import dataclasses
 from typing import Mapping, Sequence, cast
 
 from graplinc.grapl.api.graph.v1beta1 import types_pb2 as proto
-from python_proto.grapl.common.v1beta1.messages import NodeType, Uid
+from python_proto.grapl.common.v1beta1.messages import Uid
 from python_proto.serde import SerDe
 
 
