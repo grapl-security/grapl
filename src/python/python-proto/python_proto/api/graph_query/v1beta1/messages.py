@@ -322,11 +322,19 @@ class EdgeQueryMap(SerDe[proto.EdgeQueryMap]):
         msg.entries.extend(entries)
         return msg
 
-    def __getitem__(self, key: tuple[QueryId, EdgeName]) -> set[QueryId]:
+    def __contains__(self, key: EdgeQueryMapK) -> bool:
+        return key in self.entries
+
+    def __getitem__(self, key: EdgeQueryMapK) -> set[QueryId]:
         return self.entries[key]
 
-    def __setitem__(self, key: tuple[QueryId, EdgeName], value: set[QueryId]) -> None:
+    def __setitem__(self, key: EdgeQueryMapK, value: EdgeQueryMapV) -> None:
         self.entries[key] = value
+
+    def get_or_init(self, key: EdgeQueryMapK) -> set[QueryId]:
+        if not key in self:
+            self[key] = set()
+        return self[key]
 
 
 @dataclass(frozen=True, slots=True)

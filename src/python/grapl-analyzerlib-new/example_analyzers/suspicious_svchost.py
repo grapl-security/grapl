@@ -15,7 +15,6 @@ from python_proto.api.graph_query.v1beta1.messages import (
 from python_proto.api.plugin_sdk.analyzers.v1beta1.messages import (
     AnalyzerName,
     ExecutionHit,
-    LensRef,
 )
 from python_proto.common import Timestamp
 from python_proto.grapl.common.v1beta1.messages import EdgeName, NodeType, PropertyName
@@ -74,10 +73,10 @@ class SuspiciousSvchostAnalyzer(Analyzer):
     async def analyze(
         self, matched: NodeView, ctx: AnalyzerContext
     ) -> ExecutionHit | None:
-        print(f"Oh dude we did it {matched}")
+        print(f"analyze() was called: {matched}")
         return ExecutionHit(
             lens_refs=[],
-            analyzer_name=AnalyzerName(value=self.__class__.__name__),
+            # don't specify analyzer_name=, service_impl.py does that for us
             idempotency_key=12345,  # ???
             time_of_match=Timestamp.from_datetime(datetime.utcnow()),
             score=100,
@@ -87,9 +86,13 @@ class SuspiciousSvchostAnalyzer(Analyzer):
         pass
 
 
-async def main() -> None:
+def main() -> None:
+    """
+    main() is invoked by the pex_binary() entrypoint=
+    """
     analyzer = SuspiciousSvchostAnalyzer()
     # Perhaps `serve_analyzer` should just take `(analyzer=analyzer)`?
+    # We shouldn't pass on the `AnalyzerServiceConfig` to the consumer, right?
     serve_analyzer(
         analyzer_name=AnalyzerName(
             value="suspicious_svchost"
@@ -97,7 +100,3 @@ async def main() -> None:
         analyzer=analyzer,
         service_config=AnalyzerServiceConfig.from_env(),
     )
-
-
-if __name__ == "__main__":
-    main()

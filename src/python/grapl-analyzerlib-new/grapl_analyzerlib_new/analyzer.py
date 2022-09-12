@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 from dataclasses import dataclass
 from typing import Protocol
@@ -47,6 +48,10 @@ class Analyzer(Protocol):
 
     async def add_context(self, matched: NodeView, ctx: AnalyzerContext) -> None:
         """
+        Don't confuse "context" here with the AnalyzerContext argument;
+        we use this function to add additional nodes and edges to the Lens
+        to provide a fuller picture (aka, context) of the ExecutionHit.
+
         Called when `analyze` returns an `AnalyzerHit`.
         `matched` is the graph stored in the AnalyzerHit
         ```python3
@@ -65,7 +70,7 @@ class AnalyzerServiceConfig:
         return cls(bind_address=os.environ["PLUGIN_BIND_ADDRESS"])
 
 
-async def serve_analyzer(
+def serve_analyzer(
     analyzer_name: AnalyzerName,
     analyzer: Analyzer,
     service_config: AnalyzerServiceConfig,
@@ -82,9 +87,15 @@ async def serve_analyzer(
         _analyzer=analyzer,
         _graph_query_client=graph_query_client,
     )
-    await AnalyzerServiceWrapper(
+
+    servicer = AnalyzerServiceWrapper(
         bind_address=service_config.bind_address,
         analyzer_service_impl=impl,
-    ).serve()
+    )
 
-    return None
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(servicer.serve())
+    finally:
+        loop.run_until_complete(*servicer._cleanup_coroutines)
+        loop.close()

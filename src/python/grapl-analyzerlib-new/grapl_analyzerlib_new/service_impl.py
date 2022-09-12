@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
 
 import grpc
 from grapl_analyzerlib_new.analyzer_context import AnalyzerContext
-from typing_extensions import assert_never
 
 if TYPE_CHECKING:
     from grapl_analyzerlib_new.analyzer import Analyzer
@@ -131,6 +130,7 @@ class AnalyzerServiceImpl:
         )
         if not execution_hit:
             return MISS_RESPONSE
+        execution_hit.analyzer_name = self._analyzer_name
 
         await analyzer.add_context(root_node, ctx)
 

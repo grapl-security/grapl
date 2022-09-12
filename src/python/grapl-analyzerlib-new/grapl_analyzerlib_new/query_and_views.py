@@ -111,9 +111,8 @@ class NodeQuery:
             node_property_queries[
                 node.node_property_query.query_id
             ] = self.into_node_property_query()
-            edge_filters[(node.node_property_query.query_id, edge)].add(
-                neighbor.node_property_query.query_id
-            )
+            key = (node.node_property_query.query_id, edge)
+            edge_filters.get_or_init(key).add(neighbor.node_property_query.query_id)
             edge_map.update(node.edge_map)
 
         return GraphQuery(
