@@ -203,43 +203,4 @@ where
 
         Ok(attributed_node)
     }
-
-    #[tracing::instrument(skip(self, unid_graph, _unid_id_map))]
-    pub(crate) async fn attribute_dynamic_nodes(
-        &self,
-        tenant_id: uuid::Uuid,
-        unid_graph: GraphDescription,
-        _unid_id_map: &mut HashMap<String, String>,
-    ) -> Result<GraphDescription, GraphDescription> {
-        let mut unid_id_map = HashMap::new();
-        let mut dead_nodes: HashSet<&str> = HashSet::new();
-        let mut output_graph = GraphDescription::new();
-        output_graph.edges = unid_graph.edges;
-
-        for node in unid_graph.nodes.values() {
-            let span = tracing::trace_span!("dynamic attribution loop", node_key=?node.node_key);
-            let _enter = span.enter();
-            let new_node = match self.attribute_dynamic_node(tenant_id, node).await {
-                Ok(node) => node,
-                Err(e) => {
-                    tracing::warn!(message="Failed to attribute dynamic node", error=?e);
-                    dead_nodes.insert(node.node_key.as_ref());
-                    continue;
-                }
-            };
-
-            tracing::info!(message="Attributed NodeDescription", old_key=?node.node_key, new_key=?new_node.node_key);
-
-            unid_id_map.insert(node.clone_node_key(), new_node.clone_node_key());
-            output_graph.add_node(new_node);
-        }
-
-        if dead_nodes.is_empty() {
-            tracing::info!("Attributed all dynamic nodes");
-            Ok(output_graph)
-        } else {
-            tracing::warn!(message="Failed to attribute dynamic nodes", dead_nodes=?dead_nodes.len());
-            Err(output_graph)
-        }
-    }
 }
