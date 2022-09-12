@@ -27,6 +27,7 @@ from python_proto.api.graph.v1beta1.messages import (
     Static,
 )
 from python_proto.common import Duration, Timestamp, Uuid
+from python_proto.grapl.common.v1beta1.messages import Uid
 from python_proto.metrics import (
     Counter,
     Gauge,
@@ -82,6 +83,11 @@ uint32s = st.integers(min_value=UINT32_MIN, max_value=UINT32_MAX)
 
 # Very few of the tests in here really depend on the content of the text.
 small_text = st.text(max_size=4)
+
+def uids(
+        value: st.SearchStrategy[int] = st.integers(min_value=1, max_value=UINT64_MAX),
+) -> st.SearchStrategy[Uid]:
+    return st.builds(Uid, value=value)
 
 
 def uuids(
@@ -288,13 +294,13 @@ def identified_nodes(
     properties: st.SearchStrategy[Mapping[str, NodeProperty]] = st.dictionaries(
         keys=st.text(), values=node_properties(), max_size=MAX_DICT_SIZE
     ),
-    node_keys: st.SearchStrategy[str] = st.text(),
+    uids: st.SearchStrategy[Uid] = uids(),
     node_types: st.SearchStrategy[str] = st.text(),
 ) -> st.SearchStrategy[IdentifiedNode]:
     return st.builds(
         IdentifiedNode,
         properties=properties,
-        node_key=node_keys,
+        uid=uids,
         node_type=node_types,
     )
 
@@ -324,18 +330,14 @@ def edge_lists(
 
 
 def identified_edges(
-    from_uids: st.SearchStrategy[str] = st.text(),
-    from_node_keys: st.SearchStrategy[str] = st.text(),
-    to_uids: st.SearchStrategy[str] = st.text(),
-    to_node_keys: st.SearchStrategy[str] = st.text(),
+    from_uids: st.SearchStrategy[Uid] = uids(),
+    to_uids: st.SearchStrategy[Uid] = uids(),
     edge_names: st.SearchStrategy[str] = st.text(),
 ) -> st.SearchStrategy[IdentifiedEdge]:
     return st.builds(
         IdentifiedEdge,
         from_uid=from_uids,
-        from_node_key=from_node_keys,
         to_uid=to_uids,
-        to_node_key=to_node_keys,
         edge_name=edge_names,
     )
 
@@ -367,11 +369,11 @@ def graph_descriptions(
 
 
 def identified_graphs(
-    nodes: st.SearchStrategy[Mapping[str, IdentifiedNode]] = st.dictionaries(
-        keys=st.text(), values=identified_nodes(), max_size=MAX_DICT_SIZE
+    nodes: st.SearchStrategy[Mapping[Uid, IdentifiedNode]] = st.dictionaries(
+        keys=uids(), values=identified_nodes(), max_size=MAX_DICT_SIZE
     ),
-    edges: st.SearchStrategy[Mapping[str, EdgeList]] = st.dictionaries(
-        keys=st.text(), values=edge_lists(), max_size=MAX_DICT_SIZE
+    edges: st.SearchStrategy[Mapping[Uid, IdentifiedEdgeList]] = st.dictionaries(
+        keys=uids(), values=identified_edge_lists(), max_size=MAX_DICT_SIZE
     ),
 ) -> st.SearchStrategy[IdentifiedGraph]:
     return st.builds(
@@ -397,11 +399,11 @@ def lenses(
 
 
 def execution_hits(
-    nodes: st.SearchStrategy[Mapping[str, IdentifiedNode]] = st.dictionaries(
-        keys=st.text(), values=identified_nodes(), max_size=MAX_DICT_SIZE
+    nodes: st.SearchStrategy[Mapping[Uid, IdentifiedNode]] = st.dictionaries(
+        keys=uids(), values=identified_nodes(), max_size=MAX_DICT_SIZE
     ),
-    edges: st.SearchStrategy[Mapping[str, IdentifiedEdgeList]] = st.dictionaries(
-        keys=st.text(), values=identified_edge_lists(), max_size=MAX_DICT_SIZE
+    edges: st.SearchStrategy[Mapping[Uid, IdentifiedEdgeList]] = st.dictionaries(
+        keys=uids(), values=identified_edge_lists(), max_size=MAX_DICT_SIZE
     ),
     analyzer_names: st.SearchStrategy[str] = st.text(),
     risk_scores: st.SearchStrategy[int] = uint64s,
