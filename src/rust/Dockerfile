@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
     && apt-get install --yes --no-install-recommends \
         curl=7.74.0-1.3+deb11u2 \
         jq=1.6-2.1 \
-        unzip=6.0-26 \
+        unzip=6.0-26+deb11u1 \
     && apt-get install --yes --no-install-recommends \
         build-essential=12.9 \
         cmake=3.18.4-2+deb11u1 \
