@@ -1,15 +1,9 @@
-use std::collections::{
-    HashMap,
-    HashSet,
-};
-
 use failure::{
     bail,
     Error,
 };
 use rusoto_dynamodb::DynamoDb;
 use rust_proto::graplinc::grapl::api::graph::v1beta1::{
-    GraphDescription,
     NodeDescription,
     Session,
     Static,
