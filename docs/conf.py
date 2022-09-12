@@ -13,6 +13,7 @@ import sphinx_rtd_theme
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 
+# Add grapl_analyzerlib
 import os
 import sys
 
@@ -30,7 +31,7 @@ autodoc_mock_imports = [
 
 # -- Project information -----------------------------------------------------
 
-project = "Grapl-Analyzerlib"
+project = "Grapl Plugin SDK"
 copyright = "2020, Grapl Security"
 author = "Grapl Security"
 

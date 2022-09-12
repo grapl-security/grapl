@@ -22,6 +22,7 @@ with the data in Grapl.
     queryable
     analyzers/index
     setup/index
+    plugins/index
 
 .. toctree::
     :caption: Development
@@ -44,25 +45,14 @@ Let's query for some processes with the name "svchost".
 
 .. code-block:: python
 
-    from grapl_analyzerlib.prelude import *
-
-    # Create a client to talk to Grapl
-    gclient = GraphClient()
-
-    svchosts = (
-        ProcessQuery()
-        .with_process_name(eq="svchost.exe")
-        .query(gclient)  # Execute the query
-    )  # type: List[ProcessView]
+    # TODO replace with instructions for next-gen grapl_analyzerlib
 
 
 Now we can pivot around that data. Let's look at the parent processes of these svchosts:
 
 .. code-block:: python
 
-    for svchost in svchosts:
-        if svchost.get_parent():
-            print(svchost.parent.get_process_name())
+    # TODO replace with instructions for next-gen grapl_analyzerlib
 
 
 Installation

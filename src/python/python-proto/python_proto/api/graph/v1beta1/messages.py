@@ -429,6 +429,7 @@ class IdentifiedEdge(SerDe[proto.IdentifiedEdge]):
         return proto_identified_edge
 
 
+# TODO: Delete, this is being replaced by Updates
 @dataclasses.dataclass(frozen=True)
 class IdentifiedEdgeList(SerDe[proto.IdentifiedEdgeList]):
     # TODO: seed to places where this is used:
