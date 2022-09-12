@@ -4,7 +4,7 @@ ENV HWLOC_VERSION="2.7.1"
 # At least one of the install-recommends is necessary in order for hwloc to compile.
 # hadolint ignore=DL3015
 RUN apt-get update \
-    && apt-get -y install curl=7.74.0-1.3+deb11u2 \
+    && apt-get -y install curl=7.74.0-1.3+deb11u3 \
     libssl-dev=1.1.1n-0+deb11u3 \
     ca-certificates=20210119  \
     gcc=4:10.2.1-1 \
