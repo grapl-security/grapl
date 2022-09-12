@@ -4,8 +4,6 @@ import App from "./App";
 
 test("renders grapl welcome", () => {
   render(<App />);
-  const welcomeElement = screen.getByText(
-    /A Graph Analytics Platform for Detection and Response/i
-  );
+  const welcomeElement = screen.getByText(/A Graph Analytics Platform for Detection and Response/i);
   expect(welcomeElement).toBeInTheDocument();
 });
