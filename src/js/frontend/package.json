@@ -22,8 +22,8 @@
     "check-types": "tsc --project tsconfig.json --pretty --noEmit",
     "check-format": "yarn run prettier --check \"src/**/*.ts\"\n",
     "check-different": "yarn run prettier --single-quote --list-different \"src/**/*.ts\"",
-    "lint": "eslint",
-    "lint:fix": "eslint --fix"
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix ."
   },
   "browserslist": {
     "production": [
