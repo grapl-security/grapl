@@ -84,8 +84,9 @@ uint32s = st.integers(min_value=UINT32_MIN, max_value=UINT32_MAX)
 # Very few of the tests in here really depend on the content of the text.
 small_text = st.text(max_size=4)
 
+
 def uids(
-        value: st.SearchStrategy[int] = st.integers(min_value=1, max_value=UINT64_MAX),
+    value: st.SearchStrategy[int] = st.integers(min_value=1, max_value=UINT64_MAX),
 ) -> st.SearchStrategy[Uid]:
     return st.builds(Uid, value=value)
 
