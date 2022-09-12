@@ -68,6 +68,7 @@ BUILD @christophermaier
 /src/rust/generators/ @inickles-grapl
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
 /src/rust/graph-mutation/ @colin-grapl
+/src/rust/graph-query-proxy/ @colin-grapl
 /src/rust/graph-query-service/ @colin-grapl
 /src/rust/graph-schema-manager @colin-grapl @wimax-grapl
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
