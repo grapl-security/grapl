@@ -31,7 +31,7 @@ autodoc_mock_imports = [
 
 # -- Project information -----------------------------------------------------
 
-project = "Grapl-Analyzerlib"
+project = "Grapl Plugin SDK"
 copyright = "2020, Grapl Security"
 author = "Grapl Security"
 
