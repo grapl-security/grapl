@@ -192,7 +192,7 @@ pub mod client {
     use tonic::transport::Endpoint;
 
     use crate::{
-        client_macros::ExecuteClientRpcOptions,
+        client_macros::RpcConfig,
         create_proto_client,
         execute_client_rpc,
         graplinc::grapl::api::uid_allocator::v1beta1::messages as native,
@@ -251,7 +251,7 @@ pub mod client {
                 allocate_ids,
                 proto::AllocateIdsRequest,
                 native::AllocateIdsResponse,
-                ExecuteClientRpcOptions::default(),
+                RpcConfig::default(),
             )
         }
 
@@ -265,7 +265,7 @@ pub mod client {
                 create_tenant_keyspace,
                 proto::CreateTenantKeyspaceRequest,
                 native::CreateTenantKeyspaceResponse,
-                ExecuteClientRpcOptions::default(),
+                RpcConfig::default(),
             )
         }
     }

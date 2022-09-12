@@ -69,6 +69,20 @@ message GetPluginResponse {
   PluginMetadata plugin_metadata = 2;
 }
 
+// Grab a listing of all plugins for a given platform tenant
+message ListPluginsRequest {
+  // The platform tenant to list plugins for
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // Optionally filter on plugin_type
+  optional PluginType plugin_type = 2;
+}
+
+// All the plugins matching some ListPluginsRequest query
+message ListPluginsResponse {
+  // A list of plugins
+  repeated GetPluginResponse plugins = 1;
+}
+
 // A request to deploy an existing plugin
 message DeployPluginRequest {
   // The id of the plugin to be deployed
@@ -82,15 +96,17 @@ message GetPluginHealthRequest {
   graplinc.common.v1beta1.Uuid plugin_id = 1;
 }
 
+// All the health states a plugin can be in
+enum PluginHealthStatus {
+  PLUGIN_HEALTH_STATUS_UNSPECIFIED = 0;
+  PLUGIN_HEALTH_STATUS_NOT_DEPLOYED = 1;
+  // These map to https://www.nomadproject.io/api-docs/jobs#status
+  PLUGIN_HEALTH_STATUS_PENDING = 2;
+  PLUGIN_HEALTH_STATUS_RUNNING = 3;
+  PLUGIN_HEALTH_STATUS_DEAD = 4;
+}
+
 message GetPluginHealthResponse {
-  enum PluginHealthStatus {
-    PLUGIN_HEALTH_STATUS_UNSPECIFIED = 0;
-    PLUGIN_HEALTH_STATUS_NOT_DEPLOYED = 1;
-    // These map to https://www.nomadproject.io/api-docs/jobs#status
-    PLUGIN_HEALTH_STATUS_PENDING = 2;
-    PLUGIN_HEALTH_STATUS_RUNNING = 3;
-    PLUGIN_HEALTH_STATUS_DEAD = 4;
-  }
   PluginHealthStatus health_status = 1;
 }
 
@@ -165,6 +181,10 @@ service PluginRegistryService {
 
   // retrieve the plugin corresponding to the given plugin_id
   rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse);
+
+  // retrieve a listing of plugins corresponding to some filters specified in
+  // the request
+  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse);
 
   // retrieve the latest plugin deployment corresponding to the given plugin_id
   rpc GetPluginDeployment(GetPluginDeploymentRequest) returns (GetPluginDeploymentResponse);

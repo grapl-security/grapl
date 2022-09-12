@@ -31,8 +31,16 @@ def observability_env_vars_for_local() -> str:
 
 # lightstep_token should be pulumi.Output[str], but the additional type causes pulumi.Output.all to blow up during
 # typechecking
-def otel_config(lightstep_token: pulumi.Output) -> pulumi.Output[str]:
-    return pulumi.Output.all(lightstep_token=lightstep_token).apply(
+def otel_config(
+    lightstep_token: pulumi.Output,
+    lightstep_endpoint: str = "ingest.lightstep.com:443",
+    lightstep_is_endpoint_secure: str = "true",
+) -> pulumi.Output[str]:
+    return pulumi.Output.all(
+        lightstep_endpoint=lightstep_endpoint,
+        lightstep_token=lightstep_token,
+        lightstep_is_endpoint_secure=lightstep_is_endpoint_secure,
+    ).apply(
         lambda args: f"""
 receivers:
   zipkin:
@@ -45,6 +53,17 @@ receivers:
       grpc:
       http:
         endpoint: "0.0.0.0:4318"
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'nomad-server'
+          scrape_interval: 10s
+          scrape_timeout: 20s
+          metrics_path: '/v1/metrics?format=prometheus'
+          params:
+            format: ['prometheus']
+          static_configs:
+            - targets: ['localhost:4646']
 processors:
   batch:
     timeout: 10s
@@ -58,7 +77,9 @@ exporters:
   logging:
     logLevel: debug
   otlp/ls:
-    endpoint: ingest.lightstep.com:443
+    endpoint: {args['lightstep_endpoint']}
+    tls:
+      insecure: {args['lightstep_is_endpoint_secure']}
     headers:
       "lightstep-access-token": {args['lightstep_token']}
 service:
@@ -67,7 +88,7 @@ service:
       level: "debug"
   pipelines:
     traces:
-      receivers: [otlp, jaeger, zipkin]
+      receivers: [jaeger, otlp, prometheus, zipkin]
       exporters: [logging, otlp/ls]
 """
     )

@@ -9,23 +9,17 @@ from graplinc.grapl.metrics.v1.metric_types_pb2 import Gauge as _Gauge
 from graplinc.grapl.metrics.v1.metric_types_pb2 import Histogram as _Histogram
 from graplinc.grapl.metrics.v1.metric_types_pb2 import Label as _Label
 from graplinc.grapl.metrics.v1.metric_types_pb2 import MetricWrapper as _MetricWrapper
-from python_proto import SerDe
+from python_proto.serde import SerDe
 
 
 @dataclasses.dataclass(frozen=True)
 class Label(SerDe[_Label]):
     key: str
     value: str
-    proto_cls: type[_Label] = _Label
+    _proto_cls = _Label
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> Label:
-        proto_label = _Label()
-        proto_label.ParseFromString(bytes_)
-        return Label.from_proto(proto_label=proto_label)
-
-    @staticmethod
-    def from_proto(proto_label: _Label) -> Label:
+    @classmethod
+    def from_proto(cls, proto_label: _Label) -> Label:
         return Label(key=proto_label.key, value=proto_label.value)
 
     def into_proto(self) -> _Label:
@@ -40,16 +34,10 @@ class Counter(SerDe[_Counter]):
     name: str
     increment: int
     labels: Sequence[Label]
-    proto_cls: type[_Counter] = _Counter
+    _proto_cls = _Counter
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> Counter:
-        proto_counter = _Counter()
-        proto_counter.ParseFromString(bytes_)
-        return Counter.from_proto(proto_counter=proto_counter)
-
-    @staticmethod
-    def from_proto(proto_counter: _Counter) -> Counter:
+    @classmethod
+    def from_proto(cls, proto_counter: _Counter) -> Counter:
         return Counter(
             name=proto_counter.name,
             increment=proto_counter.increment,
@@ -78,16 +66,10 @@ class Gauge(SerDe[_Gauge]):
     name: str
     value: float
     labels: Sequence[Label]
-    proto_cls: type[_Gauge] = _Gauge
+    _proto_cls = _Gauge
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> Gauge:
-        proto_gauge = _Gauge()
-        proto_gauge.ParseFromString(bytes_)
-        return Gauge.from_proto(proto_gauge=proto_gauge)
-
-    @staticmethod
-    def from_proto(proto_gauge: _Gauge) -> Gauge:
+    @classmethod
+    def from_proto(cls, proto_gauge: _Gauge) -> Gauge:
         return Gauge(
             gauge_type=GaugeType(_Gauge.GaugeType.Name(proto_gauge.gauge_type)),
             name=proto_gauge.name,
@@ -110,16 +92,10 @@ class Histogram(SerDe):
     name: str
     value: float
     labels: Sequence[Label]
-    proto_cls: type[_Histogram] = _Histogram
+    _proto_cls = _Histogram
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> Histogram:
-        proto_histogram = _Histogram()
-        proto_histogram.ParseFromString(bytes_)
-        return Histogram.from_proto(proto_histogram=proto_histogram)
-
-    @staticmethod
-    def from_proto(proto_histogram: _Histogram) -> Histogram:
+    @classmethod
+    def from_proto(cls, proto_histogram: _Histogram) -> Histogram:
         return Histogram(
             name=proto_histogram.name,
             value=proto_histogram.value,
@@ -138,16 +114,10 @@ class Histogram(SerDe):
 @dataclasses.dataclass(frozen=True)
 class MetricWrapper(SerDe):
     metric: Counter | Gauge | Histogram
-    proto_cls: type[_MetricWrapper] = _MetricWrapper
+    _proto_cls = _MetricWrapper
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> MetricWrapper:
-        proto_metric_wrapper = _MetricWrapper()
-        proto_metric_wrapper.ParseFromString(bytes_)
-        return MetricWrapper.from_proto(proto_metric_wrapper=proto_metric_wrapper)
-
-    @staticmethod
-    def from_proto(proto_metric_wrapper: _MetricWrapper) -> MetricWrapper:
+    @classmethod
+    def from_proto(cls, proto_metric_wrapper: _MetricWrapper) -> MetricWrapper:
         if proto_metric_wrapper.HasField("counter"):
             metric = cast(
                 Union[Counter, Gauge, Histogram],

@@ -8,6 +8,7 @@ name = "generator_dispatcher"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+async-cache = { path = "../async-cache" }
 async-trait = "0.1"
 clap = { version = "3.0", default_features = false, features = [
   "std",
@@ -17,8 +18,6 @@ clap = { version = "3.0", default_features = false, features = [
 futures = "0.3"
 grapl-tracing = { path = "../grapl-tracing" }
 kafka = { path = "../kafka", version = "*" }
-moka = { version = "0.9", features = ["future"] }
-rand = "0.8"
 rust-proto = { path = "../rust-proto" }
 thiserror = "1.0"
 tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }

@@ -9,7 +9,7 @@
 //     "CPython==3.10.*"
 //   ],
 //   "generated_with_requirements": [
-//     "mypy==0.910"
+//     "mypy==0.960"
 //   ]
 // }
 // --- END PANTS LOCKFILE METADATA ---
@@ -27,26 +27,47 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "ef565033fa5a958e62796867b1df10c40263ea9ded87164d67572834e57a174d",
-              "url": "https://files.pythonhosted.org/packages/15/e9/6b19c33819c27db7d69b938f062ea416398af62ae93aeb0fe47cb35d8a44/mypy-0.910-py3-none-any.whl"
+              "hash": "bfd4f6536bd384c27c392a8b8f790fd0ed5c0cf2f63fc2fed7bce56751d53026",
+              "url": "https://files.pythonhosted.org/packages/7e/53/386d8b939c5654c7a2218c1625f991cc123c3d3f69d2c0e2aed16c475eb4/mypy-0.960-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "704098302473cb31a218f1775a873b376b30b4c18229421e9e9dc8916fd16150",
-              "url": "https://files.pythonhosted.org/packages/33/46/b5d01f8844c84772e950bfc6adcaaa94cd22fedeb7c01776fd6effb3c2f6/mypy-0.910.tar.gz"
+              "hash": "7a76dc4f91e92db119b1be293892df8379b08fd31795bb44e0ff84256d34c251",
+              "url": "https://files.pythonhosted.org/packages/0c/8f/9b3e12e9971389befe2bfca98eb99b5555a5f6f625f8482ded3a0e97715e/mypy-0.960-cp310-cp310-macosx_10_9_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "d4fccf04c1acf750babd74252e0f2db6bd2ac3aa8fe960797d9f3ef41cf2bfd4",
+              "url": "https://files.pythonhosted.org/packages/22/22/49792504e249a774554cd473e69af411a62c7d0591651104538fbcdaec10/mypy-0.960.tar.gz"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "ffdad80a92c100d1b0fe3d3cf1a4724136029a29afe8566404c0146747114382",
+              "url": "https://files.pythonhosted.org/packages/33/b8/bab515402dbb5874b3bc5c1586c9a70bccee73f5daa82c170c54a72b729e/mypy-0.960-cp310-cp310-macosx_11_0_arm64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "7d390248ec07fa344b9f365e6ed9d205bd0205e485c555bed37c4235c868e9d5",
+              "url": "https://files.pythonhosted.org/packages/7f/b8/aaa840a5f37e39bb3eccef982d48dccb8689074e7f6fd76d8dfffe3a8a66/mypy-0.960-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "3a3e525cd76c2c4f90f1449fd034ba21fcca68050ff7c8397bb7dd25dd8b8248",
+              "url": "https://files.pythonhosted.org/packages/a7/1c/ac13b5d83aa025adc9d7e525b8eea180f3600ac40d47b6ad7746cf796a9a/mypy-0.960-cp310-cp310-macosx_10_9_universal2.whl"
             }
           ],
           "project_name": "mypy",
           "requires_dists": [
-            "mypy-extensions<0.5.0,>=0.4.3",
+            "lxml; extra == \"reports\"",
+            "mypy-extensions>=0.4.3",
             "psutil>=4.0; extra == \"dmypy\"",
-            "toml",
-            "typed-ast<1.5.0,>=1.4.0; extra == \"python2\"",
-            "typed-ast<1.5.0,>=1.4.0; python_version < \"3.8\"",
-            "typing-extensions>=3.7.4"
+            "tomli>=1.1.0; python_version < \"3.11\"",
+            "typed-ast<2,>=1.4.0; extra == \"python2\"",
+            "typed-ast<2,>=1.4.0; python_version < \"3.8\"",
+            "typing-extensions>=3.10"
           ],
-          "requires_python": ">=3.5",
-          "version": "0.910"
+          "requires_python": ">=3.6",
+          "version": "0.960"
         },
         {
           "artifacts": [
@@ -72,19 +93,19 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b",
-              "url": "https://files.pythonhosted.org/packages/44/6f/7120676b6d73228c96e17f1f794d8ab046fc910d781c8d151120c3f1569e/toml-0.10.2-py2.py3-none-any.whl"
+              "hash": "939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc",
+              "url": "https://files.pythonhosted.org/packages/97/75/10a9ebee3fd790d20926a90a2547f0bf78f371b2f13aa822c759680ca7b9/tomli-2.0.1-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f",
-              "url": "https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz"
+              "hash": "de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f",
+              "url": "https://files.pythonhosted.org/packages/c0/3f/d7af728f075fb08564c5949a9c95e44352e23dee646869fa104a3b2060a3/tomli-2.0.1.tar.gz"
             }
           ],
-          "project_name": "toml",
+          "project_name": "tomli",
           "requires_dists": [],
-          "requires_python": "!=3.0.*,!=3.1.*,!=3.2.*,>=2.6",
-          "version": "0.10.2"
+          "requires_python": ">=3.7",
+          "version": "2.0.1"
         },
         {
           "artifacts": [
@@ -105,24 +126,24 @@
           "version": "4.3"
         }
       ],
-      "platform_tag": [
-        "cp310",
-        "cp310",
-        "manylinux_2_31_x86_64"
-      ]
+      "platform_tag": null
     }
   ],
   "path_mappings": {},
-  "pex_version": "2.1.90",
+  "pex_version": "2.1.102",
   "prefer_older_binary": false,
   "requirements": [
-    "mypy==0.910"
+    "mypy==0.960"
   ],
   "requires_python": [
     "==3.10.*"
   ],
   "resolver_version": "pip-2020-resolver",
   "style": "universal",
+  "target_systems": [
+    "linux",
+    "mac"
+  ],
   "transitive": true,
   "use_pep517": null
 }

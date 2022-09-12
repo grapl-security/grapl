@@ -19,9 +19,9 @@ SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        curl=7.74.0-1.3+deb11u2 \
+        curl=7.74.0-1.3+deb11u3 \
         jq=1.6-2.1 \
-        unzip=6.0-26 \
+        unzip=6.0-26+deb11u1 \
     && apt-get install --yes --no-install-recommends \
         build-essential=12.9 \
         cmake=3.18.4-2+deb11u1 \
@@ -96,7 +96,7 @@ EOF
 RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     mkdir -p /outputs && \
     find "${CARGO_TARGET_DIR}/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /outputs \;
-  
+
 # tarpaulin
 # This target is not merged with the `build` target because the actions to run
 # after cargo are different when building for tests and building the services,
@@ -141,6 +141,7 @@ FROM base AS build-test-integration
 # hadolint ignore=SC3054
 RUN <<EOF
 INTEGRATION_TEST_FEATURES=(
+analyzer-dispatcher/integration_tests
 e2e-tests/integration_tests
 generator-dispatcher/integration_tests
 graph-merger/integration_tests
@@ -182,7 +183,7 @@ RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
         --no-run \
         --test "*"
 
-    # Run cargo test again - everything's already compiled - but this time, 
+    # Run cargo test again - everything's already compiled - but this time,
     # the message is used as input to the jq script
     cargo test \
         --features "$(cat integration_test_features.csv)" \
@@ -238,14 +239,14 @@ COPY --from=build-test-integration /grapl/tests /tests
 # up before some of our tests attempt to connect to local sidecars. Without
 # doing so there is a race between between the sidecar and tests trying to
 # connect. Without waiting we can reliably get connection refuse errors:
-# 
+#
 #   error trying to connect: tcp connect error: Connection refused (os error
 #   111)
 #
 # Although the gRPC Client Executor is equipped with retry logic, it is not the
 # only network client being used in these tests, nor should it be assumed to be
 # the only. Grapl web, for example, would not use that to test all its APIs.
-# 
+#
 # While the web tests at this point could connect directly to the web-ui
 # service at http://web-ui.service.dc1.consul:1234 without this annoying wait,
 # doing so won't work for authenticated APIs because the web-ui service sets
@@ -374,6 +375,12 @@ FROM rust-dist AS uid-allocator-deploy
 
 COPY --from=build /outputs/uid-allocator /
 ENTRYPOINT ["/uid-allocator"]
+
+##### analyzer-dispatcher
+FROM rust-dist AS analyzer-dispatcher-deploy
+
+COPY --from=build /outputs/analyzer-dispatcher /
+ENTRYPOINT ["/analyzer-dispatcher"]
 
 ##### generator-dispatcher
 FROM rust-dist AS generator-dispatcher-deploy

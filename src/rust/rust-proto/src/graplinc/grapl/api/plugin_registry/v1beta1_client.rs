@@ -13,7 +13,7 @@ use proto::plugin_registry_service_client::PluginRegistryServiceClient as Plugin
 use tracing::instrument;
 
 use crate::{
-    client_macros::ExecuteClientRpcOptions,
+    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::plugin_registry::v1beta1 as native,
@@ -109,7 +109,22 @@ impl PluginRegistryServiceClient {
             get_plugin,
             proto::GetPluginRequest,
             native::GetPluginResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
+        )
+    }
+
+    #[instrument(skip(self, request), err)]
+    pub async fn list_plugins(
+        &mut self,
+        request: native::ListPluginsRequest,
+    ) -> Result<native::ListPluginsResponse, GrpcClientError> {
+        execute_client_rpc!(
+            self,
+            request,
+            list_plugins,
+            proto::ListPluginsRequest,
+            native::ListPluginsResponse,
+            RpcConfig::default(),
         )
     }
 
@@ -124,7 +139,7 @@ impl PluginRegistryServiceClient {
             get_plugin_deployment,
             proto::GetPluginDeploymentRequest,
             native::GetPluginDeploymentResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 
@@ -140,7 +155,7 @@ impl PluginRegistryServiceClient {
             deploy_plugin,
             proto::DeployPluginRequest,
             native::DeployPluginResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 
@@ -156,7 +171,7 @@ impl PluginRegistryServiceClient {
             tear_down_plugin,
             proto::TearDownPluginRequest,
             native::TearDownPluginResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 
@@ -171,7 +186,7 @@ impl PluginRegistryServiceClient {
             get_plugin_health,
             proto::GetPluginHealthRequest,
             native::GetPluginHealthResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 
@@ -187,7 +202,7 @@ impl PluginRegistryServiceClient {
             get_generators_for_event_source,
             proto::GetGeneratorsForEventSourceRequest,
             native::GetGeneratorsForEventSourceResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 
@@ -203,7 +218,7 @@ impl PluginRegistryServiceClient {
             get_analyzers_for_tenant,
             proto::GetAnalyzersForTenantRequest,
             native::GetAnalyzersForTenantResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 }

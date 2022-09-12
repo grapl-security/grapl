@@ -356,6 +356,16 @@ mod plugin_registry {
         }
 
         #[test]
+        fn test_serde_list_plugins_requests(value in pr_strats::list_plugins_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_serde_list_plugins_responses(value in pr_strats::list_plugins_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
         fn test_serde_get_plugin_deployment_requests(
             plugin_deployment_request in pr_strats::get_plugin_deployment_requests()
         ) {

@@ -5,4 +5,5 @@ protobuf_sources(
     # at this level, rather than specifying BUILD files in each
     # subdirectory.
     sources=["graplinc/**/*.proto"],
+    grpc=True,
 )

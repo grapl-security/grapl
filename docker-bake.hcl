@@ -161,6 +161,7 @@ group "cloudsmith-images" {
 group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
+    "analyzer-dispatcher",
     "event-source",
     "generator-dispatcher",
     "generator-execution-sidecar",
@@ -290,6 +291,14 @@ target "scylla-provisioner" {
   target   = "scylla-provisioner-deploy"
   tags = [
     upstream_aware_tag("scylla-provisioner")
+  ]
+}
+
+target "analyzer-dispatcher" {
+  inherits = ["_rust-base"]
+  target   = "analyzer-dispatcher-deploy"
+  tags = [
+    upstream_aware_tag("analyzer-dispatcher")
   ]
 }
 

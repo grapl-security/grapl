@@ -66,9 +66,9 @@ message Updates {
 // A reference to a Lens Node that
 // todo: Determine what limits to apply to fields
 message LensRef {
-  // The "namespace" of a lens, such as "AWS Region"
+  // The "namespace" of a lens, such as "AWS Region".
   string lens_namespace = 1;
-  // The "name" of a lens, such as "us-east-1"
+  // The "name" of a lens, such as "us-east-1".
   string lens_name = 2;
 }
 

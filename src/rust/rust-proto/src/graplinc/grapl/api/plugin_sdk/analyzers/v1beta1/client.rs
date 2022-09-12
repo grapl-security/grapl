@@ -7,7 +7,7 @@ use client_executor::{
 use tracing::instrument;
 
 use crate::{
-    client_macros::ExecuteClientRpcOptions,
+    client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages as native,
@@ -64,7 +64,7 @@ impl AnalyzerServiceClient {
             run_analyzer,
             proto::RunAnalyzerRequest,
             native::RunAnalyzerResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 }

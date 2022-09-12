@@ -3,69 +3,21 @@ from __future__ import annotations
 import dataclasses
 from typing import Mapping, Sequence, cast
 
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
-    DecrementOnlyIntProp as _DecrementOnlyIntProp,
-)
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
-    DecrementOnlyUintProp as _DecrementOnlyUintProp,
-)
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import Edge as _Edge
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import EdgeList as _EdgeList
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import ExecutionHit as _ExecutionHit
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
-    GraphDescription as _GraphDescription,
-)
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
-    IdentifiedGraph as _IdentifiedGraph,
-)
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import IdentifiedNode as _IdentifiedNode
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import IdStrategy as _IdStrategy
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
-    ImmutableIntProp as _ImmutableIntProp,
-)
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
-    ImmutableStrProp as _ImmutableStrProp,
-)
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
-    ImmutableUintProp as _ImmutableUintProp,
-)
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
-    IncrementOnlyIntProp as _IncrementOnlyIntProp,
-)
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
-    IncrementOnlyUintProp as _IncrementOnlyUintProp,
-)
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import Lens as _Lens
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedEdge as _MergedEdge
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedEdgeList as _MergedEdgeList
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedGraph as _MergedGraph
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedNode as _MergedNode
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
-    NodeDescription as _NodeDescription,
-)
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import NodeProperty as _NodeProperty
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import Session as _Session
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import Static as _Static
-from python_proto import SerDe
+from graplinc.grapl.api.graph.v1beta1 import types_pb2 as proto
+from python_proto.serde import SerDe
 
 
 @dataclasses.dataclass(frozen=True)
-class Session(SerDe[_Session]):
+class Session(SerDe[proto.Session]):
     primary_key_properties: Sequence[str]
     primary_key_requires_asset_id: bool
     create_time: int
     last_seen_time: int
     terminate_time: int
-    proto_cls: type[_Session] = _Session
+    _proto_cls = proto.Session
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> Session:
-        proto_session = _Session()
-        proto_session.ParseFromString(bytes_)
-        return Session.from_proto(proto_session=proto_session)
-
-    @staticmethod
-    def from_proto(proto_session: _Session) -> Session:
+    @classmethod
+    def from_proto(cls, proto_session: proto.Session) -> Session:
         return Session(
             primary_key_properties=proto_session.primary_key_properties,
             primary_key_requires_asset_id=proto_session.primary_key_requires_asset_id,
@@ -74,8 +26,8 @@ class Session(SerDe[_Session]):
             terminate_time=proto_session.terminate_time,
         )
 
-    def into_proto(self) -> _Session:
-        proto_session = _Session()
+    def into_proto(self) -> proto.Session:
+        proto_session = proto.Session()
         for prop in self.primary_key_properties:
             proto_session.primary_key_properties.append(prop)
         proto_session.primary_key_requires_asset_id = self.primary_key_requires_asset_id
@@ -86,26 +38,20 @@ class Session(SerDe[_Session]):
 
 
 @dataclasses.dataclass(frozen=True)
-class Static(SerDe[_Static]):
+class Static(SerDe[proto.Static]):
     primary_key_properties: Sequence[str]
     primary_key_requires_asset_id: bool
-    proto_cls: type[_Static] = _Static
+    _proto_cls = proto.Static
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> Static:
-        proto_static = _Static()
-        proto_static.ParseFromString(bytes_)
-        return Static.from_proto(proto_static=proto_static)
-
-    @staticmethod
-    def from_proto(proto_static: _Static) -> Static:
+    @classmethod
+    def from_proto(cls, proto_static: proto.Static) -> Static:
         return Static(
             primary_key_properties=proto_static.primary_key_properties,
             primary_key_requires_asset_id=proto_static.primary_key_requires_asset_id,
         )
 
-    def into_proto(self) -> _Static:
-        proto_static = _Static()
+    def into_proto(self) -> proto.Static:
+        proto_static = proto.Static()
         for prop in self.primary_key_properties:
             proto_static.primary_key_properties.append(prop)
         proto_static.primary_key_requires_asset_id = self.primary_key_requires_asset_id
@@ -113,18 +59,12 @@ class Static(SerDe[_Static]):
 
 
 @dataclasses.dataclass(frozen=True)
-class IdStrategy(SerDe[_IdStrategy]):
+class IdStrategy(SerDe[proto.IdStrategy]):
     strategy: Session | Static
-    proto_cls: type[_IdStrategy] = _IdStrategy
+    _proto_cls = proto.IdStrategy
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> IdStrategy:
-        proto_id_strategy = _IdStrategy()
-        proto_id_strategy.ParseFromString(bytes_)
-        return IdStrategy.from_proto(proto_id_strategy=proto_id_strategy)
-
-    @staticmethod
-    def from_proto(proto_id_strategy: _IdStrategy) -> IdStrategy:
+    @classmethod
+    def from_proto(cls, proto_id_strategy: proto.IdStrategy) -> IdStrategy:
         if proto_id_strategy.HasField("session"):
             return IdStrategy(strategy=Session.from_proto(proto_id_strategy.session))
         elif proto_id_strategy.HasField("static"):
@@ -132,190 +72,149 @@ class IdStrategy(SerDe[_IdStrategy]):
         else:
             raise Exception("Encountered unknown type")
 
-    def into_proto(self) -> _IdStrategy:
-        proto_id_strategy = _IdStrategy()
+    def into_proto(self) -> proto.IdStrategy:
+        proto_id_strategy = proto.IdStrategy()
         if type(self.strategy) is Session:
             proto_id_strategy.session.CopyFrom(
-                cast(_Session, self.strategy.into_proto())
+                cast(proto.Session, self.strategy.into_proto())
             )
         elif type(self.strategy) is Static:
-            proto_id_strategy.static.CopyFrom(cast(_Static, self.strategy.into_proto()))
+            proto_id_strategy.static.CopyFrom(
+                cast(proto.Static, self.strategy.into_proto())
+            )
         else:
             raise Exception("Encountered unknown type")
         return proto_id_strategy
 
 
 @dataclasses.dataclass(frozen=True)
-class IncrementOnlyUintProp(SerDe[_IncrementOnlyUintProp]):
+class IncrementOnlyUintProp(SerDe[proto.IncrementOnlyUintProp]):
     prop: int
-    proto_cls: type[_IncrementOnlyUintProp] = _IncrementOnlyUintProp
+    _proto_cls = proto.IncrementOnlyUintProp
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> IncrementOnlyUintProp:
-        proto_increment_only_uint_prop = _IncrementOnlyUintProp()
-        proto_increment_only_uint_prop.ParseFromString(bytes_)
-        return IncrementOnlyUintProp.from_proto(
-            proto_increment_only_uint_prop=proto_increment_only_uint_prop
-        )
-
-    @staticmethod
+    @classmethod
     def from_proto(
-        proto_increment_only_uint_prop: _IncrementOnlyUintProp,
+        cls,
+        proto_increment_only_uint_prop: proto.IncrementOnlyUintProp,
     ) -> IncrementOnlyUintProp:
         return IncrementOnlyUintProp(prop=proto_increment_only_uint_prop.prop)
 
-    def into_proto(self) -> _IncrementOnlyUintProp:
-        proto_increment_only_uint_prop = _IncrementOnlyUintProp()
+    def into_proto(self) -> proto.IncrementOnlyUintProp:
+        proto_increment_only_uint_prop = proto.IncrementOnlyUintProp()
         proto_increment_only_uint_prop.prop = self.prop
         return proto_increment_only_uint_prop
 
 
 @dataclasses.dataclass(frozen=True)
-class ImmutableUintProp(SerDe[_ImmutableUintProp]):
+class ImmutableUintProp(SerDe[proto.ImmutableUintProp]):
     prop: int
-    proto_cls: type[_ImmutableUintProp] = _ImmutableUintProp
+    _proto_cls = proto.ImmutableUintProp
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> ImmutableUintProp:
-        proto_immutable_uint_prop = _ImmutableUintProp()
-        proto_immutable_uint_prop.ParseFromString(bytes_)
-        return ImmutableUintProp.from_proto(
-            proto_immutable_uint_prop=proto_immutable_uint_prop
-        )
-
-    @staticmethod
-    def from_proto(proto_immutable_uint_prop: _ImmutableUintProp) -> ImmutableUintProp:
+    @classmethod
+    def from_proto(
+        cls,
+        proto_immutable_uint_prop: proto.ImmutableUintProp,
+    ) -> ImmutableUintProp:
         return ImmutableUintProp(prop=proto_immutable_uint_prop.prop)
 
-    def into_proto(self) -> _ImmutableUintProp:
-        proto_immutable_uint_prop = _ImmutableUintProp()
+    def into_proto(self) -> proto.ImmutableUintProp:
+        proto_immutable_uint_prop = proto.ImmutableUintProp()
         proto_immutable_uint_prop.prop = self.prop
         return proto_immutable_uint_prop
 
 
 @dataclasses.dataclass(frozen=True)
-class DecrementOnlyUintProp(SerDe[_DecrementOnlyUintProp]):
+class DecrementOnlyUintProp(SerDe[proto.DecrementOnlyUintProp]):
     prop: int
-    proto_cls: type[_DecrementOnlyUintProp] = _DecrementOnlyUintProp
+    _proto_cls = proto.DecrementOnlyUintProp
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> DecrementOnlyUintProp:
-        proto_decrement_only_uint_prop = _DecrementOnlyUintProp()
-        proto_decrement_only_uint_prop.ParseFromString(bytes_)
-        return DecrementOnlyUintProp.from_proto(
-            proto_decrement_only_uint_prop=proto_decrement_only_uint_prop
-        )
-
-    @staticmethod
+    @classmethod
     def from_proto(
-        proto_decrement_only_uint_prop: _DecrementOnlyUintProp,
+        cls,
+        proto_decrement_only_uint_prop: proto.DecrementOnlyUintProp,
     ) -> DecrementOnlyUintProp:
         return DecrementOnlyUintProp(prop=proto_decrement_only_uint_prop.prop)
 
-    def into_proto(self) -> _DecrementOnlyUintProp:
-        proto_decrement_only_uint_prop = _DecrementOnlyUintProp()
+    def into_proto(self) -> proto.DecrementOnlyUintProp:
+        proto_decrement_only_uint_prop = proto.DecrementOnlyUintProp()
         proto_decrement_only_uint_prop.prop = self.prop
         return proto_decrement_only_uint_prop
 
 
 @dataclasses.dataclass(frozen=True)
-class IncrementOnlyIntProp(SerDe[_IncrementOnlyIntProp]):
+class IncrementOnlyIntProp(SerDe[proto.IncrementOnlyIntProp]):
     prop: int
-    proto_cls: type[_IncrementOnlyIntProp] = _IncrementOnlyIntProp
+    _proto_cls = proto.IncrementOnlyIntProp
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> IncrementOnlyIntProp:
-        proto_increment_only_int_prop = _IncrementOnlyIntProp()
-        proto_increment_only_int_prop.ParseFromString(bytes_)
-        return IncrementOnlyIntProp.from_proto(
-            proto_increment_only_int_prop=proto_increment_only_int_prop
-        )
-
-    @staticmethod
+    @classmethod
     def from_proto(
-        proto_increment_only_int_prop: _IncrementOnlyIntProp,
+        cls,
+        proto_increment_only_int_prop: proto.IncrementOnlyIntProp,
     ) -> IncrementOnlyIntProp:
         return IncrementOnlyIntProp(prop=proto_increment_only_int_prop.prop)
 
-    def into_proto(self) -> _IncrementOnlyIntProp:
-        proto_increment_only_int_prop = _IncrementOnlyIntProp()
+    def into_proto(self) -> proto.IncrementOnlyIntProp:
+        proto_increment_only_int_prop = proto.IncrementOnlyIntProp()
         proto_increment_only_int_prop.prop = self.prop
         return proto_increment_only_int_prop
 
 
 @dataclasses.dataclass(frozen=True)
-class DecrementOnlyIntProp(SerDe[_DecrementOnlyIntProp]):
+class DecrementOnlyIntProp(SerDe[proto.DecrementOnlyIntProp]):
     prop: int
-    proto_cls: type[_DecrementOnlyIntProp] = _DecrementOnlyIntProp
+    _proto_cls = proto.DecrementOnlyIntProp
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> DecrementOnlyIntProp:
-        proto_decrement_only_int_prop = _DecrementOnlyIntProp()
-        proto_decrement_only_int_prop.ParseFromString(bytes_)
-        return DecrementOnlyIntProp.from_proto(
-            proto_decrement_only_int_prop=proto_decrement_only_int_prop
-        )
-
-    @staticmethod
+    @classmethod
     def from_proto(
-        proto_decrement_only_int_prop: _DecrementOnlyIntProp,
+        cls,
+        proto_decrement_only_int_prop: proto.DecrementOnlyIntProp,
     ) -> DecrementOnlyIntProp:
         return DecrementOnlyIntProp(prop=proto_decrement_only_int_prop.prop)
 
-    def into_proto(self) -> _DecrementOnlyIntProp:
-        proto_decrement_only_int_prop = _DecrementOnlyIntProp()
+    def into_proto(self) -> proto.DecrementOnlyIntProp:
+        proto_decrement_only_int_prop = proto.DecrementOnlyIntProp()
         proto_decrement_only_int_prop.prop = self.prop
         return proto_decrement_only_int_prop
 
 
 @dataclasses.dataclass(frozen=True)
-class ImmutableIntProp(SerDe[_ImmutableIntProp]):
+class ImmutableIntProp(SerDe[proto.ImmutableIntProp]):
     prop: int
-    proto_cls: type[_ImmutableIntProp] = _ImmutableIntProp
+    _proto_cls = proto.ImmutableIntProp
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> ImmutableIntProp:
-        proto_immutable_int_prop = _ImmutableIntProp()
-        proto_immutable_int_prop.ParseFromString(bytes_)
-        return ImmutableIntProp.from_proto(
-            proto_immutable_int_prop=proto_immutable_int_prop
-        )
-
-    @staticmethod
-    def from_proto(proto_immutable_int_prop: _ImmutableIntProp) -> ImmutableIntProp:
+    @classmethod
+    def from_proto(
+        cls,
+        proto_immutable_int_prop: proto.ImmutableIntProp,
+    ) -> ImmutableIntProp:
         return ImmutableIntProp(prop=proto_immutable_int_prop.prop)
 
-    def into_proto(self) -> _ImmutableIntProp:
-        proto_immutable_int_prop = _ImmutableIntProp()
+    def into_proto(self) -> proto.ImmutableIntProp:
+        proto_immutable_int_prop = proto.ImmutableIntProp()
         proto_immutable_int_prop.prop = self.prop
         return proto_immutable_int_prop
 
 
 @dataclasses.dataclass(frozen=True)
-class ImmutableStrProp(SerDe[_ImmutableStrProp]):
+class ImmutableStrProp(SerDe[proto.ImmutableStrProp]):
     prop: str
-    proto_cls: type[_ImmutableStrProp] = _ImmutableStrProp
+    _proto_cls = proto.ImmutableStrProp
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> ImmutableStrProp:
-        proto_immutable_str_prop = _ImmutableStrProp()
-        proto_immutable_str_prop.ParseFromString(bytes_)
-        return ImmutableStrProp.from_proto(
-            proto_immutable_str_prop=proto_immutable_str_prop
-        )
-
-    @staticmethod
-    def from_proto(proto_immutable_str_prop: _ImmutableStrProp) -> ImmutableStrProp:
+    @classmethod
+    def from_proto(
+        cls,
+        proto_immutable_str_prop: proto.ImmutableStrProp,
+    ) -> ImmutableStrProp:
         return ImmutableStrProp(prop=proto_immutable_str_prop.prop)
 
-    def into_proto(self) -> _ImmutableStrProp:
-        proto_immutable_str_prop = _ImmutableStrProp()
+    def into_proto(self) -> proto.ImmutableStrProp:
+        proto_immutable_str_prop = proto.ImmutableStrProp()
         proto_immutable_str_prop.prop = self.prop
         return proto_immutable_str_prop
 
 
 @dataclasses.dataclass(frozen=True)
-class NodeProperty(SerDe[_NodeProperty]):
+class NodeProperty(SerDe[proto.NodeProperty]):
     property_: (
         IncrementOnlyUintProp
         | DecrementOnlyUintProp
@@ -325,16 +224,10 @@ class NodeProperty(SerDe[_NodeProperty]):
         | ImmutableIntProp
         | ImmutableStrProp
     )
-    proto_cls: type[_NodeProperty] = _NodeProperty
+    _proto_cls = proto.NodeProperty
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> NodeProperty:
-        proto_node_property = _NodeProperty()
-        proto_node_property.ParseFromString(bytes_)
-        return NodeProperty.from_proto(proto_node_property=proto_node_property)
-
-    @staticmethod
-    def from_proto(proto_node_property: _NodeProperty) -> NodeProperty:
+    @classmethod
+    def from_proto(cls, proto_node_property: proto.NodeProperty) -> NodeProperty:
         if proto_node_property.HasField("increment_only_uint"):
             return NodeProperty(
                 property_=IncrementOnlyUintProp.from_proto(
@@ -376,35 +269,35 @@ class NodeProperty(SerDe[_NodeProperty]):
         else:
             raise Exception("Encountered unknown type")
 
-    def into_proto(self) -> _NodeProperty:
-        proto_node_property = _NodeProperty()
+    def into_proto(self) -> proto.NodeProperty:
+        proto_node_property = proto.NodeProperty()
         if type(self.property_) is IncrementOnlyUintProp:
             proto_node_property.increment_only_uint.CopyFrom(
-                cast(_IncrementOnlyUintProp, self.property_.into_proto())
+                cast(proto.IncrementOnlyUintProp, self.property_.into_proto())
             )
         elif type(self.property_) is DecrementOnlyUintProp:
             proto_node_property.decrement_only_uint.CopyFrom(
-                cast(_DecrementOnlyUintProp, self.property_.into_proto())
+                cast(proto.DecrementOnlyUintProp, self.property_.into_proto())
             )
         elif type(self.property_) is ImmutableUintProp:
             proto_node_property.immutable_uint.CopyFrom(
-                cast(_ImmutableUintProp, self.property_.into_proto())
+                cast(proto.ImmutableUintProp, self.property_.into_proto())
             )
         elif type(self.property_) is IncrementOnlyIntProp:
             proto_node_property.increment_only_int.CopyFrom(
-                cast(_IncrementOnlyIntProp, self.property_.into_proto())
+                cast(proto.IncrementOnlyIntProp, self.property_.into_proto())
             )
         elif type(self.property_) is DecrementOnlyIntProp:
             proto_node_property.decrement_only_int.CopyFrom(
-                cast(_DecrementOnlyIntProp, self.property_.into_proto())
+                cast(proto.DecrementOnlyIntProp, self.property_.into_proto())
             )
         elif type(self.property_) is ImmutableIntProp:
             proto_node_property.immutable_int.CopyFrom(
-                cast(_ImmutableIntProp, self.property_.into_proto())
+                cast(proto.ImmutableIntProp, self.property_.into_proto())
             )
         elif type(self.property_) is ImmutableStrProp:
             proto_node_property.immutable_str.CopyFrom(
-                cast(_ImmutableStrProp, self.property_.into_proto())
+                cast(proto.ImmutableStrProp, self.property_.into_proto())
             )
         else:
             raise Exception("Encountered unknown type")
@@ -412,21 +305,17 @@ class NodeProperty(SerDe[_NodeProperty]):
 
 
 @dataclasses.dataclass(frozen=True)
-class NodeDescription(SerDe[_NodeDescription]):
+class NodeDescription(SerDe[proto.NodeDescription]):
     properties: Mapping[str, NodeProperty]
     node_key: str
     node_type: str
     id_strategy: Sequence[IdStrategy]
-    proto_cls: type[_NodeDescription] = _NodeDescription
+    _proto_cls = proto.NodeDescription
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> NodeDescription:
-        proto_node_description = _NodeDescription()
-        proto_node_description.ParseFromString(bytes_)
-        return NodeDescription.from_proto(proto_node_description=proto_node_description)
-
-    @staticmethod
-    def from_proto(proto_node_description: _NodeDescription) -> NodeDescription:
+    @classmethod
+    def from_proto(
+        cls, proto_node_description: proto.NodeDescription
+    ) -> NodeDescription:
         return NodeDescription(
             properties={
                 k: NodeProperty.from_proto(proto_node_description.properties[k])
@@ -439,8 +328,8 @@ class NodeDescription(SerDe[_NodeDescription]):
             ],
         )
 
-    def into_proto(self) -> _NodeDescription:
-        proto_node_description = _NodeDescription()
+    def into_proto(self) -> proto.NodeDescription:
+        proto_node_description = proto.NodeDescription()
         for k, v in self.properties.items():
             proto_node_description.properties[k].CopyFrom(v.into_proto())
         proto_node_description.node_key = self.node_key
@@ -451,20 +340,14 @@ class NodeDescription(SerDe[_NodeDescription]):
 
 
 @dataclasses.dataclass(frozen=True)
-class IdentifiedNode(SerDe[_IdentifiedNode]):
+class IdentifiedNode(SerDe[proto.IdentifiedNode]):
     properties: Mapping[str, NodeProperty]
     node_key: str
     node_type: str
-    proto_cls: type[_IdentifiedNode] = _IdentifiedNode
+    _proto_cls = proto.IdentifiedNode
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> IdentifiedNode:
-        proto_identified_node = _IdentifiedNode()
-        proto_identified_node.ParseFromString(bytes_)
-        return IdentifiedNode.from_proto(proto_identified_node=proto_identified_node)
-
-    @staticmethod
-    def from_proto(proto_identified_node: _IdentifiedNode) -> IdentifiedNode:
+    @classmethod
+    def from_proto(cls, proto_identified_node: proto.IdentifiedNode) -> IdentifiedNode:
         return IdentifiedNode(
             properties={
                 k: NodeProperty.from_proto(proto_identified_node.properties[k])
@@ -474,8 +357,8 @@ class IdentifiedNode(SerDe[_IdentifiedNode]):
             node_type=proto_identified_node.node_type,
         )
 
-    def into_proto(self) -> _IdentifiedNode:
-        proto_identified_node = _IdentifiedNode()
+    def into_proto(self) -> proto.IdentifiedNode:
+        proto_identified_node = proto.IdentifiedNode()
         for k, v in self.properties.items():
             proto_identified_node.properties[k].CopyFrom(v.into_proto())
         proto_identified_node.node_key = self.node_key
@@ -484,21 +367,15 @@ class IdentifiedNode(SerDe[_IdentifiedNode]):
 
 
 @dataclasses.dataclass(frozen=True)
-class MergedNode(SerDe[_MergedNode]):
+class MergedNode(SerDe[proto.MergedNode]):
     properties: Mapping[str, NodeProperty]
     uid: int
     node_key: str
     node_type: str
-    proto_cls: type[_MergedNode] = _MergedNode
+    _proto_cls = proto.MergedNode
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> MergedNode:
-        proto_merged_node = _MergedNode()
-        proto_merged_node.ParseFromString(bytes_)
-        return MergedNode.from_proto(proto_merged_node=proto_merged_node)
-
-    @staticmethod
-    def from_proto(proto_merged_node: _MergedNode) -> MergedNode:
+    @classmethod
+    def from_proto(cls, proto_merged_node: proto.MergedNode) -> MergedNode:
         return MergedNode(
             properties={
                 k: NodeProperty.from_proto(proto_merged_node.properties[k])
@@ -509,8 +386,8 @@ class MergedNode(SerDe[_MergedNode]):
             node_type=proto_merged_node.node_type,
         )
 
-    def into_proto(self) -> _MergedNode:
-        proto_merged_node = _MergedNode()
+    def into_proto(self) -> proto.MergedNode:
+        proto_merged_node = proto.MergedNode()
         for k, v in self.properties.items():
             proto_merged_node.properties[k].CopyFrom(v.into_proto())
         proto_merged_node.uid = self.uid
@@ -520,28 +397,22 @@ class MergedNode(SerDe[_MergedNode]):
 
 
 @dataclasses.dataclass(frozen=True)
-class Edge(SerDe[_Edge]):
+class Edge(SerDe[proto.Edge]):
     from_node_key: str
     to_node_key: str
     edge_name: str
-    proto_cls: type[_Edge] = _Edge
+    _proto_cls = proto.Edge
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> Edge:
-        proto_edge = _Edge()
-        proto_edge.ParseFromString(bytes_)
-        return Edge.from_proto(proto_edge=proto_edge)
-
-    @staticmethod
-    def from_proto(proto_edge: _Edge) -> Edge:
+    @classmethod
+    def from_proto(cls, proto_edge: proto.Edge) -> Edge:
         return Edge(
             from_node_key=proto_edge.from_node_key,
             to_node_key=proto_edge.to_node_key,
             edge_name=proto_edge.edge_name,
         )
 
-    def into_proto(self) -> _Edge:
-        proto_edge = _Edge()
+    def into_proto(self) -> proto.Edge:
+        proto_edge = proto.Edge()
         proto_edge.from_node_key = self.from_node_key
         proto_edge.to_node_key = self.to_node_key
         proto_edge.edge_name = self.edge_name
@@ -549,44 +420,32 @@ class Edge(SerDe[_Edge]):
 
 
 @dataclasses.dataclass(frozen=True)
-class EdgeList(SerDe[_EdgeList]):
+class EdgeList(SerDe[proto.EdgeList]):
     edges: Sequence[Edge]
-    proto_cls: type[_EdgeList] = _EdgeList
+    _proto_cls = proto.EdgeList
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> EdgeList:
-        proto_edge_list = _EdgeList()
-        proto_edge_list.ParseFromString(bytes_)
-        return EdgeList.from_proto(proto_edge_list=proto_edge_list)
-
-    @staticmethod
-    def from_proto(proto_edge_list: _EdgeList) -> EdgeList:
+    @classmethod
+    def from_proto(cls, proto_edge_list: proto.EdgeList) -> EdgeList:
         return EdgeList(edges=[Edge.from_proto(e) for e in proto_edge_list.edges])
 
-    def into_proto(self) -> _EdgeList:
-        proto_edge_list = _EdgeList()
+    def into_proto(self) -> proto.EdgeList:
+        proto_edge_list = proto.EdgeList()
         for e in self.edges:
             proto_edge_list.edges.append(e.into_proto())
         return proto_edge_list
 
 
 @dataclasses.dataclass(frozen=True)
-class MergedEdge(SerDe[_MergedEdge]):
+class MergedEdge(SerDe[proto.MergedEdge]):
     from_uid: str
     from_node_key: str
     to_uid: str
     to_node_key: str
     edge_name: str
-    proto_cls: type[_MergedEdge] = _MergedEdge
+    _proto_cls = proto.MergedEdge
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> MergedEdge:
-        proto_merged_edge = _MergedEdge()
-        proto_merged_edge.ParseFromString(bytes_)
-        return MergedEdge.from_proto(proto_merged_edge=proto_merged_edge)
-
-    @staticmethod
-    def from_proto(proto_merged_edge: _MergedEdge) -> MergedEdge:
+    @classmethod
+    def from_proto(cls, proto_merged_edge: proto.MergedEdge) -> MergedEdge:
         return MergedEdge(
             from_uid=proto_merged_edge.from_uid,
             from_node_key=proto_merged_edge.from_node_key,
@@ -595,8 +454,8 @@ class MergedEdge(SerDe[_MergedEdge]):
             edge_name=proto_merged_edge.edge_name,
         )
 
-    def into_proto(self) -> _MergedEdge:
-        proto_merged_edge = _MergedEdge()
+    def into_proto(self) -> proto.MergedEdge:
+        proto_merged_edge = proto.MergedEdge()
         proto_merged_edge.from_uid = self.from_uid
         proto_merged_edge.from_node_key = self.from_node_key
         proto_merged_edge.to_uid = self.to_uid
@@ -606,48 +465,36 @@ class MergedEdge(SerDe[_MergedEdge]):
 
 
 @dataclasses.dataclass(frozen=True)
-class MergedEdgeList(SerDe[_MergedEdgeList]):
+class MergedEdgeList(SerDe[proto.MergedEdgeList]):
     # TODO: seed to places where this is used:
     # /src/python/grapl_analyzerlib/grapl_analyzerlib/view_from_proto.py
     # /src/python/grapl_analyzerlib/grapl_analyzerlib/subgraph_view.py
     edges: Sequence[MergedEdge]
-    proto_cls: type[_MergedEdgeList] = _MergedEdgeList
+    _proto_cls = proto.MergedEdgeList
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> MergedEdgeList:
-        proto_merged_edge_list = _MergedEdgeList()
-        proto_merged_edge_list.ParseFromString(bytes_)
-        return MergedEdgeList.from_proto(proto_merged_edge_list=proto_merged_edge_list)
-
-    @staticmethod
-    def from_proto(proto_merged_edge_list: _MergedEdgeList) -> MergedEdgeList:
+    @classmethod
+    def from_proto(cls, proto_merged_edge_list: proto.MergedEdgeList) -> MergedEdgeList:
         return MergedEdgeList(
             edges=[MergedEdge.from_proto(e) for e in proto_merged_edge_list.edges]
         )
 
-    def into_proto(self) -> _MergedEdgeList:
-        proto_merged_edge_list = _MergedEdgeList()
+    def into_proto(self) -> proto.MergedEdgeList:
+        proto_merged_edge_list = proto.MergedEdgeList()
         for e in self.edges:
             proto_merged_edge_list.edges.append(e.into_proto())
         return proto_merged_edge_list
 
 
 @dataclasses.dataclass(frozen=True)
-class GraphDescription(SerDe[_GraphDescription]):
+class GraphDescription(SerDe[proto.GraphDescription]):
     nodes: Mapping[str, NodeDescription]
     edges: Mapping[str, EdgeList]
-    proto_cls: type[_GraphDescription] = _GraphDescription
+    _proto_cls = proto.GraphDescription
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> GraphDescription:
-        proto_graph_description = _GraphDescription()
-        proto_graph_description.ParseFromString(bytes_)
-        return GraphDescription.from_proto(
-            proto_graph_description=proto_graph_description
-        )
-
-    @staticmethod
-    def from_proto(proto_graph_description: _GraphDescription) -> GraphDescription:
+    @classmethod
+    def from_proto(
+        cls, proto_graph_description: proto.GraphDescription
+    ) -> GraphDescription:
         return GraphDescription(
             nodes={
                 k: NodeDescription.from_proto(proto_graph_description.nodes[k])
@@ -659,8 +506,8 @@ class GraphDescription(SerDe[_GraphDescription]):
             },
         )
 
-    def into_proto(self) -> _GraphDescription:
-        proto_graph_description = _GraphDescription()
+    def into_proto(self) -> proto.GraphDescription:
+        proto_graph_description = proto.GraphDescription()
         for k1, v1 in self.nodes.items():
             proto_graph_description.nodes[k1].CopyFrom(v1.into_proto())
         for k2, v2 in self.edges.items():
@@ -669,19 +516,15 @@ class GraphDescription(SerDe[_GraphDescription]):
 
 
 @dataclasses.dataclass(frozen=True)
-class IdentifiedGraph(SerDe[_IdentifiedGraph]):
+class IdentifiedGraph(SerDe[proto.IdentifiedGraph]):
     nodes: Mapping[str, IdentifiedNode]
     edges: Mapping[str, EdgeList]
-    proto_cls: type[_IdentifiedGraph] = _IdentifiedGraph
+    _proto_cls = proto.IdentifiedGraph
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> IdentifiedGraph:
-        proto_identified_graph = _IdentifiedGraph()
-        proto_identified_graph.ParseFromString(bytes_)
-        return IdentifiedGraph.from_proto(proto_identified_graph=proto_identified_graph)
-
-    @staticmethod
-    def from_proto(proto_identified_graph: _IdentifiedGraph) -> IdentifiedGraph:
+    @classmethod
+    def from_proto(
+        cls, proto_identified_graph: proto.IdentifiedGraph
+    ) -> IdentifiedGraph:
         return IdentifiedGraph(
             nodes={
                 k: IdentifiedNode.from_proto(proto_identified_graph.nodes[k])
@@ -693,8 +536,8 @@ class IdentifiedGraph(SerDe[_IdentifiedGraph]):
             },
         )
 
-    def into_proto(self) -> _IdentifiedGraph:
-        proto_identified_graph = _IdentifiedGraph()
+    def into_proto(self) -> proto.IdentifiedGraph:
+        proto_identified_graph = proto.IdentifiedGraph()
         for k1, v1 in self.nodes.items():
             proto_identified_graph.nodes[k1].CopyFrom(v1.into_proto())
         for k2, v2 in self.edges.items():
@@ -703,19 +546,13 @@ class IdentifiedGraph(SerDe[_IdentifiedGraph]):
 
 
 @dataclasses.dataclass(frozen=True)
-class MergedGraph(SerDe[_MergedGraph]):
+class MergedGraph(SerDe[proto.MergedGraph]):
     nodes: Mapping[str, MergedNode]
     edges: Mapping[str, MergedEdgeList]
-    proto_cls: type[_MergedGraph] = _MergedGraph
+    _proto_cls = proto.MergedGraph
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> MergedGraph:
-        proto_merged_graph = _MergedGraph()
-        proto_merged_graph.ParseFromString(bytes_)
-        return MergedGraph.from_proto(proto_merged_graph=proto_merged_graph)
-
-    @staticmethod
-    def from_proto(proto_merged_graph: _MergedGraph) -> MergedGraph:
+    @classmethod
+    def from_proto(cls, proto_merged_graph: proto.MergedGraph) -> MergedGraph:
         return MergedGraph(
             nodes={
                 k: MergedNode.from_proto(proto_merged_graph.nodes[k])
@@ -727,8 +564,8 @@ class MergedGraph(SerDe[_MergedGraph]):
             },
         )
 
-    def into_proto(self) -> _MergedGraph:
-        proto_merged_graph = _MergedGraph()
+    def into_proto(self) -> proto.MergedGraph:
+        proto_merged_graph = proto.MergedGraph()
         for k1, v1 in self.nodes.items():
             proto_merged_graph.nodes[k1].CopyFrom(v1.into_proto())
         for k2, v2 in self.edges.items():
@@ -737,21 +574,15 @@ class MergedGraph(SerDe[_MergedGraph]):
 
 
 @dataclasses.dataclass(frozen=True)
-class Lens(SerDe[_Lens]):
+class Lens(SerDe[proto.Lens]):
     lens_type: str
     lens_name: str
     uid: int | None = None
     score: int | None = None
-    proto_cls: type[_Lens] = _Lens
+    _proto_cls = proto.Lens
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> Lens:
-        proto_lens = _Lens()
-        proto_lens.ParseFromString(bytes_)
-        return Lens.from_proto(proto_lens=proto_lens)
-
-    @staticmethod
-    def from_proto(proto_lens: _Lens) -> Lens:
+    @classmethod
+    def from_proto(cls, proto_lens: proto.Lens) -> Lens:
         return Lens(
             lens_type=proto_lens.lens_type,
             lens_name=proto_lens.lens_name,
@@ -759,8 +590,8 @@ class Lens(SerDe[_Lens]):
             score=proto_lens.score,
         )
 
-    def into_proto(self) -> _Lens:
-        proto_lens = _Lens()
+    def into_proto(self) -> proto.Lens:
+        proto_lens = proto.Lens()
         proto_lens.lens_type = self.lens_type
         proto_lens.lens_name = self.lens_name
         if self.uid is not None:
@@ -771,23 +602,17 @@ class Lens(SerDe[_Lens]):
 
 
 @dataclasses.dataclass(frozen=True)
-class ExecutionHit(SerDe[_ExecutionHit]):
+class ExecutionHit(SerDe[proto.ExecutionHit]):
     nodes: Mapping[str, MergedNode]
     edges: Mapping[str, MergedEdgeList]
     analyzer_name: str
     risk_score: int
     lenses: Sequence[Lens]
     risky_node_keys: Sequence[str]
-    proto_cls: type[_ExecutionHit] = _ExecutionHit
+    _proto_cls = proto.ExecutionHit
 
-    @staticmethod
-    def deserialize(bytes_: bytes) -> ExecutionHit:
-        proto_execution_hit = _ExecutionHit()
-        proto_execution_hit.ParseFromString(bytes_)
-        return ExecutionHit.from_proto(proto_execution_hit=proto_execution_hit)
-
-    @staticmethod
-    def from_proto(proto_execution_hit: _ExecutionHit) -> ExecutionHit:
+    @classmethod
+    def from_proto(cls, proto_execution_hit: proto.ExecutionHit) -> ExecutionHit:
         return ExecutionHit(
             nodes={
                 k: MergedNode.from_proto(v)
@@ -803,8 +628,8 @@ class ExecutionHit(SerDe[_ExecutionHit]):
             risky_node_keys=proto_execution_hit.risky_node_keys,
         )
 
-    def into_proto(self) -> _ExecutionHit:
-        proto_execution_hit = _ExecutionHit()
+    def into_proto(self) -> proto.ExecutionHit:
+        proto_execution_hit = proto.ExecutionHit()
         for k1, v1 in self.nodes.items():
             proto_execution_hit.nodes[k1].CopyFrom(v1.into_proto())
         for k2, v2 in self.edges.items():
