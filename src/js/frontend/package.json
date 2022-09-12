@@ -53,6 +53,7 @@
     "npm": "please-use-yarn-add",
     "yarn": ">= 3.2.3"
   },
+  "packageManager": "yarn@3.2.3",
   "description": "Grapl Frontend",
   "main": "index.tsx",
   "license": "MIT"
