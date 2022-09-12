@@ -2,14 +2,23 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Final, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
 
-from grapl_analyzerlib_new.analyzer import Analyzer, AnalyzerContext
+import grpc
+from grapl_analyzerlib_new.analyzer_context import AnalyzerContext
+from typing_extensions import assert_never
+
+if TYPE_CHECKING:
+    from grapl_analyzerlib_new.analyzer import Analyzer
+
 from grapl_analyzerlib_new.query_and_views import NodeView
+from grpc import aio as grpc_aio  # type: ignore
 from python_proto.api.graph_query.v1beta1 import messages as graph_query_messages
 from python_proto.api.graph_query.v1beta1.client import GraphQueryClient
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_messages
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
+
+# ^ grpc_aio: Type checking doesn't exist yet for gRPC asyncio runtime
 
 
 @runtime_checkable
@@ -47,6 +56,22 @@ class AnalyzerServiceImpl:
         self._graph_query = self._analyzer.query().into_graph_query()
 
     async def run_analyzer(
+        self,
+        request: analyzer_messages.RunAnalyzerRequest,
+        context: grpc_aio.ServicerContext,
+    ) -> analyzer_messages.RunAnalyzerResponse:
+        try:
+            return await self._run_analyzer_inner(request)
+        except Exception as e:
+            details = f"error_as_grpc_abort exception: {str(e)}"
+            code = grpc.StatusCode.UNKNOWN
+            await context.abort(
+                code=code,
+                details=details,
+            )
+        raise AssertionError("not reachable")
+
+    async def _run_analyzer_inner(
         self, request: analyzer_messages.RunAnalyzerRequest
     ) -> analyzer_messages.RunAnalyzerResponse:
         tenant_id = request.tenant_id

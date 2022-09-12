@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import Protocol, final
+from typing import Protocol
 
+from grapl_analyzerlib_new.analyzer_context import AnalyzerContext
 from grapl_analyzerlib_new.query_and_views import NodeQuery, NodeView
 from grapl_analyzerlib_new.service_impl import AnalyzerServiceImpl
 from python_proto.api.graph_query.v1beta1.client import GraphQueryClient
@@ -17,28 +17,6 @@ from python_proto.api.plugin_sdk.analyzers.v1beta1.server import (
     AnalyzerServiceWrapper,
 )
 from python_proto.client import GrpcClientConfig
-from python_proto.grapl.common.v1beta1.messages import Uid
-
-
-@final
-@dataclass(slots=True)
-class AnalyzerContext:
-    _analyzer_name: AnalyzerName
-    _graph_client: GraphQueryClient
-    _start_time: datetime
-    _allowed: dict[Uid, timedelta | None]
-
-    def get_graph_client(self) -> GraphQueryClient:
-        return self._graph_client
-
-    def get_remaining_time(self) -> timedelta:
-        now = datetime.now()
-        if self._start_time + timedelta(seconds=30) > now:
-            return timedelta()
-        return datetime.now() - self._start_time
-
-    def _reset_start_time(self) -> None:
-        self._start_time = datetime.now()
 
 
 # TODO: would be nice to have query() -> ProcessQuery, analyze(ProcessView, ...)

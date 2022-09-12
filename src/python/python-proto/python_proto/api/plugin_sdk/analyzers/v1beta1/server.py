@@ -17,17 +17,13 @@ from graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2_grpc import (
     add_AnalyzerServiceServicer_to_server,
 )
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as native
-from python_proto.api.plugin_sdk.analyzers.v1beta1.error import (
-    AnalyzerException,
-    exception_as_grpc_abort,
-)
 
 _cleanup_coroutines: list[Awaitable[Any]] = []
 
 
 class AnalyzerService(Protocol):
     async def run_analyzer(
-        self, request: native.RunAnalyzerRequest
+        self, request: native.RunAnalyzerRequest, context: grpc.aio.ServicerContext
     ) -> native.RunAnalyzerResponse:
         pass
 
@@ -43,10 +39,7 @@ class AnalyzerServiceWrapper(AnalyzerServiceServicer):
         context: grpc.aio.ServicerContext,
     ) -> proto.RunAnalyzerResponse:
         native_request = native.RunAnalyzerRequest.from_proto(proto_request)
-        with exception_as_grpc_abort(AnalyzerException, context):
-            native_response = await self.analyzer_service_impl.run_analyzer(
-                native_request
-            )
+        native_response = await self.analyzer_service_impl.run_analyzer(native_request)
         return native_response.into_proto()
 
     async def serve(self) -> None:
