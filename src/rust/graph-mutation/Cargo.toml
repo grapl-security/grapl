@@ -17,7 +17,6 @@ grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 hash_hasher = "2.0.3"
 lazy_static = "1.4.0"
-lru = "0.7.6"
 rust-proto = { path = "../rust-proto" }
 scylla = "0.4.4"
 thiserror = "1.0.30"

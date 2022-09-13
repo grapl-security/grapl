@@ -1,5 +1,6 @@
-trailingComma = "es5"
-tabWidth = 4
+trailingComma = "all"
+printWidth = 100
+tabWidth = 2
 useTabs = false
 semi = true
 singleQuote = false # in-line with our Python black linting

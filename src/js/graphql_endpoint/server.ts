@@ -9,41 +9,41 @@ const PORT = process.env.PORT || 5000;
 const IS_LOCAL = process.env.IS_LOCAL == "True" || null; // get this from environment
 
 function customFormatErrorFnForDebugging(error: GraphQLError) {
-    return {
-        message: error.message,
-        locations: error.locations,
-        path: error.path,
-    };
+  return {
+    message: error.message,
+    locations: error.locations,
+    path: error.path,
+  };
 }
 
 app.use(
-    "/graphql",
-    [],
-    graphqlHTTP(async (request, response, graphQLParams) => {
-        console.debug({
-            graphQLParams: graphQLParams,
-        });
-        let schema;
-        try {
-            schema = await getRootQuerySchema();
-        } catch (e) {
-            console.error("Some uncaught promise error", e);
-            throw e;
-        }
-        return {
-            schema: schema,
-            graphiql: IS_LOCAL,
-            customFormatErrorFn: customFormatErrorFnForDebugging,
-        };
-    })
+  "/graphql",
+  [],
+  graphqlHTTP(async (request, response, graphQLParams) => {
+    console.debug({
+      graphQLParams: graphQLParams,
+    });
+    let schema;
+    try {
+      schema = await getRootQuerySchema();
+    } catch (e) {
+      console.error("Some uncaught promise error", e);
+      throw e;
+    }
+    return {
+      schema: schema,
+      graphiql: IS_LOCAL,
+      customFormatErrorFn: customFormatErrorFnForDebugging,
+    };
+  }),
 );
 
 // Fallthrough if no route is found.
 app.use(function (req, res) {
-    console.warn(req.path);
-    res.sendStatus(404);
+  console.warn(req.path);
+  res.sendStatus(404);
 });
 
 app.listen(PORT, function () {
-    console.log("GraphQL Server started on Port " + PORT);
+  console.log("GraphQL Server started on Port " + PORT);
 });

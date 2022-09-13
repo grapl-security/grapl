@@ -227,7 +227,7 @@ steps:
         artifact_paths:
           - "test_artifacts/**/*"
           # https://github.com/grapl-security/issue-tracker/issues/894
-          - "src/js/engagement_view/source_map_explorer_result.html"
+          - "src/js/frontend/source_map_explorer_result.html"
 
       - label: ":rust: Rust Integration Tests"
         command:
