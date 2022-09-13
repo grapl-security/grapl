@@ -464,7 +464,6 @@ class MergedEdge(SerDe[proto.MergedEdge]):
         return proto_merged_edge
 
 
-# TODO: Delete, this is being replaced by Updates
 @dataclasses.dataclass(frozen=True)
 class MergedEdgeList(SerDe[proto.MergedEdgeList]):
     # TODO: seed to places where this is used:

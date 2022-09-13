@@ -96,7 +96,27 @@ The Python schema definitions will serve two functions:
 Our Python Schema for the Ec2InstanceNode will be relatively straightforward to
 implement.
 
-    # TODO replace with instructions for next-gen grapl_analyzerlib
+    from grapl_analyzerlib.schemas.schema_builder import NodeSchema
+
+    class Ec2InstanceNodeSchema(NodeSchema):
+        def __init__(self):
+            super(Ec2InstanceNodeSchema, self).__init__()
+            (
+                self
+                .with_str_prop("arn")
+                .with_str_prop("image_id")
+                .with_str_prop("image_description")
+                .with_str_prop("instance_id")
+                .with_int_prop("launch_time")
+                .with_str_prop("instance_state")
+                .with_str_prop("instance_type")
+                .with_str_prop("availability_zone")
+                .with_str_prop("platform")
+            )
+
+        @staticmethod
+        def self_type() -> str:
+            return "Ec2Instance"
 
 Make sure that the return value of the `self_type` method is the same name as
 the struct in your Rust model, in this case `Ec2Instance`.
@@ -104,7 +124,15 @@ the struct in your Rust model, in this case `Ec2Instance`.
 Using this Ec2InstanceNodeSchema we can generate the rest of the code that we
 need for building signatures or responding to attacks.
 
-    # TODO replace with instructions for next-gen grapl_analyzerlib
+    from grapl_analyzerlib.schemas.schema_builder import (
+        generate_plugin_query,
+        generate_plugin_view
+    )
+
+    query = generate_plugin_query(Ec2InstanceNodeSchema())
+    view = generate_plugin_view(Ec2InstanceNodeSchema())
+    print(query)
+    print(view)
 
 This will generate and print out the code for querying or pivoting off of
 Ec2Instance nodes in Grapl.
@@ -118,7 +146,25 @@ be minor changes required, such as imports, but otherwise it should generally
 
 ## Modifying the Graph Schema
 
-# TODO replace with instructions about graph-schema-manager
+Grapl already comes with the `Grapl Provision.ipynb` for provisioning the
+database. You can import our schemas into that database and then just add them
+to the schema list, which will be in a cell,
+
+        schemas = (
+            AssetSchema(),
+            ProcessSchema(),
+            FileSchema(),
+            IpConnectionSchema(),
+            IpAddressSchema(),
+            IpPortSchema(),
+            NetworkConnectionSchema(),
+            ProcessInboundConnectionSchema(),
+            ProcessOutboundConnectionSchema(),
+            # Plugin Nodes
+            Ec2InstanceNodeSchema(),
+        )
+
+Run the notebook and you should be good to go.
 
 ## Deploying Analyzers With Plugins
 
