@@ -9,13 +9,6 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-trait = "0.1"
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
-color-eyre = "0.6"
-eyre = "0.6"
 grapl-utils = { path = "../grapl-utils" }
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
