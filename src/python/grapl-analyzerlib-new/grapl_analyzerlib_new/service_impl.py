@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
@@ -130,7 +131,9 @@ class AnalyzerServiceImpl:
         )
         if not execution_hit:
             return MISS_RESPONSE
-        execution_hit.analyzer_name.CopyFrom(self._analyzer_name)
+        execution_hit = dataclasses.replace(
+            execution_hit, analyzer_name=self._analyzer_name
+        )
 
         await analyzer.add_context(root_node, ctx)
 

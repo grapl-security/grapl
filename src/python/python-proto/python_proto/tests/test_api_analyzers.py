@@ -4,6 +4,7 @@ pytest.register_assert_rewrite("python_proto.tests.helpers")
 
 import hypothesis.strategies as st
 from python_proto import common as proto_common_msgs
+from python_proto.api.graph_query.v1beta1 import messages as graph_query_msgs
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_msgs
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_msgs
 from python_proto.tests import strategies
@@ -90,6 +91,7 @@ def lens_refs(
 
 
 def execution_hits(
+    graph_view: st.SearchStrategy[graph_query_msgs.GraphView] = graph_views(),
     lens_refs: st.SearchStrategy[list[analyzer_msgs.LensRef]] = st.lists(lens_refs()),
     analyzer_name: st.SearchStrategy[analyzer_msgs.AnalyzerName] = analyzer_names(),
     time_of_match: st.SearchStrategy[
@@ -100,6 +102,7 @@ def execution_hits(
 ) -> st.SearchStrategy[analyzer_msgs.ExecutionHit]:
     return st.builds(
         analyzer_msgs.ExecutionHit,
+        graph_view=graph_view,
         lens_refs=lens_refs,
         analyzer_name=analyzer_name,
         time_of_match=time_of_match,

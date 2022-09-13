@@ -75,11 +75,15 @@ class SuspiciousSvchostAnalyzer(Analyzer):
     ) -> ExecutionHit | None:
         print(f"analyze() was called: {matched}")
         return ExecutionHit(
+            graph_view=matched.graph,
             lens_refs=[],
-            # don't specify analyzer_name=, service_impl.py does that for us
             idempotency_key=12345,  # ???
             time_of_match=Timestamp.from_datetime(datetime.utcnow()),
             score=100,
+            # implies the return type here should not be the pure python-proto type
+            analyzer_name=AnalyzerName(
+                "TODO: This should be set by AnalyzerServiceImpl"
+            ),
         )
 
     async def add_context(self, matched: NodeView, ctx: AnalyzerContext) -> None:
