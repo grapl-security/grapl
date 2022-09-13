@@ -97,7 +97,7 @@ message ExecutionMiss {
 // A request to execute an Analyzer against a specific update to a tenant's graph
 message RunAnalyzerRequest {
   // The update that occurred
-  Update update = 2;
+  Update update = 1;
 }
 
 // The result of an Analyzer's execution

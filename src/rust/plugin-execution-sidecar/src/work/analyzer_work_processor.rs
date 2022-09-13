@@ -55,6 +55,8 @@ impl AnalyzerWorkProcessor {
         let upstream_addr = std::env::var(&upstream_addr_env_var).expect(&upstream_addr_env_var);
         let address = format!("http://{upstream_addr}");
 
+        tracing::info!(message = "connecting to analyzer plugin", address = address);
+
         let client_config = AnalyzerClientConfig {
             analyzer_client_address: address.parse().expect("analyzer client address"),
         };

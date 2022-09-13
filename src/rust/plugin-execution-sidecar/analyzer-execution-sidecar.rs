@@ -6,7 +6,7 @@ use plugin_execution_sidecar::{
     work::AnalyzerWorkProcessor,
 };
 
-const SERVICE_NAME: &'static str = "generator-execution-sidecar";
+const SERVICE_NAME: &'static str = "analyzer-execution-sidecar";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
