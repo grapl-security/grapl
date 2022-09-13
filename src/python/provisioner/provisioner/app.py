@@ -7,21 +7,6 @@ from typing import TYPE_CHECKING
 
 import boto3
 from argon2 import PasswordHasher
-from grapl_analyzerlib.prelude import (
-    AssetSchema,
-    FileSchema,
-    GraphClient,
-    IpAddressSchema,
-    IpConnectionSchema,
-    IpPortSchema,
-    LensSchema,
-    NetworkConnectionSchema,
-    ProcessInboundConnectionSchema,
-    ProcessOutboundConnectionSchema,
-    ProcessSchema,
-    RiskSchema,
-)
-from grapl_analyzerlib.provision import provision_common
 from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     SecretsManagerClientFactory,
@@ -41,39 +26,6 @@ GRAPL_SCHEMA_TABLE = os.environ["GRAPL_SCHEMA_TABLE"]
 GRAPL_SCHEMA_PROPERTIES_TABLE = os.environ["GRAPL_SCHEMA_PROPERTIES_TABLE"]
 
 TRACER = get_tracer(service_name="provisioner", module_name=__name__)
-
-
-def _provision_graph(
-    graph_client: GraphClient, dynamodb: DynamoDBServiceResource
-) -> None:
-    schema_table = dynamodb.Table(GRAPL_SCHEMA_TABLE)
-    schema_properties_table = dynamodb.Table(GRAPL_SCHEMA_PROPERTIES_TABLE)
-    schemas = [
-        AssetSchema(),
-        ProcessSchema(),
-        FileSchema(),
-        IpConnectionSchema(),
-        IpAddressSchema(),
-        IpPortSchema(),
-        NetworkConnectionSchema(),
-        ProcessInboundConnectionSchema(),
-        ProcessOutboundConnectionSchema(),
-        RiskSchema(),
-        LensSchema(),
-    ]
-
-    for schema in schemas:
-        schema.init_reverse()
-
-    for schema in schemas:
-        provision_common.extend_schema(schema_table, graph_client, schema)
-
-    schema_str = provision_common.format_schemas(schemas)
-    provision_common.set_schema(graph_client, schema_str)
-
-    for schema in schemas:
-        provision_common.store_schema(schema_table, schema)
-        provision_common.store_schema_properties(schema_properties_table, schema)
 
 
 def _create_user(
@@ -112,13 +64,8 @@ def provision() -> None:
     LOGGER.info("provisioning grapl")
     with TRACER.start_as_current_span(__name__):
 
-        graph_client = GraphClient()
         dynamodb = DynamoDBResourceFactory(boto3).from_env()
         secretsmanager = SecretsManagerClientFactory(boto3).from_env()
-
-        LOGGER.info("provisioning graph")
-        _provision_graph(graph_client=graph_client, dynamodb=dynamodb)
-        LOGGER.info("provisioned graph")
 
         username, password = get_test_user_creds()
 
