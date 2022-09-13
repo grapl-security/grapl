@@ -69,11 +69,10 @@ def updates(
 
 
 def run_analyzer_requests(
-    tenant_id: st.SearchStrategy[proto_common_msgs.Uuid] = strategies.uuids(),
     update: st.SearchStrategy[analyzer_msgs.Update] = updates(),
 ) -> st.SearchStrategy[analyzer_msgs.RunAnalyzerRequest]:
     return st.builds(
-        analyzer_msgs.RunAnalyzerRequest, tenant_id=tenant_id, update=update
+        analyzer_msgs.RunAnalyzerRequest, update=update
     )
 
 
