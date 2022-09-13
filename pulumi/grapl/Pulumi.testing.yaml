@@ -23,7 +23,7 @@ config:
     plugin-bootstrap: 20220913203029-868f787
     plugin-registry: 20220913203029-868f787
     plugin-work-queue: 20220913203029-868f787
-    provisioner: 20220913203029-868f787
+    provisioner: 20220913205842-edea414
     rust-integration-tests: 20220913203029-868f787
     scylla-provisioner: 20220913203029-868f787
     sysmon-generator: 20220809152144-3c3caf3
