@@ -16,7 +16,6 @@ clap = { version = "3.0", default_features = false, features = [
 ], optional = true }
 client-executor = { path = "../client-executor" }
 futures = "0.3"
-grapl-utils = { path = "../grapl-utils" }
 prost = "0.10"
 rand = "0.8.5"
 rustc-hash = "1.1.0"
