@@ -71,9 +71,7 @@ def updates(
 def run_analyzer_requests(
     update: st.SearchStrategy[analyzer_msgs.Update] = updates(),
 ) -> st.SearchStrategy[analyzer_msgs.RunAnalyzerRequest]:
-    return st.builds(
-        analyzer_msgs.RunAnalyzerRequest, update=update
-    )
+    return st.builds(analyzer_msgs.RunAnalyzerRequest, update=update)
 
 
 def analyzer_names(
