@@ -405,6 +405,7 @@ job "grapl-core" {
           proxy {
             upstreams {
               destination_name = "graph-mutation"
+              local_bind_port  = 1001
             }
           }
         }
@@ -474,6 +475,7 @@ job "grapl-core" {
           proxy {
             upstreams {
               destination_name = "graph-mutation"
+              local_bind_port  = 1001
             }
           }
         }

@@ -134,10 +134,12 @@ impl AnalyzerDispatcher {
         config: AnalyzerDispatcherConfig,
         plugin_work_queue_client: PluginWorkQueueServiceClient,
     ) -> Result<Self, ConfigurationError> {
+        let client_config = PluginRegistryClientConfig::parse();
+        tracing::debug!(message="config parsed", client_config=?client_config);
+
         let graph_updates_consumer: Consumer<Updates> = Consumer::new(config.kafka_config)?;
         let graph_updates_retry_producer: RetryProducer<Updates> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
-        let client_config = PluginRegistryClientConfig::parse();
 
         let plugin_registry_client = build_grpc_client(client_config).await?;
 
@@ -363,6 +365,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = grapl_tracing::setup_tracing("analyzer-dispatcher");
     let config = AnalyzerDispatcherConfig::parse();
     let plugin_work_queue_client_config = PluginWorkQueueClientConfig::parse();
+
+    tracing::info!(
+        message="service starting",
+        config=?config,
+        plugin_work_queue_client_config=?plugin_work_queue_client_config
+    );
+
     let plugin_work_queue_client = build_grpc_client(plugin_work_queue_client_config).await?;
     let worker_pool_size = config.params.worker_pool_size;
     let mut analyzer_dispatcher = AnalyzerDispatcher::new(config, plugin_work_queue_client).await?;
