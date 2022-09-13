@@ -19,6 +19,16 @@ use rusoto_dynamodb::{
     TransactWriteItemsInput,
     UpdateItemInput,
 };
+use rust_proto::graplinc::grapl::{
+    api::graph_mutation::v1beta1::{
+        client::GraphMutationClient,
+        messages::CreateNodeRequest,
+    },
+    common::v1beta1::types::{
+        NodeType,
+        Uid,
+    },
+};
 use tracing::{
     info,
     warn,
@@ -188,9 +198,6 @@ where
         Ok(())
     }
 
-    // disabled while 'guessing' is disabled
-    // https://github.com/grapl-security/issue-tracker/issues/1002
-    #[allow(dead_code)]
     #[tracing::instrument(skip(self, session), err)]
     pub(crate) async fn make_create_time_canonical(&self, session: &Session) -> Result<(), Error> {
         info!(message = "Updating session end time");
@@ -238,9 +245,6 @@ where
         Ok(())
     }
 
-    // disabled while 'guessing' is disabled
-    // https://github.com/grapl-security/issue-tracker/issues/1002
-    #[allow(dead_code)]
     // Update version, and use it as a constraint
     #[tracing::instrument(skip(self, session), err)]
     pub(crate) async fn update_session_end_time(
@@ -316,9 +320,6 @@ where
         Ok(())
     }
 
-    // disabled while 'guessing' is disabled
-    // https://github.com/grapl-security/issue-tracker/issues/1002
-    #[allow(dead_code)]
     #[tracing::instrument(skip(self, session), err)]
     pub(crate) async fn delete_session(&self, session: &Session) -> Result<(), Error> {
         let del_req = DeleteItemInput {
@@ -340,8 +341,13 @@ where
         Ok(())
     }
 
-    #[tracing::instrument(skip(self, unid), err)]
-    pub(crate) async fn handle_creation_event(&self, unid: UnidSession) -> Result<String, Error> {
+    #[tracing::instrument(skip(self, unid, graph_mutation_client), err)]
+    pub(crate) async fn handle_creation_event(
+        &self,
+        tenant_id: Uuid,
+        unid: UnidSession,
+        graph_mutation_client: &GraphMutationClient,
+    ) -> Result<Uid, Error> {
         info!(
             message="Handling unid session creation",
             pseudo_key=?unid.pseudo_key, timestamp=?unid.timestamp
@@ -351,6 +357,10 @@ where
         let session = self.find_first_session_after(&unid).await?;
 
         if let Some(session) = session {
+            let session_id = match Uid::from_u64(session.session_id) {
+                Some(uid) => uid,
+                None => bail!("Invalid session_id: {}", session.session_id),
+            };
             // If session.is_create_canon is false,
             // This means that there is a 'Guessed' session in the future,
             // and we should consider this the canonical ID for that session
@@ -358,7 +368,7 @@ where
                 info!(message = "Extending session create_time");
                 self.update_session_create_time(&session, unid.timestamp, true)
                     .await?;
-                return Ok(session.session_id);
+                return Ok(session_id);
             }
 
             tracing::debug!(
@@ -373,7 +383,7 @@ where
             // with an accurate timestamp
             if skewed_cmp(unid.timestamp, session.create_time) {
                 info!(message = "Found existing session with exact create time");
-                return Ok(session.session_id);
+                return Ok(session_id);
             }
 
             // We should never be looking at a case where the query returned
@@ -406,9 +416,20 @@ where
             }
         }
 
+        let mut graph_mutation_client = graph_mutation_client.clone();
+        let uid = graph_mutation_client
+            .create_node(CreateNodeRequest {
+                tenant_id,
+                node_type: NodeType {
+                    value: unid.node_type.clone(),
+                },
+            })
+            .await?
+            .uid;
+
         // Create new session, return new session id
         let session = Session {
-            session_id: Uuid::new_v4().to_string(),
+            session_id: uid.as_u64(),
             create_time: unid.timestamp,
             end_time: unid.timestamp + 101,
             is_create_canon: true,
@@ -419,15 +440,17 @@ where
 
         info!(message = "Creating session");
         self.create_session(&session).await?;
-        Ok(session.session_id)
+        Ok(uid)
     }
 
-    #[tracing::instrument(skip(self, unid), err)]
+    #[tracing::instrument(skip(self, unid, graph_mutation_client), err)]
     pub(crate) async fn handle_last_seen(
         &self,
+        tenant_id: Uuid,
         unid: UnidSession,
+        graph_mutation_client: &GraphMutationClient,
         should_default: bool,
-    ) -> Result<String, Error> {
+    ) -> Result<Uid, Error> {
         info!(
             message="Handling unid session",
             pseudo_key=?unid.pseudo_key, timestamp=?unid.timestamp
@@ -437,9 +460,13 @@ where
         // Look for last session where session.create_time <= unid.create_time
         let session = self.find_last_session_before(&unid).await?;
         if let Some(mut session) = session {
+            let session_id = match Uid::from_u64(session.session_id) {
+                Some(uid) => uid,
+                None => bail!("Invalid session_id: {}", session.session_id),
+            };
             if unid.timestamp < session.end_time || skewed_cmp(unid.timestamp, session.end_time) {
                 info!(message = "Identified session because it fell within a timeline.");
-                return Ok(session.session_id);
+                return Ok(session_id);
             }
 
             if !session.is_end_canon {
@@ -447,7 +474,7 @@ where
                 info!(message = "Updating session end_time.");
                 //                self.update_session_end_time(&session, unid.timestamp, false)?;
 
-                return Ok(session.session_id);
+                return Ok(session_id);
             }
         }
 
@@ -455,18 +482,33 @@ where
         if let Some(session) = session {
             if !session.is_create_canon {
                 info!(message = "Found a later, non canonical session. Extending create_time.");
+                let session_id = match Uid::from_u64(session.session_id) {
+                    Some(uid) => uid,
+                    None => bail!("Invalid session_id: {}", session.session_id),
+                };
 
                 self.update_session_create_time(&session, unid.timestamp, false)
                     .await?;
-                return Ok(session.session_id);
+                return Ok(session_id);
             }
         }
 
         if should_default {
             info!(message = "Defaulting and creating new session.");
-            let session_id = Uuid::new_v4().to_string();
+
+            let mut graph_mutation_client = graph_mutation_client.clone();
+            let uid = graph_mutation_client
+                .create_node(CreateNodeRequest {
+                    tenant_id,
+                    node_type: NodeType {
+                        value: unid.node_type.clone(),
+                    },
+                })
+                .await?
+                .uid;
+
             let session = Session {
-                session_id: session_id.clone(),
+                session_id: uid.as_u64(),
                 create_time: unid.timestamp,
                 end_time: unid.timestamp + 101,
                 is_create_canon: false,
@@ -476,7 +518,7 @@ where
             };
             self.create_session(&session).await?;
 
-            Ok(session_id)
+            Ok(uid)
         } else {
             warn!(message = "Could not attribute session. Not defaulting.");
             bail!(
@@ -487,17 +529,21 @@ where
     }
 
     // exposed for integration tests
-    #[tracing::instrument(skip(self), err)]
+    #[tracing::instrument(skip(self, graph_mutation_client), err)]
     pub async fn handle_unid_session(
         &self,
+        tenant_id: Uuid,
         mut unid: UnidSession,
+        graph_mutation_client: &GraphMutationClient,
         should_default: bool,
-    ) -> Result<String, Error> {
+    ) -> Result<Uid, Error> {
         unid.timestamp = shave_int(unid.timestamp, 1);
         if unid.is_creation {
-            self.handle_creation_event(unid).await
+            self.handle_creation_event(tenant_id, unid, graph_mutation_client)
+                .await
         } else {
-            self.handle_last_seen(unid, should_default).await
+            self.handle_last_seen(tenant_id, unid, graph_mutation_client, should_default)
+                .await
         }
     }
 }

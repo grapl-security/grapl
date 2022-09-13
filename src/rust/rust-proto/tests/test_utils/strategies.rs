@@ -132,6 +132,8 @@ pub mod graph {
         ExecutionHit,
         GraphDescription,
         IdStrategy,
+        IdentifiedEdge,
+        IdentifiedEdgeList,
         IdentifiedGraph,
         IdentifiedNode,
         ImmutableIntProp,
@@ -456,16 +458,15 @@ pub mod graph {
     //
     // IdentifiedNode
     //
-
     prop_compose! {
         pub fn identified_nodes()(
             properties in collection::hash_map(any::<String>(), node_properties(), 10),
-            node_key in any::<String>(),
+            uid in common::uids(),
             node_type in any::<String>(),
         ) -> IdentifiedNode {
             IdentifiedNode {
                 properties,
-                node_key,
+                uid,
                 node_type
             }
         }
@@ -477,13 +478,44 @@ pub mod graph {
 
     prop_compose! {
         pub fn identified_graphs()(
-            nodes in collection::hash_map(any::<String>(), identified_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), edge_lists(), 10),
+            nodes in collection::hash_map(common::uids(), identified_nodes(), 10),
+            edges in collection::hash_map(common::uids(), identified_edge_lists(), 10),
         ) -> IdentifiedGraph {
             IdentifiedGraph {
                 nodes,
                 edges
             }
+        }
+    }
+
+    //
+    // IdentifiedEdge
+    //
+
+    prop_compose! {
+        pub fn identified_edges()(
+            from_uid in common::uids(),
+            to_uid in common::uids(),
+            edge_name in any::<String>(),
+        ) -> IdentifiedEdge {
+            IdentifiedEdge {
+                from_uid,
+                to_uid,
+                edge_name
+            }
+        }
+    }
+
+
+    //
+    // IdentifiedEdgeList
+    //
+
+    prop_compose! {
+        pub fn identified_edge_lists()(
+            edges in collection::vec(identified_edges(), 10),
+        ) -> IdentifiedEdgeList {
+            IdentifiedEdgeList { edges }
         }
     }
 

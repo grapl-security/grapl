@@ -152,10 +152,10 @@ async fn test_sysmon_event_produces_identified_graph(ctx: &mut E2eTestContext) -
 
     let parent_to_child_edge = identified_graph
         .edges
-        .get(parent_process.get_node_key())
+        .get(&parent_process.uid)
         .iter()
         .flat_map(|edge_list| edge_list.edges.iter())
-        .find(|edge| edge.to_node_key == child_process.get_node_key())
+        .find(|edge| edge.to_uid == child_process.uid)
         .expect("missing edge from parent to child");
 
     assert_eq!(parent_to_child_edge.edge_name, "children");
