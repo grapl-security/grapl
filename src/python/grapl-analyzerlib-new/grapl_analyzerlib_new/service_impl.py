@@ -12,12 +12,12 @@ if TYPE_CHECKING:
 
 from grapl_analyzerlib_new.query_and_views import NodeView
 from grpc import aio as grpc_aio  # type: ignore
+
+# ^ grpc_aio: Type checking doesn't exist yet for gRPC asyncio runtime
 from python_proto.api.graph_query.v1beta1 import messages as graph_query_messages
 from python_proto.api.graph_query.v1beta1.client import GraphQueryClient
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_messages
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
-
-# ^ grpc_aio: Type checking doesn't exist yet for gRPC asyncio runtime
 
 
 @runtime_checkable
@@ -130,7 +130,7 @@ class AnalyzerServiceImpl:
         )
         if not execution_hit:
             return MISS_RESPONSE
-        execution_hit.analyzer_name = self._analyzer_name
+        execution_hit.analyzer_name.CopyFrom(self._analyzer_name)
 
         await analyzer.add_context(root_node, ctx)
 

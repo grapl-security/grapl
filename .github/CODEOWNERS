@@ -44,6 +44,7 @@ BUILD @christophermaier
 /src/js/graphql_endpoint/ @andrea-grapl
 /src/proto/ @grapl-security/wg-data-infra
 /src/python/graphql_endpoint_tests/ @wimax-grapl
+/src/python/grapl-analyzerlib-new/ @colin-grapl @wimax-grapl
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
 /src/python/grapl-tests-common/ @wimax-grapl
