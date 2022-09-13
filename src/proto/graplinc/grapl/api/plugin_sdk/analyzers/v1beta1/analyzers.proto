@@ -96,8 +96,6 @@ message ExecutionMiss {
 
 // A request to execute an Analyzer against a specific update to a tenant's graph
 message RunAnalyzerRequest {
-  // The tenant that the graph belongs to
-  graplinc.common.v1beta1.Uuid tenant_id = 1;
   // The update that occurred
   Update update = 2;
 }
