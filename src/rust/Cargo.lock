@@ -2007,8 +2007,6 @@ dependencies = [
  "clap 3.2.13",
  "futures",
  "grapl-tracing",
- "prost 0.9.0",
- "rand 0.8.5",
  "rust-proto",
  "serde",
  "thiserror",
@@ -2016,7 +2014,6 @@ dependencies = [
  "tonic 0.6.2",
  "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]

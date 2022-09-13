@@ -10,21 +10,17 @@ bytes = "1.1"
 clap = { version = "3.2.13", features = ["std", "env", "derive"] }
 futures = "0.3.21"
 grapl-tracing = { path = "../grapl-tracing" }
-serde = { version = "1.0.136", features = ["derive"] }
-thiserror = "1.0.31"
 tokio = { version = "1.17.0", features = ["full"] }
 tracing = "0.1.32"
 tracing-subscriber = { version = "0.3", default-features = false, features = [
     "env-filter",
     "fmt"
 ] }
-uuid = { version = "1.0", features = ["v4"] }
-futures = "0.3.21"
-prost = "0.9.0"
+rust-proto = { path = "../rust-proto" }
+serde = { version = "1.0.136", features = ["derive"] }
 tonic = "0.6.1"
 thiserror = "1.0.31"
-async-trait = "0.1.56"
-clap = { version = "3.2.13", features = ["std", "env", "derive"] }
+uuid = "1.1.2"
 
 [features]
 integration_tests = []
