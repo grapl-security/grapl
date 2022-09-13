@@ -25,6 +25,13 @@ with the data in Grapl.
     plugins/index
 
 .. toctree::
+    :caption: Nodes
+    :maxdepth: 1
+    :glob:
+
+    nodes/*
+
+.. toctree::
     :caption: Development
     :maxdepth: 1
     :glob:
@@ -45,14 +52,25 @@ Let's query for some processes with the name "svchost".
 
 .. code-block:: python
 
-    # TODO replace with instructions for next-gen grapl_analyzerlib
+    from grapl_analyzerlib.prelude import *
+
+    # Create a client to talk to Grapl
+    gclient = GraphClient()
+
+    svchosts = (
+        ProcessQuery()
+        .with_process_name(eq="svchost.exe")
+        .query(gclient)  # Execute the query
+    )  # type: List[ProcessView]
 
 
 Now we can pivot around that data. Let's look at the parent processes of these svchosts:
 
 .. code-block:: python
 
-    # TODO replace with instructions for next-gen grapl_analyzerlib
+    for svchost in svchosts:
+        if svchost.get_parent():
+            print(svchost.parent.get_process_name())
 
 
 Installation

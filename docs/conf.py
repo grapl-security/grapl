@@ -18,6 +18,7 @@ import os
 import sys
 
 py_roots = [
+    "../src/python/grapl_analyzerlib/",
     "../src/python/grapl-common/",
 ]
 for py_root in py_roots:
@@ -31,7 +32,7 @@ autodoc_mock_imports = [
 
 # -- Project information -----------------------------------------------------
 
-project = "Grapl Plugin SDK"
+project = "Grapl-Analyzerlib"
 copyright = "2020, Grapl Security"
 author = "Grapl Security"
 

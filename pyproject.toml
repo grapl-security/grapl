@@ -8,3 +8,5 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
+# grapl_analyzerlib's import ordering is very very touchy
+skip_glob = ["src/python/grapl_analyzerlib/**"]
