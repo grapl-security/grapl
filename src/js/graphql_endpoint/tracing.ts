@@ -9,24 +9,24 @@ import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
 import { ZipkinExporter } from "@opentelemetry/exporter-zipkin";
 
 const provider: NodeTracerProvider = new NodeTracerProvider({
-    resource: new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: "graphql-service",
-    }),
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: "graphql-service",
+  }),
 });
 
 provider.addSpanProcessor(
-    new BatchSpanProcessor(
-        new ZipkinExporter({
-            serviceName: "graphql-endpoint",
-        })
-    )
+  new BatchSpanProcessor(
+    new ZipkinExporter({
+      serviceName: "graphql-endpoint",
+    }),
+  ),
 );
 provider.register();
 
 registerInstrumentations({
-    instrumentations: [
-        new GraphQLInstrumentation(),
-        new HttpInstrumentation(),
-        new ExpressInstrumentation(),
-    ],
+  instrumentations: [
+    new GraphQLInstrumentation(),
+    new HttpInstrumentation(),
+    new ExpressInstrumentation(),
+  ],
 });

@@ -1,6 +1,6 @@
 <p align="center">
     <img 
-        src="src/js/engagement_view/public/grapl_logo.png" 
+        src="src/js/frontend/public/graplLogo.png" 
         width="100px"
         />
 </p>
