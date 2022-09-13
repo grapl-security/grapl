@@ -93,6 +93,96 @@ pub struct SetupGeneratorOptions {
 }
 
 impl E2eTestContext {
+    pub async fn create_tenant(&mut self) -> eyre::Result<Uuid> {
+        tracing::info!("creating tenant");
+        // TODO: actually create a real tenant
+        Ok(Uuid::new_v4())
+    }
+
+    pub async fn create_event_source(
+        &mut self,
+        tenant_id: Uuid,
+        display_name: String,
+        description: String,
+    ) -> eyre::Result<Uuid> {
+        let event_source = self
+            .event_source_client
+            .create_event_source(CreateEventSourceRequest {
+                display_name,
+                description,
+                tenant_id,
+            })
+            .await?;
+
+        Ok(event_source.event_source_id)
+    }
+
+    pub async fn create_generator(
+        &mut self,
+        tenant_id: Uuid,
+        display_name: String,
+        event_source_id: Uuid,
+        generator_artifact: Bytes,
+    ) -> eyre::Result<Uuid> {
+        let generator = self
+            .plugin_registry_client
+            .create_plugin(
+                PluginMetadata::new(
+                    tenant_id,
+                    display_name,
+                    PluginType::Generator,
+                    Some(event_source_id),
+                ),
+                futures::stream::once(async move { generator_artifact }),
+            )
+            .await?;
+
+        Ok(generator.plugin_id())
+    }
+
+    pub async fn deploy_generator(&mut self, generator_id: Uuid) -> eyre::Result<()> {
+        self.plugin_registry_client
+            .deploy_plugin(DeployPluginRequest::new(generator_id))
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn create_analyzer(
+        &mut self,
+        tenant_id: Uuid,
+        display_name: String,
+        analyzer_artifact: Bytes,
+    ) -> eyre::Result<Uuid> {
+        tracing::info!(
+            message = "Creating analyzer plugin",
+            tenant_id =% tenant_id,
+        );
+
+        let analyzer = self
+            .plugin_registry_client
+            .create_plugin(
+                PluginMetadata::new(tenant_id, display_name, PluginType::Analyzer, None),
+                futures::stream::once(async move { analyzer_artifact }),
+            )
+            .await?;
+
+        Ok(analyzer.plugin_id())
+    }
+
+    pub async fn deploy_analyzer(&mut self, analyzer_id: Uuid) -> eyre::Result<()> {
+        tracing::info!(
+            message = "deploying analyzer",
+            analyzer_id =% analyzer_id,
+        );
+
+        self.plugin_registry_client
+            .deploy_plugin(DeployPluginRequest::new(analyzer_id))
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn setup_sysmon_generator(&mut self, test_name: &str) -> eyre::Result<SetupResult> {
         let generator_artifact = test_fixtures::get_sysmon_generator()?;
         self.setup_generator(SetupGeneratorOptions {
@@ -109,45 +199,39 @@ impl E2eTestContext {
     ) -> eyre::Result<SetupResult> {
         tracing::info!(">> Generator Setup for {}", options.test_name);
 
-        let tenant_id = Uuid::new_v4();
+        let tenant_id = self.create_tenant().await?;
 
         // Register an Event Source
-        let event_source = self
-            .event_source_client
-            .create_event_source(CreateEventSourceRequest {
-                display_name: options.test_name.clone(),
-                description: "arbitrary".to_string(),
+        let event_source_id = self
+            .create_event_source(
                 tenant_id,
-            })
+                options.test_name.clone(),
+                "arbitrary".to_string(),
+            )
             .await?;
 
         // Deploy a Generator Plugin that responds to that event_source_id
-        let plugin = {
-            let plugin = self
-                .plugin_registry_client
-                .create_plugin(
-                    PluginMetadata::new(
-                        tenant_id,
-                        options.test_name.clone(),
-                        PluginType::Generator,
-                        Some(event_source.event_source_id),
-                    ),
-                    futures::stream::once(async move { options.generator_artifact }),
+        let generator_id = {
+            let generator_id = self
+                .create_generator(
+                    tenant_id,
+                    options.test_name.clone(),
+                    event_source_id,
+                    options.generator_artifact,
                 )
                 .await?;
 
             if options.should_deploy_generator {
-                self.plugin_registry_client
-                    .deploy_plugin(DeployPluginRequest::new(plugin.plugin_id()))
-                    .await?;
+                self.deploy_generator(generator_id).await?;
             }
-            plugin
+
+            generator_id
         };
 
         let setup_result = SetupResult {
             tenant_id,
-            plugin_id: plugin.plugin_id(),
-            event_source_id: event_source.event_source_id,
+            plugin_id: generator_id,
+            event_source_id,
         };
 
         tracing::info!(

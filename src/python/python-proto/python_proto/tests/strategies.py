@@ -79,7 +79,11 @@ MAX_LOG_EVENT_SIZE = 1024
 
 uint64s = st.integers(min_value=UINT64_MIN, max_value=UINT64_MAX)
 int32s = st.integers(min_value=INT32_MIN, max_value=INT32_MAX)
+int64s = st.integers(min_value=INT64_MIN, max_value=INT64_MAX)
 uint32s = st.integers(min_value=UINT32_MIN, max_value=UINT32_MAX)
+
+# Very few of the tests in here really depend on the content of the text.
+small_text = st.text(max_size=4)
 
 
 def uuids(

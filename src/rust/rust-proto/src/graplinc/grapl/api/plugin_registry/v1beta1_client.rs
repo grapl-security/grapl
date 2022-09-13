@@ -124,7 +124,7 @@ impl PluginRegistryServiceClient {
             list_plugins,
             proto::ListPluginsRequest,
             native::ListPluginsResponse,
-            ExecuteClientRpcOptions::default(),
+            RpcConfig::default(),
         )
     }
 

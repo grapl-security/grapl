@@ -142,6 +142,7 @@ class Kafka(pulumi.ComponentResource):
                 "generated-graphs",
                 "identified-graphs",
                 "merged-graphs",
+                "merged-graphs-retry",
                 "analyzer-executions",
                 "engagements",
             ]
