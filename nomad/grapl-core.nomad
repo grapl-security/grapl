@@ -754,8 +754,9 @@ job "grapl-core" {
         AWS_REGION         = var.aws_region
         RUST_LOG           = var.rust_log
         RUST_BACKTRACE     = local.rust_backtrace
-        MG_ALPHAS          = local.alpha_grpc_connect_str
-        GRAPL_SCHEMA_TABLE = var.schema_table_name
+
+        GRAPH_MUTATION_CLIENT_URL = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
+        GRAPL_SCHEMA_TABLE        = var.schema_table_name
 
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME       = var.kafka_credentials["graph-merger"].sasl_username
@@ -776,14 +777,9 @@ job "grapl-core" {
       connect {
         sidecar_service {
           proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
+            upstreams {
+              destination_name = "graph-mutation"
+              local_bind_port  = 1001
             }
           }
         }
@@ -833,16 +829,29 @@ job "grapl-core" {
         KAFKA_CONSUMER_TOPIC      = "generated-graphs"
         KAFKA_PRODUCER_TOPIC      = "identified-graphs"
 
+        GRAPH_MUTATION_CLIENT_URL = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
+
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
+        GRAPL_STATIC_MAPPING_TABLE  = var.static_mapping_table_name
       }
 
       resources {
         cpu = 50
       }
 
-      service {
-        name = "node-identifier"
+    service {
+      name = "node-identifier"
+
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "graph-mutation"
+              local_bind_port  = 1001
+            }
+          }
+        }
       }
     }
   }

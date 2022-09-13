@@ -5,13 +5,16 @@ use rust_proto::{
         build_grpc_client,
         services::UidAllocatorClientConfig,
     },
-    graplinc::grapl::api::uid_allocator::v1beta1::{
-        client::UidAllocatorServiceClientError,
-        messages::{
-            AllocateIdsRequest,
-            Allocation,
-            CreateTenantKeyspaceRequest,
+    graplinc::grapl::{
+        api::uid_allocator::v1beta1::{
+            client::UidAllocatorServiceClientError,
+            messages::{
+                AllocateIdsRequest,
+                Allocation,
+                CreateTenantKeyspaceRequest,
+            },
         },
+        common::v1beta1::types::Uid,
     },
     protocol::service_client::ConnectError,
 };
@@ -44,9 +47,9 @@ impl CachingUidAllocatorServiceClient {
     pub async fn allocate_id(
         &self,
         tenant_id: uuid::Uuid,
-    ) -> Result<u64, UidAllocatorServiceClientError> {
+    ) -> Result<Uid, UidAllocatorServiceClientError> {
         match self.get_from_allocation_map(tenant_id) {
-            Some(allocation) => Ok(allocation),
+            Some(allocation) => Ok(Uid::from_u64(allocation).unwrap()),
             None => {
                 let mut allocator = self.allocator.clone();
                 let mut allocation = allocator
@@ -58,7 +61,7 @@ impl CachingUidAllocatorServiceClient {
                     .allocation;
                 let next = allocation.next().unwrap(); // Allocation should never be empty
                 self.allocation_map.insert(tenant_id, allocation);
-                Ok(next)
+                Ok(Uid::from_u64(next).unwrap())
             }
         }
     }
