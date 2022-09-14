@@ -111,10 +111,15 @@ class NomadAllocation:
         if not opts.dump_connect_proxy_logs:
             task_names = [t for t in task_names if not t.startswith("connect-proxy")]
 
+        for task_name in task_names:
+            if "plugin-" in task_name:
+                import pdb; pdb.set_trace();
+
         self.tasks = [
             NomadTask(
                 parent=self,
                 name=t,
+                meta=None,
                 events=input["TaskStates"][t]["Events"],
                 state=input["TaskStates"][t]["State"],
                 restarts=input["TaskStates"][t]["Restarts"],
@@ -134,6 +139,7 @@ class NomadTask:
     events: list[dict]
     state: str
     restarts: int
+    meta: dict | None
 
     def get_logs(self, nomad_client: Nomad, type: OutOrErr) -> str | None:
         try:

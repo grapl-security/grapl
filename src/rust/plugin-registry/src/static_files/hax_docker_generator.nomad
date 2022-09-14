@@ -3,6 +3,11 @@ variable "plugin_id" {
   description = "The ID for this plugin."
 }
 
+variable "plugin_display_name" {
+  type        = string
+  description = "A user-friendly name for the plugin."
+}
+
 variable "tenant_id" {
   type        = string
   description = "The tenant's ID. Used in the plugin-execution-sidecar."
@@ -171,6 +176,11 @@ job "grapl-plugin" {
     # - the plugin binary itself (mounted)
     task "plugin" {
       driver = "docker"
+
+      meta {
+        # Only used to make `dump-artifacts-local` more ergonomic
+        plugin_name = var.plugin_name
+      }
 
       config {
         ports = ["plugin"]

@@ -80,6 +80,7 @@ pub fn get_job(
                     "plugin_execution_sidecar_image",
                     plugin_execution_sidecar_image,
                 ),
+                ("plugin_display_name", plugin.display_name.to_string()),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("tenant_id", plugin.tenant_id.to_string()),
                 // Passthrough vars
