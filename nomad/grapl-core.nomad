@@ -848,17 +848,16 @@ job "grapl-core" {
       resources {
         cpu = 50
       }
+    }
+    service {
+      name = "node-identifier"
 
-      service {
-        name = "node-identifier"
-
-        connect {
-          sidecar_service {
-            proxy {
-              upstreams {
-                destination_name = "graph-mutation"
-                local_bind_port  = 1001
-              }
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "graph-mutation"
+              local_bind_port  = 1001
             }
           }
         }
