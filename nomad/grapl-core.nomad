@@ -76,6 +76,11 @@ variable "session_table_name" {
   description = "What is the name of the session table?"
 }
 
+variable "static_mapping_table_name" {
+  type        = string
+  description = "The name of the dynamodb table used for storing the ids of static nodes"
+}
+
 variable "plugin_registry_db" {
   type = object({
     hostname = string
