@@ -57,8 +57,8 @@ receivers:
     config:
       scrape_configs:
         - job_name: 'nomad-server'
-          scrape_interval: 10s
-          scrape_timeout: 20s
+          scrape_interval: 20s
+          scrape_timeout: 10s
           metrics_path: '/v1/metrics?format=prometheus'
           params:
             format: ['prometheus']
@@ -87,8 +87,11 @@ service:
     logs:
       level: "debug"
   pipelines:
+    metrics:
+      receivers: [prometheus]
+      exporters: [otlp/ls]
     traces:
-      receivers: [jaeger, otlp, prometheus, zipkin]
+      receivers: [jaeger, otlp, zipkin]
       exporters: [logging, otlp/ls]
 """
     )
