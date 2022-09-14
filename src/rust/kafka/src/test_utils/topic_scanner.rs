@@ -162,7 +162,7 @@ where
                     let ret_span = span.clone();
                     let _guard = span.enter();
 
-                    tracing::debug!(message = "consumed kafka message");
+                    tracing::trace!(message = "consumed kafka message");
 
                     if envelope.tenant_id() == priming_message_tenant_id {
                         tracing::info!("received priming message");
@@ -203,7 +203,7 @@ where
                             .expect("failed to acquire filter predicate lock")(
                             envelope.clone()
                         ) {
-                            tracing::debug!("filter predicate matched");
+                            tracing::trace!("filter predicate matched");
                             Some((ret_span, envelope))
                         } else {
                             None
