@@ -1,5 +1,8 @@
 use clap::Parser;
-use futures::StreamExt;
+use futures::{
+    FutureExt,
+    StreamExt,
+};
 use grapl_config::env_helpers::FromEnv;
 use grapl_tracing::setup_tracing;
 use kafka::{
@@ -18,7 +21,10 @@ use rust_proto::graplinc::grapl::{
     },
     pipeline::v1beta1::Envelope,
 };
-use tracing::instrument::WithSubscriber;
+use tracing::{
+    instrument::WithSubscriber,
+    Instrument,
+};
 
 mod dynamic_sessiondb;
 mod error;
@@ -68,61 +74,71 @@ async fn handler() -> Result<(), NodeIdentifierError> {
     tracing::info!(message = "Kafka StreamProcessor configured successfully");
 
     let stream = stream_processor.stream::<_, _, StreamProcessorError>(
-        move |event: Result<Envelope<GraphDescription>, StreamProcessorError>| {
-            let identifier = node_identifier.clone();
-            async move {
-                let envelope = event?;
-                let tenant_id = envelope.tenant_id();
-                let trace_id = envelope.trace_id();
-                let event_source_id = envelope.event_source_id();
-                let graph_description = envelope.inner_message();
+        move |event: Result<(tracing::Span, Envelope<GraphDescription>), StreamProcessorError>| {
+            {
+                let identifier = node_identifier.clone();
+                async move {
+                    let (span, envelope) = event?;
+                    let handler_span = span.clone();
+                    let _guard = span.enter();
+                    let tenant_id = envelope.tenant_id();
+                    let trace_id = envelope.trace_id();
+                    let event_source_id = envelope.event_source_id();
+                    let graph_description = envelope.inner_message();
 
-                tracing::debug!("received kafka message");
+                    tracing::debug!("received kafka message");
 
-                match identifier.handle_event(tenant_id, graph_description).await {
-                    Ok(identified_graph) => Ok(Some(Envelope::new(
-                        tenant_id,
-                        trace_id,
-                        event_source_id,
-                        identified_graph,
-                    ))),
-                    Err(e) => match e {
-                        Ok((_, e)) => {
-                            match e {
-                                NodeIdentifierError::AttributionFailure => {
-                                    tracing::warn!(
-                                        message = "failed to attribute",
-                                        error = %e,
-                                    );
-                                    // TODO: write message to retry topic here
-                                    Err(StreamProcessorError::from(e))
+                    match identifier
+                        .handle_event(tenant_id, graph_description)
+                        .instrument(handler_span)
+                        .await
+                    {
+                        Ok(identified_graph) => Ok(Some(Envelope::new(
+                            tenant_id,
+                            trace_id,
+                            event_source_id,
+                            identified_graph,
+                        ))),
+                        Err(e) => match e {
+                            Ok((_, e)) => {
+                                match e {
+                                    NodeIdentifierError::AttributionFailure => {
+                                        tracing::warn!(
+                                            message = "failed to attribute",
+                                            error = %e,
+                                        );
+                                        // TODO: write message to retry topic here
+                                        Err(StreamProcessorError::from(e))
+                                    }
+                                    _ => {
+                                        tracing::error!(
+                                            mesage = "unexpected error",
+                                            error = %e,
+                                        );
+                                        // TODO: write message to failed topic here
+                                        Err(StreamProcessorError::from(e))
+                                    }
+                                }
+                            }
+                            Err(e) => match e {
+                                NodeIdentifierError::EmptyGraph => {
+                                    tracing::warn!(message = "identified subgraph is empty",);
+                                    Ok(None)
                                 }
                                 _ => {
                                     tracing::error!(
-                                        mesage = "unexpected error",
+                                        message = "unexpected error",
                                         error = %e,
                                     );
-                                    // TODO: write message to failed topic here
                                     Err(StreamProcessorError::from(e))
                                 }
-                            }
-                        }
-                        Err(e) => match e {
-                            NodeIdentifierError::EmptyGraph => {
-                                tracing::warn!(message = "identified subgraph is empty",);
-                                Ok(None)
-                            }
-                            _ => {
-                                tracing::error!(
-                                    message = "unexpected error",
-                                    error = %e,
-                                );
-                                Err(StreamProcessorError::from(e))
-                            }
+                            },
                         },
-                    },
+                    }
                 }
             }
+            .into_stream()
+            .filter_map(|res| async move { res.transpose() })
         },
     );
 
