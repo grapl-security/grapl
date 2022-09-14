@@ -30,7 +30,6 @@ use futures::{
         Stream,
         StreamExt,
     },
-    Future,
     FutureExt,
     TryFutureExt,
     TryStreamExt,
@@ -57,7 +56,6 @@ use rust_proto::{
 };
 use secrecy::ExposeSecret;
 use thiserror::Error;
-use tracing::Instrument;
 
 /// helper function to format a timestamp as ISO-8601 (useful for logging)
 pub fn format_iso8601(timestamp: SystemTime) -> String {
@@ -329,6 +327,9 @@ impl<T: SerDe> Consumer<T> {
         })
     }
 
+    /// Start consuming from Kafka. Returns a stream of deserialized Envelopes
+    /// alongside a span which can be used to automatically decorate tracing
+    /// data with the Envelope's metadata.
     #[tracing::instrument(skip(self))]
     pub fn stream(
         &self,
@@ -495,46 +496,45 @@ where
     ///   1. Consumes a message from Kafka
     ///   2. Deserializes the message
     ///   3. Applies the event_handler to the message
-    ///   4. Publishes the event_handler's result to Kafka
+    ///   4. Publishes the event_handler's results to Kafka
     ///   5. Commits the message offset
+    ///
+    /// The event_handler is a function which takes inputs with type
+    /// Result<(tracing::Span, Envelope<C>), StreamProcessorError> to outputs
+    /// with type Stream<Item = Result<Envelope<P>, E>>. The Span is to enable
+    /// you to automatically decorate tracing data emitted from your
+    /// event_handler with the Envelope's metadata. If your event_handler
+    /// returns an empty stream the offset corresponding to the input message
+    /// will never be committed, but that's fine so long as eventually a
+    /// subsequent call to your event_handler returns a non-empty stream causing
+    /// a later offset to be committed.
     ///
     /// N.B.: You must consume this stream serially to ensure proper commit
     /// ordering. Consuming this stream concurrently could result in data loss.
     #[tracing::instrument(skip(self, event_handler))]
     pub fn stream<'a, F, R, E>(
         &'a self,
-        mut event_handler: F,
+        event_handler: F,
     ) -> impl Stream<Item = Result<(), StreamProcessorError>> + '_
     where
-        F: FnMut(Result<Envelope<C>, StreamProcessorError>) -> R + 'a,
-        R: Future<Output = Result<Option<Envelope<P>>, E>> + 'a,
+        F: FnMut(Result<(tracing::Span, Envelope<C>), StreamProcessorError>) -> R + 'a,
+        R: Stream<Item = Result<Envelope<P>, E>> + 'a,
         E: Into<StreamProcessorError> + 'a,
     {
         self.consumer
             .stream()
             .map_err(StreamProcessorError::from)
-            .then(move |result| {
-                // this guard makes sure any tracing messages logged within the
-                // event_handler's scope will automatically include the
-                // envelope's metadata
-                match result {
-                    Ok((span, envelope)) => event_handler(Ok(envelope)).instrument(span),
-                    Err(e) => event_handler(Err(e))
-                        .instrument(tracing::span!(tracing::Level::ERROR, "err")),
-                }
-            })
+            .map(event_handler)
+            .flatten()
             .then(move |result| async move {
                 match result {
-                    Ok(msg) => match msg {
-                        Some(msg) => {
-                            self.producer
-                                .clone()
-                                .send(msg)
-                                .map_err(StreamProcessorError::from)
-                                .await
-                        }
-                        None => Ok(()),
-                    },
+                    Ok(msg) => {
+                        self.producer
+                            .clone()
+                            .send(msg)
+                            .map_err(StreamProcessorError::from)
+                            .await
+                    }
                     Err(e) => Err(e.into()),
                 }
             })

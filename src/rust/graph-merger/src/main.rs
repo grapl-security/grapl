@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use clap::Parser;
 use dgraph_tonic::Client as DgraphClient;
-use futures::StreamExt;
+use futures::{
+    FutureExt,
+    StreamExt,
+};
 use grapl_config::env_helpers::FromEnv;
 use grapl_tracing::setup_tracing;
 use kafka::{
@@ -22,7 +25,10 @@ use rust_proto::graplinc::grapl::{
     pipeline::v1beta1::Envelope,
 };
 use tokio::sync::Mutex;
-use tracing::instrument::WithSubscriber;
+use tracing::{
+    instrument::WithSubscriber,
+    Instrument,
+};
 
 use crate::{
     reverse_resolver::ReverseEdgeResolver,
@@ -89,7 +95,9 @@ async fn handler(
     let stream = stream_processor.stream::<_, _, StreamProcessorError>(move |event| {
         let graph_merger = graph_merger.clone();
         async move {
-            let envelope = event?;
+            let (span, envelope) = event?;
+            let handler_span = span.clone();
+            let _guard = span.enter();
             let tenant_id = envelope.tenant_id();
             let trace_id = envelope.trace_id();
             let event_source_id = envelope.event_source_id();
@@ -100,6 +108,7 @@ async fn handler(
                 .lock()
                 .await
                 .handle_event(envelope.inner_message())
+                .instrument(handler_span)
                 .await
             {
                 Ok(merged_graph) => Ok(Some(Envelope::new(
@@ -149,6 +158,8 @@ async fn handler(
                 },
             }
         }
+        .into_stream()
+        .filter_map(|res| async move { res.transpose() })
     });
 
     stream
