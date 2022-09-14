@@ -355,7 +355,7 @@ lint: ## Run all lint checks
 
 .PHONY: lint-build
 lint-build: ## Lint Pants BUILD files
-	./pants update-build-files --check
+	./pants update-build-files --check ::
 
 .PHONY: lint-docker
 lint-docker: ## Lint Dockerfiles with Hadolint
@@ -414,7 +414,7 @@ format: ## Reformat all code
 
 .PHONY: format-build
 format-build: ## Reformat all Pants BUILD files
-	./pants update-build-files --no-update-build-files-fix-safe-deprecations
+	./pants update-build-files --no-update-build-files-fix-safe-deprecations ::
 
 .PHONY: format-hcl
 format-hcl: ## Reformat all HCL files
