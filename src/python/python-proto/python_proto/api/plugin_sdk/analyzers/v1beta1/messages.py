@@ -10,7 +10,7 @@ from python_proto.serde import SerDe
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class RunAnalyzerRequest(SerDe[proto.RunAnalyzerRequest]):
-    update: Update
+    updates: Updates
 
     _proto_cls = proto.RunAnalyzerRequest
 
@@ -20,12 +20,12 @@ class RunAnalyzerRequest(SerDe[proto.RunAnalyzerRequest]):
         proto_value: proto.RunAnalyzerRequest,
     ) -> RunAnalyzerRequest:
         return cls(
-            update=Update.from_proto(proto_value.update),
+            updates=Updates.from_proto(proto_value.updates),
         )
 
     def into_proto(self) -> proto.RunAnalyzerRequest:
         proto_value = self.new_proto()
-        proto_value.update.CopyFrom(self.update.into_proto())
+        proto_value.updates.CopyFrom(self.updates.into_proto())
         return proto_value
 
 
@@ -190,6 +190,27 @@ class Update(SerDe[proto.Update]):
                 raise Exception(f"Unknown variant: {self.inner}")
 
         return msg
+
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class Updates(SerDe[proto.Updates]):
+    updates: list[Update]
+    _proto_cls = proto.Updates
+
+    @classmethod
+    def from_proto(
+            cls,
+            proto_value: proto.Updates,
+    ) -> Updates:
+        return cls(
+            updates=[Update.from_proto(u) for u in proto_value.updates]
+        )
+
+    def into_proto(self) -> proto.Updates:
+        proto_value = self.new_proto()
+        proto_value.updates.extend((u.into_proto() for u in self.updates))
+        return proto_value
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
