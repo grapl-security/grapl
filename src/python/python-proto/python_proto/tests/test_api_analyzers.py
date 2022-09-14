@@ -67,10 +67,12 @@ def updates(
 ) -> st.SearchStrategy[analyzer_msgs.Update]:
     return st.builds(analyzer_msgs.Update, inner=inner)
 
+
 def multiple_updates(
     updates: st.SearchStrategy[list[analyzer_msgs.Update]] = st.lists(updates()),
 ) -> st.SearchStrategy[analyzer_msgs.Updates]:
     return st.builds(analyzer_msgs.Updates, updates=updates)
+
 
 def run_analyzer_requests(
     updates: st.SearchStrategy[analyzer_msgs.Updates] = multiple_updates(),

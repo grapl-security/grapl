@@ -192,7 +192,6 @@ class Update(SerDe[proto.Update]):
         return msg
 
 
-
 @dataclasses.dataclass(frozen=True, slots=True)
 class Updates(SerDe[proto.Updates]):
     updates: list[Update]
@@ -200,16 +199,14 @@ class Updates(SerDe[proto.Updates]):
 
     @classmethod
     def from_proto(
-            cls,
-            proto_value: proto.Updates,
+        cls,
+        proto_value: proto.Updates,
     ) -> Updates:
-        return cls(
-            updates=[Update.from_proto(u) for u in proto_value.updates]
-        )
+        return cls(updates=[Update.from_proto(u) for u in proto_value.updates])
 
     def into_proto(self) -> proto.Updates:
         proto_value = self.new_proto()
-        proto_value.updates.extend((u.into_proto() for u in self.updates))
+        proto_value.updates.extend(u.into_proto() for u in self.updates)
         return proto_value
 
 

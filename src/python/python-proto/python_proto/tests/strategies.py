@@ -419,11 +419,11 @@ def graph_descriptions(
 
 
 def identified_graphs(
-    nodes: st.SearchStrategy[Mapping[str, IdentifiedNode]] = st.dictionaries(
-        keys=st.text(), values=identified_nodes(), max_size=MAX_DICT_SIZE
+    nodes: st.SearchStrategy[Mapping[Uid, IdentifiedNode]] = st.dictionaries(
+        keys=uids(), values=identified_nodes(), max_size=MAX_DICT_SIZE
     ),
-    edges: st.SearchStrategy[Mapping[str, EdgeList]] = st.dictionaries(
-        keys=st.text(), values=edge_lists(), max_size=MAX_DICT_SIZE
+    edges: st.SearchStrategy[Mapping[Uid, IdentifiedEdgeList]] = st.dictionaries(
+        keys=uids(), values=identified_edge_lists(), max_size=MAX_DICT_SIZE
     ),
 ) -> st.SearchStrategy[IdentifiedGraph]:
     return st.builds(
