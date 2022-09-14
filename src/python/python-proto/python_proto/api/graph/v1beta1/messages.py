@@ -4,6 +4,7 @@ import dataclasses
 from typing import Mapping, Sequence, cast
 
 from graplinc.grapl.api.graph.v1beta1 import types_pb2 as proto
+from python_proto.grapl.common.v1beta1.messages import Uid
 from python_proto.serde import SerDe
 
 
@@ -342,7 +343,7 @@ class NodeDescription(SerDe[proto.NodeDescription]):
 @dataclasses.dataclass(frozen=True)
 class IdentifiedNode(SerDe[proto.IdentifiedNode]):
     properties: Mapping[str, NodeProperty]
-    node_key: str
+    uid: Uid
     node_type: str
     _proto_cls = proto.IdentifiedNode
 
@@ -353,7 +354,7 @@ class IdentifiedNode(SerDe[proto.IdentifiedNode]):
                 k: NodeProperty.from_proto(proto_identified_node.properties[k])
                 for k in proto_identified_node.properties
             },
-            node_key=proto_identified_node.node_key,
+            uid=Uid.from_proto(proto_identified_node.uid),
             node_type=proto_identified_node.node_type,
         )
 
@@ -361,7 +362,7 @@ class IdentifiedNode(SerDe[proto.IdentifiedNode]):
         proto_identified_node = proto.IdentifiedNode()
         for k, v in self.properties.items():
             proto_identified_node.properties[k].CopyFrom(v.into_proto())
-        proto_identified_node.node_key = self.node_key
+        proto_identified_node.uid.CopyFrom(self.uid.into_proto())
         proto_identified_node.node_type = self.node_type
         return proto_identified_node
 
@@ -433,6 +434,54 @@ class EdgeList(SerDe[proto.EdgeList]):
         for e in self.edges:
             proto_edge_list.edges.append(e.into_proto())
         return proto_edge_list
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class IdentifiedEdge(SerDe[proto.IdentifiedEdge]):
+    from_uid: Uid
+    to_uid: Uid
+    edge_name: str
+    _proto_cls = proto.IdentifiedEdge
+
+    @classmethod
+    def from_proto(cls, proto_identified_edge: proto.IdentifiedEdge) -> IdentifiedEdge:
+        return IdentifiedEdge(
+            from_uid=Uid.from_proto(proto_identified_edge.from_uid),
+            to_uid=Uid.from_proto(proto_identified_edge.to_uid),
+            edge_name=proto_identified_edge.edge_name,
+        )
+
+    def into_proto(self) -> proto.IdentifiedEdge:
+        proto_identified_edge = proto.IdentifiedEdge()
+        proto_identified_edge.from_uid.CopyFrom(self.from_uid.into_proto())
+        proto_identified_edge.to_uid.CopyFrom(self.to_uid.into_proto())
+        proto_identified_edge.edge_name = self.edge_name
+        return proto_identified_edge
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class IdentifiedEdgeList(SerDe[proto.IdentifiedEdgeList]):
+    # TODO: seed to places where this is used:
+    # /src/python/grapl_analyzerlib/grapl_analyzerlib/view_from_proto.py
+    # /src/python/grapl_analyzerlib/grapl_analyzerlib/subgraph_view.py
+    edges: Sequence[IdentifiedEdge]
+    _proto_cls = proto.IdentifiedEdgeList
+
+    @classmethod
+    def from_proto(
+        cls, proto_identified_edge_list: proto.IdentifiedEdgeList
+    ) -> IdentifiedEdgeList:
+        return IdentifiedEdgeList(
+            edges=[
+                IdentifiedEdge.from_proto(e) for e in proto_identified_edge_list.edges
+            ]
+        )
+
+    def into_proto(self) -> proto.IdentifiedEdgeList:
+        proto_identified_edge_list = proto.IdentifiedEdgeList()
+        for e in self.edges:
+            proto_identified_edge_list.edges.append(e.into_proto())
+        return proto_identified_edge_list
 
 
 @dataclasses.dataclass(frozen=True)
@@ -516,10 +565,10 @@ class GraphDescription(SerDe[proto.GraphDescription]):
         return proto_graph_description
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class IdentifiedGraph(SerDe[proto.IdentifiedGraph]):
-    nodes: Mapping[str, IdentifiedNode]
-    edges: Mapping[str, EdgeList]
+    nodes: Mapping[Uid, IdentifiedNode]
+    edges: Mapping[Uid, IdentifiedEdgeList]
     _proto_cls = proto.IdentifiedGraph
 
     @classmethod
@@ -528,11 +577,11 @@ class IdentifiedGraph(SerDe[proto.IdentifiedGraph]):
     ) -> IdentifiedGraph:
         return IdentifiedGraph(
             nodes={
-                k: IdentifiedNode.from_proto(proto_identified_graph.nodes[k])
+                Uid(k): IdentifiedNode.from_proto(proto_identified_graph.nodes[k])
                 for k in proto_identified_graph.nodes
             },
             edges={
-                k: EdgeList.from_proto(proto_identified_graph.edges[k])
+                Uid(k): IdentifiedEdgeList.from_proto(proto_identified_graph.edges[k])
                 for k in proto_identified_graph.edges
             },
         )
@@ -540,9 +589,9 @@ class IdentifiedGraph(SerDe[proto.IdentifiedGraph]):
     def into_proto(self) -> proto.IdentifiedGraph:
         proto_identified_graph = proto.IdentifiedGraph()
         for k1, v1 in self.nodes.items():
-            proto_identified_graph.nodes[k1].CopyFrom(v1.into_proto())
+            proto_identified_graph.nodes[k1.value].CopyFrom(v1.into_proto())
         for k2, v2 in self.edges.items():
-            proto_identified_graph.edges[k2].CopyFrom(v2.into_proto())
+            proto_identified_graph.edges[k2.value].CopyFrom(v2.into_proto())
         return proto_identified_graph
 
 
@@ -604,8 +653,8 @@ class Lens(SerDe[proto.Lens]):
 
 @dataclasses.dataclass(frozen=True)
 class ExecutionHit(SerDe[proto.ExecutionHit]):
-    nodes: Mapping[str, MergedNode]
-    edges: Mapping[str, MergedEdgeList]
+    nodes: Mapping[Uid, IdentifiedNode]
+    edges: Mapping[Uid, IdentifiedEdgeList]
     analyzer_name: str
     risk_score: int
     lenses: Sequence[Lens]
@@ -616,11 +665,11 @@ class ExecutionHit(SerDe[proto.ExecutionHit]):
     def from_proto(cls, proto_execution_hit: proto.ExecutionHit) -> ExecutionHit:
         return ExecutionHit(
             nodes={
-                k: MergedNode.from_proto(v)
+                Uid(k): IdentifiedNode.from_proto(v)
                 for k, v in proto_execution_hit.nodes.items()
             },
             edges={
-                k: MergedEdgeList.from_proto(v)
+                Uid(k): IdentifiedEdgeList.from_proto(v)
                 for k, v in proto_execution_hit.edges.items()
             },
             analyzer_name=proto_execution_hit.analyzer_name,
@@ -632,9 +681,9 @@ class ExecutionHit(SerDe[proto.ExecutionHit]):
     def into_proto(self) -> proto.ExecutionHit:
         proto_execution_hit = proto.ExecutionHit()
         for k1, v1 in self.nodes.items():
-            proto_execution_hit.nodes[k1].CopyFrom(v1.into_proto())
+            proto_execution_hit.nodes[k1.value].CopyFrom(v1.into_proto())
         for k2, v2 in self.edges.items():
-            proto_execution_hit.edges[k2].CopyFrom(v2.into_proto())
+            proto_execution_hit.edges[k2.value].CopyFrom(v2.into_proto())
         proto_execution_hit.analyzer_name = self.analyzer_name
         proto_execution_hit.risk_score = self.risk_score
         for lens in self.lenses:

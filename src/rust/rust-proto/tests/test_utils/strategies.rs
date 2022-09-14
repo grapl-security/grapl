@@ -506,7 +506,6 @@ pub mod graph {
         }
     }
 
-
     //
     // IdentifiedEdgeList
     //

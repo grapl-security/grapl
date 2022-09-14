@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
-use crate::graplinc::grapl::common::v1beta1::types::Uid;
-
 use crate::{
+    graplinc::grapl::common::v1beta1::types::Uid,
     protobufs::graplinc::grapl::api::graph::v1beta1::{
         DecrementOnlyIntProp as DecrementOnlyIntPropProto,
         DecrementOnlyUintProp as DecrementOnlyUintPropProto,
@@ -11,10 +10,10 @@ use crate::{
         ExecutionHit as ExecutionHitProto,
         GraphDescription as GraphDescriptionProto,
         IdStrategy as IdStrategyProto,
-        IdentifiedGraph as IdentifiedGraphProto,
-        IdentifiedNode as IdentifiedNodeProto,
         IdentifiedEdge as IdentifiedEdgeProto,
         IdentifiedEdgeList as IdentifiedEdgeListProto,
+        IdentifiedGraph as IdentifiedGraphProto,
+        IdentifiedNode as IdentifiedNodeProto,
         ImmutableIntProp as ImmutableIntPropProto,
         ImmutableStrProp as ImmutableStrPropProto,
         ImmutableUintProp as ImmutableUintPropProto,
@@ -1325,7 +1324,6 @@ pub struct IdentifiedEdge {
     pub edge_name: String,
 }
 
-
 impl TryFrom<IdentifiedEdgeProto> for IdentifiedEdge {
     type Error = SerDeError;
     fn try_from(identified_edge_proto: IdentifiedEdgeProto) -> Result<Self, Self::Error> {
@@ -1345,7 +1343,6 @@ impl TryFrom<IdentifiedEdgeProto> for IdentifiedEdge {
         })
     }
 }
-
 
 impl From<IdentifiedEdge> for IdentifiedEdgeProto {
     fn from(identified_edge: IdentifiedEdge) -> Self {
@@ -1530,7 +1527,6 @@ impl TryFrom<ExecutionHitProto> for ExecutionHit {
             lenses.push(Lens::from(lens));
         }
 
-
         Ok(ExecutionHit {
             nodes,
             edges,
@@ -1622,7 +1618,6 @@ impl type_url::TypeUrl for IdentifiedEdgeList {
 impl serde_impl::ProtobufSerializable for IdentifiedEdgeList {
     type ProtobufMessage = IdentifiedEdgeListProto;
 }
-
 
 //
 // MergedEdgeList
