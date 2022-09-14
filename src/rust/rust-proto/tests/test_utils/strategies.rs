@@ -1073,9 +1073,7 @@ pub mod plugin_work_queue {
         pub fn get_execute_analyzer_requests()(
             plugin_id in uuids(),
         ) -> native::GetExecuteAnalyzerRequest {
-            native::GetExecuteAnalyzerRequest {
-                plugin_id,
-            }
+            native::GetExecuteAnalyzerRequest::new(plugin_id)
         }
     }
 
@@ -1278,13 +1276,9 @@ pub mod analyzer_sdk {
 
     prop_compose! {
         pub fn run_analyzer_requests()(
-            tenant_id in uuids(),
             update in updates(),
         ) -> native::RunAnalyzerRequest {
-            native::RunAnalyzerRequest {
-                tenant_id,
-                update,
-            }
+            native::RunAnalyzerRequest::new(update)
         }
     }
 }
