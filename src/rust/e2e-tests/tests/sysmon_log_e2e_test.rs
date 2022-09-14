@@ -3,6 +3,7 @@
 use std::time::Duration;
 
 use bytes::Bytes;
+use clap::Parser;
 use e2e_tests::{
     test_fixtures,
     test_utils::{
@@ -21,18 +22,29 @@ use kafka::{
     test_utils::topic_scanner::KafkaTopicScanner,
 };
 use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
-use rust_proto::graplinc::grapl::{
-    api::{
-        graph::v1beta1::{
-            GraphDescription,
-            IdentifiedGraph,
-            MergedGraph,
+use rust_proto::{
+    client_factory::{
+        build_grpc_client,
+        services::{
+            ScyllaProvisionerClientConfig,
+            UidAllocatorClientConfig,
         },
-        pipeline_ingress::v1beta1::PublishRawLogRequest,
     },
-    pipeline::v1beta1::{
-        Envelope,
-        RawLog,
+    graplinc::grapl::{
+        api::{
+            graph::v1beta1::{
+                GraphDescription,
+                IdentifiedGraph,
+                MergedGraph,
+            },
+            pipeline_ingress::v1beta1::PublishRawLogRequest,
+            scylla_provisioner::v1beta1::messages::ProvisionGraphForTenantRequest,
+            uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
+        },
+        pipeline::v1beta1::{
+            Envelope,
+            RawLog,
+        },
     },
 };
 use test_context::test_context;
@@ -41,7 +53,7 @@ use uuid::Uuid;
 #[tracing::instrument(skip(ctx))]
 #[test_context(E2eTestContext)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
+async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let test_name = "test_sysmon_log_e2e";
 
     let SetupResult {
@@ -52,6 +64,18 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
         .setup_sysmon_generator(test_name)
         .await
         .expect("failed to setup the sysmon-generator");
+
+    let mut uid_allocator_client = build_grpc_client(UidAllocatorClientConfig::parse()).await?;
+    uid_allocator_client
+        .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
+        .await?;
+
+    let provisioner_client_config = ScyllaProvisionerClientConfig::parse();
+    let mut provisioner_client = build_grpc_client(provisioner_client_config).await?;
+
+    provisioner_client
+        .provision_graph_for_tenant(ProvisionGraphForTenantRequest { tenant_id })
+        .await?;
 
     tracing::info!(">> Setup complete. Now let's test milestones in the pipeline.");
 
@@ -214,4 +238,6 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
     assert_eq!(filtered_merged_graphs.len(), 1);
 
     // TODO: Perhaps add a test here that looks in dgraph/scylla for those identified nodes
+
+    Ok(())
 }
