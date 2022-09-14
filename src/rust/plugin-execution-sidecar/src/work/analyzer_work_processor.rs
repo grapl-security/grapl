@@ -9,7 +9,7 @@ use rust_proto::{
             messages::{
                 ExecutionResult,
                 RunAnalyzerRequest,
-                Update,
+                Updates,
             },
         },
         plugin_work_queue::v1beta1::{
@@ -152,7 +152,7 @@ impl PluginWorkProcessor for AnalyzerWorkProcessor {
     ) -> Result<Self::ProducedMessage, PluginWorkProcessorError> {
         let run_analyzer_response = self
             .analyzer_service_client
-            .run_analyzer(RunAnalyzerRequest::new(Update::deserialize(job.data())?))
+            .run_analyzer(RunAnalyzerRequest::new(Updates::deserialize(job.data())?))
             .await?;
 
         Ok(run_analyzer_response.execution_result)

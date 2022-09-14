@@ -1,9 +1,5 @@
-#![allow(warnings)]
-use std::sync::Arc;
-
 use clap::Parser;
 use futures::StreamExt;
-use grapl_config::env_helpers::FromEnv;
 use grapl_tracing::setup_tracing;
 use kafka::{
     config::{
@@ -13,7 +9,6 @@ use kafka::{
     StreamProcessor,
     StreamProcessorError,
 };
-use rusoto_dynamodb::DynamoDbClient;
 use rust_proto::{
     graplinc::grapl::{
         api::{
@@ -28,7 +23,6 @@ use rust_proto::{
         service_client::Connectable,
     },
 };
-use tokio::sync::Mutex;
 use tracing::instrument::WithSubscriber;
 
 use crate::{

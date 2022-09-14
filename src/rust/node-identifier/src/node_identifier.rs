@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use failure::Error;
 use grapl_utils::rusoto_ext::dynamodb::GraplDynamoDbClientExt;
-use rusoto_dynamodb::DynamoDb;
 use rust_proto::graplinc::grapl::{
     api::graph::v1beta1::{
         GraphDescription,
@@ -55,10 +54,9 @@ where
         tenant_id: uuid::Uuid,
         node: &NodeDescription,
     ) -> Result<IdentifiedNode, Error> {
-        Ok(self
-            .dynamic_identifier
+        self.dynamic_identifier
             .attribute_dynamic_node(tenant_id, node)
-            .await?)
+            .await
     }
 
     /// Performs batch identification of unidentified nodes into identified
@@ -79,7 +77,7 @@ where
 
         // new method
         for (unidentified_node_key, unidentified_node) in unidentified_subgraph.nodes.iter() {
-            let identified_node = match self.attribute_node_key(tenant_id, &unidentified_node).await
+            let identified_node = match self.attribute_node_key(tenant_id, unidentified_node).await
             {
                 Ok(identified_node) => identified_node,
                 Err(e) => {

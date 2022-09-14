@@ -155,6 +155,7 @@ pub mod graph {
     };
 
     use super::*;
+    use crate::strategies::common::uids;
 
     //
     // DecrementOnlyIntProp
@@ -312,8 +313,8 @@ pub mod graph {
 
     prop_compose! {
         pub fn execution_hits()(
-            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
+            nodes in collection::hash_map(uids(), identified_nodes(), 10),
+            edges in collection::hash_map(uids(), identified_edge_lists(), 10),
             analyzer_name in any::<String>(),
             risk_score in any::<u64>(),
             lenses in collection::vec(lenses(), 10),
@@ -1205,6 +1206,7 @@ pub mod analyzer_sdk {
     use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::{
         self as native,
         Update,
+        Updates,
     };
 
     use super::{
@@ -1274,11 +1276,15 @@ pub mod analyzer_sdk {
         ]
     }
 
+    pub fn vec_of_updates() -> impl Strategy<Value = Vec<Update>> {
+        proptest::collection::vec(updates(), 10)
+    }
+
     prop_compose! {
         pub fn run_analyzer_requests()(
-            update in updates(),
+            updates in vec_of_updates(),
         ) -> native::RunAnalyzerRequest {
-            native::RunAnalyzerRequest::new(update)
+            native::RunAnalyzerRequest::new(Updates { updates })
         }
     }
 }

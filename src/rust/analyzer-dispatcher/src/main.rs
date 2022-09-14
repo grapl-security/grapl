@@ -33,7 +33,7 @@ use rust_proto::{
     graplinc::grapl::{
         api::{
             plugin_registry::v1beta1::GetAnalyzersForTenantRequest,
-            plugin_sdk::analyzers::v1beta1::messages::Update,
+            plugin_sdk::analyzers::v1beta1::messages::Updates,
             plugin_work_queue::v1beta1::{
                 ExecutionJob,
                 PluginWorkQueueServiceClient,
@@ -124,8 +124,8 @@ enum AnalyzerDispatcherError {
 
 struct AnalyzerDispatcher {
     plugin_work_queue_client: PluginWorkQueueServiceClient,
-    graph_updates_consumer: Consumer<Update>,
-    graph_updates_retry_producer: RetryProducer<Update>,
+    graph_updates_consumer: Consumer<Updates>,
+    graph_updates_retry_producer: RetryProducer<Updates>,
     analyzer_ids_cache: AsyncCache<Uuid, Vec<Uuid>>,
 }
 
@@ -134,8 +134,8 @@ impl AnalyzerDispatcher {
         config: AnalyzerDispatcherConfig,
         plugin_work_queue_client: PluginWorkQueueServiceClient,
     ) -> Result<Self, ConfigurationError> {
-        let graph_updates_consumer: Consumer<Update> = Consumer::new(config.kafka_config)?;
-        let graph_updates_retry_producer: RetryProducer<Update> =
+        let graph_updates_consumer: Consumer<Updates> = Consumer::new(config.kafka_config)?;
+        let graph_updates_retry_producer: RetryProducer<Updates> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
         let client_config = PluginRegistryClientConfig::parse();
 
@@ -203,7 +203,7 @@ impl AnalyzerDispatcher {
             let stream = self.graph_updates_consumer
                 .stream()
                 .take(pool_size)
-                .then(move |graph_update_result: Result<(tracing::Span, Envelope<Update>), ConsumerError>| {
+                .then(move |graph_update_result: Result<(tracing::Span, Envelope<Updates>), ConsumerError>| {
                     let analyzer_ids_cache = analyzer_ids_cache.clone();
                     let plugin_work_queue_client = plugin_work_queue_client.clone();
                     let graph_updates_retry_producer = graph_updates_retry_producer.clone();
@@ -311,8 +311,8 @@ impl AnalyzerDispatcher {
 }
 
 async fn retry_message(
-    graph_updates_retry_producer: &RetryProducer<Update>,
-    envelope: Envelope<Update>,
+    graph_updates_retry_producer: &RetryProducer<Updates>,
+    envelope: Envelope<Updates>,
 ) -> Result<(), ProducerError> {
     // TODO: be a little smarter about handling ProducerError here
     graph_updates_retry_producer.send(envelope).await
@@ -322,7 +322,7 @@ async fn retry_message(
 async fn enqueue_plugin_work(
     plugin_work_queue_client: PluginWorkQueueServiceClient,
     analyzer_ids: Vec<Uuid>,
-    envelope: Envelope<Update>,
+    envelope: Envelope<Updates>,
 ) -> Result<(), AnalyzerDispatcherError> {
     let pool_size = analyzer_ids.len();
     let tenant_id = envelope.tenant_id();

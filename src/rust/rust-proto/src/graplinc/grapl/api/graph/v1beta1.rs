@@ -2159,46 +2159,48 @@ pub mod test {
         choices[choice_index].clone()
     }
 
-    fn choose_property(node_key: &str, property_name: &str, g: &mut Gen) -> NodeProperty {
-        let s = format!("{}{}", node_key, property_name);
+    fn choose_property(uid: Uid, property_name: &str, g: &mut Gen) -> NodeProperty {
+        let s = format!("{}{}", uid.as_u64(), property_name);
 
         let props = &[
             Property::IncrementOnlyIntProp(IncrementOnlyIntProp::arbitrary(g)),
             Property::DecrementOnlyIntProp(DecrementOnlyIntProp::arbitrary(g)),
             Property::IncrementOnlyUintProp(IncrementOnlyUintProp::arbitrary(g)),
             Property::DecrementOnlyUintProp(DecrementOnlyUintProp::arbitrary(g)),
-            Property::ImmutableIntProp(ImmutableIntProp::from(
-                hash(&[node_key, property_name]) as i64
-            )),
-            Property::ImmutableUintProp(ImmutableUintProp::from(hash(&[node_key, property_name]))),
+            Property::ImmutableIntProp(ImmutableIntProp::from(hash(
+                &[&uid.as_u64().to_string(), property_name][..],
+            ) as i64)),
+            Property::ImmutableUintProp(ImmutableUintProp::from(hash(
+                &[&uid.as_u64().to_string(), property_name][..],
+            ))),
             Property::ImmutableStrProp(ImmutableStrProp::from(s)),
         ];
-        let p: Property = choice(node_key, props);
+        let p: Property = choice(&uid.as_u64().to_string(), props);
         p.into()
     }
 
     impl Arbitrary for IdentifiedNode {
         fn arbitrary(g: &mut Gen) -> Self {
-            let node_keys = &[
-                "c413e25e-9c50-4faf-8e61-f8bfb0e0d18e".to_string(),
-                "0d5c9261-2b6e-4094-8de3-b349cb0aa310".to_string(),
-                "ed1f73df-f38d-43c0-87b0-5aff06e1f68b".to_string(),
-                "6328e956-117e-4f7f-8a5b-c56be1111f43".to_string(),
+            let uids = &[
+                Uid::from_u64(123).unwrap(),
+                Uid::from_u64(124).unwrap(),
+                Uid::from_u64(125).unwrap(),
+                Uid::from_u64(126).unwrap(),
             ];
-            let node_key = g.choose(node_keys).unwrap().clone();
+            let uid = g.choose(uids).unwrap().clone();
 
             let node_types = &["Process", "File", "IpAddress"];
-            let node_type = choice(&node_key, node_types);
+            let node_type = choice(&uid.as_u64().to_string(), node_types);
             let mut properties = HashMap::new();
             let property_names: Vec<String> = Vec::arbitrary(g);
 
             for property_name in property_names {
-                let property = choose_property(&node_key, &property_name, g);
+                let property = choose_property(uid, &property_name, g);
                 properties.insert(property_name.to_owned(), property);
             }
 
             IdentifiedNode {
-                node_key: node_key.to_owned(),
+                uid,
                 node_type: node_type.to_owned(),
                 properties,
             }
@@ -2289,7 +2291,7 @@ pub mod test {
 
     #[quickcheck]
     fn test_merge_identified_node(mut node_0: IdentifiedNode, node_1: IdentifiedNode) {
-        if node_0.node_key != node_1.node_key {
+        if node_0.uid != node_1.uid {
             return;
         }
         // let original = node_0.clone();

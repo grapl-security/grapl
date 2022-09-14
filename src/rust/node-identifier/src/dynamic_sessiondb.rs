@@ -3,28 +3,15 @@ use failure::{
     Error,
 };
 use rusoto_dynamodb::DynamoDb;
-use rust_proto::graplinc::grapl::{
-    api::{
-        graph::v1beta1::{
-            GraphDescription,
-            IdentifiedGraph,
-            IdentifiedNode,
-            NodeDescription,
-            Session,
-            Static,
-            Strategy,
-        },
-        graph_mutation::v1beta1::client::GraphMutationClient,
+use rust_proto::graplinc::grapl::api::{
+    graph::v1beta1::{
+        IdentifiedNode,
+        NodeDescription,
+        Session,
+        Static,
+        Strategy,
     },
-    common::v1beta1::types::Uid,
-};
-use serde::{
-    Deserialize,
-    Serialize,
-};
-use sha2::{
-    Digest,
-    Sha256,
+    graph_mutation::v1beta1::client::GraphMutationClient,
 };
 
 use crate::{
@@ -63,12 +50,12 @@ where
     }
 
     #[tracing::instrument(skip(self, node, strategy), err)]
-    async fn primary_session_key(
+    async fn pseudo_key(
         &self,
         node: &mut NodeDescription,
         strategy: &Session,
     ) -> Result<String, Error> {
-        let mut primary_key = String::with_capacity(32);
+        let mut pseudo_key = String::with_capacity(32);
 
         if strategy.primary_key_requires_asset_id {
             panic!("asset_id resolution is currently not supported")
@@ -78,7 +65,7 @@ where
             let prop_val = node.properties.get(prop_name);
 
             match prop_val {
-                Some(val) => primary_key.push_str(&val.to_string()),
+                Some(val) => pseudo_key.push_str(&val.to_string()),
                 None => bail!(format!(
                     "Node is missing required property {} for identity",
                     prop_name
@@ -87,9 +74,9 @@ where
         }
 
         // Push node type, as a natural partition
-        primary_key.push_str(&node.node_type);
+        pseudo_key.push_str(&node.node_type);
 
-        Ok(primary_key)
+        Ok(pseudo_key)
     }
 
     #[tracing::instrument(skip(self, strategy), err)]
@@ -101,26 +88,26 @@ where
     ) -> Result<IdentifiedNode, Error> {
         let mut attributed_node = node.clone();
 
-        let primary_key = self
-            .primary_session_key(&mut attributed_node, strategy)
-            .await?;
+        let pseudo_key = self.pseudo_key(&mut attributed_node, strategy).await?;
 
         let created_time = strategy.create_time;
         let last_seen_time = strategy.last_seen_time;
 
         let unid = match (created_time != 0, last_seen_time != 0) {
-            (true, _) => UnidSession {
-                pseudo_key: primary_key,
-                node_type: attributed_node.node_type,
-                timestamp: created_time,
-                is_creation: true,
-            },
-            (_, true) => UnidSession {
-                pseudo_key: primary_key,
-                node_type: attributed_node.node_type,
-                timestamp: last_seen_time,
-                is_creation: false,
-            },
+            (true, _) => UnidSession::new(
+                tenant_id,
+                attributed_node.node_type,
+                &pseudo_key,
+                created_time,
+                true,
+            ),
+            (_, true) => UnidSession::new(
+                tenant_id,
+                attributed_node.node_type,
+                &pseudo_key,
+                last_seen_time,
+                false,
+            ),
             _ => bail!(
                 "Terminating sessions not yet supported: {:?} {:?}",
                 node.properties,
@@ -184,6 +171,5 @@ where
                     .await
             }
         }
-        Ok(attributed_node)
     }
 }

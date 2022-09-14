@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    fmt::Debug,
+};
 
 use blake2::{
     digest::consts::U16,
@@ -29,22 +32,23 @@ use rust_proto::graplinc::grapl::{
         Uid,
     },
 };
-use serde::{
-    Deserialize,
-    Serialize,
-};
-use uid_allocator::client::CachingUidAllocatorServiceClient;
 
 type Blake2b16 = Blake2b<U16>;
 
 #[derive(Clone)]
-pub struct StaticMappingDb<D>
-where
-    D: DynamoDb,
-{
+pub struct StaticMappingDb<D> {
     static_mapping_db: D,
     graph_mutation_client: GraphMutationClient,
     table_name: String,
+}
+
+impl<D> Debug for StaticMappingDb<D> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StaticMappingDb")
+            .field("graph_mutation_client", &self.graph_mutation_client)
+            .field("table_name", &self.table_name)
+            .finish()
+    }
 }
 
 impl<D> StaticMappingDb<D>

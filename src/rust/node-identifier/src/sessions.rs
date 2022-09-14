@@ -10,7 +10,6 @@ use blake2::{
 };
 use failure::Error;
 use rusoto_dynamodb::AttributeValue;
-use rust_proto::graplinc::grapl::common::v1beta1::types::Uid;
 use serde::{
     Deserialize,
     Serialize,

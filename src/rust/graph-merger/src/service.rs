@@ -1,5 +1,3 @@
-#![allow(warnings)]
-
 use std::{
     collections::HashMap,
     fmt::Debug,
