@@ -3,7 +3,6 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use clap::Parser;
 use e2e_tests::{
     test_fixtures,
     test_utils::{
@@ -22,25 +21,18 @@ use kafka::{
     test_utils::topic_scanner::KafkaTopicScanner,
 };
 use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
-use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::ScyllaProvisionerClientConfig,
+use rust_proto::graplinc::grapl::{
+    api::{
+        graph::v1beta1::{
+            GraphDescription,
+            IdentifiedGraph,
+            MergedGraph,
+        },
+        pipeline_ingress::v1beta1::PublishRawLogRequest,
     },
-    graplinc::grapl::{
-        api::{
-            graph::v1beta1::{
-                GraphDescription,
-                IdentifiedGraph,
-                MergedGraph,
-            },
-            pipeline_ingress::v1beta1::PublishRawLogRequest,
-            scylla_provisioner::v1beta1::messages::ProvisionGraphForTenantRequest,
-        },
-        pipeline::v1beta1::{
-            Envelope,
-            RawLog,
-        },
+    pipeline::v1beta1::{
+        Envelope,
+        RawLog,
     },
 };
 use test_context::test_context;
@@ -51,22 +43,15 @@ use uuid::Uuid;
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let test_name = "test_sysmon_log_e2e";
-
+    let tenant_id = ctx.create_tenant().await?;
     let SetupResult {
         tenant_id,
         plugin_id,
         event_source_id,
     } = ctx
-        .setup_sysmon_generator(test_name)
+        .setup_sysmon_generator(tenant_id, test_name)
         .await
         .expect("failed to setup the sysmon-generator");
-
-    let provisioner_client_config = ScyllaProvisionerClientConfig::parse();
-    let mut provisioner_client = build_grpc_client(provisioner_client_config).await?;
-
-    provisioner_client
-        .provision_graph_for_tenant(ProvisionGraphForTenantRequest { tenant_id })
-        .await?;
 
     tracing::info!(">> Setup complete. Now let's test milestones in the pipeline.");
 

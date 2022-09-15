@@ -125,6 +125,7 @@ pub struct SetupResult {
 
 pub struct SetupGeneratorOptions {
     pub test_name: String,
+    pub tenant_id: Uuid,
     pub generator_artifact: Bytes,
     pub should_deploy_generator: bool,
 }
@@ -249,9 +250,14 @@ impl E2eTestContext {
         Ok(())
     }
 
-    pub async fn setup_sysmon_generator(&mut self, test_name: &str) -> eyre::Result<SetupResult> {
+    pub async fn setup_sysmon_generator(
+        &mut self,
+        tenant_id: uuid::Uuid,
+        test_name: &str,
+    ) -> eyre::Result<SetupResult> {
         let generator_artifact = test_fixtures::get_sysmon_generator()?;
         self.setup_generator(SetupGeneratorOptions {
+            tenant_id,
             test_name: test_name.to_owned(),
             generator_artifact,
             should_deploy_generator: true,
@@ -265,7 +271,7 @@ impl E2eTestContext {
     ) -> eyre::Result<SetupResult> {
         tracing::info!(">> Generator Setup for {}", options.test_name);
 
-        let tenant_id = self.create_tenant().await?;
+        let tenant_id = options.tenant_id;
 
         // Register an Event Source
         let event_source_id = self

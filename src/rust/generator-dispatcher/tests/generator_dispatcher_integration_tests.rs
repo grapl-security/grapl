@@ -17,12 +17,15 @@ async fn test_dispatcher_inserts_job_into_plugin_work_queue(
 ) -> eyre::Result<()> {
     let test_name = "test_dispatcher_inserts_job_into_plugin_work_queue";
     let generator_artifact = Bytes::from("arbitrary binary");
+
+    let tenant_id = ctx.create_tenant().await?;
     let SetupResult {
         tenant_id,
         plugin_id,
         event_source_id,
     } = ctx
         .setup_generator(SetupGeneratorOptions {
+            tenant_id,
             test_name: test_name.to_owned(),
             generator_artifact,
             should_deploy_generator: false,

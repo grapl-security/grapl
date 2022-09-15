@@ -31,11 +31,12 @@ const CONSUMER_TOPIC: &'static str = "merged-graphs";
 #[tokio::test]
 async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let test_name = "test_sysmon_event_produces_merged_graph";
+    let tenant_id = ctx.create_tenant().await?;
     let SetupResult {
         tenant_id,
         plugin_id: _,
         event_source_id,
-    } = ctx.setup_sysmon_generator(test_name).await?;
+    } = ctx.setup_sysmon_generator(tenant_id, test_name).await?;
 
     let kafka_scanner = KafkaTopicScanner::new(
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
