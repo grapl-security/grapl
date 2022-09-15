@@ -59,10 +59,11 @@ receivers:
         - job_name: 'nomad-server'
           scrape_interval: 20s
           scrape_timeout: 10s
-          metrics_path: '/v1/metrics?format=prometheus'
+          metrics_path: '/v1/metrics'
           params:
             format: ['prometheus']
           static_configs:
+            # This should be pointing to the Nomad network IP. Locally that would be the eth0 private IP. in AWS that's the Nomad ALB.
             - targets: ['localhost:4646']
 processors:
   batch:
