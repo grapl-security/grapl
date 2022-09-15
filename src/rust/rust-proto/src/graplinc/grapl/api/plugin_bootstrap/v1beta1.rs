@@ -167,8 +167,8 @@ pub mod client {
 
     use crate::{
         protobufs::graplinc::grapl::api::plugin_bootstrap::v1beta1::plugin_bootstrap_service_client::PluginBootstrapServiceClient as PluginBootstrapServiceClientProto,
-        protocol::{service_client::{Connectable, ConnectError}},
-        SerDeError,
+        protocol::{service_client::{Connectable, ConnectError, ConfigConnectable}},
+        SerDeError, client_factory::services::PluginBootstrapClientConfig,
     };
 
     use super::{GetBootstrapRequest, GetBootstrapResponse};
@@ -199,6 +199,10 @@ pub mod client {
                 proto_client: PluginBootstrapServiceClientProto::connect(endpoint).await?,
             })
         }
+    }
+
+    impl ConfigConnectable for PluginBootstrapClient {
+        type Config = PluginBootstrapClientConfig;
     }
 
     impl PluginBootstrapClient {

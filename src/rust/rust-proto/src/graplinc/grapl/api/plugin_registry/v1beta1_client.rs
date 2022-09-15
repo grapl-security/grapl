@@ -13,6 +13,7 @@ use proto::plugin_registry_service_client::PluginRegistryServiceClient as Plugin
 use tracing::instrument;
 
 use crate::{
+    client_factory::services::PluginRegistryClientConfig,
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
@@ -22,6 +23,7 @@ use crate::{
         endpoint::Endpoint,
         error::GrpcClientError,
         service_client::{
+            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -54,6 +56,10 @@ impl Connectable for PluginRegistryServiceClient {
             executor,
         })
     }
+}
+
+impl ConfigConnectable for PluginRegistryServiceClient {
+    type Config = PluginRegistryClientConfig;
 }
 
 impl PluginRegistryServiceClient {

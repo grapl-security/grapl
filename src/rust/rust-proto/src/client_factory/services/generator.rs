@@ -1,9 +1,6 @@
-use crate::{
-    client_factory::grpc_client_config::{
-        GenericGrpcClientConfig,
-        GrpcClientConfig,
-    },
-    graplinc::grapl::api::plugin_sdk::generators::v1beta1::client::GeneratorServiceClient,
+use crate::client_factory::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
 };
 
 #[derive(clap::Parser, Debug)]
@@ -21,6 +18,4 @@ impl From<GeneratorClientConfig> for GenericGrpcClientConfig {
     }
 }
 
-impl GrpcClientConfig for GeneratorClientConfig {
-    type Client = GeneratorServiceClient;
-}
+impl GrpcClientConfig for GeneratorClientConfig {}

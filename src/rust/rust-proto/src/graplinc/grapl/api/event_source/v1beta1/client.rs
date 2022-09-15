@@ -6,6 +6,7 @@ use client_executor::{
 };
 
 use crate::{
+    client_factory::services::EventSourceClientConfig,
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
@@ -18,6 +19,7 @@ use crate::{
         endpoint::Endpoint,
         error::GrpcClientError,
         service_client::{
+            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -50,6 +52,10 @@ impl Connectable for EventSourceServiceClient {
             proto_client,
         })
     }
+}
+
+impl ConfigConnectable for EventSourceServiceClient {
+    type Config = EventSourceClientConfig;
 }
 
 impl EventSourceServiceClient {

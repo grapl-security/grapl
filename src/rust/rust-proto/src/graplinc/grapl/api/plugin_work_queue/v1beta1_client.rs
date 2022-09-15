@@ -7,6 +7,7 @@ use client_executor::{
 use proto::plugin_work_queue_service_client::PluginWorkQueueServiceClient as PluginWorkQueueServiceClientProto;
 
 use crate::{
+    client_factory::services::PluginWorkQueueClientConfig,
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
@@ -16,6 +17,7 @@ use crate::{
         endpoint::Endpoint,
         error::GrpcClientError,
         service_client::{
+            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -49,6 +51,10 @@ impl Connectable for PluginWorkQueueServiceClient {
             proto_client,
         })
     }
+}
+
+impl ConfigConnectable for PluginWorkQueueServiceClient {
+    type Config = PluginWorkQueueClientConfig;
 }
 
 impl PluginWorkQueueServiceClient {

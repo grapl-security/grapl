@@ -7,6 +7,7 @@ use client_executor::{
 use tonic::transport::Endpoint;
 
 use crate::{
+    client_factory::services::GraphMutationClientConfig,
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
@@ -18,6 +19,7 @@ use crate::{
     protocol::{
         error::GrpcClientError,
         service_client::{
+            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -50,6 +52,10 @@ impl Connectable for GraphMutationClient {
             executor,
         })
     }
+}
+
+impl ConfigConnectable for GraphMutationClient {
+    type Config = GraphMutationClientConfig;
 }
 
 impl GraphMutationClient {

@@ -30,19 +30,19 @@ impl Default for BuildGrpcClientOptions {
     }
 }
 
-pub async fn build_grpc_client<C: GrpcClientConfig>(
+pub async fn build_grpc_client<C: GrpcClientConfig, Client: Connectable>(
     client_config: C,
-) -> Result<C::Client, ConnectError> {
+) -> Result<Client, ConnectError> {
     build_grpc_client_with_options(client_config, Default::default()).await
 }
 
-async fn build_grpc_client_with_options<C: GrpcClientConfig>(
+async fn build_grpc_client_with_options<C: GrpcClientConfig, Client: Connectable>(
     client_config: C,
     options: BuildGrpcClientOptions,
-) -> Result<C::Client, ConnectError> {
+) -> Result<Client, ConnectError> {
     let GenericGrpcClientConfig { address } = client_config.into();
 
-    let service_name = C::Client::SERVICE_NAME;
+    let service_name = Client::SERVICE_NAME;
 
     if !address.starts_with("http") {
         panic!("Address should start with http, but found: '{address}'")
@@ -63,5 +63,5 @@ async fn build_grpc_client_with_options<C: GrpcClientConfig>(
         .await?;
     }
 
-    C::Client::connect(endpoint).await
+    Client::connect(endpoint).await
 }

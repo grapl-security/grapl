@@ -200,6 +200,7 @@ pub mod client {
     };
 
     use crate::{
+        client_factory::services::OrganizationManagementClientConfig,
         client_macros::RpcConfig,
         create_proto_client,
         execute_client_rpc,
@@ -212,6 +213,7 @@ pub mod client {
             endpoint::Endpoint,
             error::GrpcClientError,
             service_client::{
+                ConfigConnectable,
                 ConnectError,
                 Connectable,
             },
@@ -244,6 +246,10 @@ pub mod client {
                 proto_client,
             })
         }
+    }
+
+    impl ConfigConnectable for OrganizationManagementClient {
+        type Config = OrganizationManagementClientConfig;
     }
 
     impl OrganizationManagementClient {

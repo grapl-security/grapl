@@ -8,6 +8,7 @@ use generator_service_client::GeneratorServiceClient as GeneratorServiceClientPr
 
 pub use crate::protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1::generator_service_client;
 use crate::{
+    client_factory::services::GeneratorClientConfig,
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
@@ -17,6 +18,7 @@ use crate::{
         endpoint::Endpoint,
         error::GrpcClientError,
         service_client::{
+            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -46,6 +48,10 @@ impl Connectable for GeneratorServiceClient {
             proto_client,
         })
     }
+}
+
+impl ConfigConnectable for GeneratorServiceClient {
+    type Config = GeneratorClientConfig;
 }
 
 impl GeneratorServiceClient {

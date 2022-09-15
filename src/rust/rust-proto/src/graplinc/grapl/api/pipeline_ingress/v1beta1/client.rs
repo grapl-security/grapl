@@ -6,6 +6,7 @@ use client_executor::{
 };
 
 use crate::{
+    client_factory::services::PipelineIngressClientConfig,
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
@@ -13,6 +14,7 @@ use crate::{
         endpoint::Endpoint,
         error::GrpcClientError,
         service_client::{
+            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -53,6 +55,10 @@ impl Connectable for PipelineIngressClient {
             proto_client,
         })
     }
+}
+
+impl ConfigConnectable for PipelineIngressClient {
+    type Config = PipelineIngressClientConfig;
 }
 
 impl PipelineIngressClient {

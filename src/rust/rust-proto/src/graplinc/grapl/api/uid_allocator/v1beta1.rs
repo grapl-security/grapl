@@ -192,6 +192,7 @@ pub mod client {
     use tonic::transport::Endpoint;
 
     use crate::{
+        client_factory::services::UidAllocatorClientConfig,
         client_macros::RpcConfig,
         create_proto_client,
         execute_client_rpc,
@@ -203,6 +204,7 @@ pub mod client {
         protocol::{
             error::GrpcClientError,
             service_client::{
+                ConfigConnectable,
                 ConnectError,
                 Connectable,
             },
@@ -238,6 +240,10 @@ pub mod client {
                 executor,
             })
         }
+    }
+
+    impl ConfigConnectable for UidAllocatorServiceClient {
+        type Config = UidAllocatorClientConfig;
     }
 
     impl UidAllocatorServiceClient {
