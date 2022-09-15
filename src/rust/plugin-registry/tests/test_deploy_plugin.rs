@@ -133,7 +133,7 @@ async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
 #[test_log::test(tokio::test)]
 async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
