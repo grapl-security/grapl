@@ -43,6 +43,8 @@ async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result
         "tenant_id", tenant_id=?tracing::field::Empty,
     );
     let tenant_id = ctx.create_tenant().await?;
+    _span.record("tenant_id", &format!("{tenant_id}"));
+
     ctx.setup_sysmon_generator(tenant_id, "test_query_two_attached_nodes")
         .await?;
 
@@ -51,9 +53,6 @@ async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result
 
     let mutation_client_config = GraphMutationClientConfig::parse();
     let mut graph_mutation_client = build_grpc_client(mutation_client_config).await?;
-
-    let tenant_id = uuid::Uuid::new_v4();
-    _span.record("tenant_id", &format!("{tenant_id}"));
 
     let process_node_type = NodeType::try_from("Process").unwrap();
     let file_node_type = NodeType::try_from("File").unwrap();
