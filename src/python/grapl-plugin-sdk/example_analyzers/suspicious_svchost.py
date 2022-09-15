@@ -1,12 +1,12 @@
 from datetime import datetime
 
-from grapl_analyzerlib_new.analyzer import (
+from grapl_plugin_sdk.analyzer.analyzer import (
     Analyzer,
     AnalyzerContext,
     AnalyzerServiceConfig,
     serve_analyzer,
 )
-from grapl_analyzerlib_new.query_and_views import NodeQuery, NodeView
+from grapl_plugin_sdk.analyzer.query_and_views import NodeQuery, NodeView
 from python_proto.api.graph_query.v1beta1.messages import (
     NodePropertyQuery,
     StringFilter,

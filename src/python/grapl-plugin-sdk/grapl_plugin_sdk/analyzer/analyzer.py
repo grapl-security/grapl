@@ -5,9 +5,9 @@ import os
 from dataclasses import dataclass
 from typing import Protocol
 
-from grapl_analyzerlib_new.analyzer_context import AnalyzerContext
-from grapl_analyzerlib_new.query_and_views import NodeQuery, NodeView
-from grapl_analyzerlib_new.service_impl import AnalyzerServiceImpl
+from grapl_plugin_sdk.analyzer.analyzer_context import AnalyzerContext
+from grapl_plugin_sdk.analyzer.query_and_views import NodeQuery, NodeView
+from grapl_plugin_sdk.analyzer.service_impl import AnalyzerServiceImpl
 from python_proto.api.graph_query.v1beta1.client import GraphQueryClient
 from python_proto.api.plugin_sdk.analyzers.v1beta1.messages import (
     AnalyzerName,

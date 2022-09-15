@@ -6,12 +6,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
 
 import grpc
-from grapl_analyzerlib_new.analyzer_context import AnalyzerContext
+from grapl_plugin_sdk.analyzer.analyzer_context import AnalyzerContext
 
 if TYPE_CHECKING:
-    from grapl_analyzerlib_new.analyzer import Analyzer
+    from grapl_plugin_sdk.analyzer.analyzer import Analyzer
 
-from grapl_analyzerlib_new.query_and_views import NodeView
+from grapl_plugin_sdk.analyzer.query_and_views import NodeView
 from grpc import aio as grpc_aio  # type: ignore
 
 # ^ grpc_aio: Type checking doesn't exist yet for gRPC asyncio runtime
