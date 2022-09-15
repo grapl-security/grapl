@@ -36,7 +36,7 @@ steps:
           - cargo install cargo-audit
           - cargo audit
         plugins:
-          - docker#v3.8.0:
+          - docker#v3.14.0:
               image: "rust:${rust_version}"
         soft_fail: ${soft_fail}
         agents:

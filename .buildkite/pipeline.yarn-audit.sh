@@ -32,7 +32,7 @@ steps:
           - cd src/js/frontend
           - yarn audit --level high
         plugins:
-          - docker#v3.8.0:
+          - docker#v3.14.0:
               image: "node:18-alpine"
         soft_fail: ${soft_fail}
         agents:

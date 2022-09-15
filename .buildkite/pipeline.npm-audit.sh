@@ -32,7 +32,7 @@ steps:
           - cd src/js/graphql_endpoint
           - npm audit
         plugins:
-          - docker#v3.8.0:
+          - docker#v3.14.0:
               image: "node:17-alpine"
         soft_fail: ${soft_fail}
         agents:
