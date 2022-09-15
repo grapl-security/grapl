@@ -37,7 +37,7 @@ use rust_proto::{
 use test_context::test_context;
 
 #[test_context(E2eTestContext)]
-#[test_log::test(tokio::test)]
+#[tokio::test]
 async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let _span = tracing::info_span!(
         "tenant_id", tenant_id=?tracing::field::Empty,
