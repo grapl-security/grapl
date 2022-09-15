@@ -25,10 +25,7 @@ use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
 use rust_proto::{
     client_factory::{
         build_grpc_client,
-        services::{
-            ScyllaProvisionerClientConfig,
-            UidAllocatorClientConfig,
-        },
+        services::ScyllaProvisionerClientConfig,
     },
     graplinc::grapl::{
         api::{
@@ -39,7 +36,6 @@ use rust_proto::{
             },
             pipeline_ingress::v1beta1::PublishRawLogRequest,
             scylla_provisioner::v1beta1::messages::ProvisionGraphForTenantRequest,
-            uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
         },
         pipeline::v1beta1::{
             Envelope,
