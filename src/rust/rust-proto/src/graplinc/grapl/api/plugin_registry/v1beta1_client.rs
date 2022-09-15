@@ -23,7 +23,6 @@ use crate::{
         endpoint::Endpoint,
         error::GrpcClientError,
         service_client::{
-            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -39,6 +38,7 @@ pub struct PluginRegistryServiceClient {
 
 #[async_trait::async_trait]
 impl Connectable for PluginRegistryServiceClient {
+    type Config = PluginRegistryClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.plugin_registry.v1beta1.PluginRegistryService";
 
@@ -56,10 +56,6 @@ impl Connectable for PluginRegistryServiceClient {
             executor,
         })
     }
-}
-
-impl ConfigConnectable for PluginRegistryServiceClient {
-    type Config = PluginRegistryClientConfig;
 }
 
 impl PluginRegistryServiceClient {

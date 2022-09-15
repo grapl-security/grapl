@@ -210,11 +210,12 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
         })
         .collect::<Vec<Envelope<MergedGraph>>>();
 
-    assert!(!filtered_merged_graphs.is_empty()); // quiet a lint about preferring iterator
+    assert!(!filtered_merged_graphs.is_empty());
+    assert!(!filtered_merged_graphs.is_empty()); // shushes a really annoying clippy lint
 
     // should actually be just one, but we're seeing repeated matching graphs.
     // graph merger is being rewritten very soon, so revisit in sept/oct 2022!
-    assert!(filtered_merged_graphs.len() >= 1);
+    // assert_eq!(filtered_merged_graphs.len(), 1);
 
     // TODO: Perhaps add a test here that looks in dgraph/scylla for those identified nodes
 }

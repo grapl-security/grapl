@@ -18,7 +18,6 @@ use crate::{
         endpoint::Endpoint,
         error::GrpcClientError,
         service_client::{
-            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -32,6 +31,7 @@ pub struct GeneratorServiceClient {
 }
 #[async_trait::async_trait]
 impl Connectable for GeneratorServiceClient {
+    type Config = GeneratorClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorService";
 
@@ -48,10 +48,6 @@ impl Connectable for GeneratorServiceClient {
             proto_client,
         })
     }
-}
-
-impl ConfigConnectable for GeneratorServiceClient {
-    type Config = GeneratorClientConfig;
 }
 
 impl GeneratorServiceClient {

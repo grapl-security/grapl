@@ -17,7 +17,6 @@ use crate::{
         endpoint::Endpoint,
         error::GrpcClientError,
         service_client::{
-            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -34,6 +33,7 @@ pub struct PluginWorkQueueServiceClient {
 
 #[async_trait::async_trait]
 impl Connectable for PluginWorkQueueServiceClient {
+    type Config = PluginWorkQueueClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.plugin_work_queue.v1beta1.PluginWorkQueueService";
 
@@ -51,10 +51,6 @@ impl Connectable for PluginWorkQueueServiceClient {
             proto_client,
         })
     }
-}
-
-impl ConfigConnectable for PluginWorkQueueServiceClient {
-    type Config = PluginWorkQueueClientConfig;
 }
 
 impl PluginWorkQueueServiceClient {

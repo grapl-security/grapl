@@ -7,6 +7,7 @@ use client_executor::{
 use tracing::instrument;
 
 use crate::{
+    client_factory::services::AnalyzerClientConfig,
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
@@ -33,6 +34,7 @@ pub struct AnalyzerServiceClient {
 
 #[async_trait::async_trait]
 impl Connectable for AnalyzerServiceClient {
+    type Config = AnalyzerClientConfig;
     const SERVICE_NAME: &'static str = "graplinc.grapl.api.plugin_registry.v1beta1.AnalyzerService";
 
     #[tracing::instrument(err)]

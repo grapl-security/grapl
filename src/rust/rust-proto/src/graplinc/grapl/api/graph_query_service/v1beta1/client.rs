@@ -19,7 +19,6 @@ use crate::{
     protocol::{
         error::GrpcClientError,
         service_client::{
-            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -35,6 +34,7 @@ pub struct GraphQueryClient {
 
 #[async_trait::async_trait]
 impl Connectable for GraphQueryClient {
+    type Config = GraphQueryClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.graph_query_service.v1beta1.GraphQueryService";
 
@@ -52,10 +52,6 @@ impl Connectable for GraphQueryClient {
             executor,
         })
     }
-}
-
-impl ConfigConnectable for GraphQueryClient {
-    type Config = GraphQueryClientConfig;
 }
 
 impl GraphQueryClient {

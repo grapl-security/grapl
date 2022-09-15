@@ -19,7 +19,6 @@ use crate::{
     protocol::{
         error::GrpcClientError,
         service_client::{
-            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -35,6 +34,7 @@ pub struct GraphMutationClient {
 
 #[async_trait::async_trait]
 impl Connectable for GraphMutationClient {
+    type Config = GraphMutationClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.graph_mutation.v1beta1.GraphMutationService";
 
@@ -52,10 +52,6 @@ impl Connectable for GraphMutationClient {
             executor,
         })
     }
-}
-
-impl ConfigConnectable for GraphMutationClient {
-    type Config = GraphMutationClientConfig;
 }
 
 impl GraphMutationClient {

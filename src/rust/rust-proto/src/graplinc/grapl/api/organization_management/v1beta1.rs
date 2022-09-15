@@ -213,7 +213,6 @@ pub mod client {
             endpoint::Endpoint,
             error::GrpcClientError,
             service_client::{
-                ConfigConnectable,
                 ConnectError,
                 Connectable,
             },
@@ -229,6 +228,7 @@ pub mod client {
 
     #[async_trait::async_trait]
     impl Connectable for OrganizationManagementClient {
+        type Config = OrganizationManagementClientConfig;
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.organization_management.v1beta1.OrganizationManagementService";
 
@@ -246,10 +246,6 @@ pub mod client {
                 proto_client,
             })
         }
-    }
-
-    impl ConfigConnectable for OrganizationManagementClient {
-        type Config = OrganizationManagementClientConfig;
     }
 
     impl OrganizationManagementClient {

@@ -204,7 +204,6 @@ pub mod client {
         protocol::{
             error::GrpcClientError,
             service_client::{
-                ConfigConnectable,
                 ConnectError,
                 Connectable,
             },
@@ -223,6 +222,7 @@ pub mod client {
 
     #[async_trait::async_trait]
     impl Connectable for UidAllocatorServiceClient {
+        type Config = UidAllocatorClientConfig;
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.uid_allocator.v1beta1.UidAllocatorService";
 
@@ -240,10 +240,6 @@ pub mod client {
                 executor,
             })
         }
-    }
-
-    impl ConfigConnectable for UidAllocatorServiceClient {
-        type Config = UidAllocatorClientConfig;
     }
 
     impl UidAllocatorServiceClient {

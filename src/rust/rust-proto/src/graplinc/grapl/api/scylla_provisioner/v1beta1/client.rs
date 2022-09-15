@@ -19,7 +19,6 @@ use crate::{
     protocol::{
         error::GrpcClientError,
         service_client::{
-            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -35,6 +34,7 @@ pub struct ScyllaProvisionerClient {
 
 #[async_trait::async_trait]
 impl Connectable for ScyllaProvisionerClient {
+    type Config = ScyllaProvisionerClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.scylla_provisioner.v1beta1.ScyllaProvisionerService";
 
@@ -52,10 +52,6 @@ impl Connectable for ScyllaProvisionerClient {
             executor,
         })
     }
-}
-
-impl ConfigConnectable for ScyllaProvisionerClient {
-    type Config = ScyllaProvisionerClientConfig;
 }
 
 impl ScyllaProvisionerClient {

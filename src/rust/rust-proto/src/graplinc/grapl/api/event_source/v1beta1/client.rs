@@ -19,7 +19,6 @@ use crate::{
         endpoint::Endpoint,
         error::GrpcClientError,
         service_client::{
-            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -36,6 +35,7 @@ pub struct EventSourceServiceClient {
 
 #[async_trait::async_trait]
 impl Connectable for EventSourceServiceClient {
+    type Config = EventSourceClientConfig;
     const SERVICE_NAME: &'static str = "graplinc.grapl.api.event_source.v1beta1.EventSourceService";
 
     #[tracing::instrument(err)]
@@ -52,10 +52,6 @@ impl Connectable for EventSourceServiceClient {
             proto_client,
         })
     }
-}
-
-impl ConfigConnectable for EventSourceServiceClient {
-    type Config = EventSourceClientConfig;
 }
 
 impl EventSourceServiceClient {

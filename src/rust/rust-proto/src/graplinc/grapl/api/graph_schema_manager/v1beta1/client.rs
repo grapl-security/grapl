@@ -19,7 +19,6 @@ use crate::{
     protocol::{
         error::GrpcClientError,
         service_client::{
-            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -36,6 +35,7 @@ pub struct GraphSchemaManagerClient {
 
 #[async_trait::async_trait]
 impl Connectable for GraphSchemaManagerClient {
+    type Config = GraphSchemaManagerClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.graph_schema_manager.v1beta1.GraphSchemaManagerService";
 
@@ -53,10 +53,6 @@ impl Connectable for GraphSchemaManagerClient {
             executor,
         })
     }
-}
-
-impl ConfigConnectable for GraphSchemaManagerClient {
-    type Config = GraphSchemaManagerClientConfig;
 }
 
 impl GraphSchemaManagerClient {

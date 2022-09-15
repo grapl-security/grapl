@@ -14,7 +14,6 @@ use crate::{
         endpoint::Endpoint,
         error::GrpcClientError,
         service_client::{
-            ConfigConnectable,
             ConnectError,
             Connectable,
         },
@@ -38,6 +37,7 @@ pub struct PipelineIngressClient {
 
 #[async_trait::async_trait]
 impl Connectable for PipelineIngressClient {
+    type Config = PipelineIngressClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService";
 
@@ -55,10 +55,6 @@ impl Connectable for PipelineIngressClient {
             proto_client,
         })
     }
-}
-
-impl ConfigConnectable for PipelineIngressClient {
-    type Config = PipelineIngressClientConfig;
 }
 
 impl PipelineIngressClient {
