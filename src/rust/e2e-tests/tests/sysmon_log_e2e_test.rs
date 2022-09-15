@@ -65,11 +65,6 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         .await
         .expect("failed to setup the sysmon-generator");
 
-    let mut uid_allocator_client = build_grpc_client(UidAllocatorClientConfig::parse()).await?;
-    uid_allocator_client
-        .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
-        .await?;
-
     let provisioner_client_config = ScyllaProvisionerClientConfig::parse();
     let mut provisioner_client = build_grpc_client(provisioner_client_config).await?;
 

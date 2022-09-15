@@ -42,6 +42,7 @@ async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result
     let _span = tracing::info_span!(
         "tenant_id", tenant_id=?tracing::field::Empty,
     );
+    ctx.create_tenant().await?;
     ctx.setup_sysmon_generator("test_query_two_attached_nodes")
         .await?;
 
