@@ -15,7 +15,7 @@ pub trait Connectable {
     /// Pass this NAME to e.g. a healthcheck client.
     const SERVICE_NAME: &'static str;
 
-    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError>
+    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError>
     where
         Self: Sized;
 }

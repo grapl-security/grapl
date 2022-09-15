@@ -39,7 +39,7 @@ impl Connectable for GraphMutationClient {
         "graplinc.grapl.api.graph_mutation.v1beta1.GraphMutationService";
 
     #[tracing::instrument(err)]
-    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = create_proto_client!(
             executor,

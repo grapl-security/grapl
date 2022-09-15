@@ -194,7 +194,7 @@ pub mod client {
             "graplinc.grapl.api.plugin_bootstrap.v1beta1.PluginBootstrapService";
 
         #[tracing::instrument(err)]
-        async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
             Ok(PluginBootstrapClient {
                 proto_client: PluginBootstrapServiceClientProto::connect(endpoint).await?,
             })

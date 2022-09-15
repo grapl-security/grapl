@@ -39,7 +39,7 @@ impl Connectable for GraphQueryClient {
         "graplinc.grapl.api.graph_query_service.v1beta1.GraphQueryService";
 
     #[tracing::instrument(err)]
-    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = create_proto_client!(
             executor,

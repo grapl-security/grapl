@@ -40,7 +40,7 @@ impl Connectable for GraphSchemaManagerClient {
         "graplinc.grapl.api.graph_schema_manager.v1beta1.GraphSchemaManagerService";
 
     #[tracing::instrument(err)]
-    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = create_proto_client!(
             executor,

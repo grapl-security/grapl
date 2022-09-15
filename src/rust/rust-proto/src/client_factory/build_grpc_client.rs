@@ -63,5 +63,5 @@ async fn build_grpc_client_with_options<C: GrpcClientConfig, Client: Connectable
         .await?;
     }
 
-    Client::connect(endpoint).await
+    Client::connect_with_endpoint(endpoint).await
 }
