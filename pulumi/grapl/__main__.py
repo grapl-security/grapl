@@ -320,9 +320,6 @@ def main() -> None:
         vars=dict(),
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
-            custom_timeouts=CustomTimeouts(
-                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-            ),
         ),
     )
 
