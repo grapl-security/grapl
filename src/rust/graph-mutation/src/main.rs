@@ -11,9 +11,14 @@ use graph_mutation::{
     reverse_edge_resolver::ReverseEdgeResolver,
 };
 use rust_proto::{
-    client_factory::build_grpc_client,
-    graplinc::grapl::api::graph_mutation::v1beta1::server::GraphMutationServer,
-    protocol::healthcheck::HealthcheckStatus,
+    graplinc::grapl::api::{
+        graph_mutation::v1beta1::server::GraphMutationServer,
+        graph_schema_manager::v1beta1::client::GraphSchemaManagerClient,
+    },
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        service_client::ConnectWithConfig,
+    },
 };
 use scylla::CachingSession;
 use tokio::net::TcpListener;
@@ -36,7 +41,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         10_000,
     ));
     let graph_schema_manager_client =
-        build_grpc_client(config.graph_schema_manager_client_config).await?;
+        GraphSchemaManagerClient::connect_with_config(config.graph_schema_manager_client_config)
+            .await?;
     let uid_allocator_client =
         CachingUidAllocatorClient::from_client_config(config.uid_allocator_client_config, 100)
             .await?;

@@ -4,20 +4,21 @@ use std::time::Duration;
 
 use clap::Parser;
 use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::PluginWorkQueueClientConfig,
-    },
+    client_factory::services::PluginWorkQueueClientConfig,
     graplinc::grapl::api::plugin_work_queue::v1beta1::{
         ExecutionJob,
         GetExecuteGeneratorRequest,
+        PluginWorkQueueServiceClient,
         PushExecuteGeneratorRequest,
     },
+    protocol::service_client::ConnectWithConfig,
 };
 
 #[tokio::test]
 async fn test_push_and_get_execute_generator() -> eyre::Result<()> {
-    let mut pwq_client = build_grpc_client(PluginWorkQueueClientConfig::parse()).await?;
+    let mut pwq_client =
+        PluginWorkQueueServiceClient::connect_with_config(PluginWorkQueueClientConfig::parse())
+            .await?;
 
     // Send 2 jobs to Plugin Work Queue
     let tenant_id = uuid::Uuid::new_v4();
@@ -105,7 +106,9 @@ async fn test_push_and_get_execute_generator() -> eyre::Result<()> {
 
 #[tokio::test]
 async fn test_message_available_after_failure() -> eyre::Result<()> {
-    let mut pwq_client = build_grpc_client(PluginWorkQueueClientConfig::parse()).await?;
+    let mut pwq_client =
+        PluginWorkQueueServiceClient::connect_with_config(PluginWorkQueueClientConfig::parse())
+            .await?;
 
     // Send a job to Plugin Work Queue
     let tenant_id = uuid::Uuid::new_v4();

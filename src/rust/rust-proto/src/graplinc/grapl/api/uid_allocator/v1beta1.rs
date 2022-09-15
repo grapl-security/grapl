@@ -192,6 +192,7 @@ pub mod client {
     use tonic::transport::Endpoint;
 
     use crate::{
+        client_factory::services::UidAllocatorClientConfig,
         client_macros::RpcConfig,
         create_proto_client,
         execute_client_rpc,
@@ -221,11 +222,12 @@ pub mod client {
 
     #[async_trait::async_trait]
     impl Connectable for UidAllocatorServiceClient {
+        type Config = UidAllocatorClientConfig;
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.uid_allocator.v1beta1.UidAllocatorService";
 
         #[tracing::instrument(err)]
-        async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
             let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
             let proto_client = create_proto_client!(
                 executor,

@@ -1,8 +1,5 @@
 use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::GeneratorClientConfig,
-    },
+    client_factory::services::GeneratorClientConfig,
     graplinc::{
         common::v1beta1::Duration,
         grapl::api::plugin_sdk::generators::v1beta1::{
@@ -19,6 +16,7 @@ use rust_proto::{
             client::HealthcheckClient,
             HealthcheckStatus,
         },
+        service_client::ConnectWithConfig,
     },
 };
 use test_context::{
@@ -89,7 +87,9 @@ impl GeneratorTestContextInternals {
         let client_config = GeneratorClientConfig {
             generator_client_address: endpoint,
         };
-        let client = build_grpc_client(client_config).await.unwrap();
+        let client = GeneratorServiceClient::connect_with_config(client_config)
+            .await
+            .unwrap();
 
         GeneratorTestContextInternals {
             client,

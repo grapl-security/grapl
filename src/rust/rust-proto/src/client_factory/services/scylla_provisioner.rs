@@ -1,9 +1,6 @@
-use crate::{
-    client_factory::grpc_client_config::{
-        GenericGrpcClientConfig,
-        GrpcClientConfig,
-    },
-    graplinc::grapl::api::scylla_provisioner::v1beta1::client::ScyllaProvisionerClient,
+use crate::client_factory::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
 };
 
 #[derive(clap::Parser, Debug)]
@@ -20,6 +17,4 @@ impl From<ScyllaProvisionerClientConfig> for GenericGrpcClientConfig {
     }
 }
 
-impl GrpcClientConfig for ScyllaProvisionerClientConfig {
-    type Client = ScyllaProvisionerClient;
-}
+impl GrpcClientConfig for ScyllaProvisionerClientConfig {}

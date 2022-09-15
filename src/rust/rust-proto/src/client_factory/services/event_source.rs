@@ -1,9 +1,6 @@
-use crate::{
-    client_factory::grpc_client_config::{
-        GenericGrpcClientConfig,
-        GrpcClientConfig,
-    },
-    graplinc::grapl::api::event_source::v1beta1::client::EventSourceServiceClient,
+use crate::client_factory::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
 };
 
 #[derive(clap::Parser, Debug)]
@@ -20,6 +17,4 @@ impl From<EventSourceClientConfig> for GenericGrpcClientConfig {
     }
 }
 
-impl GrpcClientConfig for EventSourceClientConfig {
-    type Client = EventSourceServiceClient;
-}
+impl GrpcClientConfig for EventSourceClientConfig {}
