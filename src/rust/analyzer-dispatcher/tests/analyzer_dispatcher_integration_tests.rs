@@ -3,26 +3,12 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use clap::Parser;
 use e2e_tests::{
     test_fixtures,
     test_utils::context::E2eTestContext,
 };
 use plugin_work_queue::test_utils::scan_analyzer_messages;
-use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::{
-            ScyllaProvisionerClientConfig,
-            UidAllocatorClientConfig,
-        },
-    },
-    graplinc::grapl::api::{
-        pipeline_ingress::v1beta1::PublishRawLogRequest,
-        scylla_provisioner::v1beta1::messages::ProvisionGraphForTenantRequest,
-        uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
-    },
-};
+use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::PublishRawLogRequest;
 use test_context::test_context;
 
 #[test_context(E2eTestContext)]
@@ -31,17 +17,6 @@ async fn test_analyzer_dispatcher_inserts_job_into_plugin_work_queue(
     ctx: &mut E2eTestContext,
 ) -> eyre::Result<()> {
     let tenant_id = ctx.create_tenant().await?;
-    let mut uid_allocator_client = build_grpc_client(UidAllocatorClientConfig::parse()).await?;
-    uid_allocator_client
-        .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
-        .await?;
-
-    let provisioner_client_config = ScyllaProvisionerClientConfig::parse();
-    let mut provisioner_client = build_grpc_client(provisioner_client_config).await?;
-
-    provisioner_client
-        .provision_graph_for_tenant(ProvisionGraphForTenantRequest { tenant_id })
-        .await?;
 
     let event_source_id = ctx
         .create_event_source(

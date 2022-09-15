@@ -36,6 +36,7 @@ impl ReverseEdgeResolver {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn resolve_reverse_edge(
         &self,
         tenant_id: uuid::Uuid,

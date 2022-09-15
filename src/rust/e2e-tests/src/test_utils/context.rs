@@ -14,8 +14,11 @@ use rust_proto::{
         build_grpc_client,
         services::{
             EventSourceClientConfig,
+            GraphSchemaManagerClientConfig,
             PipelineIngressClientConfig,
             PluginRegistryClientConfig,
+            ScyllaProvisionerClientConfig,
+            UidAllocatorClientConfig,
         },
     },
     graplinc::grapl::api::{
@@ -23,12 +26,27 @@ use rust_proto::{
             client::EventSourceServiceClient,
             CreateEventSourceRequest,
         },
+        graph_schema_manager::v1beta1::{
+            client::GraphSchemaManagerClient,
+            messages::{
+                DeploySchemaRequest,
+                SchemaType,
+            },
+        },
         pipeline_ingress::v1beta1::client::PipelineIngressClient,
         plugin_registry::v1beta1::{
             DeployPluginRequest,
             PluginMetadata,
             PluginRegistryServiceClient,
             PluginType,
+        },
+        scylla_provisioner::v1beta1::{
+            client::ScyllaProvisionerClient,
+            messages::ProvisionGraphForTenantRequest,
+        },
+        uid_allocator::v1beta1::{
+            client::UidAllocatorServiceClient,
+            messages::CreateTenantKeyspaceRequest,
         },
     },
 };
@@ -39,9 +57,12 @@ use crate::test_fixtures;
 
 pub struct E2eTestContext {
     pub event_source_client: EventSourceServiceClient,
+    pub graph_schema_manager_client: GraphSchemaManagerClient,
     pub plugin_registry_client: PluginRegistryServiceClient,
     pub pipeline_ingress_client: PipelineIngressClient,
     pub plugin_work_queue_psql_client: PsqlQueue,
+    pub uid_allocator_client: UidAllocatorServiceClient,
+    pub scylla_provisioner_client: ScyllaProvisionerClient,
     pub _guard: WorkerGuard,
 }
 
@@ -56,6 +77,11 @@ impl AsyncTestContext for E2eTestContext {
             .await
             .expect("event_source_client");
 
+        let graph_schema_manager_client =
+            build_grpc_client(GraphSchemaManagerClientConfig::parse())
+                .await
+                .expect("graph_schema_manager_client");
+
         let plugin_registry_client = build_grpc_client(PluginRegistryClientConfig::parse())
             .await
             .expect("plugin_registry_client");
@@ -69,11 +95,22 @@ impl AsyncTestContext for E2eTestContext {
                 .await
                 .expect("plugin_work_queue");
 
+        let uid_allocator_client = build_grpc_client(UidAllocatorClientConfig::parse())
+            .await
+            .expect("uid_allocator_client");
+
+        let scylla_provisioner_client = build_grpc_client(ScyllaProvisionerClientConfig::parse())
+            .await
+            .expect("scylla_provisioner_client");
+
         Self {
             event_source_client,
+            graph_schema_manager_client,
             plugin_registry_client,
             pipeline_ingress_client,
             plugin_work_queue_psql_client,
+            uid_allocator_client,
+            scylla_provisioner_client,
             _guard,
         }
     }
@@ -95,8 +132,35 @@ pub struct SetupGeneratorOptions {
 impl E2eTestContext {
     pub async fn create_tenant(&mut self) -> eyre::Result<Uuid> {
         tracing::info!("creating tenant");
-        // TODO: actually create a real tenant
-        Ok(Uuid::new_v4())
+        let tenant_id = Uuid::new_v4();
+        self.uid_allocator_client
+            .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
+            .await?;
+        self.scylla_provisioner_client
+            .provision_graph_for_tenant(ProvisionGraphForTenantRequest { tenant_id })
+            .await?;
+
+        Ok(tenant_id)
+    }
+
+    async fn provision_example_graph_schema(&mut self, tenant_id: uuid::Uuid) -> eyre::Result<()> {
+        let mut graph_schema_manager_client = self.graph_schema_manager_client.clone();
+
+        fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
+            // This path is created in rust/Dockerfile
+            let path = "/test-fixtures/example_schemas/example.graphql";
+            std::fs::read(path).map(Bytes::from)
+        }
+
+        graph_schema_manager_client
+            .deploy_schema(DeploySchemaRequest {
+                tenant_id,
+                schema: get_example_graphql_schema().unwrap(),
+                schema_type: SchemaType::GraphqlV0,
+                schema_version: 0,
+            })
+            .await?;
+        Ok(())
     }
 
     pub async fn create_event_source(
@@ -136,6 +200,8 @@ impl E2eTestContext {
                 futures::stream::once(async move { generator_artifact }),
             )
             .await?;
+
+        self.provision_example_graph_schema(tenant_id).await?;
 
         Ok(generator.plugin_id())
     }
