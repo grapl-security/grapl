@@ -76,11 +76,11 @@ DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
 DOCKER_DATA_VOLUME_FILTERS := --filter=name=grapl-data
 
 # Run a Pants goal across all proto files
-PANTS_PROTO_FILTER := ./pants filter --target-type=protobuf_sources :: | xargs ./pants
+PANTS_PROTO_FILTER := ./pants --filter-target-type=protobuf_sources
 # Run a Pants goal across all Python files
-PANTS_PYTHON_FILTER := ./pants filter --target-type=python_sources,python_tests :: | xargs ./pants
+PANTS_PYTHON_FILTER := ./pants --filter-target-type=python_sources,python_tests
 # Run a Pants goal across all shell files
-PANTS_SHELL_FILTER := ./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants
+PANTS_SHELL_FILTER := ./pants --filter-target-type=shell_sources,shunit2_tests
 
 # Helper macro for invoking a target from src/rust/Makefile
 RUST_MAKE = $(MAKE) --directory=src/rust
@@ -373,7 +373,7 @@ lint-prettier: ## Run ts/js/yaml lint checks
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
-	$(PANTS_PROTO_FILTER) lint
+	$(PANTS_PROTO_FILTER) lint ::
 
 .PHONY: lint-proto-breaking
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
@@ -381,7 +381,7 @@ lint-proto-breaking: ## Check protobuf definitions for breaking changes
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
-	$(PANTS_PYTHON_FILTER) lint
+	$(PANTS_PYTHON_FILTER) lint ::
 
 .PHONY: lint-rust
 lint-rust: lint-rust-clippy
@@ -398,7 +398,7 @@ lint-rust-rustfmt: ## Check to see if Rust code is properly formatted
 
 .PHONY: lint-shell
 lint-shell: ## Run Shell lint checks
-	$(PANTS_SHELL_FILTER) lint
+	$(PANTS_SHELL_FILTER) lint ::
 
 ##@ Formatting 💅
 
@@ -427,11 +427,11 @@ format-prettier: ## Reformat js/ts/yaml
 
 .PHONY: format-proto
 format-proto: ## Reformat all Protobuf definitions
-	$(PANTS_PROTO_FILTER) fmt
+	$(PANTS_PROTO_FILTER) fmt ::
 
 .PHONY: format-python
 format-python: ## Reformat all Python code
-	$(PANTS_PYTHON_FILTER) fmt
+	$(PANTS_PYTHON_FILTER) fmt ::
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
@@ -439,7 +439,7 @@ format-rust: ## Reformat all Rust code
 
 .PHONY: format-shell
 format-shell: ## Reformat all shell code
-	$(PANTS_SHELL_FILTER) fmt
+	$(PANTS_SHELL_FILTER) fmt ::
 
 ##@ Local Grapl 💻
 
