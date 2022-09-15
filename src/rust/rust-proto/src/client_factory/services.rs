@@ -4,6 +4,9 @@ pub use event_source::EventSourceClientConfig;
 mod generator;
 pub use generator::GeneratorClientConfig;
 
+mod analyzer;
+pub use analyzer::AnalyzerClientConfig;
+
 mod graph_query;
 pub use graph_query::GraphQueryClientConfig;
 

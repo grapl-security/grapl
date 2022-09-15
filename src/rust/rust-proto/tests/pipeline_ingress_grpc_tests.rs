@@ -149,7 +149,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
         .await
         .expect("pipeline-ingress never reported healthy");
 
-        let client = PipelineIngressClient::connect(endpoint)
+        let client = PipelineIngressClient::connect_with_endpoint(endpoint)
             .await
             .expect("could not configure client");
 

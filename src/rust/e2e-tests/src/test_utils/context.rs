@@ -10,13 +10,10 @@ use plugin_work_queue::{
     PluginWorkQueueDbConfig,
 };
 use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::{
-            EventSourceClientConfig,
-            PipelineIngressClientConfig,
-            PluginRegistryClientConfig,
-        },
+    client_factory::services::{
+        EventSourceClientConfig,
+        PipelineIngressClientConfig,
+        PluginRegistryClientConfig,
     },
     graplinc::grapl::api::{
         event_source::v1beta1::{
@@ -31,6 +28,7 @@ use rust_proto::{
             PluginType,
         },
     },
+    protocol::service_client::ConnectWithConfig,
 };
 use test_context::AsyncTestContext;
 use uuid::Uuid;
@@ -52,17 +50,20 @@ impl AsyncTestContext for E2eTestContext {
     async fn setup() -> Self {
         let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
-        let event_source_client = build_grpc_client(EventSourceClientConfig::parse())
-            .await
-            .expect("event_source_client");
+        let event_source_client =
+            EventSourceServiceClient::connect_with_config(EventSourceClientConfig::parse())
+                .await
+                .expect("event_source_client");
 
-        let plugin_registry_client = build_grpc_client(PluginRegistryClientConfig::parse())
-            .await
-            .expect("plugin_registry_client");
+        let plugin_registry_client =
+            PluginRegistryServiceClient::connect_with_config(PluginRegistryClientConfig::parse())
+                .await
+                .expect("plugin_registry_client");
 
-        let pipeline_ingress_client = build_grpc_client(PipelineIngressClientConfig::parse())
-            .await
-            .expect("pipeline_ingress_client");
+        let pipeline_ingress_client =
+            PipelineIngressClient::connect_with_config(PipelineIngressClientConfig::parse())
+                .await
+                .expect("pipeline_ingress_client");
 
         let plugin_work_queue_psql_client =
             PsqlQueue::init_with_config(PluginWorkQueueDbConfig::parse())

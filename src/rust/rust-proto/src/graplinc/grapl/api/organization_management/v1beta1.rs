@@ -200,6 +200,7 @@ pub mod client {
     };
 
     use crate::{
+        client_factory::services::OrganizationManagementClientConfig,
         client_macros::RpcConfig,
         create_proto_client,
         execute_client_rpc,
@@ -227,11 +228,12 @@ pub mod client {
 
     #[async_trait::async_trait]
     impl Connectable for OrganizationManagementClient {
+        type Config = OrganizationManagementClientConfig;
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.organization_management.v1beta1.OrganizationManagementService";
 
         #[tracing::instrument(err)]
-        async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
             let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
             let proto_client = create_proto_client!(
                 executor,

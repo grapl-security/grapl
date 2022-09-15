@@ -7,6 +7,7 @@ use client_executor::{
 use tonic::transport::Endpoint;
 
 use crate::{
+    client_factory::services::GraphMutationClientConfig,
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
@@ -33,11 +34,12 @@ pub struct GraphMutationClient {
 
 #[async_trait::async_trait]
 impl Connectable for GraphMutationClient {
+    type Config = GraphMutationClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.graph_mutation.v1beta1.GraphMutationService";
 
     #[tracing::instrument(err)]
-    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = create_proto_client!(
             executor,

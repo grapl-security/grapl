@@ -13,6 +13,7 @@ use proto::plugin_registry_service_client::PluginRegistryServiceClient as Plugin
 use tracing::instrument;
 
 use crate::{
+    client_factory::services::PluginRegistryClientConfig,
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
@@ -37,11 +38,12 @@ pub struct PluginRegistryServiceClient {
 
 #[async_trait::async_trait]
 impl Connectable for PluginRegistryServiceClient {
+    type Config = PluginRegistryClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.plugin_registry.v1beta1.PluginRegistryService";
 
     #[tracing::instrument(err)]
-    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = create_proto_client!(
             executor,

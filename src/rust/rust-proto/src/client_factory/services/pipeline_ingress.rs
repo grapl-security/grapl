@@ -1,9 +1,6 @@
-use crate::{
-    client_factory::grpc_client_config::{
-        GenericGrpcClientConfig,
-        GrpcClientConfig,
-    },
-    graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient,
+use crate::client_factory::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
 };
 
 #[derive(clap::Parser, Debug)]
@@ -20,6 +17,4 @@ impl From<PipelineIngressClientConfig> for GenericGrpcClientConfig {
     }
 }
 
-impl GrpcClientConfig for PipelineIngressClientConfig {
-    type Client = PipelineIngressClient;
-}
+impl GrpcClientConfig for PipelineIngressClientConfig {}

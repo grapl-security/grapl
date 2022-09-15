@@ -1,9 +1,6 @@
-use crate::{
-    client_factory::grpc_client_config::{
-        GenericGrpcClientConfig,
-        GrpcClientConfig,
-    },
-    graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorServiceClient,
+use crate::client_factory::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
 };
 
 #[derive(clap::Parser, Debug, Clone)]
@@ -20,6 +17,4 @@ impl From<UidAllocatorClientConfig> for GenericGrpcClientConfig {
     }
 }
 
-impl GrpcClientConfig for UidAllocatorClientConfig {
-    type Client = UidAllocatorServiceClient;
-}
+impl GrpcClientConfig for UidAllocatorClientConfig {}
