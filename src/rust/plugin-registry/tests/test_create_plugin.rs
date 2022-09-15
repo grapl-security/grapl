@@ -4,16 +4,15 @@ use bytes::Bytes;
 use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::PluginRegistryClientConfig,
-    },
+    client_factory::services::PluginRegistryClientConfig,
     graplinc::grapl::api::plugin_registry::v1beta1::{
         GetPluginRequest,
         GetPluginResponse,
         PluginMetadata,
+        PluginRegistryServiceClient,
         PluginType,
     },
+    protocol::service_client::ConnectWithConfig,
 };
 
 /// For now, this is just a smoke test. This test can and should evolve as
@@ -24,7 +23,7 @@ async fn test_create_plugin() -> eyre::Result<()> {
         env=?std::env::args(),
     );
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

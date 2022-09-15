@@ -6,10 +6,7 @@ use bytes::Bytes;
 use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::PluginRegistryClientConfig,
-    },
+    client_factory::services::PluginRegistryClientConfig,
     graplinc::grapl::api::plugin_registry::v1beta1::{
         DeployPluginRequest,
         GetPluginDeploymentRequest,
@@ -24,6 +21,7 @@ use rust_proto::{
     },
     protocol::{
         error::GrpcClientError,
+        service_client::ConnectWithConfig,
         status::Code,
     },
 };
@@ -41,7 +39,7 @@ fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
 #[test_log::test(tokio::test)]
 async fn test_deploy_example_generator() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -89,7 +87,7 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
 #[test_log::test(tokio::test)]
 async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -167,7 +165,7 @@ async fn assert_health(
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 
@@ -191,7 +189,7 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
 #[test_log::test(tokio::test)]
 async fn test_teardown_plugin() {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client(client_config)
+    let mut client = PluginRegistryServiceClient::connect_with_config(client_config)
         .await
         .expect("failed to build grpc client");
 

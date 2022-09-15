@@ -7,6 +7,7 @@ use client_executor::{
 use tonic::transport::Endpoint;
 
 use crate::{
+    client_factory::services::GraphSchemaManagerClientConfig,
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
@@ -34,11 +35,12 @@ pub struct GraphSchemaManagerClient {
 
 #[async_trait::async_trait]
 impl Connectable for GraphSchemaManagerClient {
+    type Config = GraphSchemaManagerClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.graph_schema_manager.v1beta1.GraphSchemaManagerService";
 
     #[tracing::instrument(err)]
-    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = create_proto_client!(
             executor,

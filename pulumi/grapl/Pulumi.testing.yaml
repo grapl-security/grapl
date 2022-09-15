@@ -2,32 +2,32 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20220915175641-5e4c88a
+    analyzer-dispatcher: 20220915195936-6c5ae07
     engagement-creator: 20220817005938-11d3f75
-    event-source: 20220915175641-5e4c88a
+    event-source: 20220915195936-6c5ae07
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-7e6c0b4
     firecracker_rootfs.tar.gz: 20220801204214-06bb008
-    generator-dispatcher: 20220915175641-5e4c88a
-    generator-execution-sidecar: 20220915175641-5e4c88a
-    graph-merger: 20220915175641-5e4c88a
-    graph-mutation: 20220915175641-5e4c88a
-    graph-query: 20220915175641-5e4c88a
+    generator-dispatcher: 20220915195936-6c5ae07
+    generator-execution-sidecar: 20220915195936-6c5ae07
+    graph-merger: 20220915195936-6c5ae07
+    graph-mutation: 20220915195936-6c5ae07
+    graph-query: 20220915195936-6c5ae07
     graph-query-service: 20220826220940-9c5575d
-    graph-schema-manager: 20220915175641-5e4c88a
+    graph-schema-manager: 20220915195936-6c5ae07
     graphql-endpoint: 20220915175641-5e4c88a
-    grapl-web-ui: 20220915175641-5e4c88a
+    grapl-web-ui: 20220915195936-6c5ae07
     kafka-retry: 20220915175641-5e4c88a
-    node-identifier: 20220915175641-5e4c88a
-    organization-management: 20220915175641-5e4c88a
-    pipeline-ingress: 20220915175641-5e4c88a
-    plugin-bootstrap: 20220915175641-5e4c88a
-    plugin-registry: 20220915175641-5e4c88a
-    plugin-work-queue: 20220915175641-5e4c88a
+    node-identifier: 20220915195936-6c5ae07
+    organization-management: 20220915195936-6c5ae07
+    pipeline-ingress: 20220915195936-6c5ae07
+    plugin-bootstrap: 20220915195936-6c5ae07
+    plugin-registry: 20220915195936-6c5ae07
+    plugin-work-queue: 20220915195936-6c5ae07
     provisioner: 20220915175641-5e4c88a
-    rust-integration-tests: 20220915175641-5e4c88a
-    scylla-provisioner: 20220915175641-5e4c88a
+    rust-integration-tests: 20220915195936-6c5ae07
+    scylla-provisioner: 20220915195936-6c5ae07
     sysmon-generator: 20220809152144-3c3caf3
-    uid-allocator: 20220915175641-5e4c88a
+    uid-allocator: 20220915195936-6c5ae07
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
   grapl:env_vars: ""
@@ -35,7 +35,7 @@ config:
     secure: AAABAKxa4yxFSvciEOaqrBtoUWo6qQUGrDeba1ZGrxfW/yToz6ZjXXMrGCC+69aCZvTZhzWif6r+S2fEJJGbJz8WDuje825m0wxGI7hBOsrjPw/gIJ/huFVoTM7mOgRcPZwzkVaVN0ePtdkFQJOb/PD5dOgcEf+CCcYpRthO8T9YEzVowm9lzg==
   grapl:lightstep-endpoint: ingest.lightstep.com:443
   grapl:postgres-instance-type: db.t4g.small
-  grapl:postgres-version: "13.4"
+  grapl:postgres-version: "13.7"
   grapl:scylla-addresses:
   - 54.153.52.239:9042
   - 54.193.175.245:9042

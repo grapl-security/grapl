@@ -3,21 +3,20 @@
 use bytes::Bytes;
 use clap::Parser;
 use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::PluginRegistryClientConfig,
-    },
+    client_factory::services::PluginRegistryClientConfig,
     graplinc::grapl::api::plugin_registry::v1beta1::{
         ListPluginsRequest,
         PluginMetadata,
+        PluginRegistryServiceClient,
         PluginType,
     },
+    protocol::service_client::ConnectWithConfig,
 };
 
 #[test_log::test(tokio::test)]
 async fn test_list_plugins() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_1_id = uuid::Uuid::new_v4();
@@ -106,7 +105,7 @@ async fn test_list_plugins() -> eyre::Result<()> {
 #[test_log::test(tokio::test)]
 async fn test_list_plugins_not_found() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 
