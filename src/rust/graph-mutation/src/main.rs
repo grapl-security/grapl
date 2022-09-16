@@ -32,6 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = GraphMutationServiceConfig::parse();
     let mut scylla_config = scylla::SessionConfig::new();
+    scylla_config.connect_timeout = Duration::from_secs(5);
     scylla_config.add_known_nodes_addr(&config.graph_db_config.graph_db_addresses[..]);
     scylla_config.auth_username = Some(config.graph_db_config.graph_db_auth_username.to_owned());
     scylla_config.auth_password = Some(config.graph_db_config.graph_db_auth_password.to_owned());
