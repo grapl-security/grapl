@@ -413,7 +413,8 @@ job "grapl-local-infra" {
         image = "scylladb-ext:${var.image_tag}"
         args = [
           # Set up scylla in single-node mode instead of in overprovisioned mode, ie DON'T use all available cpu/memory
-          "--smp", "1"
+          "--smp", "1",
+          "--default-log-level", "debug",
         ]
         ports = ["internal_node_rpc_1", "internal_node_rpc_2", "cql", "thrift", "rest"]
 
