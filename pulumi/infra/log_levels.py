@@ -13,6 +13,9 @@ RUST_LOG_LEVELS = ",".join(
         # It's very noisy!
         # https://github.com/launchbadge/sqlx/issues/942
         "sqlx::query=WARN",
+
+        # By default, Tower outputs every time you make a gRPC call.
+        "tower::buffer::worker=TRACE",
     ]
 )
 PY_LOG_LEVEL = "DEBUG"
