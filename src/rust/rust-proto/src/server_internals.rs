@@ -40,15 +40,21 @@ macro_rules! execute_rpc {
     ($self: ident, $request: ident, $rpc_name: ident) => {{
         {
             let rpc_name = stringify!($var);
-            tracing::info!(format!("Executing {rpc_name}"));
+            tracing::info!("Executing {rpc_name}");
+
             let proto_request = $request.into_inner();
 
             let native_request = proto_request.try_into()?;
 
+            use grapl_utils::future_ext::GraplFutureExt;
             let native_response = $self
                 .api_server
                 .$rpc_name(native_request)
+                .timeout(std::time::Duration::from_secs(9))
                 .await
+                .map_err(|e: tokio::time::error::Elapsed| {
+                    Status::internal(format!("Timeout elapsed: {e:?}"))
+                })?
                 .map_err(Into::into)?;
 
             let proto_response = native_response

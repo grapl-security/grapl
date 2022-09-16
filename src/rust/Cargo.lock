@@ -4241,6 +4241,7 @@ dependencies = [
  "clap 3.2.13",
  "client-executor",
  "futures",
+ "grapl-utils",
  "proptest",
  "prost 0.10.4",
  "prost-build 0.10.4",
