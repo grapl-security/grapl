@@ -9,7 +9,7 @@ async-trait = "0.1.56"
 clap = { version = "3.0", default_features = false, features = ["std", "env"] }
 grapl-tracing = { path = "../grapl-tracing" }
 rust-proto = { path = "../rust-proto" }
-scylla = "0.4.7"
+scylla = "0.5"
 secrecy = "0.8.0"
 thiserror = "1.0.31"
 tokio = { version = "1.20.0", features = ["full"] }
