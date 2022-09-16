@@ -21,11 +21,11 @@ use kafka::{
 };
 use rust_proto::graplinc::grapl::{
     api::{
-        client_factory::{
-            build_grpc_client,
-            services::PluginRegistryClientConfig,
+        client_factory::services::PluginRegistryClientConfig,
+        plugin_registry::v1beta1::{
+            GetGeneratorsForEventSourceRequest,
+            PluginRegistryServiceClient,
         },
-        plugin_registry::v1beta1::GetGeneratorsForEventSourceRequest,
         plugin_work_queue::v1beta1::{
             ExecutionJob,
             PluginWorkQueueServiceClient,
@@ -34,7 +34,10 @@ use rust_proto::graplinc::grapl::{
         },
         protocol::{
             error::GrpcClientError,
-            service_client::ConnectError,
+            service_client::{
+                ConnectError,
+                ConnectWithConfig,
+            },
             status::{
                 Code,
                 Status,
@@ -95,7 +98,8 @@ impl GeneratorDispatcher {
         let raw_logs_retry_producer: RetryProducer<RawLog> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
         let client_config = PluginRegistryClientConfig::parse();
-        let plugin_registry_client = build_grpc_client(client_config).await?;
+        let plugin_registry_client =
+            PluginRegistryServiceClient::connect_with_config(client_config).await?;
         let generator_ids_cache = AsyncCache::new(
             config.params.generator_ids_cache_capacity,
             Duration::from_millis(config.params.generator_ids_cache_ttl_ms),

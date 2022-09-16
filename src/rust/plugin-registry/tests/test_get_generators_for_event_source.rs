@@ -4,17 +4,16 @@ use bytes::Bytes;
 use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::{
-    client_factory::{
-        build_grpc_client,
-        services::PluginRegistryClientConfig,
-    },
+    client_factory::services::PluginRegistryClientConfig,
     plugin_registry::v1beta1::{
         GetGeneratorsForEventSourceRequest,
         PluginMetadata,
+        PluginRegistryServiceClient,
         PluginType,
     },
     protocol::{
         error::GrpcClientError,
+        service_client::ConnectWithConfig,
         status::Code,
     },
 };
@@ -26,7 +25,7 @@ async fn test_get_generators_for_event_source() -> eyre::Result<()> {
     );
 
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let generator1_display_name = "my first generator".to_string();
@@ -113,7 +112,7 @@ async fn test_get_generators_for_event_source_not_found() -> eyre::Result<()> {
     );
 
     let client_config = PluginRegistryClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

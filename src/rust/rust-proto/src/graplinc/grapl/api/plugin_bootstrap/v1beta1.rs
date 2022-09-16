@@ -167,11 +167,14 @@ pub mod client {
 
     use crate::{
         protobufs::graplinc::grapl::api::plugin_bootstrap::v1beta1::plugin_bootstrap_service_client::PluginBootstrapServiceClient as PluginBootstrapServiceClientProto,
-        graplinc::grapl::api::protocol::{
-            endpoint::Endpoint,
-            service_client::{
-                Connectable,
-                ConnectError
+        graplinc::grapl::api::{
+            client_factory::services::PluginBootstrapClientConfig,
+            protocol::{
+                endpoint::Endpoint,
+                service_client::{
+                    Connectable,
+                    ConnectError
+                },
             },
         },
         SerDeError,
@@ -198,11 +201,12 @@ pub mod client {
 
     #[async_trait::async_trait]
     impl Connectable for PluginBootstrapClient {
+        type Config = PluginBootstrapClientConfig;
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.plugin_bootstrap.v1beta1.PluginBootstrapService";
 
         #[tracing::instrument(err)]
-        async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+        async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
             Ok(PluginBootstrapClient {
                 proto_client: PluginBootstrapServiceClientProto::connect(endpoint).await?,
             })

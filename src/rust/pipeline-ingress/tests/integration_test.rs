@@ -14,14 +14,12 @@ use kafka::{
 };
 use rust_proto::graplinc::grapl::{
     api::{
-        client_factory::{
-            build_grpc_client,
-            services::PipelineIngressClientConfig,
-        },
+        client_factory::services::PipelineIngressClientConfig,
         pipeline_ingress::v1beta1::{
             client::PipelineIngressClient,
             PublishRawLogRequest,
         },
+        protocol::service_client::ConnectWithConfig,
     },
     pipeline::v1beta1::{
         Envelope,
@@ -47,7 +45,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let _guard = setup_tracing("pipeline-ingress-integration-tests").expect("setup_tracing");
 
         let client_config = PipelineIngressClientConfig::parse();
-        let pipeline_ingress_client = build_grpc_client(client_config)
+        let pipeline_ingress_client = PipelineIngressClient::connect_with_config(client_config)
             .await
             .expect("pipeline_ingress_client");
 

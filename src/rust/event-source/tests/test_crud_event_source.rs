@@ -4,17 +4,18 @@ use std::time::SystemTime;
 
 use clap::Parser;
 use rust_proto::graplinc::grapl::api::{
-    client_factory::{
-        build_grpc_client,
-        services::EventSourceClientConfig,
+    client_factory::services::EventSourceClientConfig,
+    event_source::v1beta1::{
+        self as es_api,
+        client::EventSourceServiceClient,
     },
-    event_source::v1beta1 as es_api,
+    protocol::service_client::ConnectWithConfig,
 };
 
 #[test_log::test(tokio::test)]
 async fn test_create_update_get() -> eyre::Result<()> {
     let client_config = EventSourceClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = EventSourceServiceClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

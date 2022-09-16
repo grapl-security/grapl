@@ -1,9 +1,6 @@
-use crate::graplinc::grapl::api::{
-    client_factory::grpc_client_config::{
-        GenericGrpcClientConfig,
-        GrpcClientConfig,
-    },
-    plugin_work_queue::v1beta1::PluginWorkQueueServiceClient,
+use crate::graplinc::grapl::api::client_factory::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
 };
 
 #[derive(clap::Parser, Debug)]
@@ -20,6 +17,4 @@ impl From<PluginWorkQueueClientConfig> for GenericGrpcClientConfig {
     }
 }
 
-impl GrpcClientConfig for PluginWorkQueueClientConfig {
-    type Client = PluginWorkQueueServiceClient;
-}
+impl GrpcClientConfig for PluginWorkQueueClientConfig {}

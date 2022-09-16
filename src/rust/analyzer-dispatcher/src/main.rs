@@ -25,15 +25,15 @@ use kafka::{
 use rust_proto::{
     graplinc::grapl::{
         api::{
-            client_factory::{
-                build_grpc_client,
-                services::{
-                    PluginRegistryClientConfig,
-                    PluginWorkQueueClientConfig,
-                },
+            client_factory::services::{
+                PluginRegistryClientConfig,
+                PluginWorkQueueClientConfig,
             },
             graph::v1beta1::MergedGraph,
-            plugin_registry::v1beta1::GetAnalyzersForTenantRequest,
+            plugin_registry::v1beta1::{
+                GetAnalyzersForTenantRequest,
+                PluginRegistryServiceClient,
+            },
             plugin_work_queue::v1beta1::{
                 ExecutionJob,
                 PluginWorkQueueServiceClient,
@@ -42,7 +42,10 @@ use rust_proto::{
             },
             protocol::{
                 error::GrpcClientError,
-                service_client::ConnectError,
+                service_client::{
+                    ConnectError,
+                    ConnectWithConfig,
+                },
                 status::{
                     Code,
                     Status,
@@ -139,7 +142,8 @@ impl AnalyzerDispatcher {
             RetryProducer::new(config.kafka_retry_producer_config)?;
         let client_config = PluginRegistryClientConfig::parse();
 
-        let plugin_registry_client = build_grpc_client(client_config).await?;
+        let plugin_registry_client =
+            PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
         let analyzer_ids_cache = AsyncCache::new(
             config.params.analyzer_ids_cache_capacity,
@@ -363,7 +367,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = grapl_tracing::setup_tracing("analyzer-dispatcher");
     let config = AnalyzerDispatcherConfig::parse();
     let plugin_work_queue_client_config = PluginWorkQueueClientConfig::parse();
-    let plugin_work_queue_client = build_grpc_client(plugin_work_queue_client_config).await?;
+    let plugin_work_queue_client =
+        PluginWorkQueueServiceClient::connect_with_config(plugin_work_queue_client_config).await?;
     let worker_pool_size = config.params.worker_pool_size;
     let mut analyzer_dispatcher = AnalyzerDispatcher::new(config, plugin_work_queue_client).await?;
 

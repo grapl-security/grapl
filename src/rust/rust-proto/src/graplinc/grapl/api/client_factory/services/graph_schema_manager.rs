@@ -1,9 +1,6 @@
-use crate::graplinc::grapl::api::{
-    client_factory::grpc_client_config::{
-        GenericGrpcClientConfig,
-        GrpcClientConfig,
-    },
-    graph_schema_manager::v1beta1::client::GraphSchemaManagerClient,
+use crate::graplinc::grapl::api::client_factory::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
 };
 
 #[derive(clap::Parser, Debug, Clone)]
@@ -20,6 +17,4 @@ impl From<GraphSchemaManagerClientConfig> for GenericGrpcClientConfig {
     }
 }
 
-impl GrpcClientConfig for GraphSchemaManagerClientConfig {
-    type Client = GraphSchemaManagerClient;
-}
+impl GrpcClientConfig for GraphSchemaManagerClientConfig {}

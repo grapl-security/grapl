@@ -3,11 +3,9 @@ use grapl_config::env_helpers::FromEnv;
 use rand::Rng;
 use rusoto_dynamodb::DynamoDbClient;
 use rust_proto::graplinc::grapl::api::{
-    client_factory::{
-        build_grpc_client,
-        services::PluginRegistryClientConfig,
-    },
+    client_factory::services::PluginRegistryClientConfig,
     plugin_registry::v1beta1::PluginRegistryServiceClient,
+    protocol::service_client::ConnectWithConfig,
 };
 
 use crate::upstream::GraphQlEndpointUrl;
@@ -47,7 +45,9 @@ impl Config {
 
         let listener = std::net::TcpListener::bind(builder.bind_address)?;
 
-        let plugin_registry_client = build_grpc_client(builder.plugin_registry_config).await?;
+        let plugin_registry_client =
+            PluginRegistryServiceClient::connect_with_config(builder.plugin_registry_config)
+                .await?;
 
         let dynamodb_client = DynamoDbClient::from_env();
 

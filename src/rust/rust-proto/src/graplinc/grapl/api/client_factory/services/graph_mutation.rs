@@ -1,9 +1,6 @@
-use crate::graplinc::grapl::api::{
-    client_factory::grpc_client_config::{
-        GenericGrpcClientConfig,
-        GrpcClientConfig,
-    },
-    graph_mutation::v1beta1::client::GraphMutationClient,
+use crate::graplinc::grapl::api::client_factory::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
 };
 
 #[derive(clap::Parser, Debug)]
@@ -20,6 +17,4 @@ impl From<GraphMutationClientConfig> for GenericGrpcClientConfig {
     }
 }
 
-impl GrpcClientConfig for GraphMutationClientConfig {
-    type Client = GraphMutationClient;
-}
+impl GrpcClientConfig for GraphMutationClientConfig {}

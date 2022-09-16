@@ -3,14 +3,13 @@ use std::os::unix::fs::PermissionsExt;
 use clap::Parser;
 use grapl_tracing::setup_tracing;
 use rust_proto::graplinc::grapl::api::{
-    client_factory::{
-        build_grpc_client,
-        services::PluginBootstrapClientConfig,
-    },
+    client_factory::services::PluginBootstrapClientConfig,
     plugin_bootstrap::v1beta1::{
+        client::PluginBootstrapClient,
         GetBootstrapRequest,
         GetBootstrapResponse,
     },
+    protocol::service_client::ConnectWithConfig,
 };
 
 static PLUGIN_BINARY_PATH: &str = "/usr/local/bin/grapl-plugin";
@@ -23,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = setup_tracing(SERVICE_NAME)?;
 
     let client_config = PluginBootstrapClientConfig::parse();
-    let mut bootstrap_client = build_grpc_client(client_config).await?;
+    let mut bootstrap_client = PluginBootstrapClient::connect_with_config(client_config).await?;
 
     let GetBootstrapResponse {
         plugin_payload,

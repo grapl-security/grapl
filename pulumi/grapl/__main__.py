@@ -314,6 +314,15 @@ def main() -> None:
 
     graph_db = ScyllaInstance("graph-db")
 
+    NomadJob(
+        "dns",
+        jobspec=repository_path("nomad/dns.nomad"),
+        vars=dict(),
+        opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
+        ),
+    )
+
     # TODO migrate secret lookups to dynamic vault lookups inline Nomad.
     #  This requires Nomad to have been hooked up to Vault first
     lightstep_access_token = pulumi.Output.secret(

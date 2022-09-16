@@ -4,33 +4,46 @@ use clap::Parser;
 use graph_query::node_query::NodeQuery;
 use rust_proto::graplinc::grapl::{
     api::{
-        client_factory::{
-            build_grpc_client,
-            services::{
-                GraphMutationClientConfig,
-                GraphQueryClientConfig,
-                GraphSchemaManagerClientConfig,
-                ScyllaProvisionerClientConfig,
-                UidAllocatorClientConfig,
-            },
+        client_factory::services::{
+            GraphMutationClientConfig,
+            GraphQueryClientConfig,
+            GraphSchemaManagerClientConfig,
+            ScyllaProvisionerClientConfig,
+            UidAllocatorClientConfig,
         },
         graph::v1beta1::{
             ImmutableStrProp,
             NodeProperty,
             Property,
         },
-        graph_mutation::v1beta1::messages as mutation,
-        graph_query_service::v1beta1::messages::{
-            MatchedGraphWithUid,
-            MaybeMatchWithUid,
-            NodePropertyQuery,
-            QueryGraphFromUidRequest,
-            QueryGraphWithUidRequest,
-            StringCmp,
+        graph_mutation::v1beta1::{
+            client::GraphMutationClient,
+            messages as mutation,
         },
-        graph_schema_manager::v1beta1::messages as graph_schema_manager_api,
-        scylla_provisioner::v1beta1::messages as scylla_provisioner_msgs,
-        uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
+        graph_query_service::v1beta1::{
+            client::GraphQueryClient,
+            messages::{
+                MatchedGraphWithUid,
+                MaybeMatchWithUid,
+                NodePropertyQuery,
+                QueryGraphFromUidRequest,
+                QueryGraphWithUidRequest,
+                StringCmp,
+            },
+        },
+        graph_schema_manager::v1beta1::{
+            client::GraphSchemaManagerClient,
+            messages as graph_schema_manager_api,
+        },
+        protocol::service_client::ConnectWithConfig,
+        scylla_provisioner::v1beta1::{
+            client::ScyllaProvisionerClient,
+            messages as scylla_provisioner_msgs,
+        },
+        uid_allocator::v1beta1::{
+            client::UidAllocatorServiceClient,
+            messages::CreateTenantKeyspaceRequest,
+        },
     },
     common::v1beta1::types::{
         EdgeName,
@@ -41,7 +54,7 @@ use rust_proto::graplinc::grapl::{
 async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> eyre::Result<()> {
     let graph_schema_manager_client_config = GraphSchemaManagerClientConfig::parse();
     let mut graph_schema_manager_client =
-        build_grpc_client(graph_schema_manager_client_config).await?;
+        GraphSchemaManagerClient::connect_with_config(graph_schema_manager_client_config).await?;
 
     fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
         // This path is created in rust/Dockerfile
@@ -67,13 +80,15 @@ async fn test_query_two_attached_nodes() -> eyre::Result<()> {
     );
 
     let query_client_config = GraphQueryClientConfig::parse();
-    let mut graph_query_client = build_grpc_client(query_client_config).await?;
+    let mut graph_query_client = GraphQueryClient::connect_with_config(query_client_config).await?;
 
     let mutation_client_config = GraphMutationClientConfig::parse();
-    let mut graph_mutation_client = build_grpc_client(mutation_client_config).await?;
+    let mut graph_mutation_client =
+        GraphMutationClient::connect_with_config(mutation_client_config).await?;
 
     let provisioner_client_config = ScyllaProvisionerClientConfig::parse();
-    let mut provisioner_client = build_grpc_client(provisioner_client_config).await?;
+    let mut provisioner_client =
+        ScyllaProvisionerClient::connect_with_config(provisioner_client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     _span.record("tenant_id", &format!("{tenant_id}"));
@@ -87,7 +102,8 @@ async fn test_query_two_attached_nodes() -> eyre::Result<()> {
     // Only used to provision the keyspace. It's okay here to use the
     // otherwise-unrecommended non-caching UidAllocator client.
 
-    let mut uid_allocator_client = build_grpc_client(UidAllocatorClientConfig::parse()).await?;
+    let mut uid_allocator_client =
+        UidAllocatorServiceClient::connect_with_config(UidAllocatorClientConfig::parse()).await?;
     uid_allocator_client
         .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
         .await?;

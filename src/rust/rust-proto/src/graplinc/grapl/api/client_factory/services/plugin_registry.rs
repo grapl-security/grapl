@@ -1,9 +1,6 @@
-use crate::graplinc::grapl::api::{
-    client_factory::grpc_client_config::{
-        GenericGrpcClientConfig,
-        GrpcClientConfig,
-    },
-    plugin_registry::v1beta1::PluginRegistryServiceClient,
+use crate::graplinc::grapl::api::client_factory::grpc_client_config::{
+    GenericGrpcClientConfig,
+    GrpcClientConfig,
 };
 
 #[derive(clap::Parser, Debug)]
@@ -20,6 +17,4 @@ impl From<PluginRegistryClientConfig> for GenericGrpcClientConfig {
     }
 }
 
-impl GrpcClientConfig for PluginRegistryClientConfig {
-    type Client = PluginRegistryServiceClient;
-}
+impl GrpcClientConfig for PluginRegistryClientConfig {}

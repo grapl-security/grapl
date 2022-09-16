@@ -4,6 +4,9 @@ pub use event_source::EventSourceClientConfig;
 pub(crate) mod generator;
 pub use generator::GeneratorClientConfig;
 
+pub(crate) mod analyzer;
+pub use analyzer::AnalyzerClientConfig;
+
 pub(crate) mod graph_query;
 pub use graph_query::GraphQueryClientConfig;
 

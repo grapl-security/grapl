@@ -10,6 +10,7 @@ use crate::{
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::{
+        client_factory::services::AnalyzerClientConfig,
         client_macros::RpcConfig,
         plugin_sdk::analyzers::v1beta1::messages as native,
         protocol::{
@@ -35,10 +36,11 @@ pub struct AnalyzerServiceClient {
 
 #[async_trait::async_trait]
 impl Connectable for AnalyzerServiceClient {
+    type Config = AnalyzerClientConfig;
     const SERVICE_NAME: &'static str = "graplinc.grapl.api.plugin_registry.v1beta1.AnalyzerService";
 
     #[tracing::instrument(err)]
-    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = create_proto_client!(
             executor,

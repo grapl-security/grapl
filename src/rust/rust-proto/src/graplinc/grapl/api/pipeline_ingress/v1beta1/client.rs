@@ -9,6 +9,7 @@ use crate::{
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::{
+        client_factory::services::PipelineIngressClientConfig,
         client_macros::RpcConfig,
         pipeline_ingress::v1beta1 as native,
         protocol::{
@@ -35,11 +36,12 @@ pub struct PipelineIngressClient {
 
 #[async_trait::async_trait]
 impl Connectable for PipelineIngressClient {
+    type Config = PipelineIngressClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService";
 
     #[tracing::instrument(err)]
-    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = create_proto_client!(
             executor,

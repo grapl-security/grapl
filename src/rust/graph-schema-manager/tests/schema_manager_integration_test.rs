@@ -4,11 +4,12 @@ use bytes::Bytes;
 use clap::Parser;
 use rust_proto::graplinc::grapl::{
     api::{
-        client_factory::{
-            build_grpc_client,
-            services::GraphSchemaManagerClientConfig,
+        client_factory::services::GraphSchemaManagerClientConfig,
+        graph_schema_manager::v1beta1::{
+            client::GraphSchemaManagerClient,
+            messages as sm_api,
         },
-        graph_schema_manager::v1beta1::messages as sm_api,
+        protocol::service_client::ConnectWithConfig,
     },
     common::v1beta1::types as common_api,
 };
@@ -22,7 +23,7 @@ pub fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
 #[tokio::test]
 async fn test_deploy_schema() -> eyre::Result<()> {
     let client_config = GraphSchemaManagerClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = GraphSchemaManagerClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

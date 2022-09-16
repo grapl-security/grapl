@@ -4,11 +4,12 @@ use clap::Parser;
 use grapl_config::ToPostgresUrl;
 use organization_management::OrganizationManagementServiceConfig;
 use rust_proto::graplinc::grapl::api::{
-    client_factory::{
-        build_grpc_client,
-        services::OrganizationManagementClientConfig,
+    client_factory::services::OrganizationManagementClientConfig,
+    organization_management::v1beta1::{
+        client::OrganizationManagementClient,
+        CreateOrganizationRequest,
     },
-    organization_management::v1beta1::CreateOrganizationRequest,
+    protocol::service_client::ConnectWithConfig,
 };
 
 #[test_log::test(tokio::test)]
@@ -22,7 +23,7 @@ async fn test_create_organization() -> eyre::Result<()> {
     let pool = service_config.to_postgres_url().connect().await?;
 
     let client_config = OrganizationManagementClientConfig::parse();
-    let mut client = build_grpc_client(client_config).await?;
+    let mut client = OrganizationManagementClient::connect_with_config(client_config).await?;
 
     let organization_display_name = uuid::Uuid::new_v4().to_string();
     let admin_username = "test user".to_string();

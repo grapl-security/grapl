@@ -10,6 +10,7 @@ use crate::{
     create_proto_client,
     execute_client_rpc,
     graplinc::grapl::api::{
+        client_factory::services::ScyllaProvisionerClientConfig,
         client_macros::RpcConfig,
         protocol::{
             error::GrpcClientError,
@@ -35,11 +36,12 @@ pub struct ScyllaProvisionerClient {
 
 #[async_trait::async_trait]
 impl Connectable for ScyllaProvisionerClient {
+    type Config = ScyllaProvisionerClientConfig;
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.scylla_provisioner.v1beta1.ScyllaProvisionerService";
 
     #[tracing::instrument(err)]
-    async fn connect(endpoint: Endpoint) -> Result<Self, ConnectError> {
+    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
         let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
         let proto_client = create_proto_client!(
             executor,
