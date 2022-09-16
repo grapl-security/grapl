@@ -124,14 +124,13 @@ impl GraphMutationManager {
                 || async move {
                     let property_value = property_value as i64;
                     let tenant_ks = tenant_keyspace_name(tenant_id);
-                    let mut query = Query::new(format!(
+                    let query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{MAX_U_64_TABLE_NAME} 
                         (uid, populated_field, value)
                         VALUES (?, ?, ?)
                     "
                     ));
-                    query.set_timestamp(Some(property_value));
 
                     self.scylla_client
                         .execute(query, &(uid.as_i64(), property_name.value, property_value))
@@ -160,15 +159,13 @@ impl GraphMutationManager {
                 || async move {
                     let property_value = property_value as i64;
                     let tenant_ks = tenant_keyspace_name(tenant_id);
-                    let mut query = Query::new(format!(
+                    let query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{MIN_U_64_TABLE_NAME} 
                         (uid, populated_field, value)
                         VALUES (?, ?, ?)
                     "
                     ));
-
-                    query.set_timestamp(Some(-property_value));
 
                     self.scylla_client
                         .execute(query, &(uid.as_i64(), property_name.value, property_value))
@@ -230,15 +227,13 @@ impl GraphMutationManager {
                 property_value,
                 || async move {
                     let tenant_ks = tenant_keyspace_name(tenant_id);
-                    let mut query = Query::new(format!(
+                    let query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{MAX_I_64_TABLE_NAME} 
                         (uid, populated_field, value)
                         VALUES (?, ?, ?)
                     "
                     ));
-                    query.set_timestamp(Some(property_value));
-
                     self.scylla_client
                         .execute(query, &(uid.as_i64(), property_name.value, property_value))
                         .await?;
@@ -265,15 +260,13 @@ impl GraphMutationManager {
                 property_value,
                 || async move {
                     let tenant_ks = tenant_keyspace_name(tenant_id);
-                    let mut query = Query::new(format!(
+                    let query = Query::new(format!(
                         r"
                         INSERT INTO {tenant_ks}.{MIN_I_64_TABLE_NAME} 
                         (uid, populated_field, value)
                         VALUES (?, ?, ?)
                     "
                     ));
-
-                    query.set_timestamp(Some(-property_value));
 
                     self.scylla_client
                         .execute(query, &(uid.as_i64(), property_name.value, property_value))
