@@ -14,6 +14,7 @@ use rust_proto::{
         api::{
             graph::v1beta1::{
                 ImmutableStrProp,
+                IncrementOnlyUintProp,
                 NodeProperty,
                 Property,
             },
@@ -288,6 +289,58 @@ async fn test_query_two_attached_nodes() -> eyre::Result<()> {
             panic!("Unknown edge_name {edge_name} (uid={source_uid:?})");
         }
     }
+
+    drop(_span);
+    Ok(())
+}
+
+#[test_log::test(tokio::test)]
+async fn test_set_node_property() -> eyre::Result<()> {
+    let GraphQueryIntegTestSetup {
+        graph_query_client: _,
+        mut graph_mutation_client,
+        tenant_id,
+        _span,
+    } = GraphQueryIntegTestSetup::setup().await?;
+
+    let process_node_type = NodeType::try_from("Process").unwrap();
+
+    // Make a node. Do lots of SetNodePropertys on it
+    let mutation::CreateNodeResponse { uid } = graph_mutation_client
+        .create_node(mutation::CreateNodeRequest {
+            tenant_id,
+            node_type: process_node_type.clone(),
+        })
+        .await?;
+
+    let _set_immutable_str = graph_mutation_client
+        .set_node_property(mutation::SetNodePropertyRequest {
+            tenant_id,
+            uid,
+            node_type: process_node_type.clone(),
+            property_name: "process_name".try_into()?,
+            property: NodeProperty {
+                property: Property::ImmutableStrProp(ImmutableStrProp {
+                    prop: "chrome.exe".into(),
+                }),
+            },
+        })
+        .await?;
+
+    let _set_increment_only_uint_prop = graph_mutation_client
+        .set_node_property(mutation::SetNodePropertyRequest {
+            tenant_id,
+            uid,
+            node_type: process_node_type.clone(),
+            property_name: "last_seen_time".try_into()?,
+            property: NodeProperty {
+                property: Property::IncrementOnlyUintProp(IncrementOnlyUintProp {
+                    // arbitrary date - millis since July 2019
+                    prop: 1563991514399,
+                }),
+            },
+        })
+        .await?;
 
     drop(_span);
     Ok(())
