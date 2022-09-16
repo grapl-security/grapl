@@ -17,5 +17,5 @@ readonly _NOMAD_ADDRESS
 
 cd "${REPOSITORY_ROOT}"
 NOMAD_ADDRESS="${_NOMAD_ADDRESS}" ./pants run \
-    ./etc/ci_scripts/dump_artifacts -- \
+    ./etc/ci_scripts/dump_artifacts:dump_artifacts -- \
     --no-dump-agent-logs
