@@ -9,13 +9,14 @@ RUST_LOG_LEVELS = ",".join(
         "rustls=WARN",
         # noisy, only for debugging
         "client_executor=TRACE",
+
         # By default, sqlx outputs an INFO for every query executed.
         # It's very noisy!
         # https://github.com/launchbadge/sqlx/issues/942
         "sqlx::query=WARN",
 
-        # By default, Tower outputs every time you make a gRPC call.
-        "tower::buffer::worker=WARN",
+        # By default, Tower outputs a DEBUG time you make a gRPC call.
+        "tower::buffer::worker=TRACE",
     ]
 )
 PY_LOG_LEVEL = "DEBUG"

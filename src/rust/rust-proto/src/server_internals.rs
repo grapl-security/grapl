@@ -41,7 +41,7 @@ macro_rules! execute_rpc {
         {
             let rpc_name = stringify!($rpc_name);
             tracing::info!("Executing RPC {rpc_name}");
-            
+
             let proto_request = $request.into_inner();
 
             let native_request = proto_request.try_into()?;
