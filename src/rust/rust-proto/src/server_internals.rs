@@ -39,8 +39,7 @@ impl From<crate::SerDeError> for Status {
 macro_rules! execute_rpc {
     ($self: ident, $request: ident, $rpc_name: ident) => {{
         {
-            let rpc_name = stringify!($var);
-            tracing::info!("Executing {rpc_name}");
+            tracing::info!("Executing RPC '$rpc_name'");
             
             let proto_request = $request.into_inner();
 
