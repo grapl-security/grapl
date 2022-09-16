@@ -166,6 +166,7 @@ where
             .add_service(GraphMutationServiceServerProto::new(GrpcApi::new(
                 self.api_server,
             )))
+            .timeout(std::time::Duration::from_secs(5))
             .serve_with_incoming_shutdown(
                 TcpListenerStream::new(self.tcp_listener),
                 self.shutdown_rx.map(|_| ()),
