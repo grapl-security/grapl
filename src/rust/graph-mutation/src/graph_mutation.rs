@@ -511,6 +511,7 @@ impl GraphMutationApi for GraphMutationManager {
             }
         };
 
+        tracing::info!("i should be returning now?");
         Ok(SetNodePropertyResponse {
             // todo: At this point we can't tell if the update was redundant
             //       but it is always safe (albeit suboptimal) to assume that

@@ -40,7 +40,7 @@ macro_rules! execute_rpc {
     ($self: ident, $request: ident, $rpc_name: ident) => {{
         {
             let rpc_name = stringify!($rpc_name);
-            tracing::info!("Executing RPC {rpc_name}");
+            tracing::debug!("Executing RPC {rpc_name}");
 
             let proto_request = $request.into_inner();
 
@@ -56,6 +56,7 @@ macro_rules! execute_rpc {
                 .try_into()
                 .map_err($crate::SerDeError::from)?;
 
+            tracing::debug!("Executing RPC {rpc_name} - COMPLETE");
             Ok(tonic::Response::new(proto_response))
         }
     }};
