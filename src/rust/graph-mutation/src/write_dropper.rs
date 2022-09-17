@@ -190,12 +190,14 @@ impl WriteDropper {
                 callback().await?;
                 handle_full!(self, max_u64);
                 entry.insert(value);
+                tracing::info!("Vacant");
             }
             Entry::Occupied(mut entry) => {
                 if value > *entry.get() {
                     callback().await?;
                     handle_full!(self, max_u64);
                     entry.insert(value);
+                    tracing::info!("occupado");
                 }
             }
         }

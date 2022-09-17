@@ -115,6 +115,7 @@ impl GraphMutationManager {
         property_name: PropertyName,
         property_value: u64,
     ) -> Result<(), GraphMutationManagerError> {
+        tracing::info!("Upsert max u64");
         self.write_dropper
             .check_max_u64(
                 tenant_id,
@@ -122,6 +123,7 @@ impl GraphMutationManager {
                 property_name.clone(),
                 property_value,
                 || async move {
+                    tracing::info!("Upsert max u64 actual callback");
                     let property_value = property_value as i64;
                     let tenant_ks = tenant_keyspace_name(tenant_id);
                     let query = Query::new(format!(
@@ -135,6 +137,7 @@ impl GraphMutationManager {
                     self.scylla_client
                         .execute(query, &(uid.as_i64(), property_name.value, property_value))
                         .await?;
+                    tracing::info!("Upsert max u64 actual callback COMPLETE");
                     Ok(())
                 },
             )
