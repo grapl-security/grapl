@@ -15,6 +15,7 @@ use test_context::test_context;
 async fn test_dispatcher_inserts_job_into_plugin_work_queue(
     ctx: &mut E2eTestContext,
 ) -> eyre::Result<()> {
+    let _span = tracing::info_span!("test_dispatcher_inserts_job_into_plugin_work_queue").entered();
     let test_name = "test_dispatcher_inserts_job_into_plugin_work_queue";
     let generator_artifact = Bytes::from("arbitrary binary");
 

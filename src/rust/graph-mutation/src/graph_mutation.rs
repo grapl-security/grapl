@@ -96,7 +96,7 @@ impl GraphMutationManager {
         scylla_client: Arc<CachingSession>,
         uid_allocator_client: UidAllocatorClient,
         reverse_edge_resolver: ReverseEdgeResolver,
-        max_write_drop_size: usize,
+        max_write_drop_size: u64,
     ) -> Self {
         Self {
             scylla_client,

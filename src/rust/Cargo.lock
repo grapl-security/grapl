@@ -1857,6 +1857,7 @@ dependencies = [
  "grapl-utils",
  "hash_hasher",
  "lazy_static",
+ "moka",
  "rust-proto",
  "scylla 0.5.0",
  "thiserror",

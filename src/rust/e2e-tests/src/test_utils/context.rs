@@ -131,16 +131,18 @@ pub struct SetupGeneratorOptions {
 }
 
 impl E2eTestContext {
+    #[tracing::instrument(skip(self), err)]
     pub async fn create_tenant(&mut self) -> eyre::Result<Uuid> {
         tracing::info!("creating tenant");
         let tenant_id = Uuid::new_v4();
         self.uid_allocator_client
             .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
             .await?;
+        tracing::info!("provisioning graph");
         self.scylla_provisioner_client
             .provision_graph_for_tenant(ProvisionGraphForTenantRequest { tenant_id })
             .await?;
-
+        tracing::info!("created tenant");
         Ok(tenant_id)
     }
 

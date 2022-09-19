@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use std::{
     net::SocketAddr,
     sync::Arc,

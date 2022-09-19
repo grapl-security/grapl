@@ -15,6 +15,7 @@ use rust_proto::{
         api::{
             graph::v1beta1::{
                 ImmutableStrProp,
+                IncrementOnlyUintProp,
                 NodeProperty,
                 Property,
             },
@@ -36,12 +37,14 @@ use rust_proto::{
 };
 use test_context::test_context;
 
+#[tracing::instrument(skip(ctx), err)]
 #[test_context(E2eTestContext)]
 #[tokio::test]
 async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let _span = tracing::info_span!(
-        "tenant_id", tenant_id=?tracing::field::Empty,
+        "test_query_two_attached_nodes", tenant_id=?tracing::field::Empty,
     );
+    let _entered = _span.enter();
     let tenant_id = ctx.create_tenant().await?;
     _span.record("tenant_id", &format!("{tenant_id}"));
 
@@ -57,6 +60,8 @@ async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result
     let process_node_type = NodeType::try_from("Process").unwrap();
     let file_node_type = NodeType::try_from("File").unwrap();
 
+    tracing::debug!(message="creating first node");
+
     let mutation::CreateNodeResponse {
         uid: first_node_uid,
     } = graph_mutation_client
@@ -65,6 +70,7 @@ async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result
             node_type: process_node_type.clone(),
         })
         .await?;
+    tracing::debug!(message="setting str prop on first node");
 
     graph_mutation_client
         .set_node_property(mutation::SetNodePropertyRequest {
@@ -79,7 +85,24 @@ async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result
             },
         })
         .await?;
+    tracing::debug!(message="setting int prop on first node");
 
+    let _set_increment_only_uint_prop = graph_mutation_client
+        .set_node_property(mutation::SetNodePropertyRequest {
+            tenant_id,
+            uid: first_node_uid,
+            node_type: process_node_type.clone(),
+            property_name: "last_seen_time".try_into()?,
+            property: NodeProperty {
+                property: Property::IncrementOnlyUintProp(IncrementOnlyUintProp {
+                    // arbitrary date - millis since July 2019
+                    prop: 1563991514399,
+                }),
+            },
+        })
+        .await?;
+
+    tracing::debug!(message="creating second node");
     // Add another Node - the time a File
     let mutation::CreateNodeResponse {
         uid: second_node_uid,
@@ -97,6 +120,7 @@ async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result
     let reverse_edge_name = EdgeName {
         value: "executed_as_processes".to_string(),
     };
+    tracing::debug!(message="creating edge");
     graph_mutation_client
         .create_edge(mutation::CreateEdgeRequest {
             edge_name: forward_edge_name.clone(),
@@ -114,6 +138,8 @@ async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result
         )
         .build();
 
+    tracing::debug!(message="query the graph");
+
     // Query about just the single node
     let response = graph_query_client
         .query_graph_with_uid(QueryGraphWithUidRequest {
@@ -122,6 +148,7 @@ async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result
             graph_query,
         })
         .await?;
+    tracing::debug!(message="check for graph match");
 
     let (matched_graph, root_uid) = match response.maybe_match {
         MaybeMatchWithUid::Matched(MatchedGraphWithUid {
@@ -202,7 +229,6 @@ async fn test_query_two_attached_nodes(ctx: &mut E2eTestContext) -> eyre::Result
         }
     }
 
-    drop(_span);
     Ok(())
 }
 
