@@ -2212,6 +2212,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-oauth/google@npm:latest":
+  version: 0.2.8
+  resolution: "@react-oauth/google@npm:0.2.8"
+  peerDependencies:
+    react: ">=16.8.0"
+    react-dom: ">=16.8.0"
+  checksum: 389422596d5065489b3e24db74e9ee7d49fbac070530a271deb7ca07f013d59b5bcd64e1b3a15543eff537393ba6465526546c9edd6a29051edf3b14ed72f25b
+  languageName: node
+  linkType: hard
+
 "@remix-run/router@npm:1.0.0":
   version: 1.0.0
   resolution: "@remix-run/router@npm:1.0.0"
@@ -6248,6 +6258,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "frontend@workspace:."
   dependencies:
+    "@react-oauth/google": latest
     "@testing-library/jest-dom": ^5.14.1
     "@testing-library/react": ^13.0.0
     "@testing-library/user-event": ^13.2.1
@@ -6266,6 +6277,7 @@ __metadata:
     prettier: ^2.7.1
     react: ^18.2.0
     react-dom: ^18.2.0
+    react-oauth: ^0.0.1
     react-router-dom: ^6.3.0
     react-scripts: 5.0.1
     typescript: ^4.4.2
@@ -10446,6 +10458,13 @@ __metadata:
   version: 18.2.0
   resolution: "react-is@npm:18.2.0"
   checksum: e72d0ba81b5922759e4aff17e0252bd29988f9642ed817f56b25a3e217e13eea8a7f2322af99a06edb779da12d5d636e9fda473d620df9a3da0df2a74141d53e
+  languageName: node
+  linkType: hard
+
+"react-oauth@npm:^0.0.1":
+  version: 0.0.1
+  resolution: "react-oauth@npm:0.0.1"
+  checksum: ed25f89fc9dffa9b326e6d07d04cb2407f2500a5bf1a17b20c177ff926257c870e49f463c5769719b698572ba111ba4d4c204813631363c194c41a0e45a4d4bf
   languageName: node
   linkType: hard
 

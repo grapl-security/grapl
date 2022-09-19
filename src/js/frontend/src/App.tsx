@@ -1,15 +1,12 @@
 import React from "react";
-import logo from "./assets/graplLogoFull.svg";
-import "./App.css";
+import GraplRoutes from "./routes/routes";
 
 function App() {
+  console.log("In App")
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} alt={"logo"} />
-        <p>A Graph Analytics Platform for Detection and Response</p>
-      </header>
-    </div>
+    <>
+     <GraplRoutes />
+    </>
   );
 }
 
