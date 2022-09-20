@@ -27,7 +27,13 @@ use crate::{
     config::ScyllaProvisionerServiceConfig,
     table_names::{
         tenant_keyspace_name,
+        IMM_I_64_TABLE_NAME,
         IMM_STRING_TABLE_NAME,
+        IMM_U_64_TABLE_NAME,
+        MAX_I_64_TABLE_NAME,
+        MAX_U_64_TABLE_NAME,
+        MIN_I_64_TABLE_NAME,
+        MIN_U_64_TABLE_NAME,
     },
 };
 
@@ -70,7 +76,15 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
             &[]
         ).await?;
 
-        let property_table_names = [(IMM_STRING_TABLE_NAME, "text")];
+        let property_table_names = [
+            (IMM_STRING_TABLE_NAME, "text"),
+            (MAX_I_64_TABLE_NAME, "bigint"),
+            (MIN_I_64_TABLE_NAME, "bigint"),
+            (IMM_I_64_TABLE_NAME, "bigint"),
+            (MAX_U_64_TABLE_NAME, "bigint"),
+            (MIN_U_64_TABLE_NAME, "bigint"),
+            (IMM_U_64_TABLE_NAME, "bigint"),
+        ];
 
         for (table_name, value_type) in property_table_names.into_iter() {
             session

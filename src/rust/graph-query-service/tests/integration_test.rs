@@ -14,6 +14,7 @@ use rust_proto::{
         api::{
             graph::v1beta1::{
                 ImmutableStrProp,
+                IncrementOnlyUintProp,
                 NodeProperty,
                 Property,
             },
@@ -75,43 +76,71 @@ async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> eyre::Result<(
     Ok(())
 }
 
+// This should probably replaced by a refactored E2eTestContext at some point.
+struct GraphQueryIntegTestSetup {
+    graph_query_client: GraphQueryClient,
+    graph_mutation_client: GraphMutationClient,
+    tenant_id: uuid::Uuid,
+    _span: tracing::Span,
+}
+
+impl GraphQueryIntegTestSetup {
+    pub async fn setup() -> eyre::Result<GraphQueryIntegTestSetup> {
+        // <setup>
+        let _span = tracing::info_span!(
+            "tenant_id", tenant_id=?tracing::field::Empty,
+        );
+
+        let query_client_config = GraphQueryClientConfig::parse();
+        let graph_query_client = GraphQueryClient::connect_with_config(query_client_config).await?;
+
+        let mutation_client_config = GraphMutationClientConfig::parse();
+        let graph_mutation_client =
+            GraphMutationClient::connect_with_config(mutation_client_config).await?;
+
+        let provisioner_client_config = ScyllaProvisionerClientConfig::parse();
+        let mut provisioner_client =
+            ScyllaProvisionerClient::connect_with_config(provisioner_client_config).await?;
+
+        let tenant_id = uuid::Uuid::new_v4();
+        _span.record("tenant_id", &format!("{tenant_id}"));
+
+        provisioner_client
+            .provision_graph_for_tenant(scylla_provisioner_msgs::ProvisionGraphForTenantRequest {
+                tenant_id,
+            })
+            .await?;
+
+        // Only used to provision the keyspace. It's okay here to use the
+        // otherwise-unrecommended non-caching UidAllocator client.
+
+        let mut uid_allocator_client =
+            UidAllocatorServiceClient::connect_with_config(UidAllocatorClientConfig::parse())
+                .await?;
+        uid_allocator_client
+            .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
+            .await?;
+
+        // Provision a Schema so we can test how edges work
+        provision_example_graph_schema(tenant_id).await?;
+
+        Ok(Self {
+            graph_query_client,
+            graph_mutation_client,
+            tenant_id,
+            _span,
+        })
+    }
+}
+
 #[test_log::test(tokio::test)]
 async fn test_query_two_attached_nodes() -> eyre::Result<()> {
-    let _span = tracing::info_span!(
-        "tenant_id", tenant_id=?tracing::field::Empty,
-    );
-
-    let query_client_config = GraphQueryClientConfig::parse();
-    let mut graph_query_client = GraphQueryClient::connect_with_config(query_client_config).await?;
-
-    let mutation_client_config = GraphMutationClientConfig::parse();
-    let mut graph_mutation_client =
-        GraphMutationClient::connect_with_config(mutation_client_config).await?;
-
-    let provisioner_client_config = ScyllaProvisionerClientConfig::parse();
-    let mut provisioner_client =
-        ScyllaProvisionerClient::connect_with_config(provisioner_client_config).await?;
-
-    let tenant_id = uuid::Uuid::new_v4();
-    _span.record("tenant_id", &format!("{tenant_id}"));
-
-    provisioner_client
-        .provision_graph_for_tenant(scylla_provisioner_msgs::ProvisionGraphForTenantRequest {
-            tenant_id,
-        })
-        .await?;
-
-    // Only used to provision the keyspace. It's okay here to use the
-    // otherwise-unrecommended non-caching UidAllocator client.
-
-    let mut uid_allocator_client =
-        UidAllocatorServiceClient::connect_with_config(UidAllocatorClientConfig::parse()).await?;
-    uid_allocator_client
-        .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
-        .await?;
-
-    // Provision a Schema so we can test how edges work
-    provision_example_graph_schema(tenant_id).await?;
+    let GraphQueryIntegTestSetup {
+        mut graph_query_client,
+        mut graph_mutation_client,
+        tenant_id,
+        _span,
+    } = GraphQueryIntegTestSetup::setup().await?;
 
     let process_node_type = NodeType::try_from("Process").unwrap();
     let file_node_type = NodeType::try_from("File").unwrap();
@@ -260,6 +289,58 @@ async fn test_query_two_attached_nodes() -> eyre::Result<()> {
             panic!("Unknown edge_name {edge_name} (uid={source_uid:?})");
         }
     }
+
+    drop(_span);
+    Ok(())
+}
+
+#[test_log::test(tokio::test)]
+async fn test_set_node_property() -> eyre::Result<()> {
+    let GraphQueryIntegTestSetup {
+        graph_query_client: _,
+        mut graph_mutation_client,
+        tenant_id,
+        _span,
+    } = GraphQueryIntegTestSetup::setup().await?;
+
+    let process_node_type = NodeType::try_from("Process").unwrap();
+
+    // Make a node. Do lots of SetNodePropertys on it
+    let mutation::CreateNodeResponse { uid } = graph_mutation_client
+        .create_node(mutation::CreateNodeRequest {
+            tenant_id,
+            node_type: process_node_type.clone(),
+        })
+        .await?;
+
+    graph_mutation_client
+        .set_node_property(mutation::SetNodePropertyRequest {
+            tenant_id,
+            uid,
+            node_type: process_node_type.clone(),
+            property_name: "process_name".try_into()?,
+            property: NodeProperty {
+                property: Property::ImmutableStrProp(ImmutableStrProp {
+                    prop: "chrome.exe".into(),
+                }),
+            },
+        })
+        .await?;
+
+    graph_mutation_client
+        .set_node_property(mutation::SetNodePropertyRequest {
+            tenant_id,
+            uid,
+            node_type: process_node_type.clone(),
+            property_name: "last_seen_time".try_into()?,
+            property: NodeProperty {
+                property: Property::IncrementOnlyUintProp(IncrementOnlyUintProp {
+                    // arbitrary date - millis since July 2019
+                    prop: 1563991514399,
+                }),
+            },
+        })
+        .await?;
 
     drop(_span);
     Ok(())
