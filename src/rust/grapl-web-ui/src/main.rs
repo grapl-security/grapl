@@ -10,8 +10,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     grapl_web_ui::run(config)?.await?;
 
-    // send remaining trace spans.
-    opentelemetry::global::shutdown_tracer_provider();
-
     Ok(())
 }

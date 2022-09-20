@@ -8,7 +8,7 @@ config:
     secure: AAABAKxa4yxFSvciEOaqrBtoUWo6qQUGrDeba1ZGrxfW/yToz6ZjXXMrGCC+69aCZvTZhzWif6r+S2fEJJGbJz8WDuje825m0wxGI7hBOsrjPw/gIJ/huFVoTM7mOgRcPZwzkVaVN0ePtdkFQJOb/PD5dOgcEf+CCcYpRthO8T9YEzVowm9lzg==
   grapl:lightstep-endpoint: "ingest.lightstep.com:443"
   grapl:postgres-instance-type: db.t4g.small
-  grapl:postgres-version: "13.4"
+  grapl:postgres-version: "13.7"
   grapl:scylla-addresses:
     # These 3 Scylla instances have the Nomad Agent whitelisted.
     - 54.153.52.239:9042
