@@ -29,6 +29,8 @@ DIST_DIR = $(GRAPL_ROOT)/dist
 COMPOSE_USER=${UID}:${GID}
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
+# This gets the eth0 private ip interface, which is what Consul and Nomad bind to by default
+LOCAL_HOST_ETH0_IP = $(shell ip -4 addr show eth0 | grep inet | awk  '{print $$2}' | cut --delimiter="/" --fields=1)
 
 export
 

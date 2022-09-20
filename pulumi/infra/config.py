@@ -21,6 +21,11 @@ GRAPL_TEST_USER_NAME: Final[str] = f"{STACK_NAME}-grapl-test-user"
 # note: this ${} is interpolated inside Nomad
 HOST_IP_IN_NOMAD: Final[str] = "${attr.unique.network.ip-address}"
 
+# This is equivalent to what "${attr.unique.network.ip-address}" resolves to but is used for cases where variable
+# interpolation is not available. Currently this is used to get the private IP for Nomad so the otel collector can
+# scrape metrics
+LOCAL_HOST_IP: Final[str] = os.getenv("LOCAL_HOST_ETH0_IP")
+
 
 def repository_path(relative_path: str) -> Path:
     """

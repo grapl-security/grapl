@@ -33,6 +33,7 @@ def observability_env_vars_for_local() -> str:
 # typechecking
 def otel_config(
     lightstep_token: pulumi.Output,
+    nomad_endpoint: pulumi.Output | str,
     lightstep_endpoint: str = "ingest.lightstep.com:443",
     lightstep_is_endpoint_secure: str = "true",
 ) -> pulumi.Output[str]:
@@ -40,6 +41,7 @@ def otel_config(
         lightstep_endpoint=lightstep_endpoint,
         lightstep_token=lightstep_token,
         lightstep_is_endpoint_secure=lightstep_is_endpoint_secure,
+        nomad_endpoint=nomad_endpoint,
     ).apply(
         lambda args: f"""
 receivers:
@@ -64,7 +66,7 @@ receivers:
             format: ['prometheus']
           static_configs:
             # This should be pointing to the Nomad network IP. Locally that would be the eth0 private IP. in AWS that's the Nomad ALB.
-            - targets: ['localhost:4646']
+            - targets: [{args["nomad_endpoint"]}]
 processors:
   batch:
     timeout: 10s
