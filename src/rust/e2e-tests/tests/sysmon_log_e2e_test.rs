@@ -41,15 +41,15 @@ use uuid::Uuid;
 #[tracing::instrument(skip(ctx))]
 #[test_context(E2eTestContext)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
+async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let test_name = "test_sysmon_log_e2e";
-
+    let tenant_id = ctx.create_tenant().await?;
     let SetupResult {
         tenant_id,
         plugin_id,
         event_source_id,
     } = ctx
-        .setup_sysmon_generator(test_name)
+        .setup_sysmon_generator(tenant_id, test_name)
         .await
         .expect("failed to setup the sysmon-generator");
 
@@ -218,4 +218,6 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
     // assert_eq!(filtered_merged_graphs.len(), 1);
 
     // TODO: Perhaps add a test here that looks in dgraph/scylla for those identified nodes
+
+    Ok(())
 }

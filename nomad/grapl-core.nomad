@@ -76,6 +76,11 @@ variable "session_table_name" {
   description = "What is the name of the session table?"
 }
 
+variable "static_mapping_table_name" {
+  type        = string
+  description = "The name of the dynamodb table used for storing the ids of static nodes"
+}
+
 variable "plugin_registry_db" {
   type = object({
     hostname = string
@@ -189,19 +194,23 @@ locals {
   dgraph_alpha_grpc_public_port_base  = 9080
 
   # DGraph Alphas (shards * replicas)
-  dgraph_alphas = [for alpha_id in range(0, var.dgraph_replicas * var.dgraph_shards) : {
-    id : alpha_id,
-    grpc_private_port : local.dgraph_alpha_grpc_private_port_base + alpha_id,
-    grpc_public_port : local.dgraph_alpha_grpc_public_port_base + alpha_id,
-    http_port : local.dgraph_alpha_http_private_port_base + alpha_id
-  }]
+  dgraph_alphas = [
+    for alpha_id in range(0, var.dgraph_replicas * var.dgraph_shards) : {
+      id : alpha_id,
+      grpc_private_port : local.dgraph_alpha_grpc_private_port_base + alpha_id,
+      grpc_public_port : local.dgraph_alpha_grpc_public_port_base + alpha_id,
+      http_port : local.dgraph_alpha_http_private_port_base + alpha_id
+    }
+  ]
 
   # DGraph Zeros (replicas)
-  dgraph_zeros = [for zero_id in range(1, var.dgraph_replicas) : {
-    id : zero_id,
-    grpc_private_port : local.dgraph_zero_grpc_private_port_base + zero_id,
-    http_port : local.dgraph_zero_http_private_port_base + zero_id,
-  }]
+  dgraph_zeros = [
+    for zero_id in range(1, var.dgraph_replicas) : {
+      id : zero_id,
+      grpc_private_port : local.dgraph_zero_grpc_private_port_base + zero_id,
+      http_port : local.dgraph_zero_http_private_port_base + zero_id,
+    }
+  ]
 
   # String that contains all of the Zeros for the Alphas to talk to and ensure they don't go down when one dies
   zero_alpha_connect_str = join(",", [for zero_id in range(0, var.dgraph_replicas) : "localhost:${local.dgraph_zero_grpc_private_port_base + zero_id}"])
@@ -751,10 +760,12 @@ job "grapl-core" {
       }
 
       env {
-        AWS_REGION         = var.aws_region
-        RUST_LOG           = var.rust_log
-        RUST_BACKTRACE     = local.rust_backtrace
-        MG_ALPHAS          = local.alpha_grpc_connect_str
+        AWS_REGION     = var.aws_region
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+
+        GRAPH_MUTATION_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
+
         GRAPL_SCHEMA_TABLE = var.schema_table_name
 
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
@@ -776,14 +787,9 @@ job "grapl-core" {
       connect {
         sidecar_service {
           proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
+            upstreams {
+              destination_name = "graph-mutation"
+              local_bind_port  = 1001
             }
           }
         }
@@ -833,16 +839,29 @@ job "grapl-core" {
         KAFKA_CONSUMER_TOPIC      = "generated-graphs"
         KAFKA_PRODUCER_TOPIC      = "identified-graphs"
 
+        GRAPH_MUTATION_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
+
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
+        GRAPL_STATIC_MAPPING_TABLE  = var.static_mapping_table_name
       }
 
       resources {
         cpu = 50
       }
+    }
+    service {
+      name = "node-identifier"
 
-      service {
-        name = "node-identifier"
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "graph-mutation"
+              local_bind_port  = 1001
+            }
+          }
+        }
       }
     }
   }

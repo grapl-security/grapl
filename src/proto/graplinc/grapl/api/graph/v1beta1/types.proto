@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package graplinc.grapl.api.graph.v1beta1;
 
+import "graplinc/grapl/common/v1beta1/types.proto";
+
 // The Session Identity Strategy is used to derive a canonical identity for any node that has a
 // 'pseudo key', as well as a beginning, middle, and end.
 // The 'pseudo key' can itself be multiple values concatenated together.
@@ -130,8 +132,8 @@ message NodeDescription {
 message IdentifiedNode {
   // Represents the properties of a node
   map<string, NodeProperty> properties = 1;
-  // The node_key, which is now resolved and canonical
-  string node_key = 2;
+  // The uid for this node in the graph
+  graplinc.grapl.common.v1beta1.Uid uid = 2;
   // The node type, as it exists in DGraph
   string node_type = 3;
 }
@@ -159,6 +161,28 @@ message Edge {
   string edge_name = 3;
 }
 
+// Represents a directed edge between two nodes, where both nodes, and this edge, have been identified.
+message IdentifiedEdge {
+  // The uid associated with the 'source' of the edge
+  graplinc.grapl.common.v1beta1.Uid from_uid = 1;
+  // The uid associated with the 'destination' of the edge
+  graplinc.grapl.common.v1beta1.Uid to_uid = 2;
+  // The name of the edge
+  string edge_name = 3;
+}
+
+// Represents multiple edges - mostly necessary because protobuf can't express a `map` of `repeated` values directly.
+message EdgeList {
+  // The internal repeated edges
+  repeated Edge edges = 1;
+}
+
+// Represents multiple identified edges
+message IdentifiedEdgeList {
+  // The internal repeated edges
+  repeated IdentifiedEdge edges = 1;
+}
+
 // Represents a directed edge between two nodes, where both nodes, and this edge, exist in the graph.
 message MergedEdge {
   // The uid associated with the 'source' of the edge
@@ -171,12 +195,6 @@ message MergedEdge {
   string to_node_key = 4;
   // The name of the edge
   string edge_name = 5;
-}
-
-// Represents multiple edges - mostly necessary because protobuf can't express a `map` of `repeated` values directly.
-message EdgeList {
-  // The internal repeated edges
-  repeated Edge edges = 1;
 }
 
 // Represents multiple edges - mostly necessary because protobuf can't express a `map` of `repeated` values directly.
@@ -199,9 +217,9 @@ message GraphDescription {
 // These nodes have canonical identities.
 message IdentifiedGraph {
   // The mapping of node_key to the IdentifiedNode
-  map<string, IdentifiedNode> nodes = 1;
-  // The mapping of node_key to the EdgeLists
-  map<string, EdgeList> edges = 2;
+  map<uint64, IdentifiedNode> nodes = 1;
+  // The mapping of node_key to the IdentifiedEdgeLists
+  map<uint64, IdentifiedEdgeList> edges = 2;
 }
 
 // GraphDescription represents a graph of nodes that exist in the graph store. These nodes
@@ -228,9 +246,9 @@ message Lens {
 // Result computed by an analyzer when it makes a detection.
 message ExecutionHit {
   // The mapping of node_key to the MergedNode
-  map<string, graplinc.grapl.api.graph.v1beta1.MergedNode> nodes = 1;
+  map<uint64, graplinc.grapl.api.graph.v1beta1.IdentifiedNode> nodes = 1;
   // The mapping of node_key to the EdgeLists
-  map<string, graplinc.grapl.api.graph.v1beta1.MergedEdgeList> edges = 2;
+  map<uint64, graplinc.grapl.api.graph.v1beta1.IdentifiedEdgeList> edges = 2;
   // The name of the analyzer which made the detection
   string analyzer_name = 3;
   // The risk score associated with this detection

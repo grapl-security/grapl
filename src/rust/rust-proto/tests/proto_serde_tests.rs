@@ -545,4 +545,11 @@ mod analyzer_sdk {
             check_encode_decode_invariant(value)
         }
     }
+
+    proptest! {
+        #[test]
+        fn test_update(update in as_strats::updates()) {
+            check_encode_decode_invariant(update)
+        }
+    }
 }

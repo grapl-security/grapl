@@ -389,7 +389,17 @@ impl type_url::TypeUrl for AcknowledgeAnalyzerResponse {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetExecuteAnalyzerRequest {
-    pub plugin_id: Uuid,
+    plugin_id: Uuid,
+}
+
+impl GetExecuteAnalyzerRequest {
+    pub fn new(plugin_id: Uuid) -> Self {
+        Self { plugin_id }
+    }
+
+    pub fn plugin_id(&self) -> Uuid {
+        self.plugin_id
+    }
 }
 
 impl TryFrom<proto::GetExecuteAnalyzerRequest> for GetExecuteAnalyzerRequest {

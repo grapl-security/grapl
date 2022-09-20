@@ -18,10 +18,10 @@ pub fn events_36lines_node_identity_predicate(identified_graph: IdentifiedGraph)
         (Some(parent_process), Some(child_process)) => {
             let parent_to_child_edge = identified_graph
                 .edges
-                .get(parent_process.get_node_key())
+                .get(&parent_process.uid)
                 .iter()
                 .flat_map(|edge_list| edge_list.edges.iter())
-                .find(|edge| edge.to_node_key == child_process.get_node_key())
+                .find(|edge| edge.to_uid == child_process.uid)
                 .expect("missing edge from parent to child");
 
             parent_to_child_edge.edge_name == "children"

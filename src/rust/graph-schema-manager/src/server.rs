@@ -66,6 +66,7 @@ pub struct GraphSchemaManager {
 impl GraphSchemaManagerApi for GraphSchemaManager {
     type Error = GraphSchemaManagerServiceError;
 
+    #[tracing::instrument(skip(self, request), err)]
     async fn deploy_schema(
         &self,
         request: DeploySchemaRequest,
@@ -87,6 +88,7 @@ impl GraphSchemaManagerApi for GraphSchemaManager {
         }
     }
 
+    #[tracing::instrument(skip(self), err)]
     async fn get_edge_schema(
         &self,
         request: GetEdgeSchemaRequest,
