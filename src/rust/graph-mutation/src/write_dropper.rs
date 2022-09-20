@@ -1,11 +1,5 @@
 use std::future::Future;
 
-use blake2::{
-    digest::consts::U16,
-    Blake2b,
-    Digest,
-};
-use dashmap::mapref::entry::Entry;
 use moka::future::Cache;
 use rust_proto::graplinc::grapl::common::v1beta1::types::{
     EdgeName,
@@ -13,8 +7,6 @@ use rust_proto::graplinc::grapl::common::v1beta1::types::{
     PropertyName,
     Uid,
 };
-
-type Blake2b16 = Blake2b<U16>;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct NodeTypeKey {
@@ -29,21 +21,15 @@ struct PropertyKey {
     property_name: PropertyName,
 }
 
-fn edge_key(
-    tenant_id: uuid::Uuid,
-    source_uid: Uid,
-    dst_uid: Uid,
-    edge_name: &EdgeName,
-) -> [u8; 16] {
-    let mut hasher = Blake2b16::new();
-    hasher.update(tenant_id.as_bytes());
-    hasher.update(source_uid.as_u64().to_le_bytes());
-    hasher.update(dst_uid.as_u64().to_le_bytes());
-    hasher.update(edge_name.value.as_bytes());
-    hasher.update(b"my_input");
-    hasher.finalize().into()
-}
-
+/// WriteDropper lets us save database IO by proactively "dropping" db writes
+/// that wouldn't change eventual outcome.
+/// EXAMPLE 1: Immutable String
+///   An immutable string can't change, so if we receive two instructions to
+///   write an immutable string, we only have to write one of them.
+/// EXAMPLE 2: Max u64/i64 (aka IncrOnly)
+///   If you have a property that can only increment, and we've previously
+///   written 5 to the DB, there's no reason to write a 4 if we encounter it.
+#[allow(dead_code)] // TODO https://github.com/grapl-security/issue-tracker/issues/1028
 #[derive(Clone, Debug)]
 pub struct WriteDropper {
     max_i64: Cache<PropertyKey, i64>,
@@ -58,7 +44,6 @@ pub struct WriteDropper {
 }
 
 impl WriteDropper {
-
     pub fn new(max_size: u64) -> Self {
         Self {
             max_i64: Cache::new(max_size),
@@ -84,12 +69,15 @@ impl WriteDropper {
     ) -> Result<(), E>
     where
         Fut: Future<Output = Result<T, E>>,
-        E: std::error::Error
+        E: std::error::Error,
     {
-
-        tracing::debug!(message="Performing insert",);
+        tracing::debug!(message = "Performing insert",);
         callback().await?;
-        tracing::debug!(message="Insert performed");
+        tracing::debug!(message = "Insert performed");
+
+        // TODO: Resurrect the below
+        // https://github.com/grapl-security/issue-tracker/issues/1028
+
         // match self.max_i64.entry(PropertyKey {
         //     tenant_id,
         //     node_type,
@@ -122,12 +110,11 @@ impl WriteDropper {
     ) -> Result<(), E>
     where
         Fut: Future<Output = Result<T, E>>,
-        E: std::error::Error
+        E: std::error::Error,
     {
-
-        tracing::debug!(message="Performing insert",);
+        tracing::debug!(message = "Performing insert",);
         callback().await?;
-        tracing::debug!(message="Insert performed");
+        tracing::debug!(message = "Insert performed");
         // match self.min_i64.entry(PropertyKey {
         //     tenant_id,
         //     node_type,
@@ -158,11 +145,15 @@ impl WriteDropper {
     ) -> Result<(), E>
     where
         Fut: Future<Output = Result<T, E>>,
-        E: std::error::Error
+        E: std::error::Error,
     {
-        tracing::debug!(message="Performing insert",);
+        tracing::debug!(message = "Performing insert",);
         callback().await?;
-        tracing::debug!(message="Insert performed");
+        tracing::debug!(message = "Insert performed");
+
+        // TODO: Resurrect the below, delete the above
+        // https://github.com/grapl-security/issue-tracker/issues/1028
+
         // let key = PropertyKey {
         //     tenant_id,
         //     node_type,
@@ -187,12 +178,15 @@ impl WriteDropper {
     ) -> Result<(), E>
     where
         Fut: Future<Output = Result<T, E>>,
-        E: std::error::Error
+        E: std::error::Error,
     {
-
-        tracing::debug!(message="Performing insert",);
+        tracing::debug!(message = "Performing insert",);
         callback().await?;
-        tracing::debug!(message="Insert performed");
+        tracing::debug!(message = "Insert performed");
+
+        // TODO: Resurrect the below, delete the above
+        // https://github.com/grapl-security/issue-tracker/issues/1028
+
         // match self.max_u64.entry(PropertyKey {
         //     tenant_id,
         //     node_type,
@@ -225,12 +219,15 @@ impl WriteDropper {
     ) -> Result<(), E>
     where
         Fut: Future<Output = Result<T, E>>,
-        E: std::error::Error
+        E: std::error::Error,
     {
-
-        tracing::debug!(message="Performing insert",);
+        tracing::debug!(message = "Performing insert",);
         callback().await?;
-        tracing::debug!(message="Insert performed");
+        tracing::debug!(message = "Insert performed");
+
+        // TODO: Resurrect the below, delete the above
+        // https://github.com/grapl-security/issue-tracker/issues/1028
+
         // match self.min_u64.entry(PropertyKey {
         //     tenant_id,
         //     node_type,
@@ -261,12 +258,15 @@ impl WriteDropper {
     ) -> Result<(), E>
     where
         Fut: Future<Output = Result<T, E>>,
-        E: std::error::Error
+        E: std::error::Error,
     {
-
-        tracing::debug!(message="Performing insert",);
+        tracing::debug!(message = "Performing insert",);
         callback().await?;
-        tracing::debug!(message="Insert performed");
+        tracing::debug!(message = "Insert performed");
+
+        // TODO: Resurrect the below, delete the above
+        // https://github.com/grapl-security/issue-tracker/issues/1028
+
         // let key = PropertyKey {
         //     tenant_id,
         //     node_type,
@@ -290,12 +290,15 @@ impl WriteDropper {
     ) -> Result<(), E>
     where
         Fut: Future<Output = Result<T, E>>,
-        E: std::error::Error
+        E: std::error::Error,
     {
-
-        tracing::debug!(message="Performing insert",);
+        tracing::debug!(message = "Performing insert",);
         callback().await?;
-        tracing::debug!(message="Insert performed");
+        tracing::debug!(message = "Insert performed");
+
+        // TODO: Resurrect the below, delete the above
+        // https://github.com/grapl-security/issue-tracker/issues/1028
+
         // let key = PropertyKey {
         //     tenant_id,
         //     node_type,
@@ -318,12 +321,15 @@ impl WriteDropper {
     ) -> Result<(), E>
     where
         Fut: Future<Output = Result<T, E>>,
-        E: std::error::Error
+        E: std::error::Error,
     {
-
-        tracing::debug!(message="Performing insert",);
+        tracing::debug!(message = "Performing insert",);
         callback().await?;
-        tracing::debug!(message="Insert performed");
+        tracing::debug!(message = "Insert performed");
+
+        // TODO: Resurrect the below, delete the above
+        // https://github.com/grapl-security/issue-tracker/issues/1028
+
         // let key = NodeTypeKey { tenant_id, uid };
         // if !self.node_type.contains(&key) {
         //     callback().await?;
@@ -345,12 +351,15 @@ impl WriteDropper {
     ) -> Result<(), E>
     where
         Fut: Future<Output = Result<T, E>>,
-        E: std::error::Error
+        E: std::error::Error,
     {
-
-        tracing::debug!(message="Performing insert",);
+        tracing::debug!(message = "Performing insert",);
         callback(f_edge_name, r_edge_name).await?;
-        tracing::debug!(message="Insert performed");
+        tracing::debug!(message = "Insert performed");
+
+        // TODO: Resurrect the below, delete the above
+        // https://github.com/grapl-security/issue-tracker/issues/1028
+
         // let fkey = edge_key(tenant_id, source_uid, dest_uid, &f_edge_name);
         //
         // // We always insert both the forward and reverse edges in a batch insert

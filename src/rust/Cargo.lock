@@ -1953,6 +1953,7 @@ dependencies = [
  "grapl-utils",
  "hash_hasher",
  "lazy_static",
+ "moka",
  "rust-proto",
  "scylla",
  "thiserror",

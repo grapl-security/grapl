@@ -313,7 +313,7 @@ async fn test_set_node_property() -> eyre::Result<()> {
         })
         .await?;
 
-    let _set_immutable_str = graph_mutation_client
+    graph_mutation_client
         .set_node_property(mutation::SetNodePropertyRequest {
             tenant_id,
             uid,
@@ -327,7 +327,7 @@ async fn test_set_node_property() -> eyre::Result<()> {
         })
         .await?;
 
-    let _set_increment_only_uint_prop = graph_mutation_client
+    graph_mutation_client
         .set_node_property(mutation::SetNodePropertyRequest {
             tenant_id,
             uid,
