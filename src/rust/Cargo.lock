@@ -75,7 +75,6 @@ dependencies = [
  "rand 0.8.5",
  "sha-1",
  "smallvec",
- "zstd",
 ]
 
 [[package]]
@@ -253,21 +252,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "actix-web-opentelemetry"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "503ff1136a085f39fc9fd96818a5e9c7ab58ccd36682f3cfc32a001d01cc3a50"
-dependencies = [
- "actix-http",
- "actix-web",
- "awc",
- "futures-util",
- "opentelemetry 0.17.0",
- "opentelemetry-semantic-conventions 0.9.0",
- "serde",
 ]
 
 [[package]]
@@ -2088,7 +2072,6 @@ dependencies = [
  "actix-multipart",
  "actix-session",
  "actix-web",
- "actix-web-opentelemetry",
  "argon2",
  "awc",
  "chrono",
@@ -2101,7 +2084,6 @@ dependencies = [
  "grapl-utils",
  "hmap",
  "jsonwebtoken-google",
- "opentelemetry 0.17.0",
  "rand 0.8.5",
  "reqwest",
  "rusoto_core",
@@ -2114,7 +2096,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "tracing-opentelemetry 0.17.4",
  "tracing-subscriber",
  "url",
  "uuid",
@@ -6160,25 +6141,6 @@ dependencies = [
  "quote",
  "syn",
  "synstructure",
-]
-
-[[package]]
-name = "zstd"
-version = "0.10.2+zstd.1.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f4a6bd64f22b5e3e94b4e238669ff9f10815c27a5180108b849d24174a83847"
-dependencies = [
- "zstd-safe",
-]
-
-[[package]]
-name = "zstd-safe"
-version = "4.1.6+zstd.1.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94b61c51bb270702d6167b8ce67340d2754b088d0c091b06e593aa772c3ee9bb"
-dependencies = [
- "libc",
- "zstd-sys",
 ]
 
 [[package]]
