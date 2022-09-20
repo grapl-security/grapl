@@ -333,7 +333,11 @@ def main() -> None:
     lightstep_is_endpoint_secure = (
         pulumi_config.get(key="lightstep-is-endpoint-secure") or "true"
     )
-    nomad_endpoint = getattr(nomad_provider, "address", f"{config.LOCAL_HOST_IP}:4646")
+    # Use the nomad ALB address or default to the local host address.
+    # Apparently nomad templates use a different templating syntax than anywhere else
+    nomad_endpoint = getattr(
+        nomad_provider, "address", '{{ env "attr.unique.network.ip-address" }}:4646'
+    )
     otel_configuration = otel_config(
         lightstep_token=lightstep_access_token,
         nomad_endpoint=nomad_endpoint,

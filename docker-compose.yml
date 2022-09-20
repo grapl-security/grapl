@@ -60,7 +60,6 @@ services:
       DOCKER_USER: "${UID}:${GID}"
       GRAPL_ROOT: "${GRAPL_ROOT}"
       WITH_PULUMI_TRACING: "${WITH_PULUMI_TRACING}"
-      LOCAL_HOST_ETH0_IP: "${LOCAL_HOST_ETH0_IP}"
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
     extra_hosts:
