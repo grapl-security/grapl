@@ -21,7 +21,6 @@ actix-web = { version = "4.1", default_features = false, features = [
   "compress-brotli"
 ] }
 actix-multipart = "0.4"
-actix-web-opentelemetry = { version = "0.12", features = ["awc"] }
 argon2 = { version = "0.4", features = ["std"] }
 awc = { version = "3", default_features = false, features = [
   "compress-brotli"
@@ -38,7 +37,6 @@ grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 hmap = "0.1"
 jsonwebtoken-google = "0.1"
-opentelemetry = { version = "0.17", features = ["rt-tokio"] }
 rand = "0.8"
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
@@ -53,11 +51,10 @@ serde_dynamodb = "0.9"
 thiserror = "1.0"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1"
-tracing-opentelemetry = "0.17"
 tracing-subscriber = "0.3"
 url = "2.2"
 serde_json = "1"
-uuid = { version = "1.0", features = ["v4", "serde" ] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
 
 [dev-dependencies]
 eyre = "0.6"
