@@ -134,9 +134,22 @@ def main() -> None:
     nomad_provider: pulumi.ProviderResource | None = None
     consul_provider: pulumi.ProviderResource | None = None
 
+    # Use the nomad ALB address or default to the local host address.
+    # Apparently nomad templates use a different templating syntax than anywhere else
+    nomad_endpoint: pulumi.Output[
+        str
+    ] | str = '{{ env "attr.unique.network.ip-address" }}:4646'
+
     if not config.LOCAL_GRAPL:
         upstream_stacks = UpstreamStacks()
         nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server)
+
+        nomad_endpoint = nomad_provider.address
+        # we need to strip off the prepended http:// because that combined with a non-standard port is
+        nomad_endpoint = pulumi.Output.all(
+            nomad_endpoint=nomad_endpoint,
+        ).apply(lambda endpoint: f"{nomad_endpoint}".replace("http://", ""))
+
         # Using get_output instead of require_output so that preview passes.
         # NOTE wimax Feb 2022: Not sure the above is still the case
         consul_master_token_secret_id = upstream_stacks.consul.get_output(
@@ -333,11 +346,7 @@ def main() -> None:
     lightstep_is_endpoint_secure = (
         pulumi_config.get(key="lightstep-is-endpoint-secure") or "true"
     )
-    # Use the nomad ALB address or default to the local host address.
-    # Apparently nomad templates use a different templating syntax than anywhere else
-    nomad_endpoint = getattr(
-        nomad_provider, "address", '{{ env "attr.unique.network.ip-address" }}:4646'
-    )
+
     otel_configuration = otel_config(
         lightstep_token=lightstep_access_token,
         nomad_endpoint=nomad_endpoint,
