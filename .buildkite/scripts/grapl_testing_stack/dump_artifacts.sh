@@ -16,6 +16,5 @@ _NOMAD_ADDRESS=$(pulumi stack output address --stack="${STACK}")
 readonly _NOMAD_ADDRESS
 
 cd "${REPOSITORY_ROOT}"
-NOMAD_ADDRESS="${_NOMAD_ADDRESS}" ./pants run \
-    ./etc/ci_scripts/dump_artifacts -- \
-    --no-dump-agent-logs
+# dump-artifacts is a Grapl custom alias defined in pants.toml
+NOMAD_ADDRESS="${_NOMAD_ADDRESS}" ./pants dump-artifacts --no-dump-agent-logs

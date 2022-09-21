@@ -133,6 +133,7 @@ def main() -> None:
     upstream_stacks: UpstreamStacks | None = None
     nomad_provider: pulumi.ProviderResource | None = None
     consul_provider: pulumi.ProviderResource | None = None
+
     if not config.LOCAL_GRAPL:
         upstream_stacks = UpstreamStacks()
         nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server)
@@ -314,6 +315,15 @@ def main() -> None:
 
     graph_db = ScyllaInstance("graph-db")
 
+    NomadJob(
+        "dns",
+        jobspec=repository_path("nomad/dns.nomad"),
+        vars=dict(),
+        opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
+        ),
+    )
+
     # TODO migrate secret lookups to dynamic vault lookups inline Nomad.
     #  This requires Nomad to have been hooked up to Vault first
     lightstep_access_token = pulumi.Output.secret(
@@ -323,8 +333,16 @@ def main() -> None:
     lightstep_is_endpoint_secure = (
         pulumi_config.get(key="lightstep-is-endpoint-secure") or "true"
     )
+    # Use the nomad ALB address or default to the local host address.
+    # Apparently nomad templates use a different templating syntax than anywhere else
+    nomad_endpoint = getattr(
+        nomad_provider, "address", '{{ env "attr.unique.network.ip-address" }}:4646'
+    )
     otel_configuration = otel_config(
-        lightstep_access_token, lightstep_endpoint, lightstep_is_endpoint_secure
+        lightstep_token=lightstep_access_token,
+        nomad_endpoint=nomad_endpoint,
+        lightstep_endpoint=lightstep_endpoint,
+        lightstep_is_endpoint_secure=lightstep_is_endpoint_secure,
     )
     NomadJob(
         "otel-collector",

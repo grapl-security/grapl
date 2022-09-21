@@ -5,7 +5,6 @@ use actix_web::{
     HttpResponse,
     Result,
 };
-use actix_web_opentelemetry::ClientExt;
 
 use crate::upstream::GraphQlEndpointUrl;
 
@@ -52,15 +51,11 @@ pub(self) async fn fwd_request_to_backend_service(
         .request_from(backend_url.as_str(), req.head())
         .no_decompress();
 
-    let mut res = forwarded_req
-        .trace_request()
-        .send_stream(payload)
-        .await
-        .map_err(|error| {
-            tracing::error!(%error);
+    let mut res = forwarded_req.send_stream(payload).await.map_err(|error| {
+        tracing::error!(%error);
 
-            actix_web::error::ErrorInternalServerError(error)
-        })?;
+        actix_web::error::ErrorInternalServerError(error)
+    })?;
 
     tracing::debug!(
         message = "Received response from backend service",

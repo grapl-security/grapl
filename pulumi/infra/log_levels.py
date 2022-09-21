@@ -8,7 +8,11 @@ RUST_LOG_LEVELS = ",".join(
         "rusoto_core=WARN",
         "rustls=WARN",
         # noisy, only for debugging
-        "client_executor=trace",
+        "client_executor=TRACE",
+        # By default, sqlx outputs an INFO for every query executed.
+        # It's very noisy!
+        # https://github.com/launchbadge/sqlx/issues/942
+        "sqlx::query=WARN",
     ]
 )
 PY_LOG_LEVEL = "DEBUG"

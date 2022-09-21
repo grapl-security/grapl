@@ -30,7 +30,6 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
 
         App::new()
             .wrap(actix_web::middleware::Logger::default())
-            .wrap(actix_web_opentelemetry::RequestTracing::new())
             .wrap(actix_web::middleware::Compress::default())
             .wrap(
                 CookieSession::private(&config.session_key)

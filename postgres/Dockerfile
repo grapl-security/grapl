@@ -1,4 +1,4 @@
-FROM postgres:13.4-bullseye
+FROM postgres:13.7-bullseye
 
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=postgreg-apt \
     apt-get update && \
