@@ -145,7 +145,8 @@ def main() -> None:
         upstream_stacks = UpstreamStacks()
         nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server)
 
-        # The nomad address is prepended with http:// by default. However that combined with a non-standard port is an invalid hostname, which causes the otel-collector to break. As such we need to strip this out.
+        # The nomad address is prepended with http:// by default. However that combined with a non-standard port is an
+        # invalid hostname, which causes the otel-collector to break. As such we need to strip this out.
         nomad_endpoint = pulumi.Output.all(
             nomad_endpoint=nomad_provider.address,
         ).apply(lambda endpoint: urlparse(f"{nomad_endpoint}").netloc)
