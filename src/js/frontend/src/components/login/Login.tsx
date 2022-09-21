@@ -1,9 +1,8 @@
 import React from "react";
-import { GoogleLogin } from "@react-oauth/google";
 import * as Yup from "yup";
 import { Field, Form, Formik } from "formik";
+import { GoogleSSO } from "./GoogleSSO";
 
-import { signInWithGoogleService } from "../../services/login/signInWithGoogleService";
 import { loginService } from "../../services/login/loginService";
 
 const Login = () => {
@@ -18,44 +17,9 @@ const Login = () => {
 
   return (
     <div>
-      <div className="App">
-        <div>
-          <GoogleLogin
-            login_uri="/api/auth/signin_with_google"
-            onSuccess={async (credentialResponse) => {
-              if (credentialResponse.credential === undefined) {
-                setState({
-                  ...state,
-                  loginFailed: true,
-                });
-
-                return;
-              }
-
-              const loginSuccess = await signInWithGoogleService(
-                credentialResponse.credential,
-              );
-
-              if (loginSuccess === true) {
-                window.history.replaceState(
-                  "#/login",
-                  "",
-                  "#/",
-                );
-                window.location.reload();
-                console.log("Logged In");
-              } else {
-                setState({
-                  ...state,
-                  loginFailed: true,
-                });
-              }
-            }}
-            onError={() => {
-              console.log("Login Failed");
-            }}
-          />
-        </div>
+      <div>
+        {" "}
+        <GoogleSSO state={state} setState={setState} />{" "}
       </div>
 
       <div>
@@ -63,12 +27,9 @@ const Login = () => {
           initialValues={{ userName: "", password: "" }}
           validationSchema={validationSchema}
           onSubmit={async (values) => {
-            const loginSuccess = await loginService(
-              values.userName,
-              values.password,
-            );
+            const loginSuccess = await loginService(values.userName, values.password);
 
-            if (loginSuccess === true) {
+            if (loginSuccess) {
               window.history.replaceState("#/login", "", "#/");
               window.location.reload();
               console.log("Logged In");
@@ -83,39 +44,15 @@ const Login = () => {
           {({ errors, touched }) => (
             <Form>
               <h3> User Login </h3>
-              <Field
-                name="userName"
-                type="text"
-                placeholder="Username"
-              />
-              {touched.userName && errors.userName && (
-                <div>
-                  {errors.userName}
-                </div>
-              )}
-              <Field
-                name="password"
-                type="password"
-                placeholder="Password"
-              />{" "}
-              <br />
-              {touched.password && errors.password && (
-                <div>
-                  {errors.password}
-                </div>
-              )}
-              <button type="submit">
-                SUBMIT
-              </button>
-              {state.loginFailed && (
-                <div>
-                  Unsuccessful Login
-                </div>
-              )}
+              <Field name="userName" type="text" placeholder="Username" />
+              {touched.userName && errors.userName && <div>{errors.userName}</div>}
+              <Field name="password" type="password" placeholder="Password" /> <br />
+              {touched.password && errors.password && <div>{errors.password}</div>}
+              <button type="submit">SUBMIT</button>
+              {state.loginFailed && <div>Unsuccessful Login</div>}
             </Form>
           )}
         </Formik>
-
       </div>
     </div>
   );

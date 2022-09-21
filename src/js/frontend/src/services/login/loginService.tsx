@@ -10,7 +10,7 @@ export const loginService = async (username: string, password: string) => {
   try {
     const loginData = await apiPostRequestWithBody(
       `${DEV_API_EDGES.auth}/sign_in_with_password`,
-      loginBody
+      loginBody,
     );
     return loginData["success"] === true;
   } catch (e) {
