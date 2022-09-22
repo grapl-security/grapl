@@ -53,8 +53,12 @@ impl ReverseEdgeResolver {
             .await?;
 
         let reverse_name = response.reverse_edge_name.clone();
-        // entry.insert(response);
         Ok(reverse_name)
+
+        // TODO: Resurrect the below once we figure out caching for Graph Mutation
+        // https://github.com/grapl-security/issue-tracker/issues/1028
+
+        // entry.insert(response);
         // match self
         //     .r_edge_cache
         //     .entry((tenant_id, edge_name.clone(), node_type.clone()))

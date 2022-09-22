@@ -179,37 +179,17 @@ impl GraphMerger {
 
 fn property_to_update(uid: Uid, property_name: String, property: &Property) -> Update {
     match property {
-        Property::IncrementOnlyUintProp(_) => Update::Uint64Property(UInt64PropertyUpdate {
+        Property::IncrementOnlyUintProp(_)
+        | Property::DecrementOnlyUintProp(_)
+        | Property::ImmutableUintProp(_) => Update::Uint64Property(UInt64PropertyUpdate {
             uid,
             property_name: PropertyName {
                 value: property_name,
             },
         }),
-        Property::DecrementOnlyUintProp(_) => Update::Uint64Property(UInt64PropertyUpdate {
-            uid,
-            property_name: PropertyName {
-                value: property_name,
-            },
-        }),
-        Property::ImmutableUintProp(_) => Update::Uint64Property(UInt64PropertyUpdate {
-            uid,
-            property_name: PropertyName {
-                value: property_name,
-            },
-        }),
-        Property::IncrementOnlyIntProp(_) => Update::Int64Property(Int64PropertyUpdate {
-            uid,
-            property_name: PropertyName {
-                value: property_name,
-            },
-        }),
-        Property::DecrementOnlyIntProp(_) => Update::Int64Property(Int64PropertyUpdate {
-            uid,
-            property_name: PropertyName {
-                value: property_name,
-            },
-        }),
-        Property::ImmutableIntProp(_) => Update::Int64Property(Int64PropertyUpdate {
+        Property::IncrementOnlyIntProp(_)
+        | Property::DecrementOnlyIntProp(_)
+        | Property::ImmutableIntProp => Update::Int64Property(Int64PropertyUpdate {
             uid,
             property_name: PropertyName {
                 value: property_name,
