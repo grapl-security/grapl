@@ -5,7 +5,6 @@ use rust_proto::{
     },
     protocol::error::GrpcClientError,
     SerDe,
-    SerDeError,
 };
 use uuid::Uuid;
 
@@ -15,17 +14,12 @@ pub type RequestId = i64;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PluginWorkProcessorError {
-    #[error("Grpc call failed {0}")]
+    #[error("GrpcClientError {0}")]
     GrpcClientError(#[from] GrpcClientError),
-
     #[error("Processing job failed, marking failed: {0}")]
     ProcessingJobFailed(String),
-
     #[error("Processing job failed, PWQ will retry: {0}")]
     ProcessingJobFailedRetriable(String),
-
-    #[error("Error serializing/deserializing protocol buffer: {0}")]
-    SerDeError(#[from] SerDeError),
 }
 
 impl PluginWorkProcessorError {
@@ -34,7 +28,6 @@ impl PluginWorkProcessorError {
             PluginWorkProcessorError::GrpcClientError(_) => true,
             PluginWorkProcessorError::ProcessingJobFailedRetriable(_) => true,
             PluginWorkProcessorError::ProcessingJobFailed(_) => false,
-            PluginWorkProcessorError::SerDeError(_) => false,
         }
     }
 }
