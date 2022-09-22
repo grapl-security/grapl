@@ -15,6 +15,7 @@ export const GoogleSSO = ({ state, setState }: Props) => {
   return (
     <div>
       <GoogleLogin
+        data-testid="googleSSOButton"
         login_uri="/api/auth/signin_with_google"
         onSuccess={async (credentialResponse) => {
           if (credentialResponse.credential === undefined) {
@@ -22,7 +23,6 @@ export const GoogleSSO = ({ state, setState }: Props) => {
               ...state,
               loginFailed: true,
             });
-
             return;
           }
 
