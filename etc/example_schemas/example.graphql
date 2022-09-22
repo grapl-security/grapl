@@ -14,7 +14,6 @@ type File @grapl(identity_algorithm: "session") {
     created_at: UInt! @create_time,
     last_seen_at: UInt! @last_seen_time,
     terminated_at: UInt! @terminate_time,
-    //file_asset: Asset! @edge(reverse: "files_on_asset", reverse_relationship: "ToMany"),
 }
 
 type Asset @grapl(identity_algorithm: "static") {
