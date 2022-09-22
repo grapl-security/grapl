@@ -24,10 +24,6 @@ from python_proto.api.graph.v1beta1.messages import (
     IncrementOnlyIntProp,
     IncrementOnlyUintProp,
     Lens,
-    MergedEdge,
-    MergedEdgeList,
-    MergedGraph,
-    MergedNode,
     NodeDescription,
     NodeProperty,
     Session,
@@ -307,23 +303,6 @@ def identified_nodes(
     )
 
 
-def merged_nodes(
-    properties: st.SearchStrategy[Mapping[str, NodeProperty]] = st.dictionaries(
-        keys=st.text(), values=node_properties(), max_size=MAX_DICT_SIZE
-    ),
-    uids: st.SearchStrategy[int] = uint64s,
-    node_keys: st.SearchStrategy[str] = st.text(),
-    node_types: st.SearchStrategy[str] = st.text(),
-) -> st.SearchStrategy[MergedNode]:
-    return st.builds(
-        MergedNode,
-        properties=properties,
-        uid=uids,
-        node_key=node_keys,
-        node_type=node_types,
-    )
-
-
 def edges(
     from_node_keys: st.SearchStrategy[str] = st.text(),
     to_node_keys: st.SearchStrategy[str] = st.text(),
@@ -372,34 +351,6 @@ def identified_edge_lists(
     )
 
 
-def merged_edges(
-    from_uids: st.SearchStrategy[str] = st.text(),
-    from_node_keys: st.SearchStrategy[str] = st.text(),
-    to_uids: st.SearchStrategy[str] = st.text(),
-    to_node_keys: st.SearchStrategy[str] = st.text(),
-    edge_names: st.SearchStrategy[str] = st.text(),
-) -> st.SearchStrategy[MergedEdge]:
-    return st.builds(
-        MergedEdge,
-        from_uid=from_uids,
-        from_node_key=from_node_keys,
-        to_uid=to_uids,
-        to_node_key=to_node_keys,
-        edge_name=edge_names,
-    )
-
-
-def merged_edge_lists(
-    edges: st.SearchStrategy[Sequence[MergedEdge]] = st.lists(
-        merged_edges(), max_size=MAX_LIST_SIZE
-    ),
-) -> st.SearchStrategy[MergedEdgeList]:
-    return st.builds(
-        MergedEdgeList,
-        edges=edges,
-    )
-
-
 def graph_descriptions(
     nodes: st.SearchStrategy[Mapping[str, NodeDescription]] = st.dictionaries(
         keys=st.text(), values=node_descriptions(), max_size=MAX_DICT_SIZE
@@ -425,21 +376,6 @@ def identified_graphs(
 ) -> st.SearchStrategy[IdentifiedGraph]:
     return st.builds(
         IdentifiedGraph,
-        nodes=nodes,
-        edges=edges,
-    )
-
-
-def merged_graphs(
-    nodes: st.SearchStrategy[Mapping[str, MergedNode]] = st.dictionaries(
-        keys=st.text(), values=merged_nodes(), max_size=MAX_DICT_SIZE
-    ),
-    edges: st.SearchStrategy[Mapping[str, MergedEdgeList]] = st.dictionaries(
-        keys=st.text(), values=merged_edge_lists(), max_size=MAX_DICT_SIZE
-    ),
-) -> st.SearchStrategy[MergedGraph]:
-    return st.builds(
-        MergedGraph,
         nodes=nodes,
         edges=edges,
     )

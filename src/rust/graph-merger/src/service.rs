@@ -188,7 +188,7 @@ fn property_to_update(uid: Uid, property_name: String, property: &Property) -> U
         }),
         Property::IncrementOnlyIntProp(_)
         | Property::DecrementOnlyIntProp(_)
-        | Property::ImmutableIntProp => Update::Int64Property(Int64PropertyUpdate {
+        | Property::ImmutableIntProp(_) => Update::Int64Property(Int64PropertyUpdate {
             uid,
             property_name: PropertyName {
                 value: property_name,

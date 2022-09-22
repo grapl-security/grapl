@@ -368,36 +368,6 @@ class IdentifiedNode(SerDe[proto.IdentifiedNode]):
 
 
 @dataclasses.dataclass(frozen=True)
-class MergedNode(SerDe[proto.MergedNode]):
-    properties: Mapping[str, NodeProperty]
-    uid: int
-    node_key: str
-    node_type: str
-    _proto_cls = proto.MergedNode
-
-    @classmethod
-    def from_proto(cls, proto_merged_node: proto.MergedNode) -> MergedNode:
-        return MergedNode(
-            properties={
-                k: NodeProperty.from_proto(proto_merged_node.properties[k])
-                for k in proto_merged_node.properties
-            },
-            uid=proto_merged_node.uid,
-            node_key=proto_merged_node.node_key,
-            node_type=proto_merged_node.node_type,
-        )
-
-    def into_proto(self) -> proto.MergedNode:
-        proto_merged_node = proto.MergedNode()
-        for k, v in self.properties.items():
-            proto_merged_node.properties[k].CopyFrom(v.into_proto())
-        proto_merged_node.uid = self.uid
-        proto_merged_node.node_key = self.node_key
-        proto_merged_node.node_type = self.node_type
-        return proto_merged_node
-
-
-@dataclasses.dataclass(frozen=True)
 class Edge(SerDe[proto.Edge]):
     from_node_key: str
     to_node_key: str
@@ -485,57 +455,6 @@ class IdentifiedEdgeList(SerDe[proto.IdentifiedEdgeList]):
 
 
 @dataclasses.dataclass(frozen=True)
-class MergedEdge(SerDe[proto.MergedEdge]):
-    from_uid: str
-    from_node_key: str
-    to_uid: str
-    to_node_key: str
-    edge_name: str
-    _proto_cls = proto.MergedEdge
-
-    @classmethod
-    def from_proto(cls, proto_merged_edge: proto.MergedEdge) -> MergedEdge:
-        return MergedEdge(
-            from_uid=proto_merged_edge.from_uid,
-            from_node_key=proto_merged_edge.from_node_key,
-            to_uid=proto_merged_edge.to_uid,
-            to_node_key=proto_merged_edge.to_node_key,
-            edge_name=proto_merged_edge.edge_name,
-        )
-
-    def into_proto(self) -> proto.MergedEdge:
-        proto_merged_edge = proto.MergedEdge()
-        proto_merged_edge.from_uid = self.from_uid
-        proto_merged_edge.from_node_key = self.from_node_key
-        proto_merged_edge.to_uid = self.to_uid
-        proto_merged_edge.to_node_key = self.to_node_key
-        proto_merged_edge.edge_name = self.edge_name
-        return proto_merged_edge
-
-
-# TODO: Delete, this is being replaced by Updates
-@dataclasses.dataclass(frozen=True)
-class MergedEdgeList(SerDe[proto.MergedEdgeList]):
-    # TODO: seed to places where this is used:
-    # /src/python/grapl_analyzerlib/grapl_analyzerlib/view_from_proto.py
-    # /src/python/grapl_analyzerlib/grapl_analyzerlib/subgraph_view.py
-    edges: Sequence[MergedEdge]
-    _proto_cls = proto.MergedEdgeList
-
-    @classmethod
-    def from_proto(cls, proto_merged_edge_list: proto.MergedEdgeList) -> MergedEdgeList:
-        return MergedEdgeList(
-            edges=[MergedEdge.from_proto(e) for e in proto_merged_edge_list.edges]
-        )
-
-    def into_proto(self) -> proto.MergedEdgeList:
-        proto_merged_edge_list = proto.MergedEdgeList()
-        for e in self.edges:
-            proto_merged_edge_list.edges.append(e.into_proto())
-        return proto_merged_edge_list
-
-
-@dataclasses.dataclass(frozen=True)
 class GraphDescription(SerDe[proto.GraphDescription]):
     nodes: Mapping[str, NodeDescription]
     edges: Mapping[str, EdgeList]
@@ -593,34 +512,6 @@ class IdentifiedGraph(SerDe[proto.IdentifiedGraph]):
         for k2, v2 in self.edges.items():
             proto_identified_graph.edges[k2.value].CopyFrom(v2.into_proto())
         return proto_identified_graph
-
-
-@dataclasses.dataclass(frozen=True)
-class MergedGraph(SerDe[proto.MergedGraph]):
-    nodes: Mapping[str, MergedNode]
-    edges: Mapping[str, MergedEdgeList]
-    _proto_cls = proto.MergedGraph
-
-    @classmethod
-    def from_proto(cls, proto_merged_graph: proto.MergedGraph) -> MergedGraph:
-        return MergedGraph(
-            nodes={
-                k: MergedNode.from_proto(proto_merged_graph.nodes[k])
-                for k in proto_merged_graph.nodes
-            },
-            edges={
-                k: MergedEdgeList.from_proto(proto_merged_graph.edges[k])
-                for k in proto_merged_graph.edges
-            },
-        )
-
-    def into_proto(self) -> proto.MergedGraph:
-        proto_merged_graph = proto.MergedGraph()
-        for k1, v1 in self.nodes.items():
-            proto_merged_graph.nodes[k1].CopyFrom(v1.into_proto())
-        for k2, v2 in self.edges.items():
-            proto_merged_graph.edges[k2].CopyFrom(v2.into_proto())
-        return proto_merged_graph
 
 
 @dataclasses.dataclass(frozen=True)

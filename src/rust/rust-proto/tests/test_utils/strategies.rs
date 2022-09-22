@@ -142,10 +142,6 @@ pub mod graph {
         IncrementOnlyIntProp,
         IncrementOnlyUintProp,
         Lens,
-        MergedEdge,
-        MergedEdgeList,
-        MergedGraph,
-        MergedNode,
         NodeDescription,
         NodeProperty,
         Property,
@@ -516,76 +512,6 @@ pub mod graph {
             edges in collection::vec(identified_edges(), 10),
         ) -> IdentifiedEdgeList {
             IdentifiedEdgeList { edges }
-        }
-    }
-
-    //
-    // MergedEdge
-    //
-
-    prop_compose! {
-        pub fn merged_edges()(
-            from_uid in any::<String>(),
-            from_node_key in any::<String>(),
-            to_uid in any::<String>(),
-            to_node_key in any::<String>(),
-            edge_name in any::<String>(),
-        ) -> MergedEdge {
-            MergedEdge {
-                from_uid,
-                from_node_key,
-                to_uid,
-                to_node_key,
-                edge_name
-            }
-        }
-    }
-
-    //
-    // MergedEdgeList
-    //
-
-    prop_compose! {
-        pub fn merged_edge_lists()(
-            edges in collection::vec(merged_edges(), 10),
-        ) -> MergedEdgeList {
-            MergedEdgeList { edges }
-        }
-    }
-
-    //
-    // MergedNode
-    //
-
-    prop_compose! {
-        pub fn merged_nodes()(
-            properties in collection::hash_map(any::<String>(), node_properties(), 10),
-            uid in any::<u64>(),
-            node_key in any::<String>(),
-            node_type in any::<String>(),
-        ) -> MergedNode {
-            MergedNode {
-                properties,
-                uid,
-                node_key,
-                node_type
-            }
-        }
-    }
-
-    //
-    // MergedGraph
-    //
-
-    prop_compose! {
-        pub fn merged_graphs()(
-            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
-        ) -> MergedGraph {
-            MergedGraph {
-                nodes,
-                edges,
-            }
         }
     }
 }

@@ -90,18 +90,6 @@ def test_lens_encode_decode() -> None:
     check_encode_decode_invariant(lenses())
 
 
-def test_merged_edge_list_encode_decode() -> None:
-    check_encode_decode_invariant(merged_edge_lists())
-
-
-def test_merged_edge_encode_decode() -> None:
-    check_encode_decode_invariant(merged_edges())
-
-
-def test_merged_graph_encode_decode() -> None:
-    check_encode_decode_invariant(merged_graphs())
-
-
 def test_merged_node_encode_decode() -> None:
     check_encode_decode_invariant(merged_nodes())
 
