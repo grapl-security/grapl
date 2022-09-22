@@ -26,7 +26,7 @@ def _rust_integration_container_images(
     Build a map of {task name -> docker image identifier}.
     """
     builder = DockerImageIdBuilder(
-        container_repository=config.container_repository(),
+        registry=config.image_registry(),
         artifacts=artifacts,
     )
 

@@ -31,18 +31,12 @@ def _docker_version_tag_from_env() -> str:
 
 
 class DockerImageIdBuilder:
-    def __init__(
-        self, container_repository: str | None, artifacts: ArtifactGetter
-    ) -> None:
-        self.container_repository = (
-            f"{container_repository}/" if container_repository else ""
-        )
+    def __init__(self, registry: str | None, artifacts: ArtifactGetter) -> None:
+        self.registry = f"{registry}/" if registry else ""
         self.artifacts = artifacts
 
-    def build(
-        self, container_repository: str, image_name: str, tag: str
-    ) -> DockerImageId:
-        return DockerImageId(f"{container_repository}{image_name}:{tag}")
+    def build(self, registry: str, image_name: str, tag: str) -> DockerImageId:
+        return DockerImageId(f"{registry}{image_name}:{tag}")
 
     def build_with_tag(self, image_name: str) -> DockerImageId:
         """
@@ -51,7 +45,7 @@ class DockerImageIdBuilder:
         artifact_version = self.artifacts.get(image_name)
         if artifact_version:
             return self.build(
-                container_repository=self.container_repository,
+                registry=self.registry,
                 image_name=image_name,
                 tag=artifact_version,
             )
@@ -61,7 +55,7 @@ class DockerImageIdBuilder:
             # is specified.
             tag = _docker_version_tag_from_env()
             return self.build(
-                container_repository="",  # local Docker registry
+                registry="",  # local Docker registry
                 image_name=image_name,
                 tag=tag,
             )

@@ -130,26 +130,34 @@ def configurable_envvar(service_name: str, var: str) -> str:
 
 
 def cloudsmith_repository_name() -> str | None:
-    """The repository from which to pull container images and Firecracker
-    packages from.
+    """The Cloudsmith repository from which to pull container images and
+    Firecracker packages.
 
     This will be different for different stacks; we promote packages
-    through a series of different registries that mirrors the progress
-    of code through our pipelines.
+    through a series of different Cloudsmith repositories that mirrors
+    the progress of code through our pipelines.
 
     The value will be something like `grapl/testing`.
     """
     return pulumi.Config().get("cloudsmith-repository-name")
 
 
-def container_repository() -> str | None:
-    """The repository from which to pull container images from.
+def image_registry() -> str | None:
+    """The registry from which to pull images.
 
-    Not specifying a repository will result in local images being used,
-    but only for local-grapl stacks.
+    The registry is created from a Cloudsmith repository name,
+    specified in the Pulumi stack configuration file.
+
+    If no Cloudsmith repository is specified, this function will
+    return `None`, resulting in only local images being used; this
+    should only happen for local-grapl stacks.
     """
-
+    # The naming here is a bit confusing. We're taking a **Cloudsmith
+    # repository** name to generate a **Docker registry** name, from
+    # which we'll ultimately create **Docker repository**
+    # identifiers.
+    #
+    # The two senses of "repository" here are very different, and
+    # should not be confused.
     repo_name = cloudsmith_repository_name()
-    if repo_name:
-        return f"docker.cloudsmith.io/{repo_name}"
-    return None
+    return f"docker.cloudsmith.io/{repo_name}" if repo_name else None
