@@ -10,7 +10,7 @@ describe("Login form, submit button, and SSO Container appear in /#/login", () =
     render(
       <GoogleOAuthProvider clientId="340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com">
         <Login />
-      </GoogleOAuthProvider>
+      </GoogleOAuthProvider>,
     );
 
     const username = screen.getByPlaceholderText(/Username/i);

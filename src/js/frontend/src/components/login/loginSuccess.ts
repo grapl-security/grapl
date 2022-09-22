@@ -4,7 +4,7 @@ import { signInWithGoogleService } from "../../services/login/signInWithGoogleSe
 export const loginSuccess = async (
   state: { loginFailed: boolean },
   setState: React.Dispatch<React.SetStateAction<{ loginFailed: boolean }>>,
-  credentialResponse: CredentialResponse
+  credentialResponse: CredentialResponse,
 ): Promise<void> => {
   if (credentialResponse.credential === undefined) {
     setState({
@@ -14,9 +14,7 @@ export const loginSuccess = async (
     return;
   }
 
-  const loginSuccess = await signInWithGoogleService(
-    credentialResponse.credential
-  );
+  const loginSuccess = await signInWithGoogleService(credentialResponse.credential);
 
   if (loginSuccess) {
     window.history.replaceState("#/login", "", "#/");
