@@ -17,7 +17,7 @@ use rust_proto::{
         api::{
             graph::v1beta1::IdentifiedGraph,
             graph_mutation::v1beta1::client::GraphMutationClient,
-            plugin_sdk::analyzers::v1beta1::messages::Updates,
+            plugin_sdk::analyzers::v1beta1::messages::Update,
         },
         pipeline::v1beta1::Envelope,
     },
@@ -70,7 +70,7 @@ async fn handler(
 
     // TODO: also construct a stream processor for retries
 
-    let stream_processor: StreamProcessor<IdentifiedGraph, Updates> =
+    let stream_processor: StreamProcessor<IdentifiedGraph, Update> =
         StreamProcessor::new(consumer_config, producer_config)?;
 
     tracing::info!(message = "kafka stream processor configured successfully",);
@@ -86,16 +86,21 @@ async fn handler(
 
             tracing::debug!("received kafka message");
 
-            match graph_merger
+            let envelopes_res = match graph_merger
                 .handle_event(tenant_id, envelope.inner_message())
                 .await
             {
-                Ok(updates) => Ok(Some(Envelope::new(
-                    tenant_id,
-                    trace_id,
-                    event_source_id,
-                    updates,
-                ))),
+                Ok(updates) => {
+                    // TODO: remove Updates and handle_event should just return Vec<Update>
+                    Ok(updates.updates.into_iter().map(|update| {
+                        Envelope::new(
+                            tenant_id,
+                            trace_id,
+                            event_source_id,
+                            update,
+                        )
+                    }).collect::<Vec<_>>())
+                },
                 Err(e) => match e {
                     GraphMergerError::Unexpected(ref reason) => {
                         tracing::error!(
@@ -115,10 +120,16 @@ async fn handler(
                         Err(StreamProcessorError::from(e))
                     }
                 },
-            }
+            };
+            envelopes_res
         }
-        .into_stream()
-        .filter_map(|res| async move { res.transpose() })
+        .into_stream() 
+        .flat_map(|envelope_res| { 
+            // !!!!!!!
+            // obviously doesn't work; just getting super lost in
+            // between Vecs and Results in the stream API.
+            envelope_res.into_stream()
+        })
     });
 
     stream
