@@ -138,8 +138,15 @@ def cloudsmith_repository_name() -> str | None:
     the progress of code through our pipelines.
 
     The value will be something like `grapl/testing`.
+
+    Note that local Grapl stacks MAY specify a repository name, in
+    case they would like to use images from a repository for some
+    reason; non-local stacks MUST specify a repository, however.
     """
-    return pulumi.Config().get("cloudsmith-repository-name")
+    if LOCAL_GRAPL:
+        return pulumi.Config().get("cloudsmith-repository-name")
+    else:
+        return pulumi.Config().require("cloudsmith-repository-name")
 
 
 def image_registry() -> str | None:
