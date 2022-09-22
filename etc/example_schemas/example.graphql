@@ -14,7 +14,7 @@ type File @grapl(identity_algorithm: "session") {
     created_at: UInt! @create_time,
     last_seen_at: UInt! @last_seen_time,
     terminated_at: UInt! @terminate_time,
-    file_asset: Asset! @edge(reverse: "files_on_asset", reverse_relationship: "ToMany"),
+    //file_asset: Asset! @edge(reverse: "files_on_asset", reverse_relationship: "ToMany"),
 }
 
 type Asset @grapl(identity_algorithm: "static") {
@@ -22,4 +22,5 @@ type Asset @grapl(identity_algorithm: "static") {
     hostname: String! @immutable,
     launch_time: UInt! @immutable,
     last_seen_time: UInt! @increment_only,
+    files_on_asset: [File!] @edge(reverse: "file_asset", reverse_relationship: "ToOne")
 }
