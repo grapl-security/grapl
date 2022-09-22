@@ -12,7 +12,6 @@ from python_proto.tests.test_grapl_common import (
     edge_names,
     node_types,
     property_names,
-    uids,
 )
 
 ################################################################################
@@ -115,7 +114,7 @@ def edge_query_entries(
 
 def uid_filters(
     operation: st.SearchStrategy[graph_query_msgs.UidOperation] = uid_operations,
-    value: st.SearchStrategy[grapl_common_msgs.Uid] = uids(),
+    value: st.SearchStrategy[grapl_common_msgs.Uid] = strategies.uids(),
 ) -> st.SearchStrategy[graph_query_msgs.UidFilter]:
     return st.builds(graph_query_msgs.UidFilter, operation=operation, value=value)
 
@@ -228,7 +227,7 @@ def string_properties(
 
 
 def node_properties_views(
-    uid: st.SearchStrategy[grapl_common_msgs.Uid] = uids(),
+    uid: st.SearchStrategy[grapl_common_msgs.Uid] = strategies.uids(),
     node_type: st.SearchStrategy[grapl_common_msgs.NodeType] = node_types(),
     string_properties: st.SearchStrategy[
         graph_query_msgs.StringProperties
@@ -246,7 +245,7 @@ def node_properties_view_maps(
     entries: st.SearchStrategy[
         dict[grapl_common_msgs.Uid, graph_query_msgs.NodePropertiesView]
     ] = st.dictionaries(
-        keys=uids(),
+        keys=strategies.uids(),
         values=node_properties_views(),
         max_size=hypothesis_collections_max_size,
     )
@@ -259,11 +258,11 @@ def edge_view_maps(
         dict[graph_query_msgs.EdgeViewMapK, set[grapl_common_msgs.Uid]]
     ] = st.dictionaries(
         keys=st.tuples(
-            uids(),
+            strategies.uids(),
             edge_names(),
         ),
         values=st.sets(
-            uids(),
+            strategies.uids(),
             max_size=hypothesis_collections_max_size,
         ),
         max_size=hypothesis_collections_max_size,
@@ -283,7 +282,7 @@ def graph_views(
 
 def matched_graph_with_uids(
     matched_graph: st.SearchStrategy[graph_query_msgs.GraphView] = graph_views(),
-    root_uid: st.SearchStrategy[grapl_common_msgs.Uid] = uids(),
+    root_uid: st.SearchStrategy[grapl_common_msgs.Uid] = strategies.uids(),
 ) -> st.SearchStrategy[graph_query_msgs.MatchedGraphWithUid]:
     return st.builds(
         graph_query_msgs.MatchedGraphWithUid,
@@ -312,7 +311,7 @@ def maybe_match_with_uids(
 
 def query_graph_with_uid_requests(
     tenant_id: st.SearchStrategy[proto_common_msgs.Uuid] = strategies.uuids(),
-    node_uid: st.SearchStrategy[grapl_common_msgs.Uid] = uids(),
+    node_uid: st.SearchStrategy[grapl_common_msgs.Uid] = strategies.uids(),
     graph_query: st.SearchStrategy[graph_query_msgs.GraphQuery] = graph_queries(),
 ) -> st.SearchStrategy[graph_query_msgs.QueryGraphWithUidRequest]:
     return st.builds(
@@ -325,7 +324,7 @@ def query_graph_with_uid_requests(
 
 def query_graph_from_uid_requests(
     tenant_id: st.SearchStrategy[proto_common_msgs.Uuid] = strategies.uuids(),
-    node_uid: st.SearchStrategy[grapl_common_msgs.Uid] = uids(),
+    node_uid: st.SearchStrategy[grapl_common_msgs.Uid] = strategies.uids(),
     graph_query: st.SearchStrategy[graph_query_msgs.GraphQuery] = graph_queries(),
 ) -> st.SearchStrategy[graph_query_msgs.QueryGraphFromUidRequest]:
     return st.builds(
