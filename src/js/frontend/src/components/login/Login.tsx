@@ -7,8 +7,8 @@ import { yupValidationSchema } from "./yupValidationSchema";
 
 const Login = () => {
   const [state, setState] = React.useState({
-    loginFailed: false, // Boolean represented as true when user is successfully authenticated,
-    // false when there's an auth error, or token has been removed and user has been logged out
+    loginFailed: false,  // Boolean represented as true when user is successfully authenticated,
+                        // false when there's an auth error, token has been removed or user has been logged out
   });
 
   return (
