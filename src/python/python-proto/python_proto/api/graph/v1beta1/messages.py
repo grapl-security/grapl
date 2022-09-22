@@ -8,7 +8,7 @@ from python_proto.grapl.common.v1beta1.messages import Uid
 from python_proto.serde import SerDe
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class Session(SerDe[proto.Session]):
     primary_key_properties: Sequence[str]
     primary_key_requires_asset_id: bool
@@ -38,7 +38,7 @@ class Session(SerDe[proto.Session]):
         return proto_session
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class Static(SerDe[proto.Static]):
     primary_key_properties: Sequence[str]
     primary_key_requires_asset_id: bool
@@ -59,7 +59,7 @@ class Static(SerDe[proto.Static]):
         return proto_static
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class IdStrategy(SerDe[proto.IdStrategy]):
     strategy: Session | Static
     _proto_cls = proto.IdStrategy
@@ -88,7 +88,7 @@ class IdStrategy(SerDe[proto.IdStrategy]):
         return proto_id_strategy
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class IncrementOnlyUintProp(SerDe[proto.IncrementOnlyUintProp]):
     prop: int
     _proto_cls = proto.IncrementOnlyUintProp
@@ -106,7 +106,7 @@ class IncrementOnlyUintProp(SerDe[proto.IncrementOnlyUintProp]):
         return proto_increment_only_uint_prop
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class ImmutableUintProp(SerDe[proto.ImmutableUintProp]):
     prop: int
     _proto_cls = proto.ImmutableUintProp
@@ -124,7 +124,7 @@ class ImmutableUintProp(SerDe[proto.ImmutableUintProp]):
         return proto_immutable_uint_prop
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class DecrementOnlyUintProp(SerDe[proto.DecrementOnlyUintProp]):
     prop: int
     _proto_cls = proto.DecrementOnlyUintProp
@@ -142,7 +142,7 @@ class DecrementOnlyUintProp(SerDe[proto.DecrementOnlyUintProp]):
         return proto_decrement_only_uint_prop
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class IncrementOnlyIntProp(SerDe[proto.IncrementOnlyIntProp]):
     prop: int
     _proto_cls = proto.IncrementOnlyIntProp
@@ -160,7 +160,7 @@ class IncrementOnlyIntProp(SerDe[proto.IncrementOnlyIntProp]):
         return proto_increment_only_int_prop
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class DecrementOnlyIntProp(SerDe[proto.DecrementOnlyIntProp]):
     prop: int
     _proto_cls = proto.DecrementOnlyIntProp
@@ -178,7 +178,7 @@ class DecrementOnlyIntProp(SerDe[proto.DecrementOnlyIntProp]):
         return proto_decrement_only_int_prop
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class ImmutableIntProp(SerDe[proto.ImmutableIntProp]):
     prop: int
     _proto_cls = proto.ImmutableIntProp
@@ -196,7 +196,7 @@ class ImmutableIntProp(SerDe[proto.ImmutableIntProp]):
         return proto_immutable_int_prop
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class ImmutableStrProp(SerDe[proto.ImmutableStrProp]):
     prop: str
     _proto_cls = proto.ImmutableStrProp
@@ -214,7 +214,7 @@ class ImmutableStrProp(SerDe[proto.ImmutableStrProp]):
         return proto_immutable_str_prop
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class NodeProperty(SerDe[proto.NodeProperty]):
     property_: (
         IncrementOnlyUintProp
@@ -305,7 +305,7 @@ class NodeProperty(SerDe[proto.NodeProperty]):
         return proto_node_property
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class NodeDescription(SerDe[proto.NodeDescription]):
     properties: Mapping[str, NodeProperty]
     node_key: str
@@ -340,7 +340,7 @@ class NodeDescription(SerDe[proto.NodeDescription]):
         return proto_node_description
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class IdentifiedNode(SerDe[proto.IdentifiedNode]):
     properties: Mapping[str, NodeProperty]
     uid: Uid
@@ -367,7 +367,7 @@ class IdentifiedNode(SerDe[proto.IdentifiedNode]):
         return proto_identified_node
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class Edge(SerDe[proto.Edge]):
     from_node_key: str
     to_node_key: str
@@ -390,7 +390,7 @@ class Edge(SerDe[proto.Edge]):
         return proto_edge
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class EdgeList(SerDe[proto.EdgeList]):
     edges: Sequence[Edge]
     _proto_cls = proto.EdgeList
@@ -406,7 +406,7 @@ class EdgeList(SerDe[proto.EdgeList]):
         return proto_edge_list
 
 
-@dataclasses.dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class IdentifiedEdge(SerDe[proto.IdentifiedEdge]):
     from_uid: Uid
     to_uid: Uid
@@ -454,7 +454,7 @@ class IdentifiedEdgeList(SerDe[proto.IdentifiedEdgeList]):
         return proto_identified_edge_list
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class GraphDescription(SerDe[proto.GraphDescription]):
     nodes: Mapping[str, NodeDescription]
     edges: Mapping[str, EdgeList]
@@ -484,7 +484,7 @@ class GraphDescription(SerDe[proto.GraphDescription]):
         return proto_graph_description
 
 
-@dataclasses.dataclass(frozen=True, slots=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class IdentifiedGraph(SerDe[proto.IdentifiedGraph]):
     nodes: Mapping[Uid, IdentifiedNode]
     edges: Mapping[Uid, IdentifiedEdgeList]
@@ -514,7 +514,7 @@ class IdentifiedGraph(SerDe[proto.IdentifiedGraph]):
         return proto_identified_graph
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class Lens(SerDe[proto.Lens]):
     lens_type: str
     lens_name: str
@@ -542,7 +542,7 @@ class Lens(SerDe[proto.Lens]):
         return proto_lens
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True,)
 class ExecutionHit(SerDe[proto.ExecutionHit]):
     nodes: Mapping[Uid, IdentifiedNode]
     edges: Mapping[Uid, IdentifiedEdgeList]
