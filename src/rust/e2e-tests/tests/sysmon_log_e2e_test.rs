@@ -197,16 +197,14 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let graph_updates = graph_merger_scanner_handle
         .await
         .expect("failed to configure merged_graphs scanner");
+    let graph_updates: Vec<Update> = graph_updates
+        .into_iter()
+        .flat_map(|env| env.inner_message().updates)
+        .collect();
     assert!(graph_updates.len() >= input_log_lines.len());
 
-    // flatmap vec<vec<update>> to vec<update>
-    let mut updates: Vec<Update> = vec![];
-    graph_updates.into_iter().for_each(|updates_envelope| {
-        updates.append(&mut updates_envelope.inner_message().updates);
-    });
-
     // Make sure we're getting at least one reasonable-seeming update
-    let filtered_graph_updates = updates
+    let filtered_graph_updates = graph_updates
         .into_iter()
         .filter(move |update| {
             matches!(update, Update::Uint64Property(UInt64PropertyUpdate {property_name, ..}) if {
