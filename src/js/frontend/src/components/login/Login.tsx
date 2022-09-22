@@ -7,8 +7,8 @@ import { yupValidationSchema } from "./yupValidationSchema";
 
 const Login = () => {
   const [state, setState] = React.useState({
-    loginFailed: false,  // Boolean represented as true when user is successfully authenticated,
-                        // false when there's an auth error, token has been removed or user has been logged out
+    loginFailed: false, // Boolean represented as true when user is successfully authenticated,
+    // false when there's an auth error, token has been removed or user has been logged out
   });
 
   return (
@@ -20,7 +20,10 @@ const Login = () => {
           initialValues={{ username: "", password: "" }}
           validationSchema={yupValidationSchema}
           onSubmit={async (values) => {
-            const loginSuccess = await loginService(values.username, values.password);
+            const loginSuccess = await loginService(
+              values.username,
+              values.password
+            );
 
             if (loginSuccess) {
               window.history.replaceState("#/login", "", "#/");
@@ -38,9 +41,14 @@ const Login = () => {
             <Form>
               <h1> Grapl </h1>
               <Field name="username" type="text" placeholder="Username" />
-              {touched.username && errors.username && <div>{errors.username}</div>}
-              <Field name="password" type="password" placeholder="Password" /> <br />
-              {touched.password && errors.password && <div>{errors.password}</div>}
+              {touched.username && errors.username && (
+                <div>{errors.username}</div>
+              )}
+              <Field name="password" type="password" placeholder="Password" />{" "}
+              <br />
+              {touched.password && errors.password && (
+                <div>{errors.password}</div>
+              )}
               <button name="submitButton" type="submit">
                 SUBMIT
               </button>

@@ -19,7 +19,7 @@ export const GoogleSSO = ({ state, setState }: Props) => {
         login_uri="/api/auth/signin_with_google"
         onSuccess={(credentialResponse) => {
           loginSuccess(state, setState, credentialResponse).then((m) =>
-            console.log("User Successfully logged in Using Google SSO", m),
+            console.log("User Successfully logged in Using Google SSO", m)
           );
         }}
         onError={() => {

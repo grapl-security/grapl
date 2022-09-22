@@ -14,7 +14,9 @@ export const loginSuccess = async (
     return;
   }
 
-  const loginSuccess = await signInWithGoogleService(credentialResponse.credential);
+  const loginSuccess = await signInWithGoogleService(
+    credentialResponse.credential
+  );
 
   if (loginSuccess) {
     window.history.replaceState("#/login", "", "#/");
