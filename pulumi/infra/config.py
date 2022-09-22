@@ -17,7 +17,6 @@ STACK_CONFIG_FILENAME: Final[str] = f"Pulumi.{STACK_NAME}.yaml"
 
 # This must be the same as the value defined in local-grapl.env
 GRAPL_TEST_USER_NAME: Final[str] = f"{STACK_NAME}-grapl-test-user"
-
 # note: this ${} is interpolated inside Nomad
 HOST_IP_IN_NOMAD: Final[str] = "${attr.unique.network.ip-address}"
 
