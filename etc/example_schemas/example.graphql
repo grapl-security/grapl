@@ -5,7 +5,7 @@ type Process @grapl(identity_algorithm: "session") {
     last_seen_at: UInt! @last_seen_time,
     terminated_at: UInt! @terminate_time,
     binary_file: File! @edge(reverse: "executed_as_processes", reverse_relationship: "ToMany"),
-    created_file: [File!] @edge(reverse: "created_by_process", reverse_relationship: "ToMany"),
+    created_files: [File!] @edge(reverse: "created_by_process", reverse_relationship: "ToOne"),
     process_asset: Asset! @edge(reverse: "asset_processes", reverse_relationship: "ToMany"),
 }
 
@@ -14,6 +14,7 @@ type File @grapl(identity_algorithm: "session") {
     created_at: UInt! @create_time,
     last_seen_at: UInt! @last_seen_time,
     terminated_at: UInt! @terminate_time,
+    file_asset: Asset! @edge(reverse: "files_on_asset", reverse_relationship: "ToMany"),
 }
 
 type Asset @grapl(identity_algorithm: "static") {
