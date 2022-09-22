@@ -80,7 +80,9 @@ pub struct GraphMerger {
 
 impl GraphMerger {
     pub fn new(graph_mutation_client: GraphMutationClient) -> Self {
-        Self { graph_mutation_client }
+        Self {
+            graph_mutation_client,
+        }
     }
 
     #[tracing::instrument(skip(self, subgraph))]
