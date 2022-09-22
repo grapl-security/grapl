@@ -75,12 +75,12 @@ impl From<&GraphMergerError> for kafka::StreamProcessorError {
 
 #[derive(Clone)]
 pub struct GraphMerger {
-    mg_client: GraphMutationClient,
+    graph_mutation_client: GraphMutationClient,
 }
 
 impl GraphMerger {
-    pub fn new(mg_client: GraphMutationClient) -> Self {
-        Self { mg_client }
+    pub fn new(graph_mutation_client: GraphMutationClient) -> Self {
+        Self { graph_mutation_client }
     }
 
     #[tracing::instrument(skip(self, subgraph))]
@@ -115,7 +115,7 @@ impl GraphMerger {
                 let update = property_to_update(node.uid, prop_name.clone(), &prop_value.property);
 
                 let response = self
-                    .mg_client
+                    .graph_mutation_client
                     .set_node_property(SetNodePropertyRequest {
                         tenant_id,
                         node_type: NodeType {
@@ -142,7 +142,7 @@ impl GraphMerger {
                     edge_name,
                 } = edge;
                 let response = self
-                    .mg_client
+                    .graph_mutation_client
                     .create_edge(CreateEdgeRequest {
                         tenant_id,
                         edge_name: EdgeName {

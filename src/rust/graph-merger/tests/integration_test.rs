@@ -135,13 +135,6 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
         })
         .count();
     assert_eq!(matching_updates_count, 2);
-    //
-    // let matching_updates = updates.iter().filter(|update| {
-    //     matches!(update, Update::Edge(Uint64Property {property_name, ..}) if {
-    //         property_name == "process_id"
-    //     })
-    // }).collect::<Vec<_>>();
-    // assert_eq!(matching_updates.len(), 2);
 
     Ok(())
 }
