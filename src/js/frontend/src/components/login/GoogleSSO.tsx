@@ -1,6 +1,6 @@
 import React from "react";
 import { GoogleLogin } from "@react-oauth/google";
-import { signInWithGoogleService } from "../../services/login/signInWithGoogleService";
+import { loginSuccess } from "./loginSuccess";
 
 type Props = {
   state: { loginFailed: boolean };
@@ -17,27 +17,10 @@ export const GoogleSSO = ({ state, setState }: Props) => {
       <GoogleLogin
         data-testid="googleSSOButton"
         login_uri="/api/auth/signin_with_google"
-        onSuccess={async (credentialResponse) => {
-          if (credentialResponse.credential === undefined) {
-            setState({
-              ...state,
-              loginFailed: true,
-            });
-            return;
-          }
-
-          const loginSuccess = await signInWithGoogleService(credentialResponse.credential);
-
-          if (loginSuccess) {
-            window.history.replaceState("#/login", "", "#/");
-            window.location.reload();
-            console.log("Logged In");
-          } else {
-            setState({
-              ...state,
-              loginFailed: true,
-            });
-          }
+        onSuccess={(credentialResponse) => {
+          loginSuccess(state, setState, credentialResponse).then((m) =>
+            console.log("User Successfully logged in Using Google SSO", m),
+          );
         }}
         onError={() => {
           console.log("Login Failed");

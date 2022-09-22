@@ -1,36 +1,31 @@
 import React from "react";
-import * as Yup from "yup";
 import { Field, Form, Formik } from "formik";
 import { GoogleSSO } from "./GoogleSSO";
 
 import { loginService } from "../../services/login/loginService";
+import { yupValidationSchema } from "./yupValidationSchema";
 
 const Login = () => {
   const [state, setState] = React.useState({
-    loginFailed: false,
+    loginFailed: false, // Boolean represented as true when user is successfully authenticated,
+    // false when there's an auth error, or token has been removed and user has been logged out
   });
-
-  const validationSchema = Yup.object().shape({
-    username: Yup.string().required("Username Required"),
-    password: Yup.string().required("Password Required"),
-  });
-
 
   return (
     <div data-testid="googleSSOContainer">
-        <GoogleSSO state={state} setState={setState}/>
+      <GoogleSSO state={state} setState={setState} />
 
       <div>
         <Formik
           initialValues={{ username: "", password: "" }}
-          validationSchema={validationSchema}
+          validationSchema={yupValidationSchema}
           onSubmit={async (values) => {
             const loginSuccess = await loginService(values.username, values.password);
 
             if (loginSuccess) {
               window.history.replaceState("#/login", "", "#/");
               window.location.reload();
-              console.log("Logged In");
+              console.log("User successfully logged in using Login Form.");
             } else {
               setState({
                 ...state,
@@ -46,7 +41,9 @@ const Login = () => {
               {touched.username && errors.username && <div>{errors.username}</div>}
               <Field name="password" type="password" placeholder="Password" /> <br />
               {touched.password && errors.password && <div>{errors.password}</div>}
-              <button name="submitButton" type="submit">SUBMIT</button>
+              <button name="submitButton" type="submit">
+                SUBMIT
+              </button>
               {state.loginFailed && <div>Unsuccessful Login</div>}
             </Form>
           )}
