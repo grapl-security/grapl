@@ -57,9 +57,6 @@ pub enum GraphMergerError {
     #[error("failed to configure tracing {0}")]
     SetupTracingError(#[from] SetupTracingError),
 
-    #[error("anyhow error {0}")]
-    AnyhowError(#[from] anyhow::Error),
-
     #[error("GraphMutationClientError {0}")]
     GraphMutationClientError(#[from] GraphMutationClientError),
 }
