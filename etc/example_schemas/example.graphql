@@ -7,6 +7,7 @@ type Process @grapl(identity_algorithm: "session") {
     binary_file: File! @edge(reverse: "executed_as_processes", reverse_relationship: "ToMany"),
     created_files: [File!] @edge(reverse: "created_by_process", reverse_relationship: "ToOne"),
     process_asset: Asset! @edge(reverse: "asset_processes", reverse_relationship: "ToMany"),
+    children: [Process!] @edge(reverse: "parent", reverse_relationship: "ToOne"),
 }
 
 type File @grapl(identity_algorithm: "session") {
