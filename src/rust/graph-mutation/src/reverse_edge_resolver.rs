@@ -24,6 +24,7 @@ pub enum ReverseEdgeResolverError {
 #[derive(Clone)]
 pub struct ReverseEdgeResolver {
     schema_client: GraphSchemaManagerClient,
+    #[allow(dead_code)] // https://github.com/grapl-security/issue-tracker/issues/1028
     r_edge_cache: dashmap::DashMap<(uuid::Uuid, EdgeName, NodeType), GetEdgeSchemaResponse>,
 }
 
@@ -52,7 +53,7 @@ impl ReverseEdgeResolver {
             })
             .await?;
 
-        let reverse_name = response.reverse_edge_name.clone();
+        let reverse_name = response.reverse_edge_name;
         Ok(reverse_name)
 
         // TODO: Resurrect the below once we figure out caching for Graph Mutation

@@ -1,4 +1,3 @@
-#![allow(warnings)]
 use std::sync::Arc;
 
 use grapl_utils::future_ext::GraplFutureExt;
@@ -183,10 +182,10 @@ impl GraphMutationManager {
                             .execute(query, &(uid.as_i64(), property_name.value, property_value))
                             .timeout(std::time::Duration::from_secs(3))
                             .await
-                            .map_err(|e| GraphMutationManagerError::ScyllaInsertTimeout {
+                            .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
                                 tenant_id,
                                 insert_type: "MIN_U_64",
-                            })?;
+                            })??;
                         Ok(())
                     }
                     .instrument(tracing::info_span!("upsert_min_u64"))
@@ -221,10 +220,10 @@ impl GraphMutationManager {
                         .execute(query, &(uid.as_i64(), property_name.value, property_value))
                         .timeout(std::time::Duration::from_secs(3))
                         .await
-                        .map_err(|e| GraphMutationManagerError::ScyllaInsertTimeout {
+                        .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
                             tenant_id,
                             insert_type: "MAX_U_64",
-                        })?;
+                        })??;
                     Ok(())
                 }
                 .instrument(tracing::info_span!("upsert_max_u64"))
@@ -263,10 +262,10 @@ impl GraphMutationManager {
                             .execute(query, &(uid.as_i64(), property_name.value, property_value))
                             .timeout(std::time::Duration::from_secs(3))
                             .await
-                            .map_err(|e| GraphMutationManagerError::ScyllaInsertTimeout {
+                            .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
                                 tenant_id,
                                 insert_type: "MAX_I_64",
-                            })?;
+                            })??;
                         Ok(())
                     }
                     .instrument(tracing::info_span!("upsert_max_i64"))
@@ -306,10 +305,10 @@ impl GraphMutationManager {
                             .execute(query, &(uid.as_i64(), property_name.value, property_value))
                             .timeout(std::time::Duration::from_secs(3))
                             .await
-                            .map_err(|e| GraphMutationManagerError::ScyllaInsertTimeout {
+                            .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
                                 tenant_id,
                                 insert_type: "MIN_I_64",
-                            })?;
+                            })??;
                         Ok(())
                     }
                     .instrument(tracing::info_span!("upsert_min_i64"))
@@ -343,10 +342,10 @@ impl GraphMutationManager {
                         .execute(query, &(uid.as_i64(), property_name.value, property_value))
                         .timeout(std::time::Duration::from_secs(3))
                         .await
-                        .map_err(|e| GraphMutationManagerError::ScyllaInsertTimeout {
+                        .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
                             tenant_id,
                             insert_type: "IMM_I_64",
-                        })?;
+                        })??;
                     Ok(())
                 }
                 .instrument(tracing::info_span!("upsert_imm_i64"))
@@ -379,7 +378,7 @@ impl GraphMutationManager {
                         .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
                             tenant_id,
                             insert_type: "NODE_TYPE",
-                        })?;
+                        })??;
                     Ok(())
                 }
                 .instrument(tracing::info_span!("set_node_type"))
@@ -412,10 +411,10 @@ impl GraphMutationManager {
                         .execute(query, &(uid.as_i64(), property_name.value, property_value))
                         .timeout(std::time::Duration::from_secs(3))
                         .await
-                        .map_err(|e| GraphMutationManagerError::ScyllaInsertTimeout {
+                        .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
                             tenant_id,
                             insert_type: "IMM_STRING",
-                        })?;
+                        })??;
                     Ok(())
                 }
                 .instrument(tracing::info_span!("upsert_imm_string"))
@@ -488,7 +487,7 @@ impl GraphMutationManager {
                             .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
                                 tenant_id,
                                 insert_type: "EDGES",
-                            })?;
+                            })??;
                         Ok(())
                     }
                     .instrument(tracing::info_span!("upsert_edges"))
