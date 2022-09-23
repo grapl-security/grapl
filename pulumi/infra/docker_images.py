@@ -1,5 +1,5 @@
 import os
-from typing import NewType
+from typing import NewType, Optional
 
 from infra.artifacts import ArtifactGetter
 
@@ -31,12 +31,21 @@ def _docker_version_tag_from_env() -> str:
 
 
 class DockerImageIdBuilder:
-    def __init__(self, registry: str | None, artifacts: ArtifactGetter) -> None:
-        self.registry = f"{registry}/" if registry else ""
+    def __init__(
+        self,
+        registry: str | None,
+        artifacts: ArtifactGetter,
+    ) -> None:
+        self.registry = registry
         self.artifacts = artifacts
 
-    def build(self, registry: str, image_name: str, tag: str) -> DockerImageId:
-        return DockerImageId(f"{registry}{image_name}:{tag}")
+    def build(
+        self, registry: Optional[str], image_name: str, tag: str
+    ) -> DockerImageId:
+        image_tag = f"{image_name}:{tag}"
+        if registry:
+            image_tag = f"{registry}/{image_tag}"
+        return DockerImageId(image_tag)
 
     def build_with_tag(self, image_name: str) -> DockerImageId:
         """
@@ -51,11 +60,11 @@ class DockerImageIdBuilder:
             )
         else:
             # This is only possible on Local Grapl, in which case we assume
-            # we're using a local image - even if the container repository
+            # we're using a local image - even if the container registry
             # is specified.
             tag = _docker_version_tag_from_env()
             return self.build(
-                registry="",  # local Docker registry
+                registry=None,  # local Docker registry
                 image_name=image_name,
                 tag=tag,
             )
