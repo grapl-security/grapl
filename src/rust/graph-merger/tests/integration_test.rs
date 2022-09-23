@@ -58,7 +58,7 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
     );
 
     let handle = kafka_scanner
-        .scan_for_tenant(tenant_id, 1, |_: Update| true)
+        .scan_for_tenant(tenant_id, 2, |_: Update| true)
         .await;
 
     let log_event: Bytes = r#"
