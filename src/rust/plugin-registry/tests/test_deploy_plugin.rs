@@ -135,7 +135,6 @@ async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
     let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
-    let event_source_id = uuid::Uuid::new_v4();
 
     let create_response = {
         let display_name = "suspicious-svchost";
@@ -144,7 +143,7 @@ async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
             tenant_id,
             display_name.to_owned(),
             PluginType::Analyzer,
-            Some(event_source_id.clone()),
+            None,
         );
 
         client

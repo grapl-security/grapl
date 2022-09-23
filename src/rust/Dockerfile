@@ -298,6 +298,12 @@ COPY --from=build /outputs/example-generator /
 COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /plugin-bootstrap-init/
 COPY rust/plugin-bootstrap/grapl-plugin.service /plugin-bootstrap-init/
 
+##### analyzer-execution-sidecar
+FROM rust-dist AS analyzer-execution-sidecar-deploy
+
+COPY --from=build /outputs/analyzer-execution-sidecar /
+ENTRYPOINT ["/analyzer-execution-sidecar"]
+
 ##### graph-merger
 FROM rust-dist AS graph-merger-deploy
 
