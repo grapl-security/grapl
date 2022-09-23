@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 import dataclasses
 from dataclasses import dataclass, field
@@ -19,6 +20,15 @@ from python_proto.api.graph_query.v1beta1 import messages as graph_query_message
 from python_proto.api.graph_query.v1beta1.client import GraphQueryClient
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_messages
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
+from uuid import UUID
+from python_proto.common import Uuid as PythonProtoUuid
+
+def _get_tenant_id() -> PythonProtoUuid:
+    env_var: str = os.environ["TENANT_ID"]  # specified in hax_docker_plugin.nomad
+    py_native_uuid = UUID(env_var)
+    return PythonProtoUuid.from_uuid(py_native_uuid)
+
+TENANT_ID: Final[PythonProtoUuid] = _get_tenant_id()
 
 
 @runtime_checkable
@@ -74,10 +84,9 @@ class AnalyzerServiceImpl:
     async def _run_analyzer_inner(
         self, request: analyzer_messages.RunAnalyzerRequest
     ) -> analyzer_messages.RunAnalyzerResponse:
-        tenant_id = request.tenant_id
-        update = request.update
+        updates = request.updates
 
-        match update.inner:
+        match updates.inner:
             case PropertyUpdate() as prop_update:
                 # optimization
                 # i.e. if the update is for process_name, and you're not querying for
@@ -97,7 +106,7 @@ class AnalyzerServiceImpl:
         # query. check if the UID could match any in the query.
         matched_graph: graph_query_messages.MatchedGraphWithUid | None = (
             self._graph_query_client.query_with_uid(
-                tenant_id=tenant_id,
+                tenant_id=TENANT_ID,
                 node_uid=updated_node_uid,
                 graph_query=self._graph_query,
             ).maybe_match.as_optional()
@@ -122,7 +131,7 @@ class AnalyzerServiceImpl:
             root_node_properties,
             graph_view,
             self._graph_query_client,
-            tenant_id=tenant_id,
+            tenant_id=TENANT_ID,
         )
 
         # todo: Add a timeout here
