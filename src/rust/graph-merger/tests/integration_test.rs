@@ -57,8 +57,9 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
         ),
     );
 
+    let expected_num_messages = 3;
     let handle = kafka_scanner
-        .scan_for_tenant(tenant_id, 2, |_: Update| true)
+        .scan_for_tenant(tenant_id, expected_num_messages, |_: Update| true)
         .await;
 
     let log_event: Bytes = r#"
@@ -124,22 +125,37 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
     tracing::info!("waiting for kafka_scanner to complete");
 
     let envelopes = handle.await?;
-    assert_eq!(envelopes.len(), 2);
+    assert_eq!(envelopes.len(), expected_num_messages);
 
-    for envelope in envelopes {
-        assert_eq!(envelope.tenant_id(), tenant_id);
-        assert_eq!(envelope.event_source_id(), event_source_id);
+    let updates: Vec<Update> = envelopes
+        .into_iter()
+        .map(|envelope| {
+            assert_eq!(envelope.tenant_id(), tenant_id);
+            assert_eq!(envelope.event_source_id(), event_source_id);
 
-        let update = envelope.inner_message();
+            envelope.inner_message()
+        })
+        .collect();
 
-        // Note that updates don't contain the updated value so we can't check that
-        // right now
-        let found_match = matches!(update.clone(), Update::Uint64Property(UInt64PropertyUpdate {property_name, ..}) if {
+    let process_id_update = updates.iter().find(|update| {
+        matches!(update.clone(), Update::Uint64Property(UInt64PropertyUpdate {property_name, ..}) if {
             property_name.value == "process_id"
-        });
+        })
+    });
+    assert!(
+        process_id_update.is_some(),
+        "Expected process_id update: {process_id_update:?}"
+    );
 
-        assert!(found_match, "expected a process_id update from {update:?}");
-    }
+    let process_name_update = updates.iter().find(|update| {
+        matches!(update.clone(), Update::StringProperty(StringPropertyUpdate {property_name, ..}) if {
+            property_name.value == "process_name"
+        })
+    });
+    assert!(
+        process_name_update.is_some(),
+        "Expected process_name update: {process_name_update:?}"
+    );
 
     Ok(())
 }
