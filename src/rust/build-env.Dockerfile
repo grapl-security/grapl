@@ -20,7 +20,8 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-build-en
         pkg-config=0.29.2-1 \
         tcl=8.6.11+1 \
         curl=7.74.0-1.3+deb11u3 \
-        unzip=6.0-26+deb11u1
+        unzip=6.0-26+deb11u1 \
+        libzstd-dev=1.4.8+dfsg-2.1
 EOF
 
 # Grab a Nomad binary, which we use for parsing HCL2-with-variables into JSON:
