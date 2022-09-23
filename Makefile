@@ -33,6 +33,7 @@ COMPOSE_PROJECT_NAME ?= grapl
 export
 
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
+	--file ./test/docker-compose.unit-tests-js.yml \
 
 # This is used to send docker traces to Jaeger. This is primarily useful for debugging build time performance
 ifdef WITH_TRACING
@@ -75,11 +76,11 @@ DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
 DOCKER_DATA_VOLUME_FILTERS := --filter=name=grapl-data
 
 # Run a Pants goal across all proto files
-PANTS_PROTO_FILTER := ./pants --filter-target-type=protobuf_sources
+PANTS_PROTO_FILTER := ./pants --filter-target-type=protobuf_source
 # Run a Pants goal across all Python files
-PANTS_PYTHON_FILTER := ./pants --filter-target-type=python_sources,python_tests
+PANTS_PYTHON_FILTER := ./pants --filter-target-type=python_source,python_test
 # Run a Pants goal across all shell files
-PANTS_SHELL_FILTER := ./pants --filter-target-type=shell_sources,shunit2_tests
+PANTS_SHELL_FILTER := ./pants --filter-target-type=shell_source,shunit2_test
 
 # Helper macro for invoking a target from src/rust/Makefile
 RUST_MAKE = $(MAKE) --directory=src/rust
@@ -140,6 +141,7 @@ help: ## Print this help
 	@printf '\n'
 
 ##@ Build 🔨
+
 .PHONY: build-test-unit-js
 build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.unit-tests-js.yml
@@ -239,6 +241,7 @@ test-unit: ## Build and run all unit tests
 .PHONY: test-unit-js
 test-unit-js: test-unit-frontend
 test-unit-js: ## Build and run unit tests - JavaScript only
+
 
 .PHONY: test-unit-frontend
 test-unit-frontend: ## Test Frontend

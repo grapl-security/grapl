@@ -13,9 +13,7 @@ from typing_extensions import Literal
 
 LOGGER = get_module_grapl_logger()
 
-ServiceIdentifier = Literal[
-    "grapl_e2e_tests"
-]
+ServiceIdentifier = Literal["grapl_e2e_tests"]
 
 
 def _install_from_pip(package: str) -> None:
