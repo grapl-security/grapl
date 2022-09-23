@@ -140,7 +140,9 @@ help: ## Print this help
 	@printf '\n'
 
 ##@ Build 🔨
-
+.PHONY: build-test-unit-js
+build-test-unit-js:
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.unit-tests-js.yml
 
 # Build Service Images and their Prerequisites
 ########################################################################
@@ -234,6 +236,9 @@ test-unit: test-unit-rust
 test-unit: test-unit-shell
 test-unit: ## Build and run all unit tests
 
+.PHONY: test-unit-js
+test-unit-js: test-unit-frontend
+test-unit-js: ## Build and run unit tests - JavaScript only
 
 .PHONY: test-unit-frontend
 test-unit-frontend: ## Test Frontend
