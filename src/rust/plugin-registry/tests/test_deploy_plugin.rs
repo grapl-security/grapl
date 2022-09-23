@@ -129,7 +129,6 @@ async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
     Ok(())
 }
 
-#[ignore] // until we have an Analyzer Execution Sidecar
 #[test_log::test(tokio::test)]
 async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
     let client_config = PluginRegistryClientConfig::parse();
