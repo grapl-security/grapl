@@ -57,7 +57,7 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
         ),
     );
 
-    let expected_num_messages = 3;
+    let expected_num_messages = 50;
     let handle = kafka_scanner
         .scan_for_tenant(tenant_id, expected_num_messages, |_: Update| true)
         .await;
