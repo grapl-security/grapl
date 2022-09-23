@@ -46,11 +46,16 @@ class DockerImageIdBuilder:
             image_tag = f"{registry}/{image_tag}"
         return DockerImageId(image_tag)
 
-    def build_with_tag(self, image_name: str) -> DockerImageId:
+    def build_with_tag(self, service_name: str) -> DockerImageId:
+        """Generate a complete container image identifier for a given
+        Grapl service, using version information from Pulumi stack
+        configuration.
+
         """
-        Automatically grabs the version tag from config's artifacts.
-        """
-        artifact_version = self.artifacts.get(image_name)
+        # All our images are namespaced to "grapl/"
+        image_name = f"grapl/{service_name}"
+
+        artifact_version = self.artifacts.get(service_name)
         if artifact_version:
             return DockerImageIdBuilder._build(
                 registry=self.registry,

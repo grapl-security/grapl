@@ -109,6 +109,16 @@ new_services=()
 # content already exists.
 readonly UPSTREAM_REGISTRY="docker.cloudsmith.io/grapl/testing"
 
+# Our images are named like 'grapl/${SERVICE}' (e.g.,
+# 'grapl/node-identifier').
+#
+# NOTE: I don't love the fact that the "grapl" image namespace is
+# baked into this script like this, but this seems like the
+# least-gross and most straightforward way to do it at the
+# moment. Perhaps once we migrate to Artifactory, we can streamline
+# things a bit better.
+readonly IMAGE_NAMESPACE="grapl"
+
 # It seems you can only get the sha256 sum of an image after pushing
 # it to a registry. Fun.
 #
@@ -136,7 +146,7 @@ while IFS=$'\t' read -r service tag; do
     echo "--- :cloudsmith: Checking '${service}:${IMAGE_TAG}' in 'grapl/testing'"
     sha256="$(sha256_of_image "${tag}")"
     echo "${tag} has identifier '${sha256}'"
-    upstream_sha256_identifier="${UPSTREAM_REGISTRY}/${service}@${sha256}"
+    upstream_sha256_identifier="${UPSTREAM_REGISTRY}/${IMAGE_NAMESPACE}/${service}@${sha256}"
 
     echo "Checking the existence of '${upstream_sha256_identifier}'"
     if ! image_present_upstream "${upstream_sha256_identifier}"; then

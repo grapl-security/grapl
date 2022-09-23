@@ -101,17 +101,9 @@ variable "CONTAINER_REGISTRY" {
 
 # Note that our local testing setup assumes that containers are just
 # named with their bare service name.
-#
-# (This also happens to be the convention for Docker Hub "library"
-# images, which means that we'll never be able to accidentally push
-# any of these images, because we don't have permission to push to any
-# Docker Hub library repositories! We *do* own the "grapl" namespace
-# in Docker Hub, though, which is why we don't name these images
-# "grapl/${image_name}"; we *could* accidentally push those, which we
-# don't want.)
 function "upstream_aware_tag" {
   params = [image_name]
-  result = RELEASE_BUILD ? "${CONTAINER_REGISTRY}/${image_name}:${IMAGE_TAG}" : local_only_tag("${image_name}")
+  result = RELEASE_BUILD ? "${CONTAINER_REGISTRY}/grapl/${image_name}:${IMAGE_TAG}" : local_only_tag("${image_name}")
 }
 
 # Images that are only intended for local usage should be tagged using
