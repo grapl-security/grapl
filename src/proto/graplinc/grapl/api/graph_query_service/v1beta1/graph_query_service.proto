@@ -331,7 +331,7 @@ message QueryGraphFromUidRequest {
 // The QueryGraphFromUidResponse contains the graph that matched
 // a QueryGraphFromUidResponse
 message QueryGraphFromUidResponse {
-  // A view of the MergedGraph that matched our query
+  // A view of the graph that matched our query
   // or None if query did not match
   GraphView matched_graph = 1;
 }

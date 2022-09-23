@@ -132,6 +132,8 @@ pub mod graph {
         ExecutionHit,
         GraphDescription,
         IdStrategy,
+        IdentifiedEdge,
+        IdentifiedEdgeList,
         IdentifiedGraph,
         IdentifiedNode,
         ImmutableIntProp,
@@ -140,10 +142,6 @@ pub mod graph {
         IncrementOnlyIntProp,
         IncrementOnlyUintProp,
         Lens,
-        MergedEdge,
-        MergedEdgeList,
-        MergedGraph,
-        MergedNode,
         NodeDescription,
         NodeProperty,
         Property,
@@ -153,6 +151,7 @@ pub mod graph {
     };
 
     use super::*;
+    use crate::strategies::common::uids;
 
     //
     // DecrementOnlyIntProp
@@ -310,8 +309,8 @@ pub mod graph {
 
     prop_compose! {
         pub fn execution_hits()(
-            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
+            nodes in collection::hash_map(uids(), identified_nodes(), 10),
+            edges in collection::hash_map(uids(), identified_edge_lists(), 10),
             analyzer_name in any::<String>(),
             risk_score in any::<u64>(),
             lenses in collection::vec(lenses(), 10),
@@ -456,16 +455,15 @@ pub mod graph {
     //
     // IdentifiedNode
     //
-
     prop_compose! {
         pub fn identified_nodes()(
             properties in collection::hash_map(any::<String>(), node_properties(), 10),
-            node_key in any::<String>(),
+            uid in common::uids(),
             node_type in any::<String>(),
         ) -> IdentifiedNode {
             IdentifiedNode {
                 properties,
-                node_key,
+                uid,
                 node_type
             }
         }
@@ -477,8 +475,8 @@ pub mod graph {
 
     prop_compose! {
         pub fn identified_graphs()(
-            nodes in collection::hash_map(any::<String>(), identified_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), edge_lists(), 10),
+            nodes in collection::hash_map(common::uids(), identified_nodes(), 10),
+            edges in collection::hash_map(common::uids(), identified_edge_lists(), 10),
         ) -> IdentifiedGraph {
             IdentifiedGraph {
                 nodes,
@@ -488,72 +486,32 @@ pub mod graph {
     }
 
     //
-    // MergedEdge
+    // IdentifiedEdge
     //
 
     prop_compose! {
-        pub fn merged_edges()(
-            from_uid in any::<String>(),
-            from_node_key in any::<String>(),
-            to_uid in any::<String>(),
-            to_node_key in any::<String>(),
+        pub fn identified_edges()(
+            from_uid in common::uids(),
+            to_uid in common::uids(),
             edge_name in any::<String>(),
-        ) -> MergedEdge {
-            MergedEdge {
+        ) -> IdentifiedEdge {
+            IdentifiedEdge {
                 from_uid,
-                from_node_key,
                 to_uid,
-                to_node_key,
                 edge_name
             }
         }
     }
 
     //
-    // MergedEdgeList
+    // IdentifiedEdgeList
     //
 
     prop_compose! {
-        pub fn merged_edge_lists()(
-            edges in collection::vec(merged_edges(), 10),
-        ) -> MergedEdgeList {
-            MergedEdgeList { edges }
-        }
-    }
-
-    //
-    // MergedNode
-    //
-
-    prop_compose! {
-        pub fn merged_nodes()(
-            properties in collection::hash_map(any::<String>(), node_properties(), 10),
-            uid in any::<u64>(),
-            node_key in any::<String>(),
-            node_type in any::<String>(),
-        ) -> MergedNode {
-            MergedNode {
-                properties,
-                uid,
-                node_key,
-                node_type
-            }
-        }
-    }
-
-    //
-    // MergedGraph
-    //
-
-    prop_compose! {
-        pub fn merged_graphs()(
-            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
-            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
-        ) -> MergedGraph {
-            MergedGraph {
-                nodes,
-                edges,
-            }
+        pub fn identified_edge_lists()(
+            edges in collection::vec(identified_edges(), 10),
+        ) -> IdentifiedEdgeList {
+            IdentifiedEdgeList { edges }
         }
     }
 }
@@ -1042,9 +1000,7 @@ pub mod plugin_work_queue {
         pub fn get_execute_analyzer_requests()(
             plugin_id in uuids(),
         ) -> native::GetExecuteAnalyzerRequest {
-            native::GetExecuteAnalyzerRequest {
-                plugin_id,
-            }
+            native::GetExecuteAnalyzerRequest::new(plugin_id)
         }
     }
 
@@ -1176,6 +1132,7 @@ pub mod analyzer_sdk {
     use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::{
         self as native,
         Update,
+        Updates,
     };
 
     use super::{
@@ -1245,15 +1202,15 @@ pub mod analyzer_sdk {
         ]
     }
 
+    pub fn vec_of_updates() -> impl Strategy<Value = Vec<Update>> {
+        proptest::collection::vec(updates(), 10)
+    }
+
     prop_compose! {
         pub fn run_analyzer_requests()(
-            tenant_id in uuids(),
-            update in updates(),
+            updates in vec_of_updates(),
         ) -> native::RunAnalyzerRequest {
-            native::RunAnalyzerRequest {
-                tenant_id,
-                update,
-            }
+            native::RunAnalyzerRequest::new(Updates { updates })
         }
     }
 }

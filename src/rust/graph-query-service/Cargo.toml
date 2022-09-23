@@ -37,7 +37,9 @@ tonic-build = { version = "0.6.0", features = ["prost"] }
 
 [dev-dependencies]
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
+e2e-tests = { path = "../e2e-tests" }
 eyre = "0.6"
+test-context = "0.1.4"
 
 [features]
 integration_tests = []

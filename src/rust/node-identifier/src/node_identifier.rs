@@ -2,11 +2,14 @@ use std::collections::HashMap;
 
 use failure::Error;
 use grapl_utils::rusoto_ext::dynamodb::GraplDynamoDbClientExt;
-use rust_proto::graplinc::grapl::api::graph::v1beta1::{
-    GraphDescription,
-    IdentifiedGraph,
-    IdentifiedNode,
-    NodeDescription,
+use rust_proto::graplinc::grapl::{
+    api::graph::v1beta1::{
+        GraphDescription,
+        IdentifiedGraph,
+        IdentifiedNode,
+        NodeDescription,
+    },
+    common::v1beta1::types::Uid,
 };
 use tap::tap::TapOptional;
 
@@ -51,11 +54,9 @@ where
         tenant_id: uuid::Uuid,
         node: &NodeDescription,
     ) -> Result<IdentifiedNode, Error> {
-        let new_node = self
-            .dynamic_identifier
+        self.dynamic_identifier
             .attribute_dynamic_node(tenant_id, node)
-            .await?;
-        Ok(new_node.into())
+            .await
     }
 
     /// Performs batch identification of unidentified nodes into identified
@@ -70,7 +71,7 @@ where
         tenant_id: uuid::Uuid,
         unidentified_subgraph: &GraphDescription,
         identified_graph: &mut IdentifiedGraph,
-    ) -> (HashMap<String, String>, Option<failure::Error>) {
+    ) -> (HashMap<String, Uid>, Option<failure::Error>) {
         let mut identified_nodekey_map = HashMap::new();
         let mut attribution_failure = None;
 
@@ -90,10 +91,7 @@ where
                 }
             };
 
-            identified_nodekey_map.insert(
-                unidentified_node_key.to_owned(),
-                identified_node.clone_node_key(),
-            );
+            identified_nodekey_map.insert(unidentified_node_key.to_owned(), identified_node.uid);
             identified_graph.add_node(identified_node);
         }
 
@@ -114,7 +112,7 @@ where
         &self,
         unidentified_subgraph: &GraphDescription,
         identified_graph: &mut IdentifiedGraph,
-        identified_nodekey_map: HashMap<String, String>,
+        identified_nodekey_map: HashMap<String, Uid>,
     ) {
         let identified_node_edges = unidentified_subgraph.edges.iter()
             // filter out all edges for nodes that were not identified (also gets our from_key)

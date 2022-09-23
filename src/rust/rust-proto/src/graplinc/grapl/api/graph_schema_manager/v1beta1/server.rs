@@ -159,7 +159,6 @@ where
         let mut server_builder = Server::builder().trace_fn(|request| {
             tracing::info_span!(
                 "exec_service",
-                headers = ?request.headers(),
                 method = ?request.method(),
                 uri = %request.uri(),
                 extensions = ?request.extensions(),
