@@ -32,8 +32,7 @@ COMPOSE_PROJECT_NAME ?= grapl
 
 export
 
-export EVERY_COMPOSE_FILE=--file docker-compose.yml \
-	--file ./test/docker-compose.unit-tests-js.yml \
+export EVERY_COMPOSE_FILE=--file docker-compose.yml 
 
 # This is used to send docker traces to Jaeger. This is primarily useful for debugging build time performance
 ifdef WITH_TRACING
@@ -142,9 +141,6 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build-test-unit-js
-build-test-unit-js:
-	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.unit-tests-js.yml
 
 # Build Service Images and their Prerequisites
 ########################################################################
