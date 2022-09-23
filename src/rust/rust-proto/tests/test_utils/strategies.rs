@@ -1132,7 +1132,6 @@ pub mod analyzer_sdk {
     use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::{
         self as native,
         Update,
-        Updates,
     };
 
     use super::{
@@ -1202,15 +1201,11 @@ pub mod analyzer_sdk {
         ]
     }
 
-    pub fn vec_of_updates() -> impl Strategy<Value = Vec<Update>> {
-        proptest::collection::vec(updates(), 10)
-    }
-
     prop_compose! {
         pub fn run_analyzer_requests()(
-            updates in vec_of_updates(),
+            update in updates(),
         ) -> native::RunAnalyzerRequest {
-            native::RunAnalyzerRequest::new(Updates { updates })
+            native::RunAnalyzerRequest::new(update)
         }
     }
 }

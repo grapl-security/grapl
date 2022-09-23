@@ -33,7 +33,7 @@ use rust_proto::{
                 GetAnalyzersForTenantRequest,
                 PluginRegistryServiceClient,
             },
-            plugin_sdk::analyzers::v1beta1::messages::Updates,
+            plugin_sdk::analyzers::v1beta1::messages::Update,
             plugin_work_queue::v1beta1::{
                 ExecutionJob,
                 PluginWorkQueueServiceClient,
@@ -127,8 +127,8 @@ enum AnalyzerDispatcherError {
 
 struct AnalyzerDispatcher {
     plugin_work_queue_client: PluginWorkQueueServiceClient,
-    graph_updates_consumer: Consumer<Updates>,
-    graph_updates_retry_producer: RetryProducer<Updates>,
+    graph_update_consumer: Consumer<Update>,
+    graph_update_retry_producer: RetryProducer<Update>,
     analyzer_ids_cache: AsyncCache<Uuid, Vec<Uuid>>,
 }
 
@@ -137,8 +137,8 @@ impl AnalyzerDispatcher {
         config: AnalyzerDispatcherConfig,
         plugin_work_queue_client: PluginWorkQueueServiceClient,
     ) -> Result<Self, ConfigurationError> {
-        let graph_updates_consumer: Consumer<Updates> = Consumer::new(config.kafka_config)?;
-        let graph_updates_retry_producer: RetryProducer<Updates> =
+        let graph_update_consumer: Consumer<Update> = Consumer::new(config.kafka_config)?;
+        let graph_update_retry_producer: RetryProducer<Update> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
         let client_config = PluginRegistryClientConfig::parse();
 
@@ -188,8 +188,8 @@ impl AnalyzerDispatcher {
 
         Ok(Self {
             plugin_work_queue_client,
-            graph_updates_consumer,
-            graph_updates_retry_producer,
+            graph_update_consumer,
+            graph_update_retry_producer,
             analyzer_ids_cache,
         })
     }
@@ -197,20 +197,20 @@ impl AnalyzerDispatcher {
     pub async fn run(&mut self, pool_size: usize) -> Result<(), AnalyzerDispatcherError> {
         let analyzer_ids_cache = self.analyzer_ids_cache.clone();
         let plugin_work_queue_client = self.plugin_work_queue_client.clone();
-        let graph_updates_retry_producer = self.graph_updates_retry_producer.clone();
+        let graph_update_retry_producer = self.graph_update_retry_producer.clone();
 
         loop {
             let analyzer_ids_cache = analyzer_ids_cache.clone();
             let plugin_work_queue_client = plugin_work_queue_client.clone();
-            let graph_updates_retry_producer = graph_updates_retry_producer.clone();
+            let graph_update_retry_producer = graph_update_retry_producer.clone();
 
-            let stream = self.graph_updates_consumer
+            let stream = self.graph_update_consumer
                 .stream()
                 .take(pool_size)
-                .then(move |graph_update_result: Result<(tracing::Span, Envelope<Updates>), ConsumerError>| {
+                .then(move |graph_update_result: Result<(tracing::Span, Envelope<Update>), ConsumerError>| {
                     let analyzer_ids_cache = analyzer_ids_cache.clone();
                     let plugin_work_queue_client = plugin_work_queue_client.clone();
-                    let graph_updates_retry_producer = graph_updates_retry_producer.clone();
+                    let graph_update_retry_producer = graph_update_retry_producer.clone();
 
                     async move {
                         match graph_update_result {
@@ -250,7 +250,7 @@ impl AnalyzerDispatcher {
                                         drop(_guard);
 
                                         retry_message(
-                                            &graph_updates_retry_producer,
+                                            &graph_update_retry_producer,
                                             envelope,
                                         )
                                             .instrument(span)
@@ -269,7 +269,7 @@ impl AnalyzerDispatcher {
                                         drop(_guard);
 
                                         retry_message(
-                                            &graph_updates_retry_producer,
+                                            &graph_update_retry_producer,
                                             envelope,
                                         )
                                             .instrument(span)
@@ -295,7 +295,7 @@ impl AnalyzerDispatcher {
                     }
                 })
                 .then(|result| async {
-                    self.graph_updates_consumer.commit()?;
+                    self.graph_update_consumer.commit()?;
                     result
                 });
 
@@ -315,18 +315,18 @@ impl AnalyzerDispatcher {
 }
 
 async fn retry_message(
-    graph_updates_retry_producer: &RetryProducer<Updates>,
-    envelope: Envelope<Updates>,
+    graph_update_retry_producer: &RetryProducer<Update>,
+    envelope: Envelope<Update>,
 ) -> Result<(), ProducerError> {
     // TODO: be a little smarter about handling ProducerError here
-    graph_updates_retry_producer.send(envelope).await
+    graph_update_retry_producer.send(envelope).await
 }
 
 #[tracing::instrument(skip(plugin_work_queue_client, analyzer_ids, envelope), err)]
 async fn enqueue_plugin_work(
     plugin_work_queue_client: PluginWorkQueueServiceClient,
     analyzer_ids: Vec<Uuid>,
-    envelope: Envelope<Updates>,
+    envelope: Envelope<Update>,
 ) -> Result<(), AnalyzerDispatcherError> {
     let pool_size = analyzer_ids.len();
     let tenant_id = envelope.tenant_id();

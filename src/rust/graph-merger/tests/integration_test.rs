@@ -15,10 +15,14 @@ use rust_proto::graplinc::grapl::{
     api::{
         pipeline_ingress::v1beta1::PublishRawLogRequest,
         plugin_sdk::analyzers::v1beta1::messages::{
+            StringPropertyUpdate,
             UInt64PropertyUpdate,
             Update,
-            Updates,
         },
+    },
+    common::v1beta1::types::{
+        PropertyName,
+        Uid,
     },
     pipeline::v1beta1::Envelope,
 };
@@ -38,6 +42,10 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
         event_source_id,
     } = ctx.setup_sysmon_generator(tenant_id, test_name).await?;
 
+    let priming_message = StringPropertyUpdate {
+        uid: Uid::from_u64(1).unwrap(),
+        property_name: PropertyName::new_unchecked("arbitrary value".to_string()),
+    };
     let kafka_scanner = KafkaTopicScanner::new(
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
         Duration::from_secs(60),
@@ -45,12 +53,12 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
-            Updates::new(),
+            Update::StringProperty(priming_message),
         ),
     );
 
     let handle = kafka_scanner
-        .scan_for_tenant(tenant_id, 1, |_: Updates| true)
+        .scan_for_tenant(tenant_id, 1, |_: Update| true)
         .await;
 
     let log_event: Bytes = r#"
@@ -116,25 +124,22 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
     tracing::info!("waiting for kafka_scanner to complete");
 
     let envelopes = handle.await?;
-    assert_eq!(envelopes.len(), 1);
+    assert_eq!(envelopes.len(), 2);
 
-    let envelope = envelopes[0].clone();
-    assert_eq!(envelope.tenant_id(), tenant_id);
-    assert_eq!(envelope.event_source_id(), event_source_id);
+    for envelope in envelopes {
+        assert_eq!(envelope.tenant_id(), tenant_id);
+        assert_eq!(envelope.event_source_id(), event_source_id);
 
-    let updates = envelope.inner_message();
+        let update = envelope.inner_message();
 
-    // Note that updates don't contain the updated value so we can't check that
-    // right now
-    let matching_updates_count = updates
-        .iter()
-        .filter(|update| {
-            matches!(update, Update::Uint64Property(UInt64PropertyUpdate {property_name, ..}) if {
-                property_name.value == "process_id"
-            })
-        })
-        .count();
-    assert_eq!(matching_updates_count, 2);
+        // Note that updates don't contain the updated value so we can't check that
+        // right now
+        let found_match = matches!(update.clone(), Update::Uint64Property(UInt64PropertyUpdate {property_name, ..}) if {
+            property_name.value == "process_id"
+        });
+
+        assert!(found_match, "expected a process_id update from {update:?}");
+    }
 
     Ok(())
 }
