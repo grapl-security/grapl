@@ -39,9 +39,8 @@ class DockerImageIdBuilder:
         self.registry = registry
         self.artifacts = artifacts
 
-    def build(
-        self, registry: Optional[str], image_name: str, tag: str
-    ) -> DockerImageId:
+    @staticmethod
+    def _build(registry: Optional[str], image_name: str, tag: str) -> DockerImageId:
         image_tag = f"{image_name}:{tag}"
         if registry:
             image_tag = f"{registry}/{image_tag}"
@@ -53,7 +52,7 @@ class DockerImageIdBuilder:
         """
         artifact_version = self.artifacts.get(image_name)
         if artifact_version:
-            return self.build(
+            return DockerImageIdBuilder._build(
                 registry=self.registry,
                 image_name=image_name,
                 tag=artifact_version,
@@ -63,7 +62,7 @@ class DockerImageIdBuilder:
             # we're using a local image - even if the container registry
             # is specified.
             tag = _docker_version_tag_from_env()
-            return self.build(
+            return DockerImageIdBuilder._build(
                 registry=None,  # local Docker registry
                 image_name=image_name,
                 tag=tag,
