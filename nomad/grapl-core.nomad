@@ -216,9 +216,6 @@ locals {
 
   dns_servers = [attr.unique.network.ip-address]
 
-  # Grapl services
-  graphql_endpoint_port = 5000
-
   # enabled
   rust_backtrace = 1
 }
@@ -847,76 +844,6 @@ job "grapl-core" {
     }
   }
 
-  group "graphql-endpoint" {
-    count = 2
-
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-      port "graphql-endpoint-port" {}
-    }
-
-    task "graphql-endpoint" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["graphql-endpoint"]
-        ports = ["graphql-endpoint-port"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
-      }
-
-      env {
-        RUST_LOG = var.rust_log
-        # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
-        AWS_REGION                    = var.aws_region
-        MG_ALPHAS                     = local.alpha_grpc_connect_str
-        GRAPL_SCHEMA_TABLE            = var.schema_table_name
-        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-        IS_LOCAL                      = "True"
-        JWT_SECRET_ID                 = "JWT_SECRET_ID"
-        PORT                          = "${NOMAD_PORT_graphql-endpoint-port}"
-      }
-
-      resources {
-        cpu = 50
-      }
-    }
-
-    service {
-      name = "graphql-endpoint"
-      port = "graphql-endpoint-port"
-
-      connect {
-        sidecar_service {
-          proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
   group "kafka-retry" {
     count = 2
 
@@ -1043,7 +970,6 @@ job "grapl-core" {
         PLUGIN_REGISTRY_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
 
         GRAPL_WEB_UI_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_web-ui-port}"
-        GRAPL_GRAPHQL_ENDPOINT    = "http://${NOMAD_UPSTREAM_ADDR_graphql-endpoint}"
         GRAPL_GOOGLE_CLIENT_ID    = var.google_client_id
         RUST_LOG                  = var.rust_log
         RUST_BACKTRACE            = local.rust_backtrace
@@ -1065,10 +991,6 @@ job "grapl-core" {
           proxy {
             config {
               protocol = "http"
-            }
-            upstreams {
-              destination_name = "graphql-endpoint"
-              local_bind_port  = 1000
             }
             upstreams {
               destination_name = "plugin-registry"

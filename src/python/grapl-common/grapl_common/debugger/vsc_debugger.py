@@ -14,8 +14,7 @@ from typing_extensions import Literal
 LOGGER = get_module_grapl_logger()
 
 ServiceIdentifier = Literal[
-    "grapl_e2e_tests",
-    "graphql_endpoint_tests",
+    "grapl_e2e_tests"
 ]
 
 
