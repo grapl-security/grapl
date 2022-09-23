@@ -16,7 +16,7 @@ serde = { version = "1.0.136", features = ["derive"] }
 tokio = { version = "1.17.0", features = ["full"] }
 uuid = { version = "1.0.0", features = ["v4"] }
 tracing-appender = "0.2"
-tracing-opentelemetry = "0.16"
+tracing-opentelemetry = "0.17"
 tracing = "0.1.32"
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
@@ -36,8 +36,8 @@ thiserror = "1.0.30"
 dashmap = "5.2.0"
 async-trait = "0.1.53"
 grapl-config = { path = "../grapl-config" }
-opentelemetry = { version = "0.16", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "0.15", features = [
+opentelemetry = { version = "0.17", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.16", features = [
   "collector_client",
   "rt-tokio"
 ] }

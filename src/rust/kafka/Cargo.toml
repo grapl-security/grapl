@@ -18,10 +18,10 @@ clap = { version = "3.0", default_features = false, features = [
 futures = "0.3"
 rdkafka = { version = "0.28", features = [
   "cmake-build",
-  "ssl-vendored",
+  "ssl",
   "gssapi-vendored",
   "tokio",
-  "zstd"
+  "zstd-pkg-config"
 ] }
 rust-proto = { path = "../rust-proto", version = "*" }
 secrecy = "0.8.0"

@@ -22,13 +22,13 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
         curl=7.74.0-1.3+deb11u3 \
         jq=1.6-2.1 \
         unzip=6.0-26+deb11u1 \
-    && apt-get install --yes --no-install-recommends \
         build-essential=12.9 \
         cmake=3.18.4-2+deb11u1 \
         libssl-dev=1.1.1n-0+deb11u3 \
         perl=5.32.1-4+deb11u2 \
         pkg-config=0.29.2-1 \
-        tcl=8.6.11+1
+        tcl=8.6.11+1 \
+        libzstd-dev=1.4.8+dfsg-2.1
 
 # Grab a Nomad binary, which we use for parsing HCL2-with-variables into JSON:
 # - in plugin-registry integration tests
