@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.lens_subscription.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+//import "graplinc/grapl/api/graph/v1beta1/types.proto";
+import "graplinc/grapl/common/v1beta1/types.proto";
+
+// Event representing a node added to the scope of a lens
+message NodeAddedToLensScope {
+  // The tenant that the operation pertains to
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The uid of the lens that had its scope updated
+  graplinc.grapl.common.v1beta1.Uid lens_uid = 2;
+  // The uid of the node added to the lens's scope
+  graplinc.grapl.common.v1beta1.Uid node_uid = 3;
+  // The type of the node added to the lens's scope
+  graplinc.grapl.common.v1beta1.NodeType node_type = 4;
+}
+
+// Event representing a node removed from the scope of a lens
+message NodeRemovedFromLensScope {
+  // The tenant that the operation pertains to
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The uid of the lens that had its scope updated
+  graplinc.grapl.common.v1beta1.Uid lens_uid = 2;
+  // The uid of the node removed from the lens's scope
+  graplinc.grapl.common.v1beta1.Uid node_uid = 3;
+  // The type of the node removed from the lens's scope
+  graplinc.grapl.common.v1beta1.NodeType node_type = 4;
+}
+
+// Event representing changes to a lens
+message LensUpdate {
+  // The inner representation of the update
+  oneof inner {
+    // The lens had a node added to the scope
+    NodeAddedToLensScope node_added_to_lens_scope = 1;
+    // The lens had a node removed to the scope
+    NodeRemovedFromLensScope node_removed_from_lens_scope = 2;
+  }
+}
+
+// Request to initialize a lens subscription
+message SubscribeToLensRequest {
+  // The tenant that the operation pertains to
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The uid of the lens to subscribe to
+  graplinc.grapl.common.v1beta1.Uid lens_uid = 2;
+}
+
+// Response to a successful subscription request
+message SubscribeToLensResponse {
+  // The update event itself
+  LensUpdate lens_update = 1;
+  // The current offset of the subscription, sort of like a paging token
+  uint64 update_offset = 2;
+}
+
+// LensSubscriptionService provides APIs for subscribing to lens updates. As a convenience it also provides
+// an API for listening lenses, as that's the likely step before a subscription occurs.
+service LensSubscriptionService {
+  // Create a subscription to a lens. Returns a stream of lens updates. If any updates on the backend are
+  // invalid the message will be dropped.
+  // For now, all requests for a stream will return *every* event for the requested lens. In the future
+  // the offset id will be used to return only the events since the last offset, which clients can provide.
+  // Ordering of events is best effort - there's a chance for a race condition if there are updates being made
+  // while subscriptions are being created.
+  rpc SubscribeToLens(SubscribeToLensRequest) returns (stream SubscribeToLensResponse);
+}
