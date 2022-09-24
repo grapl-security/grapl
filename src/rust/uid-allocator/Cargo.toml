@@ -25,7 +25,6 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
 rand = "0.8.5"
 futures = "0.3.21"
 itertools = "0.10.3"
-prost = "0.9.0"
 sqlx = { version = "0.6", features = [
   "postgres",
   "runtime-tokio-rustls",
