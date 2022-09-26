@@ -21,8 +21,7 @@ def _after_tests() -> None:
     Add any "after tests are executed, but before docker compose down" stuff here.
     """
     if DUMP_ARTIFACTS:
-        # this could be where we dump scylla's contents, for example
-        pass
+        dump_dynamodb()
 
 
 def exec_pytest() -> int:
