@@ -366,6 +366,12 @@ def main() -> None:
         ),
     )
 
+    ConsulConfig(
+        "grapl-core",
+        tracing_endpoint="otel-collector-zipkin.service.consul",
+        opts=pulumi.ResourceOptions(provider=consul_provider),
+    )
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -408,14 +414,6 @@ def main() -> None:
 
         graph_schema_manager_db = LocalPostgresInstance(
             name="graph-schema-manager-db", port=5437
-        )
-
-        # Since we're using an IP for Jaeger, this should only be created for local grapl.
-        # Once we're using dns addresses we can create it for everything
-        ConsulConfig(
-            "grapl-core",
-            tracing_endpoint="otel-collector-zipkin.service.consul",
-            opts=pulumi.ResourceOptions(provider=consul_provider),
         )
     else:
         ###################################
