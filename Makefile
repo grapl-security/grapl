@@ -32,7 +32,7 @@ COMPOSE_PROJECT_NAME ?= grapl
 
 export
 
-export EVERY_COMPOSE_FILE=--file docker-compose.yml 
+export EVERY_COMPOSE_FILE=--file docker-compose.yml
 
 # This is used to send docker traces to Jaeger. This is primarily useful for debugging build time performance
 ifdef WITH_TRACING
