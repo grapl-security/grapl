@@ -10,16 +10,12 @@ use kafka::{
         ProducerConfig,
     },
     StreamProcessor,
-    StreamProcessorError,
 };
 use rust_proto::{
-    graplinc::grapl::{
-        api::{
-            graph::v1beta1::IdentifiedGraph,
-            graph_mutation::v1beta1::client::GraphMutationClient,
-            plugin_sdk::analyzers::v1beta1::messages::Updates,
-        },
-        pipeline::v1beta1::Envelope,
+    graplinc::grapl::api::{
+        graph::v1beta1::IdentifiedGraph,
+        graph_mutation::v1beta1::client::GraphMutationClient,
+        plugin_sdk::analyzers::v1beta1::messages::Update,
     },
     protocol::service_client::ConnectWithConfig,
 };
@@ -54,7 +50,7 @@ async fn main() -> eyre::Result<()> {
     handler(graph_merger, consumer_config, producer_config).await
 }
 
-#[tracing::instrument(skip(graph_merger))]
+#[tracing::instrument(skip(graph_merger, consumer_config, producer_config))]
 async fn handler(
     graph_merger: GraphMerger,
     consumer_config: ConsumerConfig,
@@ -70,55 +66,17 @@ async fn handler(
 
     // TODO: also construct a stream processor for retries
 
-    let stream_processor: StreamProcessor<IdentifiedGraph, Updates> =
+    let stream_processor: StreamProcessor<IdentifiedGraph, Update> =
         StreamProcessor::new(consumer_config, producer_config)?;
 
     tracing::info!(message = "kafka stream processor configured successfully",);
 
-    let stream = stream_processor.stream::<_, _, StreamProcessorError>(move |event| {
-        let mut graph_merger = graph_merger.clone();
-        async move {
-            let (span, envelope) = event?;
-            let _guard = span.enter();
-            let tenant_id = envelope.tenant_id();
-            let trace_id = envelope.trace_id();
-            let event_source_id = envelope.event_source_id();
-
-            tracing::debug!("received kafka message");
-
-            match graph_merger
-                .handle_event(tenant_id, envelope.inner_message())
-                .await
-            {
-                Ok(updates) => Ok(Some(Envelope::new(
-                    tenant_id,
-                    trace_id,
-                    event_source_id,
-                    updates,
-                ))),
-                Err(e) => match e {
-                    GraphMergerError::Unexpected(ref reason) => {
-                        tracing::error!(
-                            message = "unexpected error",
-                            reason = %reason,
-                            error = %e,
-                        );
-                        // TODO: write message to failed topic here
-                        Err(StreamProcessorError::from(e))
-                    }
-                    _ => {
-                        tracing::error!(
-                            mesage = "unexpected error",
-                            error = %e,
-                        );
-                        // TODO: write message to failed topic here
-                        Err(StreamProcessorError::from(e))
-                    }
-                },
-            }
-        }
-        .into_stream()
-        .filter_map(|res| async move { res.transpose() })
+    let stream = stream_processor.stream::<_, _, GraphMergerError>(move |event| {
+        graph_merger
+            .clone()
+            .handle_event(event)
+            .into_stream()
+            .flat_map(|results| futures::stream::iter(results))
     });
 
     stream

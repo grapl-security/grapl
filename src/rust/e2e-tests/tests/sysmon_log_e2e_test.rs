@@ -26,10 +26,14 @@ use rust_proto::graplinc::grapl::{
         },
         pipeline_ingress::v1beta1::PublishRawLogRequest,
         plugin_sdk::analyzers::v1beta1::messages::{
+            StringPropertyUpdate,
             UInt64PropertyUpdate,
             Update,
-            Updates,
         },
+    },
+    common::v1beta1::types::{
+        PropertyName,
+        Uid,
     },
     pipeline::v1beta1::{
         Envelope,
@@ -99,6 +103,10 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     // time out instead of cutting it off early at 36 or 40.
     // Why does it not equal 36? Not really sure! But graph-merger is being
     // heavily rewritten soon, so let's explore that _after_ the rewrite.
+    let graph_merger_priming_message = StringPropertyUpdate {
+        uid: Uid::from_u64(1).unwrap(),
+        property_name: PropertyName::new_unchecked("arbitrary value".to_string()),
+    };
     let graph_merger_upper_bound = 45;
     let graph_merger_scanner_handle = KafkaTopicScanner::new(
         ConsumerConfig::with_topic("merged-graphs"),
@@ -107,12 +115,10 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
-            Updates::new(),
+            Update::StringProperty(graph_merger_priming_message),
         ),
     )
-    .scan_for_tenant(tenant_id, graph_merger_upper_bound, |_updates: Updates| {
-        true
-    })
+    .scan_for_tenant(tenant_id, graph_merger_upper_bound, |_update: Update| true)
     .await;
 
     tracing::info!(">> Inserting logs into pipeline-ingress!");
@@ -199,7 +205,7 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         .expect("failed to configure merged_graphs scanner");
     let graph_updates: Vec<Update> = graph_updates
         .into_iter()
-        .flat_map(|env| env.inner_message().updates)
+        .map(|env| env.inner_message())
         .collect();
     assert!(graph_updates.len() >= input_log_lines.len());
 

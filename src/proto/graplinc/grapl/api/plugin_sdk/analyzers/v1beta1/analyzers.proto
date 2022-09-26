@@ -57,12 +57,6 @@ message Update {
   }
 }
 
-// Represents multiple updates to the grpah
-message Updates {
-  // The updates
-  repeated Update updates = 1;
-}
-
 // A reference to a Lens Node that
 // todo: Determine what limits to apply to fields
 message LensRef {
@@ -103,7 +97,7 @@ message ExecutionMiss {
 // A request to execute an Analyzer against a specific update to a tenant's graph
 message RunAnalyzerRequest {
   // The updates that occurred
-  Updates updates = 1;
+  Update update = 1;
 }
 
 // The result of an Analyzer's execution
