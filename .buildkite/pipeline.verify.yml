@@ -187,9 +187,9 @@ steps:
       - label: ":typescript: Unit Tests"
         command:
           - make test-unit-js
-#        plugins:
-#          - grapl-security/vault-login#v0.1.3
-#          - grapl-security/vault-env#v0.1.0:
+  #        plugins:
+  #          - grapl-security/vault-login#v0.1.3
+  #          - grapl-security/vault-env#v0.1.0:
   #              secrets:
   #                - grapl/CODECOV_TOKEN
   #          - grapl-security/codecov#v0.1.6
