@@ -1,4 +1,5 @@
 use grapl_tracing::SetupTracingError;
+use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorServiceClientError;
 use thiserror::Error;
 
 #[non_exhaustive]
@@ -18,6 +19,9 @@ pub(crate) enum NodeIdentifierError {
 
     #[error("kafka configuration error {0}")]
     KafkaConfigurationError(#[from] kafka::ConfigurationError),
+
+    #[error("UidAllocatorServiceClientError {0}")]
+    UidAllocatorServiceClientError(#[from] UidAllocatorServiceClientError),
 
     #[error("failed to configure tracing {0}")]
     SetupTracingError(#[from] SetupTracingError),

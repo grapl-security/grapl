@@ -10,7 +10,6 @@ from python_proto.serde import SerDe
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class RunAnalyzerRequest(SerDe[proto.RunAnalyzerRequest]):
-    tenant_id: proto_common_msgs.Uuid
     update: Update
 
     _proto_cls = proto.RunAnalyzerRequest
@@ -21,13 +20,11 @@ class RunAnalyzerRequest(SerDe[proto.RunAnalyzerRequest]):
         proto_value: proto.RunAnalyzerRequest,
     ) -> RunAnalyzerRequest:
         return cls(
-            tenant_id=proto_common_msgs.Uuid.from_proto(proto_value.tenant_id),
             update=Update.from_proto(proto_value.update),
         )
 
     def into_proto(self) -> proto.RunAnalyzerRequest:
         proto_value = self.new_proto()
-        proto_value.tenant_id.CopyFrom(self.tenant_id.into_proto())
         proto_value.update.CopyFrom(self.update.into_proto())
         return proto_value
 

@@ -10,10 +10,7 @@ use e2e_tests::{
             E2eTestContext,
             SetupResult,
         },
-        predicates::{
-            events_36lines_merged_graph_predicate,
-            events_36lines_node_identity_predicate,
-        },
+        predicates::events_36lines_node_identity_predicate,
     },
 };
 use kafka::{
@@ -26,9 +23,17 @@ use rust_proto::graplinc::grapl::{
         graph::v1beta1::{
             GraphDescription,
             IdentifiedGraph,
-            MergedGraph,
         },
         pipeline_ingress::v1beta1::PublishRawLogRequest,
+        plugin_sdk::analyzers::v1beta1::messages::{
+            StringPropertyUpdate,
+            UInt64PropertyUpdate,
+            Update,
+        },
+    },
+    common::v1beta1::types::{
+        PropertyName,
+        Uid,
     },
     pipeline::v1beta1::{
         Envelope,
@@ -41,15 +46,15 @@ use uuid::Uuid;
 #[tracing::instrument(skip(ctx))]
 #[test_context(E2eTestContext)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
+async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let test_name = "test_sysmon_log_e2e";
-
+    let tenant_id = ctx.create_tenant().await?;
     let SetupResult {
         tenant_id,
         plugin_id,
         event_source_id,
     } = ctx
-        .setup_sysmon_generator(test_name)
+        .setup_sysmon_generator(tenant_id, test_name)
         .await
         .expect("failed to setup the sysmon-generator");
 
@@ -98,6 +103,10 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
     // time out instead of cutting it off early at 36 or 40.
     // Why does it not equal 36? Not really sure! But graph-merger is being
     // heavily rewritten soon, so let's explore that _after_ the rewrite.
+    let graph_merger_priming_message = StringPropertyUpdate {
+        uid: Uid::from_u64(1).unwrap(),
+        property_name: PropertyName::new_unchecked("arbitrary value".to_string()),
+    };
     let graph_merger_upper_bound = 45;
     let graph_merger_scanner_handle = KafkaTopicScanner::new(
         ConsumerConfig::with_topic("merged-graphs"),
@@ -106,14 +115,10 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
-            MergedGraph::new(),
+            Update::StringProperty(graph_merger_priming_message),
         ),
     )
-    .scan_for_tenant(
-        tenant_id,
-        graph_merger_upper_bound,
-        |_graph: MergedGraph| true,
-    )
+    .scan_for_tenant(tenant_id, graph_merger_upper_bound, |_update: Update| true)
     .await;
 
     tracing::info!(">> Inserting logs into pipeline-ingress!");
@@ -195,27 +200,28 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) {
     assert_eq!(filtered_identified_graphs.len(), 1);
 
     tracing::info!(">> Test: graph-merger wrote these identified nodes to our graph database, then write to 'merged-graphs'");
-    let merged_graphs = graph_merger_scanner_handle
+    let graph_updates = graph_merger_scanner_handle
         .await
         .expect("failed to configure merged_graphs scanner");
-    assert!(merged_graphs.len() >= input_log_lines.len());
+    let graph_updates: Vec<Update> = graph_updates
+        .into_iter()
+        .map(|env| env.inner_message())
+        .collect();
+    assert!(graph_updates.len() >= input_log_lines.len());
 
-    let filtered_merged_graphs = merged_graphs
-        .iter()
-        .cloned()
-        .filter(move |envelope| {
-            let envelope = envelope.clone();
-            let merged_graph = envelope.inner_message();
-            events_36lines_merged_graph_predicate(merged_graph)
+    // Make sure we're getting at least one reasonable-seeming update
+    let filtered_graph_updates = graph_updates
+        .into_iter()
+        .filter(move |update| {
+            matches!(update, Update::Uint64Property(UInt64PropertyUpdate {property_name, ..}) if {
+                property_name.value == "process_id"
+            })
         })
-        .collect::<Vec<Envelope<MergedGraph>>>();
-
-    assert!(!filtered_merged_graphs.is_empty());
-    assert!(!filtered_merged_graphs.is_empty()); // shushes a really annoying clippy lint
-
-    // should actually be just one, but we're seeing repeated matching graphs.
-    // graph merger is being rewritten very soon, so revisit in sept/oct 2022!
-    // assert_eq!(filtered_merged_graphs.len(), 1);
+        .collect::<Vec<Update>>();
+    assert!(!filtered_graph_updates.is_empty()); // yes, it's doubled, because it
+    assert!(!filtered_graph_updates.is_empty()); // shushes a really annoying clippy lint
 
     // TODO: Perhaps add a test here that looks in dgraph/scylla for those identified nodes
+
+    Ok(())
 }

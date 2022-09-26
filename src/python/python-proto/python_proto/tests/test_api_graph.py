@@ -19,10 +19,6 @@ from python_proto.tests.strategies import (
     increment_only_int_props,
     increment_only_uint_props,
     lenses,
-    merged_edge_lists,
-    merged_edges,
-    merged_graphs,
-    merged_nodes,
     node_descriptions,
     node_properties,
     sessions,
@@ -88,22 +84,6 @@ def test_increment_only_uint_prop_encode_decode() -> None:
 
 def test_lens_encode_decode() -> None:
     check_encode_decode_invariant(lenses())
-
-
-def test_merged_edge_list_encode_decode() -> None:
-    check_encode_decode_invariant(merged_edge_lists())
-
-
-def test_merged_edge_encode_decode() -> None:
-    check_encode_decode_invariant(merged_edges())
-
-
-def test_merged_graph_encode_decode() -> None:
-    check_encode_decode_invariant(merged_graphs())
-
-
-def test_merged_node_encode_decode() -> None:
-    check_encode_decode_invariant(merged_nodes())
 
 
 def test_node_description_encode_decode() -> None:

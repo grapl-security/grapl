@@ -78,7 +78,7 @@ pub(crate) fn generate_process_create_subgraph(
     );
 
     graph.add_edge(
-        "bin_file",
+        "binary_file",
         child.clone_node_key(),
         child_exe.clone_node_key(),
     );

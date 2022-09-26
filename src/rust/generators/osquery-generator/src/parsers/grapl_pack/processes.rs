@@ -72,7 +72,7 @@ impl From<ProcessEvent> for GraphDescription {
                 .with_last_seen_timestamp(process_start_time);
 
             graph.add_edge(
-                "bin_file",
+                "binary_file",
                 child.clone_node_key(),
                 child_exe.clone_node_key(),
             );

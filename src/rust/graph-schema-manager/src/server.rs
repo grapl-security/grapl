@@ -26,34 +26,36 @@ use crate::{
 
 #[derive(thiserror::Error, Debug)]
 pub enum GraphSchemaManagerServiceError {
-    #[error("NonUtf8 GraphQL Schema {0}")]
+    #[error("NonUtf8 GraphQL Schema: '{0}'")]
     NonUtf8GraphQLSchema(std::string::FromUtf8Error),
-    #[error("DeployGraphqlError {0}")]
+    #[error("DeployGraphqlError: '{0}'")]
     DeployGraphqlError(#[from] DeployGraphqlError),
-    #[error("GetEdgeSchema sqlx error {0}")]
+    #[error("GetEdgeSchema sqlx error: '{0}'")]
     GetEdgeSchemaSqlxError(sqlx::Error),
-    #[error("Invalid ReverseEdgeName: {0}")]
+    #[error("Invalid ReverseEdgeName: '{0}'")]
     InvalidReverseEdgeName(SerDeError),
+    #[error("GetEdgeSchema: Edge not found for tenant_id={tenant_id}, node_type={node_type}, edge_name={edge_name}")]
+    EdgeSchemaNotFound {
+        tenant_id: uuid::Uuid,
+        node_type: String,
+        edge_name: String,
+    },
 }
 
 impl From<GraphSchemaManagerServiceError> for Status {
     fn from(error: GraphSchemaManagerServiceError) -> Self {
+        let msg = error.to_string();
         match error {
-            GraphSchemaManagerServiceError::NonUtf8GraphQLSchema(e) => {
-                Status::invalid_argument(format!("NonUtf8GraphQLSchema - {}", e))
+            GraphSchemaManagerServiceError::NonUtf8GraphQLSchema(_) => {
+                Status::invalid_argument(msg)
             }
             GraphSchemaManagerServiceError::DeployGraphqlError(DeployGraphqlError::SqlxError(
-                e,
-            )) => Status::internal(format!("SqlError during deployment - {}", e)),
-            GraphSchemaManagerServiceError::DeployGraphqlError(e) => {
-                Status::invalid_argument(format!("DeployGraphqlError - {}", e))
-            }
-            GraphSchemaManagerServiceError::GetEdgeSchemaSqlxError(e) => {
-                Status::internal(format!("SqlError during deployment - {}", e))
-            }
-            GraphSchemaManagerServiceError::InvalidReverseEdgeName(name) => {
-                Status::internal(format!("InvalidReverseEdgeName - {}", name))
-            }
+                _,
+            )) => Status::internal(msg),
+            GraphSchemaManagerServiceError::DeployGraphqlError(_) => Status::invalid_argument(msg),
+            GraphSchemaManagerServiceError::EdgeSchemaNotFound { .. } => Status::internal(msg),
+            GraphSchemaManagerServiceError::GetEdgeSchemaSqlxError(_) => Status::internal(msg),
+            GraphSchemaManagerServiceError::InvalidReverseEdgeName(_) => Status::internal(msg),
         }
     }
 }
@@ -66,6 +68,7 @@ pub struct GraphSchemaManager {
 impl GraphSchemaManagerApi for GraphSchemaManager {
     type Error = GraphSchemaManagerServiceError;
 
+    #[tracing::instrument(skip(self, request), err)]
     async fn deploy_schema(
         &self,
         request: DeploySchemaRequest,
@@ -87,6 +90,7 @@ impl GraphSchemaManagerApi for GraphSchemaManager {
         }
     }
 
+    #[tracing::instrument(skip(self), err)]
     async fn get_edge_schema(
         &self,
         request: GetEdgeSchemaRequest,
@@ -99,9 +103,16 @@ impl GraphSchemaManagerApi for GraphSchemaManager {
 
         let response = self
             .db_client
-            .get_edge_schema(tenant_id, node_type, edge_name)
+            .get_edge_schema(tenant_id, node_type.clone(), edge_name.clone())
             .await
-            .map_err(GraphSchemaManagerServiceError::GetEdgeSchemaSqlxError)?;
+            .map_err(|e| match e {
+                sqlx::Error::RowNotFound => Self::Error::EdgeSchemaNotFound {
+                    tenant_id,
+                    node_type: node_type.value,
+                    edge_name: edge_name.value,
+                },
+                _ => Self::Error::GetEdgeSchemaSqlxError(e),
+            })?;
 
         Ok(GetEdgeSchemaResponse {
             reverse_edge_name: EdgeName::try_from(response.reverse_edge_name)
