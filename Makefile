@@ -32,8 +32,7 @@ COMPOSE_PROJECT_NAME ?= grapl
 
 export
 
-export EVERY_COMPOSE_FILE=--file docker-compose.yml \
-	--file ./test/docker-compose.unit-tests-js.yml \
+export EVERY_COMPOSE_FILE=--file docker-compose.yml
 
 # This is used to send docker traces to Jaeger. This is primarily useful for debugging build time performance
 ifdef WITH_TRACING
@@ -142,9 +141,6 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build-test-unit-js
-build-test-unit-js:
-	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.unit-tests-js.yml
 
 # Build Service Images and their Prerequisites
 ########################################################################
@@ -240,16 +236,8 @@ test-unit: ## Build and run all unit tests
 
 .PHONY: test-unit-js
 test-unit-js: test-unit-frontend
-test-unit-js: test-unit-graphql-endpoint
 test-unit-js: ## Build and run unit tests - JavaScript only
 
-.PHONY: test-unit-graphql-endpoint
-test-unit-graphql-endpoint: | dist
-test-unit-graphql-endpoint: build-test-unit-js
-test-unit-graphql-endpoint: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
-test-unit-graphql-endpoint: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
-test-unit-graphql-endpoint: ## Test Graphql Endpoint
-	test/docker-compose-with-error.sh
 
 .PHONY: test-unit-frontend
 test-unit-frontend: ## Test Frontend

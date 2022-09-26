@@ -42,9 +42,6 @@ nomad_get_per_task_results() {
     # Returns something like {
     #   "graph-merger-integration-tests": {
     #     "Complete": 1
-    #   },
-    #   "graphql-endpoint-tests": {
-    #     "Failed": 1
     #   }
     # }
     local -r job_id="${1}"

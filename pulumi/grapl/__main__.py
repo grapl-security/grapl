@@ -78,7 +78,6 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "graph-mutation": builder.build_with_tag("graph-mutation"),
         "graph-query": builder.build_with_tag("graph-query"),
         "graph-schema-manager": builder.build_with_tag("graph-schema-manager"),
-        "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
         "kafka-retry": builder.build_with_tag("kafka-retry"),
         "node-identifier": builder.build_with_tag("node-identifier"),
@@ -298,13 +297,6 @@ def main() -> None:
     consul_web_ui_defaults = ConsulServiceDefault(
         "web-ui",
         service_name="web-ui",
-        protocol="http",
-        opts=pulumi.ResourceOptions(provider=consul_provider),
-    )
-
-    ConsulServiceDefault(
-        "graphql-endpoint",
-        service_name="graphql-endpoint",
         protocol="http",
         opts=pulumi.ResourceOptions(provider=consul_provider),
     )

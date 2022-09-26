@@ -8,8 +8,6 @@ use rust_proto::{
     protocol::service_client::ConnectWithConfig,
 };
 
-use crate::upstream::GraphQlEndpointUrl;
-
 const KEY_SIZE: usize = 32;
 pub(crate) const SESSION_TOKEN: &'static str = "SESSION_TOKEN";
 pub(crate) const SESSION_TOKEN_LENGTH: usize = 32;
@@ -32,7 +30,6 @@ pub struct Config {
     pub session_key: [u8; KEY_SIZE],
     pub user_auth_table_name: String,
     pub user_session_table_name: String,
-    pub graphql_endpoint: GraphQlEndpointUrl,
     pub plugin_registry_client: PluginRegistryServiceClient,
     pub google_client_id: String,
 }
@@ -58,7 +55,6 @@ impl Config {
             session_key,
             user_auth_table_name: builder.user_auth_table_name,
             user_session_table_name: builder.user_session_table_name,
-            graphql_endpoint: builder.graphql_endpoint,
             plugin_registry_client,
             google_client_id: builder.google_client_id,
         };
@@ -76,8 +72,6 @@ pub struct ConfigBuilder {
     pub user_auth_table_name: String,
     #[clap(env = "GRAPL_USER_SESSION_TABLE")]
     pub user_session_table_name: String,
-    #[clap(env = "GRAPL_GRAPHQL_ENDPOINT")]
-    pub graphql_endpoint: GraphQlEndpointUrl,
     #[clap(flatten)]
     pub plugin_registry_config: PluginRegistryClientConfig,
     #[clap(env = "GRAPL_GOOGLE_CLIENT_ID")]

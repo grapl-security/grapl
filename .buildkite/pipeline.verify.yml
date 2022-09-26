@@ -127,21 +127,6 @@ steps:
                     group: ":lock_with_ink_pen: Dependency Audits"
                     command: ".buildkite/pipeline.cargo-audit.sh | buildkite-agent pipeline upload"
 
-      - label: ":thinking_face::nodejs: NPM Audit?"
-        plugins:
-          - grapl-security/grapl-release#v0.1.2
-          - chronotc/monorepo-diff#v2.2.0:
-              diff: grapl_diff.sh
-              log_level: "debug"
-              watch:
-                - path:
-                    - "**/package.json"
-                    - "**/package-lock.json"
-                  config:
-                    label: ":pipeline: Upload NPM Audit"
-                    group: ":lock_with_ink_pen: Dependency Audits"
-                    command: ".buildkite/pipeline.npm-audit.sh | buildkite-agent pipeline upload"
-
       - label: ":thinking_face::nodejs: Yarn Audit?"
         plugins:
           - grapl-security/grapl-release#v0.1.2
@@ -202,12 +187,12 @@ steps:
       - label: ":typescript: Unit Tests"
         command:
           - make test-unit-js
-        plugins:
-          - grapl-security/vault-login#v0.1.3
-          - grapl-security/vault-env#v0.1.0:
-              secrets:
-                - grapl/CODECOV_TOKEN
-          - grapl-security/codecov#v0.1.6
+  #        plugins:
+  #          - grapl-security/vault-login#v0.1.3
+  #          - grapl-security/vault-env#v0.1.0:
+  #              secrets:
+  #                - grapl/CODECOV_TOKEN
+  #          - grapl-security/codecov#v0.1.6
 
   - group: "Integration tests"
     key: integration-tests
