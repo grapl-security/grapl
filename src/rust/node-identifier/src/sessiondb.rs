@@ -198,6 +198,9 @@ where
         Ok(())
     }
 
+    // disabled while 'guessing' is disabled
+    // https://github.com/grapl-security/issue-tracker/issues/1002
+    #[allow(dead_code)]
     #[tracing::instrument(skip(self, session), err)]
     pub(crate) async fn make_create_time_canonical(&self, session: &Session) -> Result<(), Error> {
         info!(message = "Updating session end time");
@@ -245,6 +248,9 @@ where
         Ok(())
     }
 
+    // disabled while 'guessing' is disabled
+    // https://github.com/grapl-security/issue-tracker/issues/1002
+    #[allow(dead_code)]
     // Update version, and use it as a constraint
     #[tracing::instrument(skip(self, session), err)]
     pub(crate) async fn update_session_end_time(
@@ -320,6 +326,9 @@ where
         Ok(())
     }
 
+    // disabled while 'guessing' is disabled
+    // https://github.com/grapl-security/issue-tracker/issues/1002
+    #[allow(dead_code)]
     #[tracing::instrument(skip(self, session), err)]
     pub(crate) async fn delete_session(&self, session: &Session) -> Result<(), Error> {
         let del_req = DeleteItemInput {
