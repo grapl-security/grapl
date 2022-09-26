@@ -162,6 +162,7 @@ where
 
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()
+            .timeout(std::time::Duration::from_secs(5))
             .add_service(health_service)
             .add_service(GraphMutationServiceServerProto::new(GrpcApi::new(
                 self.api_server,

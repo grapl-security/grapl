@@ -214,7 +214,7 @@ install_nvm() {
     # shellcheck disable=SC1091
     [ -s "${NVM_DIR}/bash_completion" ] && \. "${NVM_DIR}/bash_completion" # This loads nvm bash_completion
 
-    # Install latest node 18.x. This matches up with frontend, although graphql_endpoint is on 17 :(
+    # Install latest node 18.x.
     nvm install 18
     # Opt in to corepack. With this on, we'll use the version of yarn set by the packageManager property in package.json
     # Yes, with this on we'll have one source of truth for yarn versions!

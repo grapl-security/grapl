@@ -207,30 +207,6 @@ mod graph {
         }
 
         #[test]
-        fn test_merged_edge_encode_decode(merged_edge in st::merged_edges()) {
-            check_encode_decode_invariant(merged_edge)
-        }
-
-        #[test]
-        fn test_merged_edge_list_encode_decode(
-            merged_edge_list in st::merged_edge_lists()
-        ) {
-            check_encode_decode_invariant(merged_edge_list)
-        }
-
-        #[test]
-        fn test_merged_node_encode_decode(merged_node in st::merged_nodes()) {
-            check_encode_decode_invariant(merged_node)
-        }
-
-        #[test]
-        fn test_merged_graph_encode_decode(
-            merged_graph in st::merged_graphs()
-        ) {
-            check_encode_decode_invariant(merged_graph)
-        }
-
-        #[test]
         fn test_lens_encode_decode(
             lens in st::lenses()
         ) {
@@ -543,6 +519,13 @@ mod analyzer_sdk {
         #[test]
         fn test_run_analyzer_request(value in as_strats::run_analyzer_requests()) {
             check_encode_decode_invariant(value)
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn test_update(update in as_strats::updates()) {
+            check_encode_decode_invariant(update)
         }
     }
 }

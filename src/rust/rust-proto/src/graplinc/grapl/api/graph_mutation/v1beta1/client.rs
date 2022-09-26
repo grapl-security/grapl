@@ -1,4 +1,7 @@
-use std::time::Duration;
+use std::{
+    fmt::Debug,
+    time::Duration,
+};
 
 use client_executor::{
     Executor,
@@ -30,6 +33,14 @@ pub type GraphMutationClientError = GrpcClientError;
 pub struct GraphMutationClient {
     proto_client: GraphMutationServiceClient<tonic::transport::Channel>,
     executor: Executor,
+}
+
+impl Debug for GraphMutationClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GraphMutationClient")
+            .field("proto_client", &self.proto_client)
+            .finish()
+    }
 }
 
 #[async_trait::async_trait]
