@@ -436,8 +436,7 @@ job "grapl-local-infra" {
       }
 
       resources {
-        cpu        = 50
-        memory_max = 1024
+        cpu = 50
       }
 
       service {
