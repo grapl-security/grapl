@@ -57,7 +57,7 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
         ),
     );
 
-    let expected_num_messages = 500;
+    let expected_num_messages = 22;
     let handle = kafka_scanner
         .scan_for_tenant(tenant_id, expected_num_messages, |_: Update| true)
         .await;
@@ -136,6 +136,8 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
             envelope.inner_message()
         })
         .collect();
+
+    tracing::info!(message="updates", updates=?updates);
 
     let process_id_update = updates.iter().find(|update| {
         matches!(update.clone(), Update::Uint64Property(UInt64PropertyUpdate {property_name, ..}) if {
