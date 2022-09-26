@@ -142,7 +142,6 @@ group "default" {
 group "grapl-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "javascript-services",
     "python-services",
     "rust-services",
   ]
@@ -188,12 +187,6 @@ group "python-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "provisioner"
-  ]
-}
-
-group "javascript-services" {
-  targets = [
-    "graphql-endpoint"
   ]
 }
 
@@ -482,18 +475,6 @@ target "provisioner" {
   ]
 }
 
-# JavaScript Services
-# ----------------------------------------------------------------------
-
-target "graphql-endpoint" {
-  inherits   = ["_grapl-base"]
-  context    = "src/js/graphql_endpoint"
-  dockerfile = "Dockerfile"
-  target     = "graphql-endpoint-deploy"
-  tags = [
-    upstream_aware_tag("graphql-endpoint")
-  ]
-}
 
 # Testing Images
 # ----------------------------------------------------------------------
