@@ -9,12 +9,10 @@ RUST_LOG_LEVELS = ",".join(
         "hyper=WARN",
         "rusoto_core=WARN",
         "rustls=WARN",
-
         # By default, sqlx outputs an INFO for every query executed.
         # It's very noisy!
         # https://github.com/launchbadge/sqlx/issues/942
         "sqlx::query=WARN",
-
         # By default, Tower outputs a DEBUG time you make a gRPC call,
         # so set it to something less noisy.
         "tower::buffer::worker=WARN",

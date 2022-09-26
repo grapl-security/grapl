@@ -3,7 +3,6 @@ import uuid
 from typing import Mapping, Sequence
 
 import hypothesis.strategies as st
-from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
 from python_proto.api.graph.v1beta1.messages import (
     DecrementOnlyIntProp,
     DecrementOnlyUintProp,
@@ -28,6 +27,7 @@ from python_proto.api.graph.v1beta1.messages import (
     Static,
 )
 from python_proto.common import Duration, Timestamp, Uuid
+from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
 from python_proto.grapl.common.v1beta1.messages import Uid
 from python_proto.metrics import (
     Counter,
@@ -85,10 +85,12 @@ uint32s = st.integers(min_value=UINT32_MIN, max_value=UINT32_MAX)
 # Very few of the tests in here really depend on the content of the text.
 small_text = st.text(max_size=4)
 
+
 def uids(
     value: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[grapl_common_messages.Uid]:
     return st.builds(grapl_common_messages.Uid, value=value)
+
 
 def uuids(
     lsbs: st.SearchStrategy[int] = uint64s,

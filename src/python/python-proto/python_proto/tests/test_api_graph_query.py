@@ -8,11 +8,7 @@ from python_proto.api.graph_query.v1beta1 import messages as graph_query_msgs
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_msgs
 from python_proto.tests import strategies
 from python_proto.tests.helpers import check_encode_decode_invariant
-from python_proto.tests.test_grapl_common import (
-    edge_names,
-    node_types,
-    property_names,
-)
+from python_proto.tests.test_grapl_common import edge_names, node_types, property_names
 
 ################################################################################
 # Strategies
