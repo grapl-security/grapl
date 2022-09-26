@@ -221,7 +221,7 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     assert!(!filtered_graph_updates.is_empty()); // yes, it's doubled, because it
     assert!(!filtered_graph_updates.is_empty()); // shushes a really annoying clippy lint
 
-    // TODO: Perhaps add a test here that looks in dgraph/scylla for those identified nodes
+    // TODO: Perhaps add a test here that looks in scylla for those identified nodes
 
     Ok(())
 }
