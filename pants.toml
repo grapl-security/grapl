@@ -25,7 +25,7 @@ pants_ignore=[
 ]
 
 plugins = [
-  "toolchain.pants.plugin==0.22.0"
+  "toolchain.pants.plugin==0.23.0"
 ]
 
 remote_cache_read = true
