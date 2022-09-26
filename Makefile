@@ -61,10 +61,8 @@ NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 #
 # This is set in docker-bake.hcl
 DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
-# We pull some vendor containers directly
-DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
-# This filter should differentiate between data volumes, such as those used for
-# DGraph (grapl-data-dgraph), and those used for caching builds
+# This filter should differentiate between data volumes, such as those once used
+# for DGraph (grapl-data-dgraph), and those used for caching builds
 # (grapl-frontend-view-yarn).
 #
 # Multiple filter arguments can be supplied here.
@@ -532,7 +530,6 @@ clean-dist: ## Clean out the `dist` directory
 clean-docker: clean-docker-cache
 clean-docker: clean-docker-containers
 clean-docker: clean-docker-images
-clean-docker: clean-docker-dgraph
 clean-docker: clean-docker-data-volumes
 clean-docker: ## Clean all Docker-related resources
 
@@ -567,13 +564,6 @@ clean-docker-data-volumes: ## Remove all Grapl labeled volumes
 	# We explicitly don't want to prune the build cache volumes
 	docker volume ls ${DOCKER_DATA_VOLUME_FILTERS} --quiet |
 		xargs --no-run-if-empty docker volume rm --force
-
-clean-docker-dgraph: ## Remove dgraph images
-	docker images \
-		--filter=label=$(DOCKER_DGRAPH_FILTER_LABEL) \
-		--quiet \
-	| xargs --no-run-if-empty docker rmi --force
-
 
 .PHONY: clean-frontend
 clean-frontend:
