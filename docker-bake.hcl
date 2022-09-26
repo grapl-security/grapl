@@ -162,6 +162,7 @@ group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "analyzer-dispatcher",
+    "analyzer-execution-sidecar",
     "event-source",
     "generator-dispatcher",
     "generator-execution-sidecar",
@@ -347,6 +348,14 @@ target "event-source" {
   target   = "event-source-deploy"
   tags = [
     upstream_aware_tag("event-source")
+  ]
+}
+
+target "analyzer-execution-sidecar" {
+  inherits = ["_rust-base"]
+  target   = "analyzer-execution-sidecar-deploy"
+  tags = [
+    upstream_aware_tag("analyzer-execution-sidecar")
   ]
 }
 

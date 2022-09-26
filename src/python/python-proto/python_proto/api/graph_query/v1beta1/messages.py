@@ -4,7 +4,7 @@ import enum
 import os
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import DefaultDict, Iterable, Iterator, Mapping, Sequence
+from typing import DefaultDict, Iterable, Iterator, Mapping, Optional, Sequence
 
 from graplinc.grapl.api.graph_query_service.v1beta1 import (
     graph_query_service_pb2 as proto,
@@ -322,11 +322,19 @@ class EdgeQueryMap(SerDe[proto.EdgeQueryMap]):
         msg.entries.extend(entries)
         return msg
 
-    def __getitem__(self, key: tuple[QueryId, EdgeName]) -> set[QueryId]:
+    def __contains__(self, key: EdgeQueryMapK) -> bool:
+        return key in self.entries
+
+    def __getitem__(self, key: EdgeQueryMapK) -> set[QueryId]:
         return self.entries[key]
 
-    def __setitem__(self, key: tuple[QueryId, EdgeName], value: set[QueryId]) -> None:
+    def __setitem__(self, key: EdgeQueryMapK, value: EdgeQueryMapV) -> None:
         self.entries[key] = value
+
+    def get_or_init(self, key: EdgeQueryMapK) -> set[QueryId]:
+        if not key in self:
+            self[key] = set()
+        return self[key]
 
 
 @dataclass(frozen=True, slots=True)
@@ -813,6 +821,13 @@ class MaybeMatchWithUid(SerDe[proto.MaybeMatchWithUid]):
             case NoMatchWithUid() as inner:
                 msg.missed.CopyFrom(inner.into_proto())
         return msg
+
+    def as_optional(self) -> Optional[MatchedGraphWithUid]:
+        match self.inner:
+            case MatchedGraphWithUid() as inner:
+                return inner
+            case NoMatchWithUid() as inner:
+                return None
 
 
 @dataclass(frozen=True, slots=True)
