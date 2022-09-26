@@ -24,6 +24,8 @@ pub fn setup_tracing(service_name: &str) -> Result<WorkerGuard, SetupTracingErro
 
     // initialize json logging layer
     let log_layer = tracing_subscriber::fmt::layer()
+        .with_file(true)
+        .with_line_number(true)
         .json()
         .with_writer(non_blocking);
 

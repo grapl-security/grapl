@@ -1,11 +1,9 @@
-#![allow(warnings)]
 use std::sync::Arc;
 
 use rust_proto::{
     graplinc::grapl::api::graph_query_service::v1beta1::{
         messages::{
             GraphQuery,
-            GraphView,
             MatchedGraphWithUid,
             MaybeMatchWithUid,
             NoMatchWithUid,
@@ -116,7 +114,7 @@ impl GraphQueryApi for GraphQueryService {
         let visited = Visited::new();
         let x_short_circuit = ShortCircuit::new();
         let graph = fetch_node_with_edges(
-            &node_query,
+            node_query,
             &graph_query,
             node_uid,
             request.tenant_id,

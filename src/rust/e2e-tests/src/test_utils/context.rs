@@ -12,13 +12,23 @@ use plugin_work_queue::{
 use rust_proto::{
     client_factory::services::{
         EventSourceClientConfig,
+        GraphSchemaManagerClientConfig,
         PipelineIngressClientConfig,
         PluginRegistryClientConfig,
+        ScyllaProvisionerClientConfig,
+        UidAllocatorClientConfig,
     },
     graplinc::grapl::api::{
         event_source::v1beta1::{
             client::EventSourceServiceClient,
             CreateEventSourceRequest,
+        },
+        graph_schema_manager::v1beta1::{
+            client::GraphSchemaManagerClient,
+            messages::{
+                DeploySchemaRequest,
+                SchemaType,
+            },
         },
         pipeline_ingress::v1beta1::client::PipelineIngressClient,
         plugin_registry::v1beta1::{
@@ -26,6 +36,14 @@ use rust_proto::{
             PluginMetadata,
             PluginRegistryServiceClient,
             PluginType,
+        },
+        scylla_provisioner::v1beta1::{
+            client::ScyllaProvisionerClient,
+            messages::ProvisionGraphForTenantRequest,
+        },
+        uid_allocator::v1beta1::{
+            client::UidAllocatorServiceClient,
+            messages::CreateTenantKeyspaceRequest,
         },
     },
     protocol::service_client::ConnectWithConfig,
@@ -37,9 +55,12 @@ use crate::test_fixtures;
 
 pub struct E2eTestContext {
     pub event_source_client: EventSourceServiceClient,
+    pub graph_schema_manager_client: GraphSchemaManagerClient,
     pub plugin_registry_client: PluginRegistryServiceClient,
     pub pipeline_ingress_client: PipelineIngressClient,
     pub plugin_work_queue_psql_client: PsqlQueue,
+    pub uid_allocator_client: UidAllocatorServiceClient,
+    pub scylla_provisioner_client: ScyllaProvisionerClient,
     pub _guard: WorkerGuard,
 }
 
@@ -60,6 +81,11 @@ impl AsyncTestContext for E2eTestContext {
                 .await
                 .expect("plugin_registry_client");
 
+        let graph_schema_manager_client =
+            GraphSchemaManagerClient::connect_with_config(GraphSchemaManagerClientConfig::parse())
+                .await
+                .expect("graph_schema_manager_client");
+
         let pipeline_ingress_client =
             PipelineIngressClient::connect_with_config(PipelineIngressClientConfig::parse())
                 .await
@@ -70,11 +96,24 @@ impl AsyncTestContext for E2eTestContext {
                 .await
                 .expect("plugin_work_queue");
 
+        let uid_allocator_client =
+            UidAllocatorServiceClient::connect_with_config(UidAllocatorClientConfig::parse())
+                .await
+                .expect("uid_allocator_client");
+
+        let scylla_provisioner_client =
+            ScyllaProvisionerClient::connect_with_config(ScyllaProvisionerClientConfig::parse())
+                .await
+                .expect("scylla_provisioner_client");
+
         Self {
             event_source_client,
+            graph_schema_manager_client,
             plugin_registry_client,
             pipeline_ingress_client,
             plugin_work_queue_psql_client,
+            uid_allocator_client,
+            scylla_provisioner_client,
             _guard,
         }
     }
@@ -89,15 +128,45 @@ pub struct SetupResult {
 
 pub struct SetupGeneratorOptions {
     pub test_name: String,
+    pub tenant_id: Uuid,
     pub generator_artifact: Bytes,
     pub should_deploy_generator: bool,
 }
 
 impl E2eTestContext {
+    #[tracing::instrument(skip(self), err)]
     pub async fn create_tenant(&mut self) -> eyre::Result<Uuid> {
         tracing::info!("creating tenant");
-        // TODO: actually create a real tenant
-        Ok(Uuid::new_v4())
+        let tenant_id = Uuid::new_v4();
+        self.uid_allocator_client
+            .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
+            .await?;
+        tracing::info!("provisioning graph");
+        self.scylla_provisioner_client
+            .provision_graph_for_tenant(ProvisionGraphForTenantRequest { tenant_id })
+            .await?;
+        tracing::info!("created tenant");
+        Ok(tenant_id)
+    }
+
+    async fn provision_example_graph_schema(&mut self, tenant_id: uuid::Uuid) -> eyre::Result<()> {
+        let mut graph_schema_manager_client = self.graph_schema_manager_client.clone();
+
+        fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
+            // This path is created in rust/Dockerfile
+            let path = "/test-fixtures/example_schemas/example.graphql";
+            std::fs::read(path).map(Bytes::from)
+        }
+
+        graph_schema_manager_client
+            .deploy_schema(DeploySchemaRequest {
+                tenant_id,
+                schema: get_example_graphql_schema().unwrap(),
+                schema_type: SchemaType::GraphqlV0,
+                schema_version: 0,
+            })
+            .await?;
+        Ok(())
     }
 
     pub async fn create_event_source(
@@ -137,6 +206,8 @@ impl E2eTestContext {
                 futures::stream::once(async move { generator_artifact }),
             )
             .await?;
+
+        self.provision_example_graph_schema(tenant_id).await?;
 
         Ok(generator.plugin_id())
     }
@@ -184,9 +255,14 @@ impl E2eTestContext {
         Ok(())
     }
 
-    pub async fn setup_sysmon_generator(&mut self, test_name: &str) -> eyre::Result<SetupResult> {
+    pub async fn setup_sysmon_generator(
+        &mut self,
+        tenant_id: uuid::Uuid,
+        test_name: &str,
+    ) -> eyre::Result<SetupResult> {
         let generator_artifact = test_fixtures::get_sysmon_generator()?;
         self.setup_generator(SetupGeneratorOptions {
+            tenant_id,
             test_name: test_name.to_owned(),
             generator_artifact,
             should_deploy_generator: true,
@@ -200,7 +276,7 @@ impl E2eTestContext {
     ) -> eyre::Result<SetupResult> {
         tracing::info!(">> Generator Setup for {}", options.test_name);
 
-        let tenant_id = self.create_tenant().await?;
+        let tenant_id = options.tenant_id;
 
         // Register an Event Source
         let event_source_id = self

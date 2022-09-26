@@ -8,12 +8,6 @@ from python_proto.tests import strategies
 from python_proto.tests.helpers import check_encode_decode_invariant
 
 
-def uids(
-    value: st.SearchStrategy[int] = strategies.uint64s,
-) -> st.SearchStrategy[messages.Uid]:
-    return st.builds(messages.Uid, value=value)
-
-
 def property_names(
     value: st.SearchStrategy[str] = strategies.small_text,
 ) -> st.SearchStrategy[messages.PropertyName]:
@@ -33,7 +27,7 @@ def node_types(
 
 
 def test_uids() -> None:
-    check_encode_decode_invariant(uids())
+    check_encode_decode_invariant(strategies.uids())
 
 
 def test_property_names() -> None:
