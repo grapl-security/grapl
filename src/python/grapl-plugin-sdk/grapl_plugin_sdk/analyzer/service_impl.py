@@ -1,7 +1,7 @@
 from __future__ import annotations
-import os
 
 import dataclasses
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
@@ -12,6 +12,8 @@ from grapl_plugin_sdk.analyzer.analyzer_context import AnalyzerContext
 if TYPE_CHECKING:
     from grapl_plugin_sdk.analyzer.analyzer import Analyzer
 
+from uuid import UUID
+
 from grapl_plugin_sdk.analyzer.query_and_views import NodeView
 from grpc import aio as grpc_aio  # type: ignore
 
@@ -19,14 +21,15 @@ from grpc import aio as grpc_aio  # type: ignore
 from python_proto.api.graph_query.v1beta1 import messages as graph_query_messages
 from python_proto.api.graph_query.v1beta1.client import GraphQueryClient
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_messages
-from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
-from uuid import UUID
 from python_proto.common import Uuid as PythonProtoUuid
+from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
+
 
 def _get_tenant_id() -> PythonProtoUuid:
     env_var: str = os.environ["TENANT_ID"]  # specified in hax_docker_plugin.nomad
     py_native_uuid = UUID(env_var)
     return PythonProtoUuid.from_uuid(py_native_uuid)
+
 
 TENANT_ID: Final[PythonProtoUuid] = _get_tenant_id()
 
@@ -84,9 +87,7 @@ class AnalyzerServiceImpl:
     async def _run_analyzer_inner(
         self, request: analyzer_messages.RunAnalyzerRequest
     ) -> analyzer_messages.RunAnalyzerResponse:
-        updates = request.updates
-
-        match updates.inner:
+        match request.update.inner:
             case PropertyUpdate() as prop_update:
                 # optimization
                 # i.e. if the update is for process_name, and you're not querying for
