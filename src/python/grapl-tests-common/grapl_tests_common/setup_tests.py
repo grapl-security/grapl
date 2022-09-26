@@ -4,7 +4,6 @@ import os
 from os import environ
 
 import pytest
-import requests
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.utils.primitive_convertors import to_bool
 from grapl_tests_common.dump_dynamodb import dump_dynamodb
