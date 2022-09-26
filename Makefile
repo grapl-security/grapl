@@ -76,11 +76,11 @@ DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
 DOCKER_DATA_VOLUME_FILTERS := --filter=name=grapl-data
 
 # Run a Pants goal across all proto files
-PANTS_PROTO_FILTER := ./pants --filter-target-type=protobuf_sources
+PANTS_PROTO_FILTER := ./pants --filter-target-type=protobuf_source
 # Run a Pants goal across all Python files
-PANTS_PYTHON_FILTER := ./pants --filter-target-type=python_sources,python_tests
+PANTS_PYTHON_FILTER := ./pants --filter-target-type=python_source,python_test
 # Run a Pants goal across all shell files
-PANTS_SHELL_FILTER := ./pants --filter-target-type=shell_sources,shunit2_tests
+PANTS_SHELL_FILTER := ./pants --filter-target-type=shell_source,shunit2_test
 
 # Helper macro for invoking a target from src/rust/Makefile
 RUST_MAKE = $(MAKE) --directory=src/rust
