@@ -102,8 +102,8 @@ variable "CONTAINER_REGISTRY" {
 # Note that our local testing setup assumes that containers are just
 # named with their bare service name.
 function "upstream_aware_tag" {
-  params = [image_name]
-  result = RELEASE_BUILD ? "${CONTAINER_REGISTRY}/grapl/${image_name}:${IMAGE_TAG}" : local_only_tag("${image_name}")
+  params = [service_name]
+  result = RELEASE_BUILD ? "${CONTAINER_REGISTRY}/grapl/${service_name}:${IMAGE_TAG}" : local_only_tag("${service_name}")
 }
 
 # Images that are only intended for local usage should be tagged using
@@ -112,8 +112,8 @@ function "upstream_aware_tag" {
 # You can't push images to a remote registry if it doesn't have that
 # registry as part of its tags, after all.
 function "local_only_tag" {
-  params = [image_name]
-  result = "${image_name}:${IMAGE_TAG}"
+  params = [service_name]
+  result = "grapl/${service_name}:${IMAGE_TAG}"
 }
 
 # Groups
