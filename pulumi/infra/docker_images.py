@@ -3,6 +3,8 @@ from typing import NewType, Optional
 
 from infra.artifacts import ArtifactGetter
 
+import pulumi
+
 DockerImageId = NewType("DockerImageId", str)
 """
 A Docker image identifier is something that can be consumed by the
@@ -41,9 +43,12 @@ class DockerImageIdBuilder:
 
     @staticmethod
     def _build(registry: Optional[str], image_name: str, tag: str) -> DockerImageId:
+        pulumi.log.info(f"_build: registry: {registry}, image_name: {image_name}, tag: {tag}")
         image_tag = f"{image_name}:{tag}"
         if registry:
             image_tag = f"{registry}/{image_tag}"
+
+        pulumi.log.info(f"Final image tag: {image_tag}")
         return DockerImageId(image_tag)
 
     def build_with_tag(self, service_name: str) -> DockerImageId:
@@ -52,11 +57,16 @@ class DockerImageIdBuilder:
         configuration.
 
         """
+        pulumi.log.info(f"Building tag for {service_name}")
+
         # All our images are namespaced to "grapl/"
         image_name = f"grapl/{service_name}"
 
+        pulumi.log.info(f"Image name: {image_name}")
+
         artifact_version = self.artifacts.get(service_name)
         if artifact_version:
+            pulumi.log.info(f"Found artifact version: {artifact_version}")
             return DockerImageIdBuilder._build(
                 registry=self.registry,
                 image_name=image_name,
@@ -66,7 +76,9 @@ class DockerImageIdBuilder:
             # This is only possible on Local Grapl, in which case we assume
             # we're using a local image - even if the container registry
             # is specified.
+            pulumi.log.info(f"No artifact version found for {service_name}")
             tag = _docker_version_tag_from_env()
+            pulumi.log.info(f"Using tag {tag}")
             return DockerImageIdBuilder._build(
                 registry=None,  # local Docker registry
                 image_name=image_name,
