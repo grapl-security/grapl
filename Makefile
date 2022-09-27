@@ -189,6 +189,7 @@ build-grapl-service-prerequisites: build-frontend
 .PHONY: build-image-prerequisites
 build-image-prerequisites: ## Build all dependencies that must be copied into our images that we push to our registry
 build-image-prerequisites: build-grapl-service-prerequisites
+build-image-prerequisites: build-test-fixture-pex-files
 
 .PHONY: build-local-infrastructure
 build-local-infrastructure: build-grapl-service-prerequisites
