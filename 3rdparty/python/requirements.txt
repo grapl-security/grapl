@@ -20,13 +20,13 @@ opentelemetry-sdk
 protobuf>=3.20.1,<4.0.0
 pulumi==3.33.1
 pulumi-aws==5.9.2
-pulumi_consul
-pulumi_docker
+pulumi-consul
+pulumi-docker
 pulumi-kafka
-pulumi_nomad
-pulumi_policy
-pulumi_postgresql
-pulumi_random
+pulumi-nomad
+pulumi-policy
+pulumi-postgresql
+pulumi-random
 pydantic==1.8.2
 pyjwt
 pytest
@@ -36,5 +36,5 @@ requests
 setuptools
 toml==0.10.2
 typer[all]
-typing_extensions
+typing-extensions
 zstd
