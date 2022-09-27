@@ -7,7 +7,6 @@ boto3
 botocore
 click
 confluent-kafka
-cookiecutter==1.7.3
 grpcio
 grpcio-reflection
 hypothesis
