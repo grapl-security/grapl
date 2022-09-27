@@ -9,6 +9,7 @@ click
 confluent-kafka
 cookiecutter==1.7.3
 grpcio
+grpcio-reflection
 hypothesis
 lark-parser
 opentelemetry-api
@@ -28,7 +29,6 @@ pulumi_policy
 pulumi_postgresql
 pulumi_random
 pydantic==1.8.2
-pydgraph
 pyjwt
 pytest
 python-hcl2

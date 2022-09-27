@@ -12,7 +12,7 @@ steps:
       queue: "pulumi-staging"
     plugins:
       - grapl-security/vault-login#v0.1.3
-      - grapl-security/vault-env#v0.1.0:
+      - grapl-security/vault-env#v0.2.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
       - improbable-eng/metahook#v0.4.1:
