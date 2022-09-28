@@ -6,19 +6,19 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-trait = "0.1.56"
-clap = { version = "3.0", default_features = false, features = ["std", "env"] }
+clap = { workspace = true }
 grapl-tracing = { path = "../grapl-tracing" }
 rust-proto = { path = "../rust-proto" }
 scylla = "0.5"
 secrecy = "0.8.0"
-thiserror = "1.0.31"
-tokio = { version = "1.20.0", features = ["full"] }
-tracing = "0.1.36"
-uuid = { version = "1.1.2", features = ["v4"] }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
-test-log = { version = "0.2", default-features = false, features = ["trace"] }
 env_logger = "0.9.0"
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "fmt"

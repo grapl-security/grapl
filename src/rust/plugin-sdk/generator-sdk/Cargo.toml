@@ -10,21 +10,17 @@ path = "src/examples/example_generator.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-trait = "0.1"
-bytes = "1.1"
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
+bytes = { workspace = true }
+clap = { workspace = true }
 grapl-tracing = { path = "../../grapl-tracing" }
 rust-proto = { path = "../../rust-proto" }
 serde = { version = "1.0", features = ["derive"] }
-tokio = { version = "1.17", features = ["full"] }
-tracing = "0.1"
 #[dev-dependencies]
 # Only for test_utils
 test-context = { version = "0.1", optional = true }
-thiserror = "1.0"
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
 
 [features]
 test_utils = ["test-context"]

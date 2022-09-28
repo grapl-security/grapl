@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies]
 derive-dynamic-node = { path = "../derive-dynamic-node" }
 rust-proto = { path = "../rust-proto", version = "*" }
-thiserror = "1.0"
-uuid = { version = "1.0", features = ["v4"] }
+thiserror = { workspace = true }
+uuid = { workspace = true }

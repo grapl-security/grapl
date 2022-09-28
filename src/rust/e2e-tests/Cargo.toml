@@ -8,9 +8,9 @@ integration_tests = []
 
 [dependencies]
 async-trait = "0.1"
-bytes = "1.1"
-clap = { version = "3.0", default_features = false, features = ["std", "env"] }
-eyre = "0.6"
+bytes = { workspace = true }
+clap = { workspace = true }
+eyre = { workspace = true }
 futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
@@ -18,8 +18,8 @@ grapl-utils = { path = "../grapl-utils" }
 kafka = { path = "../kafka", features = ["test-utils"] }
 plugin-work-queue = { path = "../plugin-work-queue", features = ["test-utils"] }
 rust-proto = { path = "../rust-proto" }
-test-context = "0.1"
-thiserror = "1.0"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-tracing = "0.1"
-uuid = { version = "1.0", features = ["v4"] }
+test-context = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
