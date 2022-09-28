@@ -5,41 +5,41 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+async-recursion = "1.0.0"
+async-trait = "0.1.56"
 bytes = { workspace = true }
-rust-proto = { path = "../rust-proto" }
-grapl-tracing = { path = "../grapl-tracing" }
 chrono = "0.4.19"
+clap = { workspace = true}
+env_logger = "0.9.0"
+futures = "0.3.21"
+grapl-tracing = { path = "../grapl-tracing" }
+itertools = "0.10.3"
+prost = "0.9.0"
+rand = "0.8.5"
+rust-proto = { path = "../rust-proto" }
+rustc-hash = "1.1.0"
+scylla = "0.5"
+secrecy = "0.8.0"
 serde = { version = "1.0.136", features = ["derive"] }
+test-log = { version = "0.2.8", features = ["trace"] }
+thiserror = { workspace = true }
 tokio = { version = "1.17.0", features = ["full"] }
-uuid = { workspace = true }
+tonic = "0.6.1"
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "fmt"
 ] }
-test-log = { version = "0.2.8", features = ["trace"] }
-env_logger = "0.9.0"
-scylla = "0.5"
-rand = "0.8.5"
-futures = "0.3.21"
-itertools = "0.10.3"
-prost = "0.9.0"
-tonic = "0.6.1"
-thiserror = { workspace = true }
-async-recursion = "1.0.0"
-async-trait = "0.1.56"
-rustc-hash = "1.1.0"
-clap = { version = "3.2.13", features = ["std", "env", "derive"] }
-secrecy = "0.8.0"
+uuid = { workspace = true }
 
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }
 
 [dev-dependencies]
-test-log = { version = "0.2", default-features = false, features = ["trace"] }
 e2e-tests = { path = "../e2e-tests" }
 eyre = { workspace = true }
 test-context = { workspace = true }
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
 
 [features]
 integration_tests = []

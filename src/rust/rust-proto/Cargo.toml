@@ -9,11 +9,7 @@ license = "MIT"
 [dependencies]
 async-trait = "0.1"
 bytes = { workspace = true }
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-], optional = true }
+clap = { workspace = true }
 client-executor = { path = "../client-executor" }
 futures = "0.3"
 grapl-utils = { path = "../grapl-utils" }
@@ -40,5 +36,4 @@ test-context = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [features]
-default = ["client-factory"]
-client-factory = ["clap"]
+default = []

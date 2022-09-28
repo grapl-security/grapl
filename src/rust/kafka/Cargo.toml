@@ -10,11 +10,7 @@ license = "MIT"
 [dependencies]
 bytes = { workspace = true }
 chrono = "0.4"
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
+clap = { workspace = true }
 futures = "0.3"
 rdkafka = { version = "0.28", features = [
   "cmake-build",

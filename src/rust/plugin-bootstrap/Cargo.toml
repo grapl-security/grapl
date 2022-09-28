@@ -16,11 +16,7 @@ name = "plugin_bootstrap"
 
 [dependencies]
 async-trait = "0.1"
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
+clap = { workspace = true }
 futures = "0.3"
 grapl-tracing = { path = "../grapl-tracing" }
 rust-proto = { path = "../rust-proto" }

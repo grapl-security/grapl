@@ -18,7 +18,8 @@ integration_tests = []
 [dependencies]
 async-trait = "0.1"
 bytes = { workspace = true }
-clap = { version = "3.0", default_features = false, features = ["std", "env"] }
+clap = { workspace = true }
+eyre = { workspace = true }
 futures = "0.3"
 futures-retry = "0.6"
 grapl-config = { path = "../grapl-config", version = "*" }
@@ -30,10 +31,10 @@ lru = "0.7"
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
+rusoto_credential = "0.47"
 rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-rusoto_credential = "0.47"
 rust-proto = { path = "../rust-proto", version = "*" }
 serde_json = "1.0"
 thiserror = { workspace = true }
@@ -46,7 +47,6 @@ tokio = { version = "1.17", features = [
 ] }
 tracing = { workspace = true }
 uuid = { workspace = true }
-eyre = { workspace = true }
 
 [dev-dependencies]
 e2e-tests = { path = "../e2e-tests" }

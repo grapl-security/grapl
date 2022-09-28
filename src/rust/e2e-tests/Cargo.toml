@@ -9,7 +9,7 @@ integration_tests = []
 [dependencies]
 async-trait = "0.1"
 bytes = { workspace = true }
-clap = { version = "3.0", default_features = false, features = ["std", "env"] }
+clap = { workspace = true }
 eyre = { workspace = true }
 futures = "0.3"
 grapl-config = { path = "../grapl-config" }

@@ -6,11 +6,7 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1"
 bytes = { workspace = true }
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
+clap = { workspace = true }
 grapl-config = { path = "../grapl-config" }
 grapl-graphql-codegen = { path = "../grapl-graphql-codegen" }
 grapl-tracing = { path = "../grapl-tracing" }

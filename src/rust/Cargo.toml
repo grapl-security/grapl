@@ -1,7 +1,7 @@
 [workspace]
 members = [
-  "./async-cache",
   "./analyzer-dispatcher",
+  "./async-cache",
   "./client-executor",
   "./consul-connect",
   "./derive-dynamic-node",
@@ -39,6 +39,11 @@ members = [
 
 [workspace.dependencies]
 bytes = "1.1"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 eyre = "0.6"
 test-context = "0.1"
 tracing = "0.1"

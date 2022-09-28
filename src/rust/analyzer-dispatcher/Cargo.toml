@@ -5,13 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-async-trait = "0.1"
 async-cache = { path = "../async-cache" }
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
+async-trait = "0.1"
+clap = { workspace = true }
 futures = "0.3"
 grapl-tracing = { path = "../grapl-tracing" }
 kafka = { path = "../kafka", version = "*" }
@@ -24,8 +20,8 @@ uuid = { workspace = true }
 [dev-dependencies]
 async-trait = "0.1"
 bytes = { workspace = true }
-eyre = { workspace = true }
 e2e-tests = { path = "../e2e-tests" }
+eyre = { workspace = true }
 plugin-work-queue = { path = "../plugin-work-queue", features = ["test-utils"] }
 test-context = { workspace = true }
 

@@ -5,11 +5,7 @@ authors = ["Max Wittek <wimax@graplsecurity.com>"]
 edition = "2021"
 
 [dependencies]
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
+clap = { workspace = true }
 thiserror = { workspace = true }
 tokio = { version = "1.17", features = ["full"] }
 tracing = { workspace = true }

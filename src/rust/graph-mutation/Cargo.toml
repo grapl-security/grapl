@@ -7,11 +7,7 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.53"
 blake2 = "0.10.4"
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
+clap = { workspace = true }
 dashmap = "5.2.0"
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
