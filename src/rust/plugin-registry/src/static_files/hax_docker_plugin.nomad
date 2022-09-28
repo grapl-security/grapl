@@ -150,7 +150,7 @@ job "grapl-plugin" {
     # hence the "dynamic" trickery.
     dynamic "task" {
       # Disable graph-query if graph_query_proxy_image is not specified (for generators)
-      for_each = (graph_query_proxy_image == null) ? ["arbitrary 1-length array"] : []
+      for_each = (graph_query_proxy_image == null) ? [/*empty*/] : ["arbitrary 1-length array"]
       iterator = i
 
       labels = ["graph-query-proxy-sidecar"]
