@@ -17,7 +17,9 @@ backend_packages = [
   "pants.backend.shell.lint.shellcheck",
   "pants.backend.shell.lint.shfmt"
 ]
+
 use_deprecated_directory_cli_args_semantics = false
+use_deprecated_pex_binary_run_semantics = false
 
 pants_ignore=[
     "!.buildkite",
