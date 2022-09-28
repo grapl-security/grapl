@@ -34,7 +34,7 @@ pulumi-random
 pyjwt
 pytest
 python-hcl2
-python-nomad==1.4.1
+python-nomad
 requests
 setuptools
 typer[all]
