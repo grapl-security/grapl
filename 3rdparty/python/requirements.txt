@@ -18,7 +18,7 @@ opentelemetry-instrumentation-botocore
 opentelemetry-sdk
 # Protobuf 4 introduced issues for me, is the only reason I added less-than-4
 protobuf>=3.20.1,<4.0.0
-pulumi==3.33.1
+pulumi
 pulumi-aws
 pulumi-consul
 pulumi-docker
