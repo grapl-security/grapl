@@ -26,7 +26,7 @@ sqlx = { version = "0.6", features = [
   "migrate",
 ] }
 thiserror = { workspace = true }
-tokio = { version = "1.17", features = ["macros", "rt-multi-thread"] }
+tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",

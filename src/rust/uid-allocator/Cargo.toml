@@ -28,7 +28,7 @@ sqlx = { version = "0.6", features = [
   "offline"
 ] }
 thiserror = { workspace = true }
-tokio = { version = "1.17.0", features = ["full"] }
+tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-appender = "0.2"
 tracing-opentelemetry = "0.16"

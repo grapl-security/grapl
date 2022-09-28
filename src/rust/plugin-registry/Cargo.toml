@@ -38,7 +38,7 @@ sqlx = { version = "0.6", features = [
 ] }
 tempfile = "3.3"
 thiserror = { workspace = true }
-tokio = { version = "1.17", features = ["full"] }
+tokio = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
 

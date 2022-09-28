@@ -17,7 +17,7 @@ moka = { version = "0.9", features = ["future"] }
 rust-proto = { path = "../rust-proto" }
 scylla = "0.5"
 thiserror = { workspace = true }
-tokio = { version = "1.17.0", features = ["full"] }
+tokio = { workspace = true }
 tracing = { workspace = true }
 uid-allocator = { path = "../uid-allocator" }
 uuid = { workspace = true }

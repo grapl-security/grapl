@@ -16,12 +16,9 @@ kafka = { path = "../../kafka", version = "*" }
 rust-proto = { path = "../../rust-proto", version = "*" }
 sysmon-parser = { path = "../../sysmon-parser/" }
 thiserror = { workspace = true }
-tokio = { version = "1.17", features = [
+tokio = { workspace = true, features = [
   "sync",
-  "rt",
-  "macros",
   "time",
-  "rt-multi-thread",
   "fs"
 ] }
 tracing = { workspace = true }

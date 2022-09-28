@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 clap = { workspace = true }
 thiserror = { workspace = true }
-tokio = { version = "1.17", features = ["full"] }
+tokio = { workspace = true }
 tracing = { workspace = true }
 trust-dns-resolver = "0.20"
 
