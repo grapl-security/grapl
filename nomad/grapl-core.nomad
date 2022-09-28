@@ -825,6 +825,7 @@ job "grapl-core" {
         PLUGIN_EXECUTION_OBSERVABILITY_ENV_VARS         = var.observability_env_vars
         PLUGIN_EXECUTION_GENERATOR_SIDECAR_IMAGE        = var.container_images["generator-execution-sidecar"]
         PLUGIN_EXECUTION_ANALYZER_SIDECAR_IMAGE         = var.container_images["analyzer-execution-sidecar"]
+        PLUGIN_EXECUTION_GRAPH_QUERY_PROXY_IMAGE        = var.container_images["graph-query-proxy"]
 
         # common Rust env vars
         RUST_BACKTRACE = local.rust_backtrace

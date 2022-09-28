@@ -34,6 +34,12 @@ variable "plugin_execution_sidecar_image" {
   description = "The container that will load and run the Generator Executor or Analyzer Executor"
 }
 
+variable "graph_query_proxy_image" {
+  description = "Container image for running Graph Query Proxy. Only specify this for Analyzers."
+  type = string
+  default = null
+}
+
 variable "rust_log" {
   type        = string
   description = "Controls the logging behavior of Rust-based services."
@@ -75,6 +81,7 @@ job "grapl-plugin" {
       //   servers = local.dns_servers
       // }
       port "plugin-execution-sidecar" {}
+      port "graph-query-proxy" {}
     }
 
     service {
@@ -134,7 +141,29 @@ job "grapl-plugin" {
       }
     }
 
-    // TODO: task "tenant-plugin-graph-query-sidecar"
+    # The execution task pulls messages from the plugin-work-queue and
+    # sends them to the plugin
+    task "graph-query-proxy-sidecar" {
+      driver = "docker"
+
+      config {
+        image = var.graph_query_proxy_image
+      }
+
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
+      env {
+        GRAPH_QUERY_PROXY_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-proxy}"
+        PLUGIN_EXECUTOR_PLUGIN_ID = var.plugin_id
+
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = 1
+      }
+    }
 
     restart {
       attempts = 1

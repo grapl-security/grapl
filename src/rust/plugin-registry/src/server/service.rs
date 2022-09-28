@@ -127,6 +127,8 @@ pub struct PluginExecutionPassthroughVars {
     pub generator_sidecar_image: String,
     #[clap(long, env = "PLUGIN_EXECUTION_ANALYZER_SIDECAR_IMAGE")]
     pub analyzer_sidecar_image: String,
+    #[clap(long, env = "PLUGIN_EXECUTION_GRAPH_QUERY_PROXY_IMAGE")]
+    pub graph_query_proxy_image: String,
 
     // Pass through a couple env vars also used for the plugin-registry service
     // Since they're used in both ways - locally for this service, and the
