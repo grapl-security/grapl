@@ -146,36 +146,29 @@ job "grapl-plugin" {
     }
 
     # A level of indirection in front of the Graph Query Service that prevents
-    # the plugin from querying other tenants' data. Only runs for analyzers,
-    # hence the "dynamic" trickery.
-    dynamic "task" {
-      # Disable graph-query if graph_query_proxy_image is not specified (for generators)
-      for_each = (graph_query_proxy_image == null) ? [/*empty*/] : ["arbitrary 1-length array"]
-      iterator = i
+    # the plugin from querying other tenants' data.
 
-      labels = ["graph-query-proxy-sidecar"]
+    # TODO: We should not launch this for generators. Perhaps two sep Nomad files?
+    task "graph-query-proxy-sidecar" {
+      driver = "docker"
 
-      content {
-        driver = "docker"
+      config {
+        image = var.graph_query_proxy_image
+      }
 
-        config {
-          image = var.graph_query_proxy_image
-        }
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
 
-        template {
-          data        = var.observability_env_vars
-          destination = "observability.env"
-          env         = true
-        }
+      env {
+        GRAPH_QUERY_PROXY_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-proxy}"
+        GRAPH_QUERY_CLIENT_ADDRESS     = "http://${NOMAD_UPSTREAM_ADDR_graph-query}"
+        TENANT_ID                      = var.tenant_id
 
-        env {
-          GRAPH_QUERY_PROXY_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-proxy}"
-          GRAPH_QUERY_CLIENT_ADDRESS     = "http://${NOMAD_UPSTREAM_ADDR_graph-query}"
-          TENANT_ID                      = var.tenant_id
-
-          RUST_LOG       = var.rust_log
-          RUST_BACKTRACE = 1
-        }
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = 1
       }
     }
 
