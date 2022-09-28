@@ -19,7 +19,7 @@ grapl-tracing = { path = "../../grapl-tracing" }
 kafka = { path = "../../kafka", version = "*" }
 rust-proto = { path = "../../rust-proto", version = "*" }
 sysmon-parser = { path = "../../sysmon-parser/" }
-thiserror = "1.0"
+thiserror = { workspace = true }
 tokio = { version = "1.17", features = [
   "sync",
   "rt",
@@ -28,8 +28,8 @@ tokio = { version = "1.17", features = [
   "rt-multi-thread",
   "fs"
 ] }
-tracing = "0.1"
-uuid = { version = "1.0", features = ["v4"] }
+tracing = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
 async-trait = "0.1"

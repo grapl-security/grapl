@@ -23,10 +23,10 @@ sqlx = { version = "0.6", features = [
   "uuid",
   "migrate",
 ] }
-thiserror = "1.0"
+thiserror = { workspace = true }
 tokio = { version = "1.19", features = ["full"] }
-tracing = "0.1"
-uuid = { version = "1.0", default-features = false, features = ["v4"] }
+tracing = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
 eyre = "0.6"

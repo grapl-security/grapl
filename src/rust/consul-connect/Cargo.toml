@@ -10,9 +10,9 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
-thiserror = "1.0"
+thiserror = { workspace = true }
 tokio = { version = "1.17", features = ["full"] }
-tracing = "0.1"
+tracing = { workspace = true }
 trust-dns-resolver = "0.20"
 
 [features]

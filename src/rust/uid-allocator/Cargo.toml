@@ -14,10 +14,10 @@ clap = { version = "3.0", default_features = false, features = [
 ] }
 serde = { version = "1.0.136", features = ["derive"] }
 tokio = { version = "1.17.0", features = ["full"] }
-uuid = { version = "1.0.0", features = ["v4"] }
+uuid = { workspace = true }
 tracing-appender = "0.2"
 tracing-opentelemetry = "0.16"
-tracing = "0.1.32"
+tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "json"
@@ -32,7 +32,7 @@ sqlx = { version = "0.6", features = [
   "uuid",
   "offline"
 ] }
-thiserror = "1.0.30"
+thiserror = { workspace = true }
 dashmap = "5.2.0"
 async-trait = "0.1.53"
 grapl-config = { path = "../grapl-config" }

@@ -24,10 +24,10 @@ clap = { version = "3.0", default_features = false, features = [
 futures = "0.3"
 grapl-tracing = { path = "../grapl-tracing" }
 rust-proto = { path = "../rust-proto" }
-thiserror = "1.0"
+thiserror = { workspace = true }
 tokio = { version = "1.14.0", features = ["full"] }
-tracing = "0.1"
-uuid = { version = "1.0", features = ["v4"] }
+tracing = { workspace = true }
+uuid = { workspace = true }
 
 [features]
 integration = []

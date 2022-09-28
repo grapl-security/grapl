@@ -37,6 +37,11 @@ members = [
   "./uid-allocator",
 ]
 
+[workspace.dependencies]
+tracing = "0.1"
+thiserror = "1.0"
+uuid = { version = "1.0", features = ["v4"] }
+
 [profile.dev]
 opt-level = 1
 
