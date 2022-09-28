@@ -1884,6 +1884,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "graph-query-proxy"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "clap 3.2.13",
+ "futures",
+ "grapl-tracing",
+ "rust-proto",
+ "serde",
+ "thiserror",
+ "tokio",
+ "tonic 0.6.2",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "graph-schema-manager"
 version = "0.1.0"
 dependencies = [

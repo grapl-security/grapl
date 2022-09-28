@@ -1,0 +1,26 @@
+[package]
+name = "graph-query-proxy"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+async-trait = "0.1.56"
+bytes = "1.1"
+clap = { version = "3.2.13", features = ["std", "env", "derive"] }
+futures = "0.3.21"
+grapl-tracing = { path = "../grapl-tracing" }
+tokio = { version = "1.17.0", features = ["full"] }
+tracing = "0.1.32"
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+    "env-filter",
+    "fmt"
+] }
+rust-proto = { path = "../rust-proto" }
+serde = { version = "1.0.136", features = ["derive"] }
+tonic = "0.6.1"
+thiserror = "1.0.31"
+uuid = "1.1.2"
+
+[features]
+integration_tests = []
