@@ -27,17 +27,9 @@ function populate() {
 }
 
 # Retrieve a list of all Python dependencies in this project.
-#
-# Previously we used `./pants dependencies --type=3rdparty ::`, but
-# the `--type` option was removed in 2.9.0.dev0. Pants recommends this
-# implementation as an equivalent, and mentions that "in the future
-# there will be a more robust way of querying and filtering
-# dependencies." At that point, this function implementation can
-# likely be simplified.
 function python_dependencies() {
-    ./pants dependencies :: |
-        xargs ./pants filter --target-type=python_requirement |
-        xargs ./pants peek | jq -r '.[]["requirements"][]'
+    ./pants peek --filter-target-type=python_requirement :: |
+        jq -r '.[]["requirements"][]'
 }
 
 # Main command function

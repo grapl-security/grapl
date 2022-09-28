@@ -5,11 +5,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
+clap = { workspace = true }
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
@@ -22,20 +18,20 @@ sqlx = { version = "0.6", features = [
   "runtime-tokio-rustls",
   "uuid",
 ] }
-thiserror = "1.0"
-tokio = { version = "1.17", features = ["macros", "rt-multi-thread"] }
-tracing = "0.1"
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "fmt"
 ] }
-uuid = { version = "1.0", features = ["serde", "v4"] }
+uuid = { workspace = true }
 
 [build-dependencies]
 
 [dev-dependencies]
 env_logger = "0.9.0"
-eyre = "0.6"
+eyre = { workspace = true }
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
 
 [features]
