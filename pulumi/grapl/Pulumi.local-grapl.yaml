@@ -17,7 +17,7 @@ config:
       sns: http://host.docker.internal:4566
       sqs: http://host.docker.internal:4566
   aws:region: us-east-1
-  aws:s3ForcePathStyle: "true"
+  aws:s3UsePathStyle: "true"
   aws:secretKey: test
   aws:skipCredentialsValidation: "true"
   aws:skipRequestingAccountId: "true"
