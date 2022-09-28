@@ -1,13 +1,17 @@
 # Any Python dependencies used by our code should be declared here.
 # !!!!! Don't forget to regenerate the constraints from this! (see readme.md)
-
+#
+# If you pin any versions here, PLEASE leave a comment explaining
+# **why** the dependency needed to be pinned. This will help engineers
+# in the future better determine when a pin may safely be removed.
+#
 # Please keep this alphabetical order
+
 argon2-cffi
 boto3
 botocore
 click
 confluent-kafka
-cookiecutter==1.7.3
 grpcio
 grpcio-reflection
 hypothesis
@@ -17,25 +21,27 @@ opentelemetry-exporter-zipkin-json
 opentelemetry-instrumentation
 opentelemetry-instrumentation-botocore
 opentelemetry-sdk
-# Protobuf 4 introduced issues for me, is the only reason I added less-than-4
-protobuf>=3.20.1,<4.0.0
-pulumi==3.33.1
-pulumi-aws==5.9.2
-pulumi_consul
-pulumi_docker
+protobuf
+# This is only pinned to ensure that we get the latest Pulumi; for
+# some reason, leaving it unpinned resulted in an older version being
+# pulled in. Feel free to update this pin as needed (there's nothing
+# magical about 3.40.2; it's just what was current when this was
+# written), or even remove it if it is no longer needed.
+pulumi==3.40.2
+pulumi-aws
+pulumi-consul
+pulumi-docker
 pulumi-kafka
-pulumi_nomad
-pulumi_policy
-pulumi_postgresql
-pulumi_random
-pydantic==1.8.2
+pulumi-nomad
+pulumi-policy
+pulumi-postgresql
+pulumi-random
 pyjwt
 pytest
 python-hcl2
-python-nomad==1.4.1
+python-nomad
 requests
 setuptools
-toml==0.10.2
 typer[all]
-typing_extensions
+typing-extensions
 zstd

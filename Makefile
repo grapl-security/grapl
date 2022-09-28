@@ -254,8 +254,10 @@ test-unit-frontend: ## Test Frontend
 # tags, rather than pytest tags
 # If you need to `pdb` these tests, add a `--debug` after `./pants test`
 test-unit-python: ## Run Python unit tests under Pants
-	./pants filter --filter-target-type="python_tests" :: \
-	| xargs ./pants --tag="-needs_work" test --pytest-args="-m \"not integration_test\""
+	./pants --filter-target-type="python_test" \
+		--tag="-needs_work" \
+	test :: \
+	--pytest-args="-m \"not integration_test\""
 
 .PHONY: test-unit-rust
 test-unit-rust: ## Build and run unit tests - Rust only (not for CI)
