@@ -20,11 +20,11 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-bytes = "1.1"
-eyre = "0.6"
+bytes = { workspace = true }
+eyre = { workspace = true }
 futures = "0.3"
 kafka = { path = "../kafka", features = ["test-utils"] }
-test-context = "0.1"
+test-context = { workspace = true }
 tokio = { version = "1.17", features = ["macros", "rt"] }
 
 [features]

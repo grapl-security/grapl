@@ -17,7 +17,7 @@ integration_tests = []
 
 [dependencies]
 async-trait = "0.1"
-bytes = "1.1"
+bytes = { workspace = true }
 clap = { version = "3.0", default_features = false, features = ["std", "env"] }
 futures = "0.3"
 futures-retry = "0.6"
@@ -46,9 +46,9 @@ tokio = { version = "1.17", features = [
 ] }
 tracing = { workspace = true }
 uuid = { workspace = true }
-eyre = "0.6.8"
+eyre = { workspace = true }
 
 [dev-dependencies]
 e2e-tests = { path = "../e2e-tests" }
 kafka = { path = "../kafka", features = ["test-utils"] }
-test-context = "0.1"
+test-context = { workspace = true }

@@ -13,7 +13,7 @@ name = "plugin_work_queue"
 
 [dependencies]
 async-trait = "0.1"
-bytes = "1.1"
+bytes = { workspace = true }
 chrono = "0.4"
 clap = { version = "3.0", default_features = false, features = [
   "std",
@@ -40,7 +40,7 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-eyre = "0.6"
+eyre = { workspace = true }
 tracing-subscriber = "0.3"
 
 [features]

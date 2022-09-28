@@ -8,7 +8,7 @@ license = "MIT"
 
 [dependencies]
 async-trait = "0.1"
-bytes = "1.1"
+bytes = { workspace = true }
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",
@@ -36,7 +36,7 @@ tonic-build = { version = "0.7", features = ["default", "compression"] }
 proptest = "1.0"
 quickcheck = "1.0"
 quickcheck_macros = "1.0"
-test-context = "0.1"
+test-context = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [features]

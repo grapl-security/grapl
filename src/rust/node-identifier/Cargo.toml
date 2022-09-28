@@ -16,7 +16,7 @@ path = "src/main.rs"
 integration_tests = []
 
 [dependencies]
-bytes = "1.1"
+bytes = { workspace = true }
 chrono = "0.4"
 clap = { version = "3.0", default_features = false, features = [
   "std",
@@ -56,11 +56,11 @@ tokio = { version = "1.17", features = [
 tracing = { workspace = true }
 uuid = { workspace = true }
 blake2 = "0.10.4"
-eyre = "0.6.8"
+eyre = { workspace = true }
 
 [dev-dependencies]
 async-trait = "0.1"
-test-context = "0.1"
+test-context = { workspace = true }
 e2e-tests = { path = "../e2e-tests" }
 kafka = { path = "../kafka", features = ["test-utils"] }
 rand = "0.8"

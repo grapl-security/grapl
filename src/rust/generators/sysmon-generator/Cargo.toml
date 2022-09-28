@@ -33,12 +33,12 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 async-trait = "0.1"
-bytes = "1.1"
-eyre = "0.6"
+bytes = { workspace = true }
+eyre = { workspace = true }
 generator-sdk = { path = "../../plugin-sdk/generator-sdk", features = [
   "test_utils"
 ] }
-test-context = "0.1"
+test-context = { workspace = true }
 
 [features]
 integration_tests = []

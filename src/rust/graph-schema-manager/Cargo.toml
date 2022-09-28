@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
-bytes = "1.1"
+bytes = { workspace = true }
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",
@@ -29,7 +29,7 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-eyre = "0.6"
+eyre = { workspace = true }
 
 [features]
 integration_tests = []
