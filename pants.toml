@@ -48,12 +48,6 @@ enabled = true
 # Randomly generated with `uuidgen --random`
 repo_id = "f416be7b-e109-4915-8eba-940bcfa310c1"
 
-[protoc]
-version = "3.15.8"
-known_versions = [
-    "3.15.8|linux_x86_64|b9ff821d2a4f9e9943dc2a13e6a76d99c7472dac46ddd3718a3a4c3b877c044a|1639343"
-]
-
 # Given how our code is currently structured, with package and test
 # code for every project in their own directory, I believe we have to
 # list each of those top-level containing directories here in order

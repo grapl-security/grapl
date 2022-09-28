@@ -16,8 +16,7 @@ opentelemetry-exporter-zipkin-json
 opentelemetry-instrumentation
 opentelemetry-instrumentation-botocore
 opentelemetry-sdk
-# Protobuf 4 introduced issues for me, is the only reason I added less-than-4
-protobuf>=3.20.1,<4.0.0
+protobuf
 pulumi
 pulumi-aws
 pulumi-consul
