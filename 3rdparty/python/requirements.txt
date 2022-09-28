@@ -1,7 +1,12 @@
 # Any Python dependencies used by our code should be declared here.
 # !!!!! Don't forget to regenerate the constraints from this! (see readme.md)
-
+#
+# If you pin any versions here, PLEASE leave a comment explaining
+# **why** the dependency needed to be pinned. This will help engineers
+# in the future better determine when a pin may safely be removed.
+#
 # Please keep this alphabetical order
+
 argon2-cffi
 boto3
 botocore
