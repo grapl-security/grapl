@@ -66,7 +66,7 @@ pub fn get_job(
     let graph_query_proxy_image = match plugin_type {
         PluginType::Generator => None,
         PluginType::Analyzer => Some(passthru.graph_query_proxy_image),
-    }
+    };
     match plugin_runtime {
         PluginRuntime::HaxDocker => {
             let job_file_hcl = static_files::HAX_DOCKER_PLUGIN_JOB;

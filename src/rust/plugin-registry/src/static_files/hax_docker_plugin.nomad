@@ -36,8 +36,8 @@ variable "plugin_execution_sidecar_image" {
 
 variable "graph_query_proxy_image" {
   description = "Container image for running Graph Query Proxy. Only specify this for Analyzers."
-  type = string
-  default = null
+  type        = string
+  default     = null
 }
 
 variable "rust_log" {
@@ -107,7 +107,11 @@ job "grapl-plugin" {
               local_bind_port = 1001
             }
 
-            // TODO: upstream for graph-query-service
+            upstreams {
+              destination_name = "graph-query"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1002
+            }
           }
         }
       }
@@ -141,27 +145,37 @@ job "grapl-plugin" {
       }
     }
 
-    # The execution task pulls messages from the plugin-work-queue and
-    # sends them to the plugin
-    task "graph-query-proxy-sidecar" {
-      driver = "docker"
+    # A level of indirection in front of the Graph Query Service that prevents
+    # the plugin from querying other tenants' data. Only runs for analyzers,
+    # hence the "dynamic" trickery.
+    dynamic "task" {
+      # Disable graph-query if graph_query_proxy_image is not specified (for generators)
+      for_each = (graph_query_proxy_image == null) ? ["arbitrary 1-length array"] : []
+      iterator = i
 
-      config {
-        image = var.graph_query_proxy_image
-      }
+      labels = ["graph-query-proxy-sidecar"]
 
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
-      }
+      content {
+        driver = "docker"
 
-      env {
-        GRAPH_QUERY_PROXY_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-proxy}"
-        PLUGIN_EXECUTOR_PLUGIN_ID = var.plugin_id
+        config {
+          image = var.graph_query_proxy_image
+        }
 
-        RUST_LOG       = var.rust_log
-        RUST_BACKTRACE = 1
+        template {
+          data        = var.observability_env_vars
+          destination = "observability.env"
+          env         = true
+        }
+
+        env {
+          GRAPH_QUERY_PROXY_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-proxy}"
+          GRAPH_QUERY_CLIENT_ADDRESS     = "http://${NOMAD_UPSTREAM_ADDR_graph-query}"
+          TENANT_ID                      = var.tenant_id
+
+          RUST_LOG       = var.rust_log
+          RUST_BACKTRACE = 1
+        }
       }
     }
 

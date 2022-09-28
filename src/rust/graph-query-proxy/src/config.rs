@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use rust_proto::{client_factory::services::GraphQueryClientConfig};
+use rust_proto::client_factory::services::GraphQueryClientConfig;
 
 #[derive(clap::Parser, Debug, Clone)]
 pub struct GraphQueryProxyConfig {

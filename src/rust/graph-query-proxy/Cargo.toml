@@ -13,8 +13,8 @@ grapl-tracing = { path = "../grapl-tracing" }
 tokio = { version = "1.17.0", features = ["full"] }
 tracing = "0.1.32"
 tracing-subscriber = { version = "0.3", default-features = false, features = [
-    "env-filter",
-    "fmt"
+  "env-filter",
+  "fmt"
 ] }
 rust-proto = { path = "../rust-proto" }
 serde = { version = "1.0.136", features = ["derive"] }

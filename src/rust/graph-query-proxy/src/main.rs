@@ -7,7 +7,7 @@ use rust_proto::{
     },
     protocol::{
         healthcheck::HealthcheckStatus,
-        service_client::Connectable,
+        service_client::ConnectWithConfig,
     },
 };
 use tokio::net::TcpListener;
@@ -29,7 +29,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let graph_query_service = GraphQueryProxy::new(
         config.tenant_id,
-        GraphQueryClient::connect(graph_query_service_client_config).await?,
+        GraphQueryClient::connect_with_config(config.graph_query_service_client_config.clone())
+            .await?,
     );
 
     exec_service(config, graph_query_service).await
