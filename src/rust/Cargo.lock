@@ -858,14 +858,11 @@ version = "3.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac2bd7a1eb07da9ac757c923f69373deb7bc2ba5efc951b873bcb5e693992dca"
 dependencies = [
- "atty",
  "bitflags",
  "clap_derive",
  "clap_lex",
  "indexmap",
  "once_cell",
- "strsim",
- "termcolor",
  "textwrap 0.15.0",
 ]
 
@@ -1893,10 +1890,8 @@ dependencies = [
  "futures",
  "grapl-tracing",
  "rust-proto",
- "serde",
  "thiserror",
  "tokio",
- "tonic 0.6.2",
  "tracing",
  "tracing-subscriber",
  "uuid",
@@ -4762,12 +4757,6 @@ dependencies = [
  "unicode-bidi",
  "unicode-normalization",
 ]
-
-[[package]]
-name = "strsim"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "strum"
