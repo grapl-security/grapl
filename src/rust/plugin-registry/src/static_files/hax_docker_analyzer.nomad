@@ -84,7 +84,7 @@ job "grapl-plugin" {
     }
 
     service {
-      name = "analyzer-execution-sidecar-${var.plugin_id}"
+      name = "analyzer-exec-sidecar-${var.plugin_id}"
       tags = [
         "analyzer-execution-sidecar",
         "tenant-${var.tenant_id}",
