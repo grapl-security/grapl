@@ -53,7 +53,7 @@ In prod, this is currently disabled.
 EOF
 }
 
-job "grapl-plugin-analyzer" {
+job "grapl-plugin" {
   datacenters = ["dc1"]
   namespace   = "plugin-${var.plugin_id}"
   type        = "service"
