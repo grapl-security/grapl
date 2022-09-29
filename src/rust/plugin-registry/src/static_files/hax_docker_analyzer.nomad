@@ -114,6 +114,13 @@ job "grapl-plugin-analyzer" {
           }
         }
       }
+
+      check {
+        type     = "grpc"
+        port     = "graph-query-proxy"
+        interval = "10s"
+        timeout  = "3s"
+      }
     }
 
     # The execution task pulls messages from the plugin-work-queue and
