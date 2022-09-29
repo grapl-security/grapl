@@ -322,6 +322,12 @@ FROM rust-dist AS graph-mutation-deploy
 COPY --from=build /outputs/graph-mutation /
 ENTRYPOINT ["/graph-mutation"]
 
+##### graph-query-proxy
+FROM rust-dist as graph-query-proxy-deploy
+
+COPY --from=build /outputs/graph-query-proxy /
+ENTRYPOINT ["/graph-query-proxy"]
+
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy
 

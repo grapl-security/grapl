@@ -169,6 +169,7 @@ group "rust-services" {
     "graph-merger",
     "graph-mutation",
     "graph-query",
+    "graph-query-proxy",
     "graph-schema-manager",
     "grapl-web-ui",
     "kafka-retry",
@@ -332,6 +333,14 @@ target "graph-query" {
   target   = "graph-query-deploy"
   tags = [
     upstream_aware_tag("graph-query")
+  ]
+}
+
+target "graph-query-proxy" {
+  inherits = ["_rust-base"]
+  target   = "graph-query-proxy-deploy"
+  tags = [
+    upstream_aware_tag("graph-query-proxy")
   ]
 }
 

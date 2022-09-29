@@ -26,7 +26,7 @@ from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
 
 
 def _get_tenant_id() -> PythonProtoUuid:
-    env_var: str = os.environ["TENANT_ID"]  # specified in hax_docker_plugin.nomad
+    env_var: str = os.environ["TENANT_ID"]  # specified in hax_docker_analyzer.nomad
     py_native_uuid = UUID(env_var)
     return PythonProtoUuid.from_uuid(py_native_uuid)
 

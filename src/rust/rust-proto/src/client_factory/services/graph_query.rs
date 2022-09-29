@@ -3,7 +3,7 @@ use crate::client_factory::grpc_client_config::{
     GrpcClientConfig,
 };
 
-#[derive(clap::Parser, Debug)]
+#[derive(clap::Parser, Debug, Clone)]
 pub struct GraphQueryClientConfig {
     #[clap(long, env)]
     pub graph_query_client_address: String,

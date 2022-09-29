@@ -57,7 +57,10 @@ job "grapl-plugin" {
     attempts = 0
   }
 
-  # We'll want to make sure we have the opposite constraint on other services
+  # This makes sure that generators only run on a certain subset of Nomad agents
+  # that have "meta.is_grapl_plugin_host" set to true.
+  # (We'll want to eventually ensure we have the opposite constraint on 
+  # non-plugin jobs.)
   # This is set in the Nomad agent's `client` stanza:
   # https://www.nomadproject.io/docs/configuration/client#meta
   constraint {
@@ -65,22 +68,18 @@ job "grapl-plugin" {
     value     = true
   }
 
-  group "plugin-execution-sidecar" {
+  group "generator-execution-sidecar" {
     count = var.plugin_count
 
     network {
       mode = "bridge"
-      // TODO i think? possibly cargo culted?
-      // dns {
-      //   servers = local.dns_servers
-      // }
-      port "plugin-execution-sidecar" {}
+      port "generator-execution-sidecar" {}
     }
 
     service {
-      name = "plugin-execution-sidecar-${var.plugin_id}"
+      name = "generator-exec-sidecar-${var.plugin_id}"
       tags = [
-        "plugin-execution-sidecar",
+        "generator-execution-sidecar",
         "tenant-${var.tenant_id}",
         "plugin-${var.plugin_id}"
       ]
@@ -99,16 +98,14 @@ job "grapl-plugin" {
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
               local_bind_port = 1001
             }
-
-            // TODO: upstream for graph-query-service
           }
         }
       }
     }
 
     # The execution task pulls messages from the plugin-work-queue and
-    # sends them to the plugin
-    task "plugin-execution-sidecar" {
+    # sends them to the generator
+    task "generator-execution-sidecar" {
       driver = "docker"
 
       config {
@@ -134,8 +131,6 @@ job "grapl-plugin" {
       }
     }
 
-    // TODO: task "tenant-plugin-graph-query-sidecar"
-
     restart {
       attempts = 1
       delay    = "5s"
@@ -145,10 +140,6 @@ job "grapl-plugin" {
   group "plugin" {
     network {
       mode = "bridge"
-      // TODO
-      // dns {
-      //   servers = local.dns_servers
-      // }
       port "plugin" {}
     }
 
@@ -224,7 +215,6 @@ EOF
         # Consumed by GeneratorServiceConfig
         PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
 
-        # Should we make these eventually customizable?
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
       }
