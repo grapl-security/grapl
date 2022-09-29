@@ -57,7 +57,10 @@ job "grapl-plugin" {
     attempts = 0
   }
 
-  # We'll want to make sure we have the opposite constraint on other services
+  # This makes sure that generators only run on a certain subset of Nomad agents
+  # that have "meta.is_grapl_plugin_host" set to true.
+  # (We'll want to eventually ensure we have the opposite constraint on 
+  # non-plugin jobs.)
   # This is set in the Nomad agent's `client` stanza:
   # https://www.nomadproject.io/docs/configuration/client#meta
   constraint {
