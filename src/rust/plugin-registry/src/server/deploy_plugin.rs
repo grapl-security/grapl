@@ -63,11 +63,14 @@ pub fn get_job(
         PluginType::Generator => passthru.generator_sidecar_image,
         PluginType::Analyzer => passthru.analyzer_sidecar_image,
     };
-    let graph_query_proxy_image = passthru.graph_query_proxy_image;
+    let hax_docker_nomad_job = match plugin_type {
+        PluginType::Generator => static_files::HAX_DOCKER_GENERATOR_JOB,
+        PluginType::Analyzer => static_files::HAX_DOCKER_ANALYZER_JOB,
+    };
     match plugin_runtime {
         PluginRuntime::HaxDocker => {
             let job_file_hcl = static_files::HAX_DOCKER_PLUGIN_JOB;
-            let job_file_vars: NomadVars = HashMap::from([
+            let mut job_file_vars: NomadVars = HashMap::from([
                 ("aws_account_id", service_config.bucket_aws_account_id),
                 ("plugin_artifact_url", plugin_artifact_url),
                 (
@@ -85,6 +88,9 @@ pub fn get_job(
                 ("observability_env_vars", passthru.observability_env_vars),
                 ("graph_query_proxy_image", graph_query_proxy_image),
             ]);
+            if plugin_type == PluginType::Analyzer {
+                job_file_vars.insert("graph_query_proxy_image", passthru.graph_query_proxy_image);
+            }
             cli.parse_hcl2(job_file_hcl, job_file_vars)
         }
         PluginRuntime::Firecracker => {

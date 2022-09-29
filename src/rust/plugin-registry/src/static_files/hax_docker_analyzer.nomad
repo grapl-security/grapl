@@ -148,7 +148,6 @@ job "grapl-plugin" {
     # A level of indirection in front of the Graph Query Service that prevents
     # the plugin from querying other tenants' data.
 
-    # TODO: We should not launch this for generators. Perhaps two sep Nomad files?
     task "graph-query-proxy-sidecar" {
       driver = "docker"
 
@@ -169,6 +168,11 @@ job "grapl-plugin" {
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
+      }
+
+      resources {
+        cpu    = 25  // MHz
+        memory = 128 // MB
       }
     }
 
