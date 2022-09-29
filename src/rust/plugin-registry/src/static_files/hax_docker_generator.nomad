@@ -99,12 +99,6 @@ job "grapl-plugin" {
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
               local_bind_port = 1001
             }
-
-            upstreams {
-              destination_name = "graph-query"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1002
-            }
           }
         }
       }
