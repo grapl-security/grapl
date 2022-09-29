@@ -47,7 +47,7 @@ In prod, this is currently disabled.
 EOF
 }
 
-job "grapl-plugin" {
+job "grapl-plugin-generator" {
   datacenters = ["dc1"]
   namespace   = "plugin-${var.plugin_id}"
   type        = "service"
@@ -68,18 +68,18 @@ job "grapl-plugin" {
     value     = true
   }
 
-  group "plugin-execution-sidecar" {
+  group "generator-execution-sidecar" {
     count = var.plugin_count
 
     network {
       mode = "bridge"
-      port "plugin-execution-sidecar" {}
+      port "generator-execution-sidecar" {}
     }
 
     service {
-      name = "plugin-execution-sidecar-${var.plugin_id}"
+      name = "generator-execution-sidecar-${var.plugin_id}"
       tags = [
-        "plugin-execution-sidecar",
+        "generator-execution-sidecar",
         "tenant-${var.tenant_id}",
         "plugin-${var.plugin_id}"
       ]
@@ -104,8 +104,8 @@ job "grapl-plugin" {
     }
 
     # The execution task pulls messages from the plugin-work-queue and
-    # sends them to the plugin
-    task "plugin-execution-sidecar" {
+    # sends them to the generator
+    task "generator-execution-sidecar" {
       driver = "docker"
 
       config {
