@@ -14,6 +14,7 @@ members = [
   "./graph-merger",
   "./graph-mutation",
   "./graph-query-service", # TODO rename dir
+  "./graph-query-proxy",
   "./graph-schema-manager",
   "./grapl-config",
   "./grapl-graphql-codegen",
