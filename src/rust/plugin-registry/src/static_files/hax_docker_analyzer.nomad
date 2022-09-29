@@ -76,10 +76,6 @@ job "grapl-plugin" {
 
     network {
       mode = "bridge"
-      // TODO i think? possibly cargo culted?
-      // dns {
-      //   servers = local.dns_servers
-      // }
       port "plugin-execution-sidecar" {}
       port "graph-query-proxy" {}
     }
@@ -185,10 +181,6 @@ job "grapl-plugin" {
   group "plugin" {
     network {
       mode = "bridge"
-      // TODO
-      // dns {
-      //   servers = local.dns_servers
-      // }
       port "plugin" {}
     }
 
@@ -264,7 +256,6 @@ EOF
         # Consumed by GeneratorServiceConfig
         PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
 
-        # Should we make these eventually customizable?
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
       }
