@@ -7,6 +7,7 @@ use crate::client_factory::grpc_client_config::{
 pub struct GeneratorClientConfig {
     // Intentionally not marked with Clap macros; you'll rarely/never have to
     // construct a GeneratorClientConfig from environment variables.
+    #[clap(long, env)]
     pub generator_client_address: String,
 }
 

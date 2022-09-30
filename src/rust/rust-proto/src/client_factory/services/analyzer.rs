@@ -5,6 +5,7 @@ use crate::client_factory::grpc_client_config::{
 
 #[derive(clap::Parser, Debug)]
 pub struct AnalyzerClientConfig {
+    #[clap(long, env)]
     pub analyzer_client_address: String,
 }
 

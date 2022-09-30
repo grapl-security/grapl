@@ -1,8 +1,6 @@
+use clap::Parser;
 use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::AnalyzerClientConfig,
-    },
+    client_factory::services::AnalyzerClientConfig,
     graplinc::grapl::api::{
         plugin_sdk::analyzers::v1beta1::{
             client::AnalyzerServiceClient,
@@ -20,6 +18,7 @@ use rust_proto::{
             PluginWorkQueueServiceClient,
         },
     },
+    protocol::service_client::ConnectWithConfig,
     SerDe,
 };
 use uuid::Uuid;
@@ -49,19 +48,12 @@ pub struct AnalyzerWorkProcessor {
 }
 
 impl AnalyzerWorkProcessor {
-    pub async fn new(config: &PluginExecutorConfig) -> Result<Self, Box<dyn std::error::Error>> {
-        let plugin_id = config.plugin_id;
-        let upstream_addr_env_var = format!("NOMAD_UPSTREAM_ADDR_plugin-{plugin_id}");
-        let upstream_addr = std::env::var(&upstream_addr_env_var).expect(&upstream_addr_env_var);
-        let address = format!("http://{upstream_addr}");
+    pub async fn new(_config: &PluginExecutorConfig) -> Result<Self, Box<dyn std::error::Error>> {
+        let client_config = AnalyzerClientConfig::parse();
+        tracing::info!(message = "connecting to analyzer plugin", client_config =? client_config);
 
-        tracing::info!(message = "connecting to analyzer plugin", address = address);
-
-        let client_config = AnalyzerClientConfig {
-            analyzer_client_address: address.parse().expect("analyzer client address"),
-        };
-
-        let analyzer_service_client = build_grpc_client(client_config).await?;
+        let analyzer_service_client =
+            AnalyzerServiceClient::connect_with_config(client_config).await?;
 
         Ok(AnalyzerWorkProcessor {
             analyzer_service_client,

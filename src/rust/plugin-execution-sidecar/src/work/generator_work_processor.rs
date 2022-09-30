@@ -42,8 +42,8 @@ pub struct GeneratorWorkProcessor {
 }
 
 impl GeneratorWorkProcessor {
-    pub async fn new(config: &PluginExecutorConfig) -> Result<Self, Box<dyn std::error::Error>> {
-        let generator_service_client = get_generator_client(config.plugin_id).await?;
+    pub async fn new(_config: &PluginExecutorConfig) -> Result<Self, Box<dyn std::error::Error>> {
+        let generator_service_client = get_generator_client().await?;
         Ok(GeneratorWorkProcessor {
             generator_service_client,
         })

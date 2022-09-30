@@ -79,7 +79,8 @@ job "grapl-plugin" {
   }
 
   group "analyzer-execution-sidecar" {
-    count     = var.plugin_count
+    count = var.plugin_count
+
     consul { namespace = local.namespace }
 
     network {
@@ -106,7 +107,7 @@ job "grapl-plugin" {
             }
 
             upstreams {
-              destination_name      = "plugin-${var.plugin_id}"
+              destination_name      = "plugin"
               destination_namespace = local.namespace
               local_bind_port       = 1001
             }
@@ -130,7 +131,7 @@ job "grapl-plugin" {
             upstreams {
               destination_name      = "graph-query"
               destination_namespace = "default"
-              local_bind_port = 1002
+              local_bind_port       = 1002
             }
           }
         }
@@ -161,6 +162,8 @@ job "grapl-plugin" {
 
       env {
         PLUGIN_EXECUTOR_PLUGIN_ID = var.plugin_id
+
+        ANALYZER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin}"
 
         // FYI: the upstream plugin's address is discovered at runtime, not
         // env{}, because the upstream's name is based on ${PLUGIN_ID}.
@@ -211,6 +214,7 @@ job "grapl-plugin" {
 
   group "plugin" {
     consul { namespace = local.namespace }
+
     network {
       mode = "bridge"
       port "plugin" {}
@@ -219,7 +223,7 @@ job "grapl-plugin" {
     count = var.plugin_count
 
     service {
-      name = "plugin-${var.plugin_id}"
+      name = "plugin"
       port = "plugin"
       tags = [
         "plugin",
