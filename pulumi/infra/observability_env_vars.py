@@ -30,7 +30,8 @@ def otel_config(
     lightstep_token: pulumi.Output,
     nomad_endpoint: pulumi.Output | str,
     lightstep_endpoint: str = "ingest.lightstep.com:443",
-    lightstep_is_endpoint_insecure: bool = False,
+    # This is optional because pulumi.config.get_bool returns Optional[bool]
+    lightstep_is_endpoint_insecure: bool | None = False,
 ) -> pulumi.Output[str]:
     return pulumi.Output.all(
         lightstep_endpoint=lightstep_endpoint,
