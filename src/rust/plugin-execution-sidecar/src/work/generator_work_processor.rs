@@ -22,10 +22,7 @@ use super::{
     },
     PluginWorkProcessor,
 };
-use crate::{
-    config::PluginExecutorConfig,
-    sidecar_client::generator_client::get_generator_client,
-};
+use crate::config::PluginExecutorConfig;
 
 impl Workload for GetExecuteGeneratorResponse {
     fn request_id(&self) -> i64 {
@@ -43,7 +40,9 @@ pub struct GeneratorWorkProcessor {
 
 impl GeneratorWorkProcessor {
     pub async fn new(_config: &PluginExecutorConfig) -> Result<Self, Box<dyn std::error::Error>> {
-        let generator_service_client = get_generator_client().await?;
+        let client_config = GeneratorClientConfig::parse();
+        let generator_service_client =
+            GeneratorServiceClient::connect_with_config(client_config).await;
         Ok(GeneratorWorkProcessor {
             generator_service_client,
         })
