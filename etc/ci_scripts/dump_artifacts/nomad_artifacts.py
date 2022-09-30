@@ -221,8 +221,6 @@ def _write_nomad_logs(
         for task in alloc.tasks:
             task_allocs[task.name].add(task)
 
-    del task
-
     for (task_name, task_alloc_set) in task_allocs.items():
         # Skip the `.short_alloc` stuff if there's just one.
         is_singular = len(task_alloc_set) == 1

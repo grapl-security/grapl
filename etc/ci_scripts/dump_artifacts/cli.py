@@ -98,8 +98,12 @@ def main() -> None:
     shutil.move(src="/tmp/ALL_ARTIFACTS.zip", dst=artifacts_dir)
 
     LOGGER.info(
-        ["---", f"--- Artifacts dumped to {Colorize.green(artifacts_dir)}", "---"].join(
-            "\n"
+        "\n".join(
+            [
+                "---",
+                f"--- Artifacts dumped to {Colorize.green(str(artifacts_dir))}",
+                "---",
+            ]
         )
     )
 
