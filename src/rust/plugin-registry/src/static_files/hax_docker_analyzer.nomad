@@ -53,9 +53,13 @@ In prod, this is currently disabled.
 EOF
 }
 
+locals {
+  namespace = "plugin-${var.plugin_id}"
+}
+
 job "grapl-plugin" {
   datacenters = ["dc1"]
-  namespace   = "plugin-${var.plugin_id}"
+  namespace   = local.namespace
   type        = "service"
 
   reschedule {
@@ -75,7 +79,8 @@ job "grapl-plugin" {
   }
 
   group "analyzer-execution-sidecar" {
-    count = var.plugin_count
+    count     = var.plugin_count
+    consul { namespace = local.namespace }
 
     network {
       mode = "bridge"
@@ -84,7 +89,7 @@ job "grapl-plugin" {
     }
 
     service {
-      name = "analyzer-exec-sidecar-${var.plugin_id}"
+      name = "analyzer-exec-sidecar"
       tags = [
         "analyzer-execution-sidecar",
         "tenant-${var.tenant_id}",
@@ -95,20 +100,36 @@ job "grapl-plugin" {
         sidecar_service {
           proxy {
             upstreams {
-              destination_name = "plugin-work-queue"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1000
+              destination_name      = "plugin-work-queue"
+              destination_namespace = "default"
+              local_bind_port       = 1000
             }
 
             upstreams {
-              destination_name = "plugin-${var.plugin_id}"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1001
+              destination_name      = "plugin-${var.plugin_id}"
+              destination_namespace = local.namespace
+              local_bind_port       = 1001
             }
+          }
+        }
+      }
+    }
 
+    service {
+      name = "graph-query-proxy"
+      port = "graph-query-proxy"
+      tags = [
+        "graph-query-proxy",
+        "tenant-${var.tenant_id}",
+        "plugin-${var.plugin_id}"
+      ]
+
+      connect {
+        sidecar_service {
+          proxy {
             upstreams {
-              destination_name = "graph-query"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              destination_name      = "graph-query"
+              destination_namespace = "default"
               local_bind_port = 1002
             }
           }
@@ -189,6 +210,7 @@ job "grapl-plugin" {
   }
 
   group "plugin" {
+    consul { namespace = local.namespace }
     network {
       mode = "bridge"
       port "plugin" {}
@@ -207,6 +229,13 @@ job "grapl-plugin" {
 
       connect {
         sidecar_service {
+          proxy {
+            upstreams {
+              destination_name      = "graph-query-proxy"
+              destination_namespace = local.namespace
+              local_bind_port       = 1000
+            }
+          }
         }
       }
 
@@ -264,7 +293,8 @@ EOF
         PLUGIN_ID  = "${var.plugin_id}"
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
         # Consumed by GeneratorServiceConfig
-        PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
+        PLUGIN_BIND_ADDRESS              = "0.0.0.0:${NOMAD_PORT_plugin}"
+        GRAPH_QUERY_PROXY_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-query-proxy}"
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
