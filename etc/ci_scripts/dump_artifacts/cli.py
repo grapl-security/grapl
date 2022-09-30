@@ -97,7 +97,11 @@ def main() -> None:
     shutil.make_archive(base_name=zip_filename, format="zip", root_dir=artifacts_dir)
     shutil.move(src="/tmp/ALL_ARTIFACTS.zip", dst=artifacts_dir)
 
-    LOGGER.info(f"--- Artifacts dumped to {Colorize.green(artifacts_dir)}")
+    LOGGER.info(
+        ["---", f"--- Artifacts dumped to {Colorize.green(artifacts_dir)}", "---"].join(
+            "\n"
+        )
+    )
 
 
 if __name__ == "__main__":
