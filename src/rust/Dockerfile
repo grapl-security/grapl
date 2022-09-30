@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
 # - in plugin-registry image
 WORKDIR /nomad
 RUN <<EOF
-NOMAD_VERSION="1.2.4"
+NOMAD_VERSION="1.3.5"
 ZIP_NAME="nomad_${NOMAD_VERSION}_linux_amd64.zip"
 curl --remote-name --proto '=https' --tlsv1.2 -sSf \
   "https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/${ZIP_NAME}"
