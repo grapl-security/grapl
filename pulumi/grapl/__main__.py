@@ -338,15 +338,15 @@ def main() -> None:
         pulumi_config.get(key="lightstep-access-token") or ""
     )
     lightstep_endpoint = pulumi_config.require(key="lightstep-endpoint")
-    lightstep_is_endpoint_secure = (
-        pulumi_config.get(key="lightstep-is-endpoint-secure") or "true"
+    lightstep_is_endpoint_insecure = (
+        pulumi_config.get(key="lightstep-is-endpoint-insecure") or "false"
     )
 
     otel_configuration = otel_config(
         lightstep_token=lightstep_access_token,
         nomad_endpoint=nomad_endpoint,
         lightstep_endpoint=lightstep_endpoint,
-        lightstep_is_endpoint_secure=lightstep_is_endpoint_secure,
+        lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
     )
     NomadJob(
         "otel-collector",
