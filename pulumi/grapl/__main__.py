@@ -31,7 +31,7 @@ from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
-from infra.observability_env_vars import observability_env_vars_for_local, otel_config
+from infra.observability_env_vars import get_observability_env_vars, otel_config
 from infra.postgres import Postgres
 from infra.scylla import ScyllaInstance
 
@@ -232,7 +232,7 @@ def main() -> None:
         service: kafka.consumer_group(service) for service in kafka_consumer_services
     }
 
-    observability_env_vars = observability_env_vars_for_local()
+    observability_env_vars = get_observability_env_vars()
 
     # This Google client ID is used by grapl-web-ui for authenticating users via Sign In With Google.
     # TODO: This should be moved to Pulumi config somehwo, but I'm not sure the best way to do that atm.

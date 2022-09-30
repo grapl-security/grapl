@@ -1,14 +1,9 @@
-from infra import config
-
 import pulumi
 
 
-def observability_env_vars_for_local() -> str:
+def get_observability_env_vars() -> str:
     # We currently use both the zipkin v2 endpoint for consul, python and typescript instrumentation and the jaeger udp
     # agent endpoint for rust instrumentation. These will be consolidated in the future
-
-    if not config.LOCAL_GRAPL:
-        return "DUMMY_VAR_FOR_PROD = TRUE"
 
     # These use the weird Mustache {{}} tags because this interpolation eventually
     # gets passed in to a template{} stanza.
