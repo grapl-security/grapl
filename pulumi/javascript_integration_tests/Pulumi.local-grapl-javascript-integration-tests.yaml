@@ -1,0 +1,10 @@
+encryptionsalt: v1:KRH5XXw/Vv4=:v1:Mi1EOttYFIuFy8Zl:u/QoTfZuh9c5m6Jyw2L3mAKC+VNs8g== #TODO - WHERE DO WE GET THIS FROM
+config:
+  aws:accessKey: test
+  aws:region: us-east-1
+  aws:secretKey: test
+  aws:skipCredentialsValidation: "true"
+  aws:skipRequestingAccountId: "true"
+  # Host OS's Nomad instance
+  nomad:address: http://host.docker.internal:4646
+  javascript-integration-tests:confluent-environment-name: "local-grapl" #TODO: WHERE DO WE SPECIFY THIS

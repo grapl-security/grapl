@@ -15,6 +15,9 @@
 IMAGE_TAG ?= dev
 # This is a build argument for our Python images, and is thus used in
 # docker-bake.hcl
+JAVASCRIPT_VERSION ?= $(shell cat .javascript-version)
+# This is a build argument for our Python images, and is thus used in
+# docker-bake.hcl
 PYTHON_VERSION ?= $(shell cat .python-version)
 # This is a build argument for our Rust images, and is thus used in
 # docker-bake.hcl
@@ -43,6 +46,7 @@ endif
 # over invoking `docker buildx bake` directly.
 DOCKER_BUILDX_BAKE := docker buildx bake $(buildx_builder_args)
 
+COMPOSE_PROJECT_JAVASCRIPT_INTEGRATION_TESTS := javascript-integration-tests
 COMPOSE_PROJECT_PYTHON_INTEGRATION_TESTS := python-integration-tests
 COMPOSE_PROJECT_RUST_INTEGRATION_TESTS := rust-integration-tests
 
@@ -201,6 +205,12 @@ build-test-integration-python:
 	@echo "--- Building python integration test images"
 	$(DOCKER_BUILDX_BAKE) python-integration-tests
 
+.PHONY: build-test-integration-javascript
+build-test-integration-javascript:
+	@echo "--- Building javascript integration test images"
+	$(DOCKER_BUILDX_BAKE) javascript-integration-tests
+
+
 ########################################################################
 
 .PHONY: build-prettier-image
@@ -280,6 +290,13 @@ test-unit-rust-coverage: ## Run Rust unit tests and gather coverage statistics (
 	$(RUST_MAKE) coverage
 
 ########################################################################
+
+.PHONY: test-integration-javascript
+test-integration-javascript: build-local-infrastructure
+test-integration-javascript: build-test-integration-javascript
+test-integration-javascript: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_JAVASCRIPT_INTEGRATION_TESTS)
+test-integration-javascript: ## Build and run javascript integration tests
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh javascript-integration-tests 9"
 
 .PHONY: typecheck
 typecheck: ## Typecheck Python Code

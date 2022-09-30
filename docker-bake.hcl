@@ -83,6 +83,14 @@ variable "RUST_VERSION" {
 variable "PYTHON_VERSION" {
 }
 
+# This will be incorporated into the base image identifier for our
+# Javascript images. In general, it should correspond to the version in
+# `.javascript-version`, which we'll extract in our Makefile
+# and pass in here. If something weird happens in the future where we
+# need to override that for some reason, we can.
+variable "JAVASCRIPT_VERSION" {
+}
+
 # This is the directory that certain artifacts will be deposited into
 variable "DIST_DIR" {
 }
@@ -211,6 +219,13 @@ group "local-infrastructure" {
   ]
 }
 
+group "javascript-integration-tests" {
+  # NOTE: Please keep this list sorted in alphabetical order
+  targets = [
+    "javascript-integration-tests",
+  ]
+}
+
 group "python-integration-tests" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
@@ -221,6 +236,7 @@ group "python-integration-tests" {
 group "all-tests" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
+    "javascript-integration-tests",
     "python-integration-tests",
     "rust-integration-tests"
   ]
@@ -440,6 +456,16 @@ target "uid-allocator" {
   ]
 }
 
+# JavaScript Services - integration testing
+# ---------------------------------------------------------------------
+target "_javascript-base" {
+  inherits = ["_grapl-base"]
+  contexts = {
+    dist-ctx = "dist"
+    etc-ctx  = "etc"
+  }
+  dockerfile = "src/js/Dockerfile"
+}
 
 # Python Services
 # ----------------------------------------------------------------------
@@ -469,6 +495,14 @@ target "provisioner" {
 
 # Testing Images
 # ----------------------------------------------------------------------
+
+target "javascript-integration-tests" {
+  inherits = ["_javascript-base"]
+  target   = "integration-tests"
+  tags = [
+    local_only_tag("javascript-integration-tests")
+  ]
+}
 
 target "python-integration-tests" {
   inherits = ["_python-base"]

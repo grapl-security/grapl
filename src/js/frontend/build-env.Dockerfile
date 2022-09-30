@@ -30,5 +30,9 @@ RUN mkdir --parents \
     /frontend/.yarn/state \
     /frontend/node_modules
 
+
+
+
+
 VOLUME /frontend/.yarn/state
 VOLUME /frontend/node_modules

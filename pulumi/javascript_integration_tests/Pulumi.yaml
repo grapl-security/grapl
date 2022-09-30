@@ -1,0 +1,3 @@
+name: javascript-integration-tests
+runtime: javascript
+description: Deploy javascript integration tests to Nomad
