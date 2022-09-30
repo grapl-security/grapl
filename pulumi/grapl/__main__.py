@@ -339,8 +339,8 @@ def main() -> None:
         pulumi_config.get(key="lightstep-access-token") or ""
     )
     lightstep_endpoint = pulumi_config.require(key="lightstep-endpoint")
-    lightstep_is_endpoint_insecure = (
-        pulumi_config.get(key="lightstep-is-endpoint-insecure") or "false"
+    lightstep_is_endpoint_insecure = pulumi_config.get_bool(
+        key="lightstep-is-endpoint-insecure", default=False
     )
 
     otel_configuration = otel_config(
