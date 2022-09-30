@@ -231,5 +231,5 @@ ignore_adding_targets = [
 ]
 
 [cli.alias]
-bk-run = "run build-support:bk-run --"
+bk-run = "run build-support/bk-run.py --"
 dump-artifacts = "run etc/ci_scripts/dump_artifacts:dump_artifacts --"
