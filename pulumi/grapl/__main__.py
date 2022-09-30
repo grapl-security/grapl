@@ -78,6 +78,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graph-mutation": builder.build_with_tag("graph-mutation"),
         "graph-query": builder.build_with_tag("graph-query"),
+        "graph-query-proxy": builder.build_with_tag("graph-query-proxy"),
         "graph-schema-manager": builder.build_with_tag("graph-schema-manager"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
         "kafka-retry": builder.build_with_tag("kafka-retry"),
