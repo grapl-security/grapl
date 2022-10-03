@@ -85,10 +85,10 @@ variable "PYTHON_VERSION" {
 
 # This will be incorporated into the base image identifier for our
 # Javascript images. In general, it should correspond to the version in
-# `.javascript-version`, which we'll extract in our Makefile
+# `.typescript-version`, which we'll extract in our Makefile
 # and pass in here. If something weird happens in the future where we
 # need to override that for some reason, we can.
-variable "JAVASCRIPT_VERSION" {
+variable "TYPESCRIPT_VERSION" {
 }
 
 # This is the directory that certain artifacts will be deposited into
@@ -219,10 +219,10 @@ group "local-infrastructure" {
   ]
 }
 
-group "javascript-integration-tests" {
+group "typescript-integration-tests" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "javascript-integration-tests",
+    "typescript-integration-tests",
   ]
 }
 
@@ -236,7 +236,7 @@ group "python-integration-tests" {
 group "all-tests" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "javascript-integration-tests",
+    "typescript-integration-tests",
     "python-integration-tests",
     "rust-integration-tests"
   ]
@@ -456,9 +456,9 @@ target "uid-allocator" {
   ]
 }
 
-# JavaScript Services - integration testing
+# Typescript Services - integration testing
 # ---------------------------------------------------------------------
-target "_javascript-base" {
+target "_typescript-base" {
   inherits = ["_grapl-base"]
   contexts = {
     dist-ctx = "dist"
@@ -496,11 +496,11 @@ target "provisioner" {
 # Testing Images
 # ----------------------------------------------------------------------
 
-target "javascript-integration-tests" {
-  inherits = ["_javascript-base"]
+target "typescript-integration-tests" {
+  inherits = ["typescript-base"]
   target   = "integration-tests"
   tags = [
-    local_only_tag("javascript-integration-tests")
+    local_only_tag("typescript-integration-tests")
   ]
 }
 

@@ -19,7 +19,7 @@ from infra.nomad_service_postgres import NomadServicePostgresDbArgs
 import pulumi
 
 
-def _javascript_integration_container_images(
+def _typescript_integration_container_images(
     artifacts: ArtifactGetter,
 ) -> Mapping[str, DockerImageId]:
     """
@@ -31,7 +31,7 @@ def _javascript_integration_container_images(
     )
 
     return {
-        "javascript_integration_tests": builder.build_with_tag("javascript_integration_tests"),
+        "typescript_integration_tests": builder.build_with_tag("typescript_integration_tests"),
     }
 
 
@@ -68,12 +68,12 @@ def main() -> None:
         # We don't do Python integration tests in AWS yet, mostly because the
         # current Python Pants integration test setup is funky and requires an
         # on-disk Grapl repo.
-        # FIXME: makejavascript_integration_tests work in AWS.
+        # FIXME: typescript_integration_tests work in AWS.
 
-        javascript_integration_test_job_vars: NomadVars = {
+        typescript_integration_test_job_vars: NomadVars = {
             "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
             "aws_region": aws.get_region().name,
-            "container_images": _javascript_integration_container_images(artifacts),
+            "container_images": typescript_integration_container_images(artifacts),
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
@@ -81,10 +81,10 @@ def main() -> None:
             "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
         }
 
-        javascript_integration_tests = NomadJob(
-            "javascript_integration_tests",
-            jobspec=repository_path("nomad/local/javascript_integration_tests.nomad"),
-            vars=javascript_integration_test_job_vars,
+        typescript_integration_tests = NomadJob(
+            "typescript_integration_tests",
+            jobspec=repository_path("nomad/local/typescript_integration_tests.nomad"),
+            vars=typescript_integration_test_job_vars,
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
 

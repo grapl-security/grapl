@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.4
-ARG JAVASCRIPT_VERSION
+ARG TYPESCRIPT_VERSION
 
 # grapl-javascript-base
 ################################################################################
-FROM javascript:${JAVASCRIPT}-bullseye-slim AS grapl-javascript-base
+FROM typescript:${TYPESCRIPT}-bullseye-slim AS grapl-typescript-base
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
@@ -26,7 +26,7 @@ ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 
 # Provisioner
 ################################################################################
-FROM grapl-javascript-base AS provisioner-deploy
+FROM grapl-typescript-base AS provisioner-deploy
 # Named context support https://github.com/hadolint/hadolint/issues/830
 # hadolint ignore=DL3022
 COPY --from=dist-ctx provisioner.pex .
@@ -34,10 +34,10 @@ CMD [":"]
 
 # integration-tests
 ################################################################################
-FROM grapl-javascript-base AS integration-tests
+FROM grapl-typescript-base AS integration-tests
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
-# We install javascript so that we have a js version supported by pants (No 3.10 support yet)
+# We install typescript so that we have a ts version supported by pants (No 3.10 support yet)
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         build-essential=12.9 \
@@ -68,4 +68,4 @@ ENV PANTS_SETUP_CACHE=/mnt/pants-cache/setup
 
 # /mnt/grapl-root is mounted by `integration-tests.nomad` at runtime.
 WORKDIR /mnt/grapl-root
-CMD ["./test/run/javascript-integration-tests-from-docker-container.sh"]
+CMD ["./test/run/typescript-integration-tests-from-docker-container.sh"]

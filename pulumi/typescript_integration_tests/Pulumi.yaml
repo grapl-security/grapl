@@ -1,0 +1,3 @@
+name: typescript-integration-tests
+runtime: typescript
+description: Deploy typescript integration tests to Nomad

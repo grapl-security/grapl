@@ -56,7 +56,7 @@ locals {
   log_level = "DEBUG"
 }
 
-job "javascript-integration-tests" {
+job "typescript-integration-tests" {
   datacenters = ["dc1"]
   type        = "batch"
   parameterized {}
@@ -69,7 +69,7 @@ job "javascript-integration-tests" {
   # Specifies that this job is the most high priority job we have; nothing else should take precedence
   priority = 100
 
-  group "javascript-integration-tests" {
+  group "typescript-integration-tests" {
     restart {
       # Make this a one-shot job. Absolute worst case, Buildkite reruns it for us.
       attempts = 0
@@ -81,7 +81,7 @@ job "javascript-integration-tests" {
 
     # Enable service discovery
     service {
-      name = "javascript-integration-tests"
+      name = "typescript-integration-tests"
       connect {
         sidecar_service {
           proxy {
@@ -99,12 +99,12 @@ job "javascript-integration-tests" {
       }
     }
 
-    task "javascript-integration-tests" {
+    task "typescript-integration-tests" {
       driver = "docker"
       user   = var.docker_user
 
       config {
-        image = var.container_images["javascript-integration-tests"]
+        image = var.container_images["typescript-integration-tests"]
         # Pants caches requirements per-user. So when we run a Docker container
         # with the host's userns, this lets us reuse the pants cache.
         # (This descreases runtime on my personal laptop from 390s to 190s)

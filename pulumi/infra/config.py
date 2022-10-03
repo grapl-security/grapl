@@ -48,7 +48,7 @@ _validate_stack_name()
 
 LOCAL_GRAPL: Final[bool] = STACK_NAME in (
     "local-grapl",
-    "local-grapl-javascript-integration-tests",
+    "local-grapl-typescript-integration-tests",
     "local-grapl-python-integration-tests",
     "local-grapl-rust-integration-tests",
 )
