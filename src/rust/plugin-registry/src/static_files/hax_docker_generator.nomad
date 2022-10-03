@@ -221,7 +221,7 @@ EOF
         PLUGIN_ID  = "${var.plugin_id}"
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
         # Consumed by GeneratorServiceConfig
-        PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
+        PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_generator-plugin}"
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
