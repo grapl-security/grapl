@@ -31,7 +31,9 @@ def _typescript_integration_container_images(
     )
 
     return {
-        "typescript_integration_tests": builder.build_with_tag("typescript_integration_tests"),
+        "typescript_integration_tests": builder.build_with_tag(
+            "typescript_integration_tests"
+        ),
     }
 
 

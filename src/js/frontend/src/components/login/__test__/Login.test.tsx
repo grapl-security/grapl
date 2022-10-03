@@ -1,7 +1,6 @@
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { fireEvent, render, screen, waitFor, renderHook } from "@testing-library/react";
 
-
 import Login from "components/login/Login";
 
 // to show the result of render(), use screen.debug() which displays HTML
@@ -20,22 +19,22 @@ describe("Login", () => {
     await waitFor(() => {
       fireEvent.change(username, {
         target: {
-          value: "local-grapl-grapl-test-user"
-        }
-      })
-    })
+          value: "local-grapl-grapl-test-user",
+        },
+      });
+    });
 
     await waitFor(() => {
       fireEvent.change(password, {
         target: {
-          value: "local-grapl-password"
-        }
-      })
-    })
+          value: "local-grapl-password",
+        },
+      });
+    });
 
     await waitFor(() => {
-      fireEvent.click(submitButton)
-    })
+      fireEvent.click(submitButton);
+    });
 
     // const {result} = renderHook(() => useLoggedInUser())
     // expect(result.current).toEqual({name: 'Alice'})
@@ -43,5 +42,5 @@ describe("Login", () => {
     // expect(waitFor.innerHTML).toBe(
     //   '{"email":"mock@email.com","name":"mockname","color":"green"}'
     // )
-  })
+  });
 });
