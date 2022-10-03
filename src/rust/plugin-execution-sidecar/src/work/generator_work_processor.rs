@@ -1,15 +1,18 @@
-use rust_proto::graplinc::grapl::api::{
-    graph::v1beta1::GraphDescription,
-    plugin_sdk::generators::v1beta1::{
-        client::GeneratorServiceClient,
-        RunGeneratorRequest,
-    },
-    plugin_work_queue::v1beta1::{
-        AcknowledgeGeneratorRequest,
-        ExecutionJob,
-        GetExecuteGeneratorRequest,
-        GetExecuteGeneratorResponse,
-        PluginWorkQueueServiceClient,
+use rust_proto::{
+    client_factory::services::GeneratorClientConfig,
+    graplinc::grapl::api::{
+        graph::v1beta1::GraphDescription,
+        plugin_sdk::generators::v1beta1::{
+            client::GeneratorServiceClient,
+            RunGeneratorRequest,
+        },
+        plugin_work_queue::v1beta1::{
+            AcknowledgeGeneratorRequest,
+            ExecutionJob,
+            GetExecuteGeneratorRequest,
+            GetExecuteGeneratorResponse,
+            PluginWorkQueueServiceClient,
+        },
     },
 };
 use uuid::Uuid;
