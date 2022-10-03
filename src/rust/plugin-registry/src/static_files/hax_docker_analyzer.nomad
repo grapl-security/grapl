@@ -107,7 +107,7 @@ job "grapl-plugin" {
             }
 
             upstreams {
-              destination_name      = "plugin"
+              destination_name      = "analyzer-plugin"
               destination_namespace = local.namespace
               local_bind_port       = 1001
             }
@@ -163,7 +163,7 @@ job "grapl-plugin" {
       env {
         PLUGIN_EXECUTOR_PLUGIN_ID = var.plugin_id
 
-        ANALYZER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin}"
+        ANALYZER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_analyzer-plugin}"
 
         // FYI: the upstream plugin's address is discovered at runtime, not
         // env{}, because the upstream's name is based on ${PLUGIN_ID}.
@@ -212,21 +212,22 @@ job "grapl-plugin" {
     }
   }
 
-  group "plugin" {
+  group "analyzer-plugin" {
     consul { namespace = local.namespace }
 
     network {
       mode = "bridge"
-      port "plugin" {}
+      port "analyzer-plugin" {}
     }
 
     count = var.plugin_count
 
     service {
-      name = "plugin"
-      port = "plugin"
+      name = "analyzer-plugin"
+      port = "analyzer-plugin"
       tags = [
         "plugin",
+        "analyzer-plugin",
         "tenant-${var.tenant_id}",
         "plugin-${var.plugin_id}"
       ]
@@ -245,7 +246,7 @@ job "grapl-plugin" {
 
       check {
         type     = "grpc"
-        port     = "plugin"
+        port     = "analyzer-plugin"
         interval = "10s"
         timeout  = "3s"
       }
@@ -253,11 +254,11 @@ job "grapl-plugin" {
 
     # a Docker task holding:
     # - the plugin binary itself (mounted)
-    task "plugin" {
+    task "analyzer-plugin" {
       driver = "docker"
 
       config {
-        ports = ["plugin"]
+        ports = ["analyzer-plugin"]
 
         image      = var.plugin_runtime_image
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
@@ -297,7 +298,7 @@ EOF
         PLUGIN_ID  = "${var.plugin_id}"
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
         # Consumed by GeneratorServiceConfig
-        PLUGIN_BIND_ADDRESS              = "0.0.0.0:${NOMAD_PORT_plugin}"
+        PLUGIN_BIND_ADDRESS              = "0.0.0.0:${NOMAD_PORT_analyzer-plugin}"
         GRAPH_QUERY_PROXY_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-query-proxy}"
 
         RUST_LOG       = var.rust_log

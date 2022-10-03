@@ -100,7 +100,7 @@ job "grapl-plugin" {
             }
 
             upstreams {
-              destination_name      = "plugin"
+              destination_name      = "generator-plugin"
               destination_namespace = local.namespace
               local_bind_port       = 1001
             }
@@ -127,7 +127,7 @@ job "grapl-plugin" {
       env {
         PLUGIN_EXECUTOR_PLUGIN_ID = var.plugin_id
 
-        GENERATOR_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin}"
+        GENERATOR_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_generator-plugin}"
 
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
 
@@ -142,21 +142,22 @@ job "grapl-plugin" {
     }
   }
 
-  group "plugin" {
+  group "generator-plugin" {
     consul { namespace = local.namespace }
 
     network {
       mode = "bridge"
-      port "plugin" {}
+      port "generator-plugin" {}
     }
 
     count = var.plugin_count
 
     service {
-      name = "plugin"
-      port = "plugin"
+      name = "generator-plugin"
+      port = "generator-plugin"
       tags = [
         "plugin",
+        "generator-plugin",
         "tenant-${var.tenant_id}",
         "plugin-${var.plugin_id}"
       ]
@@ -168,7 +169,7 @@ job "grapl-plugin" {
 
       check {
         type     = "grpc"
-        port     = "plugin"
+        port     = "generator-plugin"
         interval = "10s"
         timeout  = "3s"
       }
@@ -176,11 +177,11 @@ job "grapl-plugin" {
 
     # a Docker task holding:
     # - the plugin binary itself (mounted)
-    task "plugin" {
+    task "generator-plugin" {
       driver = "docker"
 
       config {
-        ports = ["plugin"]
+        ports = ["generator-plugin"]
 
         image      = var.plugin_runtime_image
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
