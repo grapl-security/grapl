@@ -1,3 +1,4 @@
+use clap::Parser;
 use rust_proto::{
     client_factory::services::GeneratorClientConfig,
     graplinc::grapl::api::{
@@ -14,6 +15,7 @@ use rust_proto::{
             PluginWorkQueueServiceClient,
         },
     },
+    protocol::service_client::ConnectWithConfig,
 };
 use uuid::Uuid;
 
@@ -45,7 +47,7 @@ impl GeneratorWorkProcessor {
     pub async fn new(_config: &PluginExecutorConfig) -> Result<Self, Box<dyn std::error::Error>> {
         let client_config = GeneratorClientConfig::parse();
         let generator_service_client =
-            GeneratorServiceClient::connect_with_config(client_config).await;
+            GeneratorServiceClient::connect_with_config(client_config).await?;
         Ok(GeneratorWorkProcessor {
             generator_service_client,
         })
