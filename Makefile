@@ -15,9 +15,6 @@
 IMAGE_TAG ?= dev
 # This is a build argument for our Python images, and is thus used in
 # docker-bake.hcl
-TYPESCRIPT_VERSION ?= $(shell cat .typescript-version)
-# This is a build argument for our Python images, and is thus used in
-# docker-bake.hcl
 PYTHON_VERSION ?= $(shell cat .python-version)
 # This is a build argument for our Rust images, and is thus used in
 # docker-bake.hcl

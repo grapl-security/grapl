@@ -83,14 +83,6 @@ variable "RUST_VERSION" {
 variable "PYTHON_VERSION" {
 }
 
-# This will be incorporated into the base image identifier for our
-# Javascript images. In general, it should correspond to the version in
-# `.typescript-version`, which we'll extract in our Makefile
-# and pass in here. If something weird happens in the future where we
-# need to override that for some reason, we can.
-variable "TYPESCRIPT_VERSION" {
-}
-
 # This is the directory that certain artifacts will be deposited into
 variable "DIST_DIR" {
 }
