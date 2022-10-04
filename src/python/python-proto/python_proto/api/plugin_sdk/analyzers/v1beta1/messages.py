@@ -4,6 +4,7 @@ import dataclasses
 
 from graplinc.grapl.api.plugin_sdk.analyzers.v1beta1 import analyzers_pb2 as proto
 from python_proto import common as proto_common_msgs
+from python_proto.api.graph_query.v1beta1.messages import GraphView
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_msgs
 from python_proto.serde import SerDe
 
@@ -239,12 +240,12 @@ class AnalyzerName(SerDe[proto.AnalyzerName]):
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class ExecutionHit(SerDe[proto.ExecutionHit]):
-    # graph_view: GraphView
+    graph_view: GraphView
     lens_refs: list[LensRef]
-    analyzer_name: AnalyzerName
     time_of_match: proto_common_msgs.Timestamp
     idempotency_key: int
     score: int
+    analyzer_name: AnalyzerName
 
     _proto_cls = proto.ExecutionHit
 
@@ -254,6 +255,7 @@ class ExecutionHit(SerDe[proto.ExecutionHit]):
         proto_value: proto.ExecutionHit,
     ) -> ExecutionHit:
         return cls(
+            graph_view=GraphView.from_proto(proto_value.graph_view),
             lens_refs=[LensRef.from_proto(p) for p in proto_value.lens_refs],
             analyzer_name=AnalyzerName.from_proto(proto_value.analyzer_name),
             time_of_match=proto_common_msgs.Timestamp.from_proto(
@@ -265,6 +267,7 @@ class ExecutionHit(SerDe[proto.ExecutionHit]):
 
     def into_proto(self) -> proto.ExecutionHit:
         proto_value = self.new_proto()
+        proto_value.graph_view.CopyFrom(self.graph_view.into_proto())
         proto_value.lens_refs.extend(
             [lens_ref.into_proto() for lens_ref in self.lens_refs]
         )
@@ -345,3 +348,7 @@ class RunAnalyzerResponse(SerDe[proto.RunAnalyzerResponse]):
         proto_value = self.new_proto()
         proto_value.execution_result.CopyFrom(self.execution_result.into_proto())
         return proto_value
+
+    @classmethod
+    def miss(cls) -> RunAnalyzerResponse:
+        return cls(execution_result=ExecutionResult(inner=ExecutionMiss()))

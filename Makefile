@@ -62,10 +62,8 @@ NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 #
 # This is set in docker-bake.hcl
 DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
-# We pull some vendor containers directly
-DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
-# This filter should differentiate between data volumes, such as those used for
-# DGraph (grapl-data-dgraph), and those used for caching builds
+# This filter should differentiate between data volumes, such as those once used
+# for DGraph (grapl-data-dgraph), and those used for caching builds
 # (grapl-frontend-view-yarn).
 #
 # Multiple filter arguments can be supplied here.
@@ -159,6 +157,12 @@ build-service-pex-files: ## Build all PEX files needed by Grapl SaaS services
 	@echo "--- Building Grapl service PEX files"
 	./pants --tag="service-pex" package ::
 
+# We copy built Analyzers from dist/ into our Rust integration tests so we can deploy them.
+.PHONY: build-test-fixture-pex-files
+build-test-fixture-pex-files: ## Build all PEX files needed by integration tests, e.g. analyzers
+	@echo "--- Building Python test fixture PEX files"
+	./pants --tag="test-fixture-pex" package ::
+
 .PHONY: build-frontend
 build-frontend: ## Build website assets to include in grapl-web-ui
 	@echo "--- Building the frontend"
@@ -186,6 +190,7 @@ build-grapl-service-prerequisites: build-frontend
 .PHONY: build-image-prerequisites
 build-image-prerequisites: ## Build all dependencies that must be copied into our images that we push to our registry
 build-image-prerequisites: build-grapl-service-prerequisites
+build-image-prerequisites: build-test-fixture-pex-files
 
 .PHONY: build-local-infrastructure
 build-local-infrastructure: build-grapl-service-prerequisites
@@ -193,7 +198,7 @@ build-local-infrastructure: build-grapl-service-prerequisites
 	$(DOCKER_BUILDX_BAKE) local-infrastructure
 
 .PHONY: build-test-integration-rust
-build-test-integration-rust:
+build-test-integration-rust: build-test-fixture-pex-files
 	@echo "--- Building rust integration test images"
 	$(DOCKER_BUILDX_BAKE) rust-integration-tests
 
@@ -256,8 +261,10 @@ test-unit-frontend: ## Test Frontend
 # tags, rather than pytest tags
 # If you need to `pdb` these tests, add a `--debug` after `./pants test`
 test-unit-python: ## Run Python unit tests under Pants
-	./pants filter --filter-target-type="python_tests" :: \
-	| xargs ./pants --tag="-needs_work" test --pytest-args="-m \"not integration_test\""
+	./pants --filter-target-type="python_test" \
+		--tag="-needs_work" \
+	test :: \
+	--pytest-args="-m \"not integration_test\""
 
 .PHONY: test-unit-rust
 test-unit-rust: ## Build and run unit tests - Rust only (not for CI)
@@ -540,7 +547,6 @@ clean-dist: ## Clean out the `dist` directory
 clean-docker: clean-docker-cache
 clean-docker: clean-docker-containers
 clean-docker: clean-docker-images
-clean-docker: clean-docker-dgraph
 clean-docker: clean-docker-data-volumes
 clean-docker: ## Clean all Docker-related resources
 
@@ -575,13 +581,6 @@ clean-docker-data-volumes: ## Remove all Grapl labeled volumes
 	# We explicitly don't want to prune the build cache volumes
 	docker volume ls ${DOCKER_DATA_VOLUME_FILTERS} --quiet |
 		xargs --no-run-if-empty docker volume rm --force
-
-clean-docker-dgraph: ## Remove dgraph images
-	docker images \
-		--filter=label=$(DOCKER_DGRAPH_FILTER_LABEL) \
-		--quiet \
-	| xargs --no-run-if-empty docker rmi --force
-
 
 .PHONY: clean-frontend
 clean-frontend:

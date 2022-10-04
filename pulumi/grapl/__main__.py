@@ -31,7 +31,7 @@ from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
-from infra.observability_env_vars import observability_env_vars_for_local, otel_config
+from infra.observability_env_vars import get_observability_env_vars, otel_config
 from infra.postgres import Postgres
 from infra.scylla import ScyllaInstance
 
@@ -67,8 +67,9 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
 
     return {
         "analyzer-dispatcher": builder.build_with_tag("analyzer-dispatcher"),
-        "analyzer-execution-sidecar": DockerImageId("TODO implement analzyer executor"),
-        "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
+        "analyzer-execution-sidecar": builder.build_with_tag(
+            "analyzer-execution-sidecar"
+        ),
         "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
         "generator-execution-sidecar": builder.build_with_tag(
@@ -77,6 +78,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graph-mutation": builder.build_with_tag("graph-mutation"),
         "graph-query": builder.build_with_tag("graph-query"),
+        "graph-query-proxy": builder.build_with_tag("graph-query-proxy"),
         "graph-schema-manager": builder.build_with_tag("graph-schema-manager"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
         "kafka-retry": builder.build_with_tag("kafka-retry"),
@@ -230,7 +232,7 @@ def main() -> None:
         service: kafka.consumer_group(service) for service in kafka_consumer_services
     }
 
-    observability_env_vars = observability_env_vars_for_local()
+    observability_env_vars = get_observability_env_vars()
 
     # This Google client ID is used by grapl-web-ui for authenticating users via Sign In With Google.
     # TODO: This should be moved to Pulumi config somehwo, but I'm not sure the best way to do that atm.
@@ -337,15 +339,15 @@ def main() -> None:
         pulumi_config.get(key="lightstep-access-token") or ""
     )
     lightstep_endpoint = pulumi_config.require(key="lightstep-endpoint")
-    lightstep_is_endpoint_secure = (
-        pulumi_config.get(key="lightstep-is-endpoint-secure") or "true"
+    lightstep_is_endpoint_insecure = pulumi_config.get_bool(
+        key="lightstep-is-endpoint-insecure", default=False
     )
 
     otel_configuration = otel_config(
         lightstep_token=lightstep_access_token,
         nomad_endpoint=nomad_endpoint,
         lightstep_endpoint=lightstep_endpoint,
-        lightstep_is_endpoint_secure=lightstep_is_endpoint_secure,
+        lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
     )
     NomadJob(
         "otel-collector",

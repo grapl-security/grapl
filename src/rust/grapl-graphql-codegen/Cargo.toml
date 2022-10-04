@@ -12,14 +12,10 @@ name = "grapl_graphql_codegen"
 name = "grapl-graphql-codegen"
 
 [dependencies]
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
+clap = { workspace = true }
 color-eyre = "0.6"
 graphql-parser = "0.4"
 serde_json = "1.0"
-thiserror = "1.0"
-tracing = "0.1"
+thiserror = { workspace = true }
+tracing = { workspace = true }
 tracing-subscriber = "0.3"

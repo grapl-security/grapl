@@ -1,14 +1,9 @@
-from infra import config
-
 import pulumi
 
 
-def observability_env_vars_for_local() -> str:
+def get_observability_env_vars() -> str:
     # We currently use both the zipkin v2 endpoint for consul, python and typescript instrumentation and the jaeger udp
     # agent endpoint for rust instrumentation. These will be consolidated in the future
-
-    if not config.LOCAL_GRAPL:
-        return "DUMMY_VAR_FOR_PROD = TRUE"
 
     # These use the weird Mustache {{}} tags because this interpolation eventually
     # gets passed in to a template{} stanza.
@@ -35,12 +30,13 @@ def otel_config(
     lightstep_token: pulumi.Output,
     nomad_endpoint: pulumi.Output | str,
     lightstep_endpoint: str = "ingest.lightstep.com:443",
-    lightstep_is_endpoint_secure: str = "true",
+    # This is optional because pulumi.config.get_bool returns Optional[bool]
+    lightstep_is_endpoint_insecure: bool | None = False,
 ) -> pulumi.Output[str]:
     return pulumi.Output.all(
         lightstep_endpoint=lightstep_endpoint,
         lightstep_token=lightstep_token,
-        lightstep_is_endpoint_secure=lightstep_is_endpoint_secure,
+        lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
         nomad_endpoint=nomad_endpoint,
     ).apply(
         lambda args: f"""
@@ -82,9 +78,9 @@ exporters:
   otlp/ls:
     endpoint: {args['lightstep_endpoint']}
     tls:
-      insecure: {args['lightstep_is_endpoint_secure']}
-    headers:
-      "lightstep-access-token": {args['lightstep_token']}
+      insecure: {args['lightstep_is_endpoint_insecure']}
+    headers: 
+      "lightstep-access-token": "{args['lightstep_token']}"
 service:
   telemetry:
     logs:

@@ -162,12 +162,14 @@ group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "analyzer-dispatcher",
+    "analyzer-execution-sidecar",
     "event-source",
     "generator-dispatcher",
     "generator-execution-sidecar",
     "graph-merger",
     "graph-mutation",
     "graph-query",
+    "graph-query-proxy",
     "graph-schema-manager",
     "grapl-web-ui",
     "kafka-retry",
@@ -342,6 +344,14 @@ target "graph-query" {
   ]
 }
 
+target "graph-query-proxy" {
+  inherits = ["_rust-base"]
+  target   = "graph-query-proxy-deploy"
+  tags = [
+    upstream_aware_tag("graph-query-proxy")
+  ]
+}
+
 target "grapl-web-ui" {
   inherits = ["_rust-base"]
   target   = "grapl-web-ui-deploy"
@@ -355,6 +365,14 @@ target "event-source" {
   target   = "event-source-deploy"
   tags = [
     upstream_aware_tag("event-source")
+  ]
+}
+
+target "analyzer-execution-sidecar" {
+  inherits = ["_rust-base"]
+  target   = "analyzer-execution-sidecar-deploy"
+  tags = [
+    upstream_aware_tag("analyzer-execution-sidecar")
   ]
 }
 

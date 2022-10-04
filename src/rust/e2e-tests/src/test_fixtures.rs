@@ -11,6 +11,14 @@ pub fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
     std::fs::read("/test-fixtures/sysmon-generator").map(Bytes::from)
 }
 
+pub fn get_example_generator() -> Result<Bytes, std::io::Error> {
+    std::fs::read("/test-fixtures/example-generator").map(Bytes::from)
+}
+
+pub fn get_suspicious_svchost_analyzer() -> Result<Bytes, std::io::Error> {
+    std::fs::read("/test-fixtures/suspicious_svchost_analyzer.pex").map(Bytes::from)
+}
+
 pub fn single_sysmon_event() -> Bytes {
     r#"
 <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">

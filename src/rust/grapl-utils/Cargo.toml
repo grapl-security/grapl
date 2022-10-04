@@ -13,4 +13,4 @@ rusoto_core = { version = "0.47", default_features = false, features = [
 rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-tokio = { version = "1.17", features = ["time"] }
+tokio = { workspace = true, features = ["time"], default_features = false }

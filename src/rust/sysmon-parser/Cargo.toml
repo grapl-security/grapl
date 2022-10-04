@@ -21,13 +21,13 @@ memchr = "2"
 serde = { version = "1.0", default-features = false, features = [
   "derive"
 ], optional = true }
-thiserror = "1.0"
-uuid = "1.0"
+thiserror = { workspace = true }
+uuid = { workspace = true }
 xmlparser = "0.13"
 
 [dev-dependencies]
 criterion = "0.3"
-eyre = "0.6"
+eyre = { workspace = true }
 
 [[bench]]
 name = "benches"

@@ -229,6 +229,11 @@ COPY --from=etc-ctx example_schemas /test-fixtures/example_schemas
 # hadolint ignore=DL3022
 COPY --from=etc-ctx sample_data/36_eventlog.xml /test-fixtures
 
+# Copy in an example Analyzer, suspicious_svchost, for integration testing.
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=dist-ctx suspicious_svchost_analyzer.pex /test-fixtures
+
 # Copy in the example generator so we can deploy it in test_deploy_plugin
 COPY --from=build /outputs/example-generator /test-fixtures
 COPY --from=build /outputs/sysmon-generator /test-fixtures
@@ -293,6 +298,12 @@ COPY --from=build /outputs/example-generator /
 COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /plugin-bootstrap-init/
 COPY rust/plugin-bootstrap/grapl-plugin.service /plugin-bootstrap-init/
 
+##### analyzer-execution-sidecar
+FROM rust-dist AS analyzer-execution-sidecar-deploy
+
+COPY --from=build /outputs/analyzer-execution-sidecar /
+ENTRYPOINT ["/analyzer-execution-sidecar"]
+
 ##### graph-merger
 FROM rust-dist AS graph-merger-deploy
 
@@ -310,6 +321,12 @@ FROM rust-dist AS graph-mutation-deploy
 
 COPY --from=build /outputs/graph-mutation /
 ENTRYPOINT ["/graph-mutation"]
+
+##### graph-query-proxy
+FROM rust-dist as graph-query-proxy-deploy
+
+COPY --from=build /outputs/graph-query-proxy /
+ENTRYPOINT ["/graph-query-proxy"]
 
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy

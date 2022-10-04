@@ -1,7 +1,7 @@
 [workspace]
 members = [
-  "./async-cache",
   "./analyzer-dispatcher",
+  "./async-cache",
   "./client-executor",
   "./consul-connect",
   "./derive-dynamic-node",
@@ -14,6 +14,7 @@ members = [
   "./graph-merger",
   "./graph-mutation",
   "./graph-query-service", # TODO rename dir
+  "./graph-query-proxy",
   "./graph-schema-manager",
   "./grapl-config",
   "./grapl-graphql-codegen",
@@ -36,6 +37,29 @@ members = [
   "./sysmon-parser",
   "./uid-allocator",
 ]
+
+[workspace.dependencies]
+bytes = "1.1"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
+eyre = "0.6"
+sqlx = { version = "0.6", features = [
+  "chrono",
+  "migrate",
+  "offline",
+  "postgres",
+  "runtime-tokio-rustls",
+  "time",
+  "uuid",
+] }
+test-context = "0.1"
+thiserror = "1.0"
+tokio = { version = "1.21", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1"
+uuid = { version = "1.0", features = ["v4"] }
 
 [profile.dev]
 opt-level = 1

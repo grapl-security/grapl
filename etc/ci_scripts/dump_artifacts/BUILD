@@ -1,8 +1,1 @@
-python_sources(
-    name="dump_artifacts_lib",
-)
-
-pex_binary(
-    name="dump_artifacts",
-    entry_point="cli.py:main",
-)
+python_sources()
