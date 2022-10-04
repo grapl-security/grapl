@@ -21,14 +21,7 @@ rusoto_s3 = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
 secrecy = "0.8"
-sqlx = { version = "0.6", features = [
-  "chrono",
-  "migrate",
-  "offline",
-  "postgres",
-  "runtime-tokio-rustls",
-  "uuid",
-] }
+sqlx = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

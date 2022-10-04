@@ -18,13 +18,7 @@ grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto", version = "*" }
-sqlx = { version = "0.6", features = [
-  "runtime-tokio-rustls",
-  "postgres",
-  "offline",
-  "uuid",
-  "migrate",
-] }
+sqlx = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
