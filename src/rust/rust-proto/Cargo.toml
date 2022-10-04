@@ -37,7 +37,3 @@ quickcheck = "1.0"
 quickcheck_macros = "1.0"
 test-context = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-[features]
-default = ["client-factory"]
-client-factory = ["clap"]

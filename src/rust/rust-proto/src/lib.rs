@@ -196,14 +196,9 @@ pub mod graplinc {
         }
 
         pub mod api {
-            mod client_macros; // FIXME: remove
-
             pub mod server;
 
             pub mod client;
-
-            #[cfg(feature = "client-factory")]
-            pub mod client_factory; // FIXME: remove
 
             pub mod protocol;
 
