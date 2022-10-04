@@ -31,9 +31,8 @@ locals {
       port = 5432,
     },
     {
-      name       = "plugin-work-queue-db",
-      port       = 5433,
-      memory_max = 1024,
+      name = "plugin-work-queue-db",
+      port = 5433,
     },
     {
       name = "organization-management-db",

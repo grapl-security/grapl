@@ -28,14 +28,7 @@ rusoto_s3 = { version = "0.47", default_features = false, features = [
 ] }
 rust-proto = { path = "../rust-proto" }
 serde_json = "1.0"
-sqlx = { version = "0.6", features = [
-  "chrono",
-  "migrate",
-  "offline",
-  "postgres",
-  "runtime-tokio-rustls",
-  "uuid",
-] }
+sqlx = { workspace = true }
 tempfile = "3.3"
 thiserror = { workspace = true }
 tokio = { workspace = true }

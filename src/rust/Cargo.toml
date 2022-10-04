@@ -46,6 +46,15 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 eyre = "0.6"
+sqlx = { version = "0.6", features = [
+  "chrono",
+  "migrate",
+  "offline",
+  "postgres",
+  "runtime-tokio-rustls",
+  "time",
+  "uuid",
+] }
 test-context = "0.1"
 thiserror = "1.0"
 tokio = { version = "1.21", features = ["macros", "rt-multi-thread"] }
