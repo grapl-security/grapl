@@ -71,8 +71,3 @@ CREATE INDEX IF NOT EXISTS creation_time_ix ON plugin_work_queue.generator_plugi
 
 CREATE INDEX IF NOT EXISTS execution_key_ix ON plugin_work_queue.analyzer_plugin_executions (execution_key);
 CREATE INDEX IF NOT EXISTS creation_time_ix ON plugin_work_queue.analyzer_plugin_executions (creation_time);
-
-CREATE SCHEMA IF NOT EXISTS partman;
-CREATE EXTENSION IF NOT EXISTS pg_partman WITH SCHEMA partman;
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-SELECT cron.schedule('@hourly', $$CALL partman.run_maintenance_proc()$$);
