@@ -1,101 +1,102 @@
 use std::time::Duration;
 
-use client_executor::{
-    Executor,
-    ExecutorConfig,
-};
+use client_executor::strategy::FibonacciBackoff;
 use tonic::transport::Endpoint;
 
 use crate::{
-    create_proto_client,
-    execute_client_rpc,
     graplinc::grapl::api::{
-        client_factory::services::GraphMutationClientConfig,
-        client_macros::RpcConfig,
         graph_mutation::v1beta1::messages as native,
-        protocol::{
-            error::GrpcClientError,
-            service_client::{
-                ConnectError,
-                Connectable,
-            },
+        client::{
+            Connectable,
+            Client,
+            ClientError,
+            Configuration
         },
     },
-    protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
-        self as proto,
-        graph_mutation_service_client::GraphMutationServiceClient,
-    },
+    protobufs::graplinc::grapl::api::graph_mutation::v1beta1::graph_mutation_service_client::GraphMutationServiceClient,
 };
-pub type GraphMutationClientError = GrpcClientError;
-
-#[derive(Clone)]
-pub struct GraphMutationClient {
-    proto_client: GraphMutationServiceClient<tonic::transport::Channel>,
-    executor: Executor,
-}
 
 #[async_trait::async_trait]
-impl Connectable for GraphMutationClient {
-    type Config = GraphMutationClientConfig;
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.graph_mutation.v1beta1.GraphMutationService";
-
-    #[tracing::instrument(err)]
-    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = create_proto_client!(
-            executor,
-            GraphMutationServiceClient<tonic::transport::Channel>,
-            endpoint,
-        );
-
-        Ok(Self {
-            proto_client,
-            executor,
-        })
+impl Connectable for GraphMutationServiceClient<tonic::transport::Channel> {
+    async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+        Ok(Self::connect(endpoint).await?)
     }
 }
 
-impl GraphMutationClient {
+#[derive(Clone)]
+pub struct GraphMutationClient<B>
+where
+    B: IntoIterator<Item = Duration> + Clone,
+{
+    client: Client<B, GraphMutationServiceClient<tonic::transport::Channel>>,
+}
+
+impl <B> GraphMutationClient<B>
+where
+    B: IntoIterator<Item = Duration> + Clone,
+{
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.graph_mutation.v1beta1.GraphMutationService";
+
+    pub fn new<A>(
+        address: A,
+        request_timeout: Duration,
+        executor_timeout: Duration,
+        concurrency_limit: usize,
+        initial_backoff_delay: Duration,
+        maximum_backoff_delay: Duration,
+    ) -> Result<Self, ClientError>
+    where
+        A: TryInto<Endpoint>,
+    {
+        let configuration = Configuration::new(
+            Self::SERVICE_NAME,
+            address,
+            request_timeout,
+            executor_timeout,
+            concurrency_limit,
+            FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
+                .max_delay(maximum_backoff_delay)
+                .map(client_executor::strategy::jitter),
+        )?;
+        let client = Client::new(configuration)?;
+
+        Ok(Self { client })
+    }
+
     pub async fn create_node(
         &mut self,
         request: native::CreateNodeRequest,
-    ) -> Result<native::CreateNodeResponse, GraphMutationClientError> {
-        execute_client_rpc!(
-            self,
+    ) -> Result<native::CreateNodeResponse, ClientError> {
+        Ok(self.client.execute(
             request,
-            create_node,
-            proto::CreateNodeRequest,
-            native::CreateNodeResponse,
-            RpcConfig::default(),
-        )
+            |status, request| status.code() == tonic::Code::Unavailable,
+            10,
+            |client, request| client.create_node(request),
+        ).await?)
     }
 
     pub async fn set_node_property(
         &mut self,
         request: native::SetNodePropertyRequest,
-    ) -> Result<native::SetNodePropertyResponse, GraphMutationClientError> {
-        execute_client_rpc!(
-            self,
+    ) -> Result<native::SetNodePropertyResponse, ClientError> {
+        Ok(self.client.execute(
             request,
-            set_node_property,
-            proto::SetNodePropertyRequest,
-            native::SetNodePropertyResponse,
-            RpcConfig::default(),
-        )
+            |status, request| status.code() == tonic::Code::Unavailable,
+            10,
+            |client, request| client.set_node_property(request),
+        ).await?)
     }
 
     pub async fn create_edge(
         &mut self,
         request: native::CreateEdgeRequest,
-    ) -> Result<native::CreateEdgeResponse, GraphMutationClientError> {
-        execute_client_rpc!(
-            self,
+    ) -> Result<native::CreateEdgeResponse, ClientError> {
+        Ok(self.client.execute(
             request,
-            create_edge,
-            proto::CreateEdgeRequest,
-            native::CreateEdgeResponse,
-            RpcConfig::default(),
-        )
+            |status, request| status.code() == tonic::Code::Unavailable,
+            10,
+            |client, request| client.create_edge(request),
+        ).await?)
     }
 }

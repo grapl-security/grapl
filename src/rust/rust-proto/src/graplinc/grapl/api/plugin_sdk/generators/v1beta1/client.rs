@@ -1,70 +1,78 @@
 use std::time::Duration;
 
-use client_executor::{
-    Executor,
-    ExecutorConfig,
-};
-use generator_service_client::GeneratorServiceClient as GeneratorServiceClientProto;
+use client_executor::strategy::FibonacciBackoff;
+use tonic::transport::Endpoint;
 
-pub use crate::protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1::generator_service_client;
 use crate::{
-    create_proto_client,
-    execute_client_rpc,
     graplinc::grapl::api::{
-        client_factory::services::GeneratorClientConfig,
-        client_macros::RpcConfig,
         plugin_sdk::generators::v1beta1 as native,
-        protocol::{
-            endpoint::Endpoint,
-            error::GrpcClientError,
-            service_client::{
-                ConnectError,
-                Connectable,
-            },
+        client::{
+            Client,
+            ClientError,
+            Configuration, Connectable
         },
     },
-    protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as proto,
+    protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1::generator_service_client::GeneratorServiceClient,
 };
 
-#[derive(Clone)]
-pub struct GeneratorServiceClient {
-    executor: Executor,
-    proto_client: GeneratorServiceClientProto<tonic::transport::Channel>,
-}
 #[async_trait::async_trait]
-impl Connectable for GeneratorServiceClient {
-    type Config = GeneratorClientConfig;
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorService";
-
-    #[tracing::instrument(err)]
-    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = create_proto_client!(
-            executor,
-            GeneratorServiceClientProto<tonic::transport::Channel>,
-            endpoint,
-        );
-        Ok(GeneratorServiceClient {
-            executor,
-            proto_client,
-        })
+impl Connectable for GeneratorServiceClient<tonic::transport::Channel> {
+    async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+        Ok(Self::connect(endpoint).await?)
     }
 }
 
-impl GeneratorServiceClient {
+#[derive(Clone)]
+pub struct GeneratorClient<B>
+where
+    B: IntoIterator<Item = Duration> + Clone,
+{
+    client: Client<B, GeneratorServiceClient<tonic::transport::Channel>>,
+}
+
+impl <B> GeneratorClient<B>
+where
+    B: IntoIterator<Item = Duration> + Clone,
+{
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorService";
+
+    pub fn new<A>(
+        address: A,
+        request_timeout: Duration,
+        executor_timeout: Duration,
+        concurrency_limit: usize,
+        initial_backoff_delay: Duration,
+        maximum_backoff_delay: Duration,
+    ) -> Result<Self, ClientError>
+    where
+        A: TryInto<Endpoint>,
+    {
+        let configuration = Configuration::new(
+            Self::SERVICE_NAME,
+            address,
+            request_timeout,
+            executor_timeout,
+            concurrency_limit,
+            FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
+                .max_delay(maximum_backoff_delay)
+                .map(client_executor::strategy::jitter),
+        )?;
+        let client = Client::new(configuration);
+
+        Ok(Self { client })
+    }
+
     #[tracing::instrument(skip(self, request), err)]
     pub async fn run_generator(
         &mut self,
         request: native::RunGeneratorRequest,
-    ) -> Result<native::RunGeneratorResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
+    ) -> Result<native::RunGeneratorResponse, ClientError> {
+        Ok(self.client.execute(
             request,
-            run_generator,
-            proto::RunGeneratorRequest,
-            native::RunGeneratorResponse,
-            RpcConfig::default(),
-        )
+            |status, request| status.code() == tonic::Code::Unavailable,
+            10,
+            |client, request| client.run_generator(request),
+        ).await?)
     }
 }

@@ -161,23 +161,13 @@ impl serde_impl::ProtobufSerializable for PluginPayload {
 //
 
 pub mod client {
-    use futures::FutureExt;
-    use thiserror::Error;
-    use tonic::Request;
+    use std::time::Duration;
+
+    use client_executor::strategy::FibonacciBackoff;
+    use tonic::transport::Endpoint;
 
     use crate::{
-        protobufs::graplinc::grapl::api::plugin_bootstrap::v1beta1::plugin_bootstrap_service_client::PluginBootstrapServiceClient as PluginBootstrapServiceClientProto,
-        graplinc::grapl::api::{
-            client_factory::services::PluginBootstrapClientConfig,
-            protocol::{
-                endpoint::Endpoint,
-                service_client::{
-                    Connectable,
-                    ConnectError
-                },
-            },
-        },
-        SerDeError,
+        protobufs::graplinc::grapl::api::plugin_bootstrap::v1beta1::plugin_bootstrap_service_client::PluginBootstrapServiceClient, graplinc::grapl::api::client::{Connectable, ClientError, Configuration, Client},
     };
 
     use super::{
@@ -185,48 +175,63 @@ pub mod client {
         GetBootstrapResponse
     };
 
-    #[non_exhaustive]
-    #[derive(Debug, Error)]
-    pub enum PluginBootstrapClientError {
-        #[error("failed to serialize/deserialize {0}")]
-        SerDeError(#[from] SerDeError),
-
-        #[error("received unfavorable gRPC status {0}")]
-        GrpcStatus(#[from] tonic::Status),
-    }
-
-    pub struct PluginBootstrapClient {
-        proto_client: PluginBootstrapServiceClientProto<tonic::transport::Channel>,
-    }
-
     #[async_trait::async_trait]
-    impl Connectable for PluginBootstrapClient {
-        type Config = PluginBootstrapClientConfig;
-        const SERVICE_NAME: &'static str =
-            "graplinc.grapl.api.plugin_bootstrap.v1beta1.PluginBootstrapService";
-
-        #[tracing::instrument(err)]
-        async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-            Ok(PluginBootstrapClient {
-                proto_client: PluginBootstrapServiceClientProto::connect(endpoint).await?,
-            })
+    impl Connectable for PluginBootstrapServiceClient<tonic::transport::Channel> {
+        async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+            Ok(Self::connect(endpoint).await?)
         }
     }
 
-    impl PluginBootstrapClient {
+    pub struct PluginBootstrapClient<B>
+    where
+        B: IntoIterator<Item = Duration> + Clone,
+    {
+        client: Client<B, tonic::transport::Channel>,
+    }
+
+    impl <B> PluginBootstrapClient<B>
+    where
+        B: IntoIterator<Item = Duration> + Clone,
+    {
+        const SERVICE_NAME: &'static str =
+            "graplinc.grapl.api.plugin_bootstrap.v1beta1.PluginBootstrapService";
+
+        pub fn new<A>(
+            address: A,
+            request_timeout: Duration,
+            executor_timeout: Duration,
+            concurrency_limit: usize,
+            initial_backoff_delay: Duration,
+            maximum_backoff_delay: Duration,
+        ) -> Result<Self, ClientError>
+        where
+            A: TryInto<Endpoint>,
+        {
+            let configuration = Configuration::new(
+                Self::SERVICE_NAME,
+                address,
+                request_timeout,
+                executor_timeout,
+                concurrency_limit,
+                FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
+                    .max_delay(maximum_backoff_delay)
+                    .map(client_executor::strategy::jitter),
+            )?;
+            let client = Client::new(configuration);
+
+            Ok(Self { client })
+        }
+
         pub async fn get_bootstrap(
             &mut self,
-            get_bootstrap_request: GetBootstrapRequest,
-        ) -> Result<GetBootstrapResponse, PluginBootstrapClientError> {
-            self.proto_client
-                .get_bootstrap(Request::new(get_bootstrap_request.into()))
-                .map(
-                    |response| -> Result<GetBootstrapResponse, PluginBootstrapClientError> {
-                        let inner = response?.into_inner();
-                        Ok(inner.try_into()?)
-                    },
-                )
-                .await
+            request: GetBootstrapRequest,
+        ) -> Result<GetBootstrapResponse, ClientError> {
+            Ok(self.client.execute(
+                request,
+                |status, request| status.code() == tonic::Code::Unavailable,
+                10,
+                |client, request| client.get_bootstrap(request),
+            ).await?)
         }
     }
 }

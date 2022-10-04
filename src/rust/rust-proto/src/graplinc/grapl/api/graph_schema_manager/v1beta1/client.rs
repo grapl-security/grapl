@@ -1,88 +1,87 @@
 use std::time::Duration;
 
-use client_executor::{
-    Executor,
-    ExecutorConfig,
-};
+use client_executor::strategy::FibonacciBackoff;
 use tonic::transport::Endpoint;
 
 use crate::{
-    create_proto_client,
-    execute_client_rpc,
     graplinc::grapl::api::{
-        client_factory::services::GraphSchemaManagerClientConfig,
-        client_macros::RpcConfig,
         graph_schema_manager::v1beta1::messages as native,
-        protocol::{
-            error::GrpcClientError,
-            service_client::{
-                ConnectError,
-                Connectable,
-            },
-        },
+        client::{Client, Connectable, ClientError, Configuration},
     },
-    protobufs::graplinc::grapl::api::graph_schema_manager::{
-        v1beta1 as proto,
-        v1beta1::graph_schema_manager_service_client::GraphSchemaManagerServiceClient as GraphSchemaManagerServiceClientProto,
-    },
+    protobufs::graplinc::grapl::api::graph_schema_manager::v1beta1::graph_schema_manager_service_client::GraphSchemaManagerServiceClient,
 };
 
-pub type GraphSchemaManagerClientError = GrpcClientError;
-
-#[derive(Clone)]
-pub struct GraphSchemaManagerClient {
-    proto_client: GraphSchemaManagerServiceClientProto<tonic::transport::Channel>,
-    executor: Executor,
-}
-
 #[async_trait::async_trait]
-impl Connectable for GraphSchemaManagerClient {
-    type Config = GraphSchemaManagerClientConfig;
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.graph_schema_manager.v1beta1.GraphSchemaManagerService";
-
-    #[tracing::instrument(err)]
-    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = create_proto_client!(
-            executor,
-            GraphSchemaManagerServiceClientProto<tonic::transport::Channel>,
-            endpoint,
-        );
-
-        Ok(Self {
-            proto_client,
-            executor,
-        })
+impl Connectable
+    for GraphSchemaManagerServiceClient<tonic::transport::Channel>
+{
+    async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+        Ok(Self::connect(endpoint).await?)
     }
 }
 
-impl GraphSchemaManagerClient {
+#[derive(Clone)]
+pub struct GraphSchemaManagerClient<B>
+where
+    B: IntoIterator<Item = Duration> + Clone,
+{
+    client: Client<B, GraphSchemaManagerServiceClient<tonic::transport::Channel>>,
+}
+
+impl <B> GraphSchemaManagerClient<B>
+where
+    B: IntoIterator<Item = Duration> + Clone,
+{
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.graph_schema_manager.v1beta1.GraphSchemaManagerService";
+
+    pub fn new<A>(
+        address: A,
+        request_timeout: Duration,
+        executor_timeout: Duration,
+        concurrency_limit: usize,
+        initial_backoff_delay: Duration,
+        maximum_backoff_delay: Duration,
+    ) -> Result<Self, ClientError>
+    where
+        A: TryInto<Endpoint>,
+    {
+        let configuration = Configuration::new(
+            Self::SERVICE_NAME,
+            address,
+            request_timeout,
+            executor_timeout,
+            concurrency_limit,
+            FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
+                .max_delay(maximum_backoff_delay)
+                .map(client_executor::strategy::jitter),
+        )?;
+        let client = Client::new(configuration)?;
+
+        Ok(Self { client })
+    }
+
     pub async fn deploy_schema(
         &mut self,
         request: native::DeploySchemaRequest,
-    ) -> Result<native::DeploySchemaResponse, GraphSchemaManagerClientError> {
-        execute_client_rpc!(
-            self,
+    ) -> Result<native::DeploySchemaResponse, ClientError> {
+        Ok(self.client.execute(
             request,
-            deploy_schema,
-            proto::DeploySchemaRequest,
-            native::DeploySchemaResponse,
-            RpcConfig::default(),
-        )
+            |status, request| status.code() == tonic::Code::Unavailable,
+            10,
+            |client, request| client.deploy_schema(request),
+        ).await?)
     }
 
     pub async fn get_edge_schema(
         &mut self,
         request: native::GetEdgeSchemaRequest,
-    ) -> Result<native::GetEdgeSchemaResponse, GraphSchemaManagerClientError> {
-        execute_client_rpc!(
-            self,
+    ) -> Result<native::GetEdgeSchemaResponse, ClientError> {
+        Ok(self.client.execute(
             request,
-            get_edge_schema,
-            proto::GetEdgeSchemaRequest,
-            native::GetEdgeSchemaResponse,
-            RpcConfig::default(),
-        )
+            |status, request| status.code() == tonic::Code::Unavailable,
+            10,
+            |client, request| client.get_edge_schema(request),
+        ).await?)
     }
 }

@@ -187,92 +187,94 @@ pub mod server {
 pub mod client {
     use std::time::Duration;
 
-    use client_executor::{
-        Executor,
-        ExecutorConfig,
-    };
+    use client_executor::strategy::FibonacciBackoff;
     use tonic::transport::Endpoint;
 
     use crate::{
-        create_proto_client,
-        execute_client_rpc,
         graplinc::grapl::api::{
-            client_factory::services::UidAllocatorClientConfig,
-            client_macros::RpcConfig,
-            protocol::{
-                error::GrpcClientError,
-                service_client::{
-                    ConnectError,
-                    Connectable,
-                },
-            },
             uid_allocator::v1beta1::messages as native,
+            client::{
+                Client,
+                Configuration,
+                Connectable,
+                ClientError,
+            },
         },
-        protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
-            self as proto,
-            uid_allocator_service_client::UidAllocatorServiceClient as UidAllocatorServiceClientProto,
-        },
+        protobufs::graplinc::grapl::api::uid_allocator::v1beta1::uid_allocator_service_client::UidAllocatorServiceClient,
     };
 
-    pub type UidAllocatorServiceClientError = GrpcClientError;
+    #[async_trait::async_trait]
+    impl Connectable for UidAllocatorServiceClient<tonic::transport::Channel> {
+        async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+            Ok(Self::connect(endpoint).await?)
+        }
+    }
 
     #[derive(Clone)]
     /// This allocator should rarely be used. Instead, use the CachingUidAllocatorServiceClient
     /// from the uid-allocator crate.
-    pub struct UidAllocatorServiceClient {
-        proto_client: UidAllocatorServiceClientProto<tonic::transport::Channel>,
-        executor: Executor,
+    pub struct UidAllocatorClient<B>
+    where
+        B: IntoIterator<Item = Duration> + Clone,
+    {
+        client: Client<B, UidAllocatorServiceClient<tonic::transport::Channel>>,
     }
 
-    #[async_trait::async_trait]
-    impl Connectable for UidAllocatorServiceClient {
-        type Config = UidAllocatorClientConfig;
+    impl <B> UidAllocatorClient<B>
+    where
+        B: IntoIterator<Item = Duration> + Clone,
+    {
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.uid_allocator.v1beta1.UidAllocatorService";
 
-        #[tracing::instrument(err)]
-        async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-            let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-            let proto_client = create_proto_client!(
-                executor,
-                UidAllocatorServiceClientProto<tonic::transport::Channel>,
-                endpoint,
-            );
+        pub fn new<A>(
+            address: A,
+            request_timeout: Duration,
+            executor_timeout: Duration,
+            concurrency_limit: usize,
+            initial_backoff_delay: Duration,
+            maximum_backoff_delay: Duration,
+        ) -> Result<Self, ClientError>
+        where
+            A: TryInto<Endpoint>,
+        {
+            let configuration = Configuration::new(
+                Self::SERVICE_NAME,
+                address,
+                request_timeout,
+                executor_timeout,
+                concurrency_limit,
+                FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
+                    .max_delay(maximum_backoff_delay)
+                    .map(client_executor::strategy::jitter),
+            )?;
+            let client = Client::new(configuration);
 
-            Ok(Self {
-                proto_client,
-                executor,
-            })
+            Ok(Self { client })
         }
-    }
 
-    impl UidAllocatorServiceClient {
         pub async fn allocate_ids(
             &mut self,
             request: native::AllocateIdsRequest,
-        ) -> Result<native::AllocateIdsResponse, UidAllocatorServiceClientError> {
-            execute_client_rpc!(
-                self,
+        ) -> Result<native::AllocateIdsResponse, ClientError> {
+            Ok(self.client.execute(
                 request,
-                allocate_ids,
-                proto::AllocateIdsRequest,
-                native::AllocateIdsResponse,
-                RpcConfig::default(),
-            )
+                |status, request| status.code() == tonic::Code::Unavailable,
+                10,
+                |client, request| client.allocate_ids(request),
+            ).await?)
         }
 
         pub async fn create_tenant_keyspace(
             &mut self,
             request: native::CreateTenantKeyspaceRequest,
-        ) -> Result<native::CreateTenantKeyspaceResponse, UidAllocatorServiceClientError> {
-            execute_client_rpc!(
-                self,
+        ) -> Result<native::CreateTenantKeyspaceResponse, ClientError> {
+            Ok(self.client.execute(
                 request,
-                create_tenant_keyspace,
-                proto::CreateTenantKeyspaceRequest,
-                native::CreateTenantKeyspaceResponse,
-                RpcConfig::default(),
-            )
+                |status, request| status.code() == tonic::Code::Unavailable,
+                10,
+                |client, request| client.create_tenant_keyspace(request),
+            ).await?)
         }
     }
 }

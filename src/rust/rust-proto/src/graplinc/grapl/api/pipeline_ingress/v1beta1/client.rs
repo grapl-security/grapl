@@ -1,73 +1,77 @@
 use std::time::Duration;
 
-use client_executor::{
-    Executor,
-    ExecutorConfig,
-};
+use client_executor::strategy::FibonacciBackoff;
+use tonic::transport::Endpoint;
 
 use crate::{
-    create_proto_client,
-    execute_client_rpc,
     graplinc::grapl::api::{
-        client_factory::services::PipelineIngressClientConfig,
-        client_macros::RpcConfig,
         pipeline_ingress::v1beta1 as native,
-        protocol::{
-            endpoint::Endpoint,
-            error::GrpcClientError,
-            service_client::{
-                ConnectError,
-                Connectable,
-            },
+        client::{
+            Connectable,
+            Client,
+            ClientError,
+            Configuration,
         },
     },
-    protobufs::graplinc::grapl::api::pipeline_ingress::{
-        v1beta1 as proto,
-        v1beta1::pipeline_ingress_service_client::PipelineIngressServiceClient as PipelineIngressServiceClientProto,
-    },
+    protobufs::graplinc::grapl::api::pipeline_ingress::v1beta1::pipeline_ingress_service_client::PipelineIngressServiceClient,
 };
 
-pub type PipelineIngressClientError = GrpcClientError;
-
-pub struct PipelineIngressClient {
-    executor: Executor,
-    proto_client: PipelineIngressServiceClientProto<tonic::transport::Channel>,
-}
-
 #[async_trait::async_trait]
-impl Connectable for PipelineIngressClient {
-    type Config = PipelineIngressClientConfig;
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService";
-
-    #[tracing::instrument(err)]
-    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = create_proto_client!(
-            executor,
-            PipelineIngressServiceClientProto<tonic::transport::Channel>,
-            endpoint,
-        );
-
-        Ok(Self {
-            executor,
-            proto_client,
-        })
+impl Connectable for PipelineIngressServiceClient<tonic::transport::Channel> {
+    async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+        Ok(Self::connect(endpoint).await?)
     }
 }
 
-impl PipelineIngressClient {
+pub struct PipelineIngressClient<B>
+where
+    B: IntoIterator<Item = Duration> + Clone,
+{
+    client: Client<B, PipelineIngressServiceClient<tonic::transport::Channel>>,
+}
+
+impl <B> PipelineIngressClient<B>
+where
+    B: IntoIterator<Item = Duration> + Clone,
+{
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService";
+
+    pub fn new<A>(
+        address: A,
+        request_timeout: Duration,
+        executor_timeout: Duration,
+        concurrency_limit: usize,
+        initial_backoff_delay: Duration,
+        maximum_backoff_delay: Duration,
+    ) -> Result<Self, ClientError>
+    where
+        A: TryInto<Endpoint>,
+    {
+        let configuration = Configuration::new(
+            Self::SERVICE_NAME,
+            address,
+            request_timeout,
+            executor_timeout,
+            concurrency_limit,
+            FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
+                .max_delay(maximum_backoff_delay)
+                .map(client_executor::strategy::jitter),
+        )?;
+        let client = Client::new(configuration);
+
+        Ok(Self { client })
+    }
+
     pub async fn publish_raw_log(
         &mut self,
         request: native::PublishRawLogRequest,
-    ) -> Result<native::PublishRawLogResponse, PipelineIngressClientError> {
-        execute_client_rpc!(
-            self,
+    ) -> Result<native::PublishRawLogResponse, ClientError> {
+        Ok(self.client.execute(
             request,
-            publish_raw_log,
-            proto::PublishRawLogRequest,
-            native::PublishRawLogResponse,
-            RpcConfig::default(),
-        )
+            |status, request| status.code() == tonic::Code::Unavailable,
+            10,
+            |client, request| client.publish_raw_log(request),
+        ).await?)
     }
 }

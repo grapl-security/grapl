@@ -10,10 +10,7 @@ use proto::{
 use uuid::Uuid;
 
 pub use crate::graplinc::grapl::api::plugin_work_queue::{
-    v1beta1_client::{
-        PluginWorkQueueServiceClient,
-        PluginWorkQueueServiceClientError,
-    },
+    v1beta1_client::PluginWorkQueueClient,
     v1beta1_server::{
         PluginWorkQueueApi,
         PluginWorkQueueServer,
