@@ -448,16 +448,6 @@ target "uid-allocator" {
   ]
 }
 
-# Typescript Services - integration testing
-# ---------------------------------------------------------------------
-target "_typescript-base" {
-  inherits = ["_grapl-base"]
-  contexts = {
-    dist-ctx = "dist"
-    etc-ctx  = "etc"
-  }
-  dockerfile = "src/js/Dockerfile"
-}
 
 # Python Services
 # ----------------------------------------------------------------------
@@ -489,8 +479,10 @@ target "provisioner" {
 # ----------------------------------------------------------------------
 
 target "typescript-integration-tests" {
-  inherits = ["typescript-base"]
-  target   = "integration-tests"
+  inherits   = ["_grapl-base"]
+  context    = "src/js/frontend/"
+  dockerfile = "Dockerfile"
+  target     = "integration-tests"
   tags = [
     local_only_tag("typescript-integration-tests")
   ]

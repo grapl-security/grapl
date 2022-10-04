@@ -85,7 +85,7 @@ def main() -> None:
 
         typescript_integration_tests = NomadJob(
             "typescript_integration_tests",
-            jobspec=repository_path("nomad/local/typescript_integration_tests.nomad"),
+            jobspec=repository_path("nomad/typescript_integration_tests.nomad"),
             vars=typescript_integration_test_job_vars,
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )

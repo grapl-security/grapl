@@ -36,6 +36,7 @@ services:
           pulumi stack init local-grapl-typescript-integration-tests --non-interactive
           pulumi up --yes  --stack=local-grapl-typescript-integration-tests $$TRACING_ARGS
         )
+
         (
           cd python_integration_tests
           # Ideally this stack name would be scoped by organization, but

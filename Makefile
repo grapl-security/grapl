@@ -288,13 +288,6 @@ test-unit-rust-coverage: ## Run Rust unit tests and gather coverage statistics (
 
 ########################################################################
 
-.PHONY: test-integration-typescript
-test-integration-typescript: build-local-infrastructure
-test-integration-typescript: build-test-integration-typescript
-test-integration-typescript: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_TYPESCRIPT_INTEGRATION_TESTS)
-test-integration-typescript: ## Build and run typescript integration tests
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh typescript-integration-tests 9"
-
 .PHONY: typecheck
 typecheck: ## Typecheck Python Code
 	./pants check ::
@@ -312,6 +305,13 @@ test-integration-rust: build-test-integration-rust
 test-integration-rust: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_RUST_INTEGRATION_TESTS)
 test-integration-rust: ## Build and run rust integration tests
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh rust-integration-tests 9"
+
+.PHONY: test-integration-typescript
+test-integration-typescript: build-local-infrastructure
+test-integration-typescript: build-test-integration-typescript
+test-integration-typescript: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_TYPESCRIPT_INTEGRATION_TESTS)
+test-integration-typescript: ## Build and run typescript integration tests
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh typescript-integration-tests 9"
 
 # This target is not intended to be used directly from the command line.
 # Think of it as a Context Manager that:

@@ -1,19 +1,6 @@
 # This setup is inspired by the following forum discussion:
 # https://discuss.hashicorp.com/t/best-practices-for-testing-against-services-in-nomad-consul-connect/29022
 # We'll submit integration tests to Nomad as Nomad jobs.
-
-variable "container_images" {
-  type        = map(string)
-  description = <<EOF
-  A map of $NAME_OF_TASK to the URL for that task's docker image ID.
-  (See DockerImageId in Pulumi for further documentation.)
-EOF
-}
-
-variable "aws_region" {
-  type = string
-}
-
 variable "aws_env_vars_for_local" {
   type        = string
   description = <<EOF
@@ -25,6 +12,28 @@ With prod, these are all taken from the EC2 Instance Metadata in prod.
 We have to provide a default value in prod; otherwise you can end up with a
 weird nomad state parse error.
 EOF
+}
+
+variable "aws_region" {
+  type = string
+}
+
+variable "container_images" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to the URL for that task's docker image ID.
+  (See DockerImageId in Pulumi for further documentation.)
+EOF
+}
+
+variable "docker_user" {
+  type        = string
+  description = "The UID:GID pair to run as inside the Docker container"
+}
+
+variable "grapl_root" {
+  type        = string
+  description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
 }
 
 variable "schema_properties_table_name" {
@@ -42,15 +51,6 @@ variable "test_user_password_secret_id" {
   description = "The SecretsManager SecretID for the test user's password"
 }
 
-variable "docker_user" {
-  type        = string
-  description = "The UID:GID pair to run as inside the Docker container"
-}
-
-variable "grapl_root" {
-  type        = string
-  description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
-}
 
 locals {
   log_level = "DEBUG"
@@ -86,14 +86,14 @@ job "typescript-integration-tests" {
         sidecar_service {
           proxy {
             upstreams {
-              # This is a hack, because IDK how to share locals across files
-              destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 9080
-            }
-            upstreams {
               destination_name = "web-ui"
               local_bind_port  = 1234
             }
+            upstreams {
+              destination_name = "plugin-registry"
+              local_bind_port  = 1001
+            }
+
           }
         }
       }
@@ -142,11 +142,6 @@ job "typescript-integration-tests" {
       env {
         AWS_REGION = "${var.aws_region}"
 
-        # These environment vars need to exist but the values aren't actually exercised
-        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
-        GRAPL_ANALYZERS_BUCKET                  = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
-        GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
-
         GRAPL_API_HOST                     = "${NOMAD_UPSTREAM_IP_web-ui}"
         GRAPL_HTTP_FRONTEND_PORT           = "${NOMAD_UPSTREAM_PORT_web-ui}"
         GRAPL_TEST_USER_NAME               = var.test_user_name
@@ -156,7 +151,6 @@ job "typescript-integration-tests" {
         IS_RETRY = "False"
 
         GRAPL_LOG_LEVEL = local.log_level
-        MG_ALPHAS       = "localhost:9080"
 
       }
 
