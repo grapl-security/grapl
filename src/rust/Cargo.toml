@@ -46,7 +46,7 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 eyre = "0.6"
-sqlx = { version = "0.6.2", features = [
+sqlx = { version = "0.6", features = [
   "chrono",
   "migrate",
   "offline",
