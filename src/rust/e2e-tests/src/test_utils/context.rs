@@ -120,9 +120,9 @@ impl AsyncTestContext for E2eTestContext {
 }
 
 #[derive(Debug)]
-pub struct SetupResult {
+pub struct SetupGeneratorResult {
     pub tenant_id: Uuid,
-    pub plugin_id: Uuid,
+    pub generator_plugin_id: Uuid,
     pub event_source_id: Uuid,
 }
 
@@ -255,11 +255,24 @@ impl E2eTestContext {
         Ok(())
     }
 
+    pub async fn setup_suspicious_svchost_analyzer(
+        &mut self,
+        tenant_id: uuid::Uuid,
+        test_name: &str,
+    ) -> eyre::Result<uuid::Uuid> {
+        let analyzer_artifact = test_fixtures::get_suspicious_svchost_analyzer()?;
+        let analyzer_plugin_id = self
+            .create_analyzer(tenant_id, test_name.to_owned(), analyzer_artifact)
+            .await?;
+        self.deploy_analyzer(analyzer_plugin_id).await?;
+        Ok(analyzer_plugin_id)
+    }
+
     pub async fn setup_sysmon_generator(
         &mut self,
         tenant_id: uuid::Uuid,
         test_name: &str,
-    ) -> eyre::Result<SetupResult> {
+    ) -> eyre::Result<SetupGeneratorResult> {
         let generator_artifact = test_fixtures::get_sysmon_generator()?;
         self.setup_generator(SetupGeneratorOptions {
             tenant_id,
@@ -273,7 +286,7 @@ impl E2eTestContext {
     pub async fn setup_generator(
         &mut self,
         options: SetupGeneratorOptions,
-    ) -> eyre::Result<SetupResult> {
+    ) -> eyre::Result<SetupGeneratorResult> {
         tracing::info!(">> Generator Setup for {}", options.test_name);
 
         let tenant_id = options.tenant_id;
@@ -305,9 +318,9 @@ impl E2eTestContext {
             generator_id
         };
 
-        let setup_result = SetupResult {
+        let setup_result = SetupGeneratorResult {
             tenant_id,
-            plugin_id: generator_id,
+            generator_plugin_id: generator_id,
             event_source_id,
         };
 
