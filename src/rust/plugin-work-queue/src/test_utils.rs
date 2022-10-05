@@ -96,7 +96,7 @@ impl PsqlQueueTestExtensions for PsqlQueue {
     }
 }
 
-pub async fn scan_for_plugin_message_in_pwq(
+pub async fn scan_for_generator_plugin_message_in_pwq(
     psql_queue: PsqlQueue,
     plugin_id: uuid::Uuid,
 ) -> Option<NextExecutionRequest> {

@@ -8,7 +8,7 @@ use e2e_tests::{
     test_utils::{
         context::{
             E2eTestContext,
-            SetupResult,
+            SetupGeneratorResult,
         },
         predicates::events_36lines_node_identity_predicate,
     },
@@ -17,7 +17,10 @@ use kafka::{
     config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
 };
-use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
+use plugin_work_queue::test_utils::{
+    scan_analyzer_messages,
+    scan_for_generator_plugin_message_in_pwq,
+};
 use rust_proto::graplinc::grapl::{
     api::{
         graph::v1beta1::{
@@ -49,14 +52,18 @@ use uuid::Uuid;
 async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let test_name = "test_sysmon_log_e2e";
     let tenant_id = ctx.create_tenant().await?;
-    let SetupResult {
+    let SetupGeneratorResult {
         tenant_id,
-        plugin_id,
+        generator_plugin_id,
         event_source_id,
     } = ctx
         .setup_sysmon_generator(tenant_id, test_name)
         .await
         .expect("failed to setup the sysmon-generator");
+
+    let analyzer_plugin_id = ctx
+        .setup_suspicious_svchost_analyzer(tenant_id, test_name)
+        .await?;
 
     tracing::info!(">> Setup complete. Now let's test milestones in the pipeline.");
 
@@ -164,9 +171,11 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         ">> Test: `generator-dispatcher` consumes the raw-log and enqueues it in Plugin Work Queue"
     );
     {
-        let msg =
-            scan_for_plugin_message_in_pwq(ctx.plugin_work_queue_psql_client.clone(), plugin_id)
-                .await;
+        let msg = scan_for_generator_plugin_message_in_pwq(
+            ctx.plugin_work_queue_psql_client.clone(),
+            generator_plugin_id,
+        )
+        .await;
         assert!(msg.is_some());
     }
 
@@ -222,6 +231,19 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     assert!(!filtered_graph_updates.is_empty()); // shushes a really annoying clippy lint
 
     // TODO: Perhaps add a test here that looks in scylla for those identified nodes
+
+    tracing::info!(
+        ">> Test: `analyzer-dispatcher` consumes the Update and enqueues it in Plugin Work Queue"
+    );
+    {
+        let msg = scan_analyzer_messages(
+            ctx.plugin_work_queue_psql_client.clone(),
+            Duration::from_secs(10), // should be basically instantaneous?
+            analyzer_plugin_id,
+        )
+        .await;
+        assert!(msg.is_some());
+    }
 
     Ok(())
 }
