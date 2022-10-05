@@ -16,16 +16,9 @@ breaking:
   # https://docs.buf.build/breaking-configuration
   use:
     - FILE
+  # Ignore pre-release (i.e., alpha and beta) packages; those can
+  # break backward compatibility by definition.
+  ignore_unstable_packages: true
   ignore:
-    # Ignore pre-release (i.e., alpha and beta) packages; those can
-    # break backward compatibility by definition.
-    - graplinc/grapl/api/graph/v1beta1
-    - graplinc/grapl/pipeline/v1beta1
-    - graplinc/grapl/pipeline/v1beta2
-    - graplinc/grapl/api/graph-query-service/v1beta1 # no longer exists
-    - graplinc/grapl/api/plugin_work_queue/v1beta1
-    - graplinc/grapl/api/plugin_registry/v1beta1
-    - graplinc/grapl/api/plugin_sdk/analyzers/v1beta1
-    - graplinc/common/v1beta1
     # Again, we don't care about vendored definitions
     - google/
