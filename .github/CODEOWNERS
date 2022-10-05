@@ -15,6 +15,7 @@ BUILD @christophermaier
 /docker-bake.hcl @christophermaier
 /docker-compose*.yml @christophermaier
 *Dockerfile* @christophermaier @inickles-grapl
+/docker-plugin-runtime @wimax-grapl
 /Dockerfile.pulumi @christophermaier
 .dockerignore @christophermaier @inickles-grapl
 /docs/ @wimax-grapl

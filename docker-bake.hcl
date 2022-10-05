@@ -144,6 +144,7 @@ group "grapl-services" {
   targets = [
     "python-services",
     "rust-services",
+    "plugin-support",
   ]
 }
 
@@ -155,6 +156,13 @@ group "cloudsmith-images" {
   targets = [
     "grapl-services",
     "rust-integration-tests"
+  ]
+}
+
+# These are images required to run Plugins inside Grapl.
+group "plugin-support" {
+  targets = [
+    "docker-plugin-runtime",
   ]
 }
 
@@ -232,9 +240,9 @@ group "all" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "all-tests",
-    "local-only-services",
-    "grapl-services",
     "export-rust-build-artifacts-to-dist",
+    "grapl-services",
+    "local-only-services",
   ]
 }
 
@@ -458,6 +466,22 @@ target "uid-allocator" {
   ]
 }
 
+
+# Plugin Runtime
+# ----------------------------------------------------------------------
+
+# This is the Docker image that will host our Generators and Analyzers
+# until we swap over to Firecracker.
+target "docker-plugin-runtime" {
+  inherits = ["_grapl-base"]
+  context  = "docker-plugin-runtime"
+  args = {
+    PYTHON_VERSION = "${PYTHON_VERSION}"
+  }
+  tags = [
+    upstream_aware_tag("docker-plugin-runtime")
+  ]
+}
 
 # Python Services
 # ----------------------------------------------------------------------
