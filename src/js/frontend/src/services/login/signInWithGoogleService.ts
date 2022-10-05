@@ -10,6 +10,7 @@ export const signInWithGoogleService = async (token: string) => {
     const loginData = await apiPostRequestWithBody(
       `${DEV_API_EDGES.auth}/sign_in_with_google`,
       body,
+      "application/json"
     );
     return loginData["success"] === true;
   } catch (e) {

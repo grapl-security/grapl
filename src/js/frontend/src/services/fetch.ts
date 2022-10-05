@@ -16,12 +16,12 @@ export const apiFetchReq = async (urlSlug: string, method = "GET") => {
   return response.json();
 };
 
-export const apiPostRequestWithBody = async (urlSlug: string, body: string) => {
+export const apiPostRequestWithBody = async (urlSlug: string, body: string, contentType: string) => {
   const response = await fetch(urlSlug, {
     method: "POST",
     credentials: "include",
     headers: new Headers({
-      "Content-Type": "application/json",
+      "Content-Type": contentType,
       // Enable Consul Ingress Gateway tracing with custom header per Consideration 2 of
       // https://www.consul.io/docs/connect/distributed-tracing#considerations
       "x-client-trace-id": "1",

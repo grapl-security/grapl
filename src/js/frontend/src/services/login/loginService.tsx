@@ -11,6 +11,7 @@ export const loginService = async (username: string, password: string) => {
     const loginData = await apiPostRequestWithBody(
       `${DEV_API_EDGES.auth}/sign_in_with_password`,
       loginBody,
+      "application/json"
     );
     return loginData["success"] === true;
   } catch (e) {
