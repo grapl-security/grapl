@@ -105,11 +105,27 @@ job "grapl-plugin" {
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
               local_bind_port = 1001
             }
+          }
+        }
+      }
+    }
 
+    service {
+      name = "graph-query-proxy-${var.plugin_id}"
+      port = "graph-query-proxy"
+      tags = [
+        "graph-query-proxy",
+        "tenant-${var.tenant_id}",
+        "plugin-${var.plugin_id}"
+      ]
+
+      connect {
+        sidecar_service {
+          proxy {
             upstreams {
               destination_name = "graph-query"
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1002
+              local_bind_port = 1000
             }
           }
         }
@@ -207,6 +223,12 @@ job "grapl-plugin" {
 
       connect {
         sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "graph-query-proxy-${var.plugin_id}"
+              destination_port = 1000
+            }
+          }
         }
       }
 
@@ -265,6 +287,11 @@ EOF
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
         # Consumed by GeneratorServiceConfig
         PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
+
+        # We have to do some Bash variable indirection - {!VAR_NAME}, 
+        # since the upstream has a variable in its name.
+        GRAPH_QUERY_UPSTREAM_ADDR  = "NOMAD_UPSTREAM_ADDR_graph-query-sidecar-${var.plugin_id}"
+        GRAPH_QUERY_CLIENT_ADDRESS = "http://${!GRAPH_QUERY_UPSTREAM_ADDR}"
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
