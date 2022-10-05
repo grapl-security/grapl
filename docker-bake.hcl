@@ -473,9 +473,8 @@ target "uid-allocator" {
 # This is the Docker image that will host our Generators and Analyzers
 # until we swap over to Firecracker.
 target "docker-plugin-runtime" {
-  inherits   = ["_grapl-base"]
-  context    = "."
-  dockerfile = "Dockerfile.plugin-runtime"
+  inherits = ["_grapl-base"]
+  context  = "docker-plugin-runtime"
   args = {
     PYTHON_VERSION = "${PYTHON_VERSION}"
   }
