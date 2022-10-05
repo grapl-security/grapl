@@ -80,7 +80,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "graph-query": builder.build_with_tag("graph-query"),
         "graph-query-proxy": builder.build_with_tag("graph-query-proxy"),
         "graph-schema-manager": builder.build_with_tag("graph-schema-manager"),
-        "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
+        "hax-docker-plugin-runtime": builder.build_with_tag("docker-plugin-runtime"),
         "kafka-retry": builder.build_with_tag("kafka-retry"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "organization-management": builder.build_with_tag("organization-management"),
