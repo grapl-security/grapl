@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use crate::{
     graplinc::grapl::{
-        api::graph_query_service::v1beta1::messages::GraphView,
+        api::graph_query::v1beta1::messages::GraphView,
         common::v1beta1::types::{
             EdgeName,
             PropertyName,

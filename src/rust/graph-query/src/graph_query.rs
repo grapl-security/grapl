@@ -1,7 +1,7 @@
 use futures::future::join_all;
-pub use rust_proto::graplinc::grapl::api::graph_query_service::v1beta1::messages::StringCmp;
+pub use rust_proto::graplinc::grapl::api::graph_query::v1beta1::messages::StringCmp;
 use rust_proto::graplinc::grapl::{
-    api::graph_query_service::v1beta1::messages::{
+    api::graph_query::v1beta1::messages::{
         GraphQuery,
         GraphView,
     },

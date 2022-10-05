@@ -11,7 +11,7 @@ use std::{
 };
 
 use rust_proto::graplinc::grapl::{
-    api::graph_query_service::v1beta1::messages::QueryId,
+    api::graph_query::v1beta1::messages::QueryId,
     common::v1beta1::types::EdgeName,
 };
 

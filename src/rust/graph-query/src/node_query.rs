@@ -5,7 +5,7 @@ use std::{
 
 use async_recursion::async_recursion;
 use rust_proto::graplinc::grapl::{
-    api::graph_query_service::v1beta1::messages::{
+    api::graph_query::v1beta1::messages::{
         AndStringFilters,
         GraphQuery,
         GraphView,

@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 
 import grpc
-from graplinc.grapl.api.graph_query_service.v1beta1.graph_query_service_pb2_grpc import (
+from graplinc.grapl.api.graph_query.v1beta1.graph_query_pb2_grpc import (
     GraphQueryServiceStub,
 )
 from python_proto import common as proto_common_msgs
