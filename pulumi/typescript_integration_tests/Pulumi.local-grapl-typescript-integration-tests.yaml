@@ -1,4 +1,3 @@
-encryptionsalt: v1:KRH5XXw/Vv4=:v1:Mi1EOttYFIuFy8Zl:u/QoTfZuh9c5m6Jyw2L3mAKC+VNs8g== #TODO - WHERE DO WE GET THIS FROM
 config:
   aws:accessKey: test
   aws:region: us-east-1

@@ -40,7 +40,7 @@ describe("Login form", () => {
     await waitFor(() => {
       fireEvent.change(username, {
         target: {
-          value: "local-grapl-grapl-test-user",
+          value: process.env.GRAPL_TEST_USER_NAME,
         },
       });
     });
@@ -48,7 +48,8 @@ describe("Login form", () => {
     await waitFor(() => {
       fireEvent.change(password, {
         target: {
-          value: "local-grapl-password", // this needs to come from the environment from secrets manager
+          value:  process.env.GRAPL_TEST_USER_PASSWORD_SECRET_ID, // this is not the password secret value yet,
+                                                                  // we have to interact with AWS SDK to get the value from the secret ID
         },
       });
     });
@@ -58,7 +59,7 @@ describe("Login form", () => {
     });
 
     // const {result} = renderHook(() => useLoggedInUser())
-    // expect(result.current).toEqual({name: 'Alice'})
+    expect(process.env.GRAPL_TEST_USER_NAME).toBe('local-grapl-grapl-test-user');
 
     // expect(waitFor.innerHTML).toBe(
     //   '{"email":"mock@email.com","name":"mockname","color":"green"}'

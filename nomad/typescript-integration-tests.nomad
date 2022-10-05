@@ -26,35 +26,16 @@ variable "container_images" {
 EOF
 }
 
-variable "docker_user" {
-  type        = string
-  description = "The UID:GID pair to run as inside the Docker container"
-}
-
-variable "grapl_root" {
-  type        = string
-  description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
-}
-
-variable "schema_properties_table_name" {
-  type        = string
-  description = "What is the name of the schema properties table?"
-}
-
 variable "test_user_name" {
   type        = string
   description = "The name of the test user"
 }
 
-variable "test_user_password_secret_id" {
-  type        = string
-  description = "The SecretsManager SecretID for the test user's password"
-}
+#variable "test_user_password_secret_id" {
+#  type        = string
+#  description = "The SecretsManager SecretID for the test user's password"
+#}
 
-
-locals {
-  log_level = "DEBUG"
-}
 
 job "typescript-integration-tests" {
   datacenters = ["dc1"]
@@ -80,56 +61,29 @@ job "typescript-integration-tests" {
     }
 
     # Enable service discovery
-    service {
-      name = "typescript-integration-tests"
-      connect {
-        sidecar_service {
-          proxy {
-            upstreams {
-              destination_name = "web-ui"
-              local_bind_port  = 1234
-            }
-            upstreams {
-              destination_name = "plugin-registry"
-              local_bind_port  = 1001
-            }
-
-          }
-        }
-      }
-    }
+#    service {
+#      name = "typescript-integration-tests"
+#      connect {
+#        sidecar_service {
+#          proxy {
+#            upstreams {
+#              destination_name = "web-ui"
+#              local_bind_port  = 1234
+#            }
+#            upstreams {
+#              destination_name = "plugin-registry"
+#              local_bind_port  = 1001
+#            }
+#          }
+#        }
+#      }
+#    }
 
     task "typescript-integration-tests" {
       driver = "docker"
-      user   = var.docker_user
 
       config {
         image = var.container_images["typescript-integration-tests"]
-        # Pants caches requirements per-user. So when we run a Docker container
-        # with the host's userns, this lets us reuse the pants cache.
-        # (This descreases runtime on my personal laptop from 390s to 190s)
-        userns_mode = "host"
-
-        mount {
-          # Just to clarify, this is all Docker-verbiage mounts and binds.
-          # Nothing Nomad-y about it.
-          type     = "bind"
-          source   = var.grapl_root
-          target   = "/mnt/grapl-root"
-          readonly = false
-        }
-
-        mount {
-          type     = "volume"
-          target   = "/mnt/pants-cache"
-          source   = "pants-cache-volume"
-          readonly = false
-          volume_options {
-            # Upon initial creation of this volume, *do* copy in the current
-            # contents in the Docker image.
-            no_copy = false
-          }
-        }
       }
 
       # This writes an env file that gets read by the task automatically
@@ -142,21 +96,15 @@ job "typescript-integration-tests" {
       env {
         AWS_REGION = "${var.aws_region}"
 
-        GRAPL_API_HOST                     = "${NOMAD_UPSTREAM_IP_web-ui}"
-        GRAPL_HTTP_FRONTEND_PORT           = "${NOMAD_UPSTREAM_PORT_web-ui}"
+#        GRAPL_API_HOST                     = "${NOMAD_UPSTREAM_IP_web-ui}"
+#        GRAPL_HTTP_FRONTEND_PORT           = "${NOMAD_UPSTREAM_PORT_web-ui}"
         GRAPL_TEST_USER_NAME               = var.test_user_name
-        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
-        GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
-
-        IS_RETRY = "False"
-
-        GRAPL_LOG_LEVEL = local.log_level
-
+#        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
       }
 
-      resources {
-        memory = 1024
-      }
+#      resources {
+#        memory = 1024
+#      }
     }
   }
 

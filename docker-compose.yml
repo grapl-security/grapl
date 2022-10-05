@@ -8,7 +8,7 @@ version: "3.8"
 services:
   pulumi:
     image: local-pulumi:${IMAGE_TAG}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    entrypoint: [ "/bin/bash", "-o", "errexit", "-o", "nounset", "-c" ]
     command:
       - |
         pulumi login --local
@@ -29,14 +29,7 @@ services:
         # every local `up`; but it's a 2s Pulumi operation and they
         # don't auto-execute since they're Parameterized Batch Jobs.
         # Basically: It's mostly harmless.
-        (
-          cd typescript_integration_tests
-          # Ideally this stack name would be scoped by organization, but
-          # login --local doesn't support organizations
-          pulumi stack init local-grapl-typescript-integration-tests --non-interactive
-          pulumi up --yes  --stack=local-grapl-typescript-integration-tests $$TRACING_ARGS
-        )
-
+        
         (
           cd python_integration_tests
           # Ideally this stack name would be scoped by organization, but
@@ -51,6 +44,14 @@ services:
           # login --local doesn't support organizations
           pulumi stack init local-grapl-rust-integration-tests --non-interactive
           pulumi up --yes  --stack=local-grapl-rust-integration-tests $$TRACING_ARGS
+        )
+        
+        (
+          cd typescript_integration_tests
+          # Ideally this stack name would be scoped by organization, but
+          # login --local doesn't support organizations
+          pulumi stack init local-grapl-typescript-integration-tests --non-interactive
+          pulumi up --yes  --stack=local-grapl-typescript-integration-tests $$TRACING_ARGS
         )
 
     volumes:
