@@ -13,7 +13,7 @@ members = [
   "./generators/sysmon-generator",
   "./graph-merger",
   "./graph-mutation",
-  "./graph-query"
+  "./graph-query",
   "./graph-query-proxy",
   "./graph-schema-manager",
   "./grapl-config",
