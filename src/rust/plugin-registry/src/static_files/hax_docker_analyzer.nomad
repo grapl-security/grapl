@@ -226,7 +226,7 @@ job "grapl-plugin" {
           proxy {
             upstreams {
               destination_name = "graph-query-proxy-${var.plugin_id}"
-              destination_port = 1000
+              local_bind_port  = 1000
             }
           }
         }
