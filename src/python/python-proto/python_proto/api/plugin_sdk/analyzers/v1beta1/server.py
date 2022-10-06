@@ -5,9 +5,11 @@ we are ignoring *the entire file*.
 https://github.com/nipunn1313/mypy-protobuf/pull/217
 """
 
+import os
 import logging
 from concurrent import futures
 from dataclasses import dataclass, field
+import sys
 from typing import Any, Awaitable, Protocol
 
 import grpc
@@ -18,6 +20,9 @@ from graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2_grpc import (
 )
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as native
 
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(os.environ["ANALYZER_LOG_LEVEL"])
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 class AnalyzerService(Protocol):
     async def run_analyzer(
@@ -38,9 +43,11 @@ class AnalyzerServiceWrapper(AnalyzerServiceServicer):
         context: grpc.aio.ServicerContext,
     ) -> proto.RunAnalyzerResponse:
         native_request = native.RunAnalyzerRequest.from_proto(proto_request)
+        LOGGER.info("Running analyzer")
         native_response = await self.analyzer_service_impl.run_analyzer(
             native_request, context
         )
+        LOGGER.debug("Completed running analyzer", request=str(native_request), response=str(native_response))
         return native_response.into_proto()
 
     async def serve(self) -> None:
@@ -53,7 +60,7 @@ class AnalyzerServiceWrapper(AnalyzerServiceServicer):
         # This shutdown stuff is suggested in the grpc example here:
         # https://github.com/grpc/grpc/blob/master/examples/python/helloworld/async_greeter_server_with_graceful_shutdown.py
         async def server_graceful_shutdown() -> None:
-            logging.info("Starting graceful shutdown...")
+            LOGGER.info("Starting graceful shutdown...")
             await server.stop(5)
 
         self._cleanup_coroutines.append(server_graceful_shutdown())
@@ -68,5 +75,7 @@ class AnalyzerServiceWrapper(AnalyzerServiceServicer):
         reflection.enable_server_reflection(SERVICE_NAMES, server)
         """
 
+        LOGGER.info("Starting analyzer server")
         await server.start()
+        LOGGER.info("Analyzer started, waiting for requests.")
         await server.wait_for_termination()
