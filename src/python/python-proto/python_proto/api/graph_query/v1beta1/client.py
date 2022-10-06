@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 
 import grpc
@@ -27,7 +26,7 @@ class GraphQueryClient(Connectable):
     # implements Connectable
     @classmethod
     def connect(cls, client_config: GrpcClientConfig) -> GraphQueryClient:
-        address = os.environ["GRAPH_QUERY_CLIENT_ADDRESS"]
+        address = client_config.address
         channel = grpc.insecure_channel(address)
         stub = GraphQueryServiceStub(channel)
 

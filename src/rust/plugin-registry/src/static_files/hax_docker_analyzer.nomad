@@ -288,10 +288,11 @@ EOF
         # Consumed by GeneratorServiceConfig
         PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
 
-        # We have to do some Bash variable indirection - {!VAR_NAME}, 
-        # since the upstream has a variable in its name.
-        GRAPH_QUERY_UPSTREAM_ADDR  = "NOMAD_UPSTREAM_ADDR_graph-query-sidecar-${var.plugin_id}"
-        GRAPH_QUERY_CLIENT_ADDRESS = "http://${!GRAPH_QUERY_UPSTREAM_ADDR}"
+        # Ideally we'd specify GRAPH_QUERY_CLIENT_ADDRESS here, but
+        # due to HCL limitations + the fact each `graph-query-proxy` service 
+        # has a different name, we instead construct the CLIENT_ADDRESS at
+        # runtime.
+        # https://github.com/hashicorp/nomad/issues/14813
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
