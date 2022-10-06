@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use rust_proto::{
-    graplinc::grapl::api::graph_query_service::v1beta1::{
+    graplinc::grapl::api::graph_query::v1beta1::{
         messages::{
             GraphQuery,
             MatchedGraphWithUid,

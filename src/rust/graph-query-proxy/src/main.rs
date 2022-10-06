@@ -1,7 +1,7 @@
 use clap::Parser;
 use grapl_tracing::setup_tracing;
 use rust_proto::{
-    graplinc::grapl::api::graph_query_service::v1beta1::{
+    graplinc::grapl::api::graph_query::v1beta1::{
         client::GraphQueryClient,
         server::GraphQueryServiceServer,
     },
