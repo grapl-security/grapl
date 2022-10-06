@@ -96,13 +96,13 @@ job "grapl-plugin" {
           proxy {
             upstreams {
               destination_name = "plugin-work-queue"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              # port unique within group, but arbitrary
               local_bind_port = 1000
             }
 
             upstreams {
               destination_name = "plugin-${var.plugin_id}"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              # port unique within group, but arbitrary
               local_bind_port = 1001
             }
           }
@@ -124,8 +124,8 @@ job "grapl-plugin" {
           proxy {
             upstreams {
               destination_name = "graph-query"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1000
+              # port unique within group, but arbitrary
+              local_bind_port = 1002
             }
           }
         }
