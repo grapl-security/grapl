@@ -12,7 +12,7 @@ use crate::{
         PropertyName,
         Uid,
     },
-    protobufs::graplinc::grapl::api::graph_query_service::v1beta1 as proto,
+    protobufs::graplinc::grapl::api::graph_query::v1beta1 as proto,
     SerDeError,
 };
 

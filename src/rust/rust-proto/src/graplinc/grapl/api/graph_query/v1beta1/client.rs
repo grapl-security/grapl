@@ -11,8 +11,8 @@ use crate::{
     client_macros::RpcConfig,
     create_proto_client,
     execute_client_rpc,
-    graplinc::grapl::api::graph_query_service::v1beta1::messages as native,
-    protobufs::graplinc::grapl::api::graph_query_service::v1beta1::{
+    graplinc::grapl::api::graph_query::v1beta1::messages as native,
+    protobufs::graplinc::grapl::api::graph_query::v1beta1::{
         self as proto,
         graph_query_service_client::GraphQueryServiceClient,
     },
@@ -35,8 +35,7 @@ pub struct GraphQueryClient {
 #[async_trait::async_trait]
 impl Connectable for GraphQueryClient {
     type Config = GraphQueryClientConfig;
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.graph_query_service.v1beta1.GraphQueryService";
+    const SERVICE_NAME: &'static str = "graplinc.grapl.api.graph_query.v1beta1.GraphQueryService";
 
     #[tracing::instrument(err)]
     async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {

@@ -6,9 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import DefaultDict, Iterable, Iterator, Mapping, Optional, Sequence
 
-from graplinc.grapl.api.graph_query_service.v1beta1 import (
-    graph_query_service_pb2 as proto,
-)
+from graplinc.grapl.api.graph_query.v1beta1 import graph_query_pb2 as proto
 from python_proto.common import Uuid
 from python_proto.grapl.common.v1beta1.messages import (
     EdgeName,
