@@ -3,6 +3,7 @@ python_requirements(
         # grpcio can be removed once Pants is upgraded to 2.14:
         # https://github.com/pantsbuild/pants/pull/16605
         "grpcio": ["grpc"],
+        "grpcio-health-checking": ["grpc_health"],
         "grpcio-reflection": ["grpc_reflection"],
         "pyjwt": ["jwt"],
         "python-hcl2": ["hcl2"],

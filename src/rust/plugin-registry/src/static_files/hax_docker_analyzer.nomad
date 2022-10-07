@@ -96,19 +96,35 @@ job "grapl-plugin" {
           proxy {
             upstreams {
               destination_name = "plugin-work-queue"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              # port unique within group, but arbitrary
               local_bind_port = 1000
             }
 
             upstreams {
               destination_name = "plugin-${var.plugin_id}"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              # port unique within group, but arbitrary
               local_bind_port = 1001
             }
+          }
+        }
+      }
+    }
 
+    service {
+      name = "graph-query-proxy-${var.plugin_id}"
+      port = "graph-query-proxy"
+      tags = [
+        "graph-query-proxy",
+        "tenant-${var.tenant_id}",
+        "plugin-${var.plugin_id}"
+      ]
+
+      connect {
+        sidecar_service {
+          proxy {
             upstreams {
               destination_name = "graph-query"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              # port unique within group, but arbitrary
               local_bind_port = 1002
             }
           }
@@ -207,6 +223,12 @@ job "grapl-plugin" {
 
       connect {
         sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "graph-query-proxy-${var.plugin_id}"
+              local_bind_port  = 1000
+            }
+          }
         }
       }
 
@@ -266,8 +288,13 @@ EOF
         # Consumed by GeneratorServiceConfig
         PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
 
-        RUST_LOG       = var.rust_log
-        RUST_BACKTRACE = 1
+        # Ideally we'd specify GRAPH_QUERY_CLIENT_ADDRESS here, but
+        # due to HCL limitations + the fact each `graph-query-proxy` service 
+        # has a different name, we instead construct the CLIENT_ADDRESS at
+        # runtime.
+        # https://github.com/hashicorp/nomad/issues/14813
+
+        ANALYZER_LOG_LEVEL = "DEBUG"
       }
 
       // Each plugin should ideally have a very small footprint.

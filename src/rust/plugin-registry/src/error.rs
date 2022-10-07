@@ -43,11 +43,11 @@ pub enum PluginRegistryServiceError {
     SerDeError(#[from] SerDeError),
     #[error(transparent)]
     DatabaseSerDeError(#[from] DatabaseSerDeError),
-    #[error(transparent)]
+    #[error("Failed RPC with Nomad: '{0}'")]
     NomadClientError(#[from] nomad::client::NomadClientError),
-    #[error(transparent)]
+    #[error("Failed using Nomad CLI: '{0}'")]
     NomadCliError(#[from] nomad::cli::NomadCliError),
-    #[error("Error allocating Nomad job: '{0}'")]
+    #[error("Unable to allocate Nomad job - it may be out of resources: '{0}'")]
     NomadJobAllocationError(nomad::client::NomadClientError),
     #[error("StreamInputError {0}")]
     StreamInputError(&'static str),
@@ -82,11 +82,9 @@ impl From<PluginRegistryServiceError> for Status {
             Error::DatabaseSerDeError(_) => {
                 Status::invalid_argument("Unable to deserialize message from database")
             }
-            Error::NomadClientError(_) => Status::unknown("Failed RPC with Nomad"),
-            Error::NomadCliError(_) => Status::unknown("Failed using Nomad CLI"),
-            Error::NomadJobAllocationError(_) => {
-                Status::unknown("Unable to allocate Nomad job - it may be out of resources. See plugin-registry logs.")
-            }
+            e @ (Error::NomadClientError(_)
+            | Error::NomadCliError(_)
+            | Error::NomadJobAllocationError(_)) => Status::unknown(e.to_string()),
             Error::StreamInputError(e) => {
                 // Since it's regarding user input, we can de-anonymize this message
                 Status::invalid_argument(format!("Unexpected input to Stream RPC: {e}"))
