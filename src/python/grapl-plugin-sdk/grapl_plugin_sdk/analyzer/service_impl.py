@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
 import os
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
@@ -23,6 +25,10 @@ from python_proto.api.graph_query.v1beta1.client import GraphQueryClient
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_messages
 from python_proto.common import Uuid as PythonProtoUuid
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(os.environ["ANALYZER_LOG_LEVEL"])
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def _get_tenant_id() -> PythonProtoUuid:
@@ -89,11 +95,13 @@ class AnalyzerServiceImpl:
     ) -> analyzer_messages.RunAnalyzerResponse:
         match request.update.inner:
             case PropertyUpdate() as prop_update:
+                LOGGER.debug("PropertyUpdate")
                 # optimization
                 # i.e. if the update is for process_name, and you're not querying for
                 # process_name, that's obviously a miss
                 prop_name = prop_update.property_name
                 if not check_for_string_property(self._graph_query, prop_name):
+                    LOGGER.debug("No string property")
                     return MISS_RESPONSE
 
                 updated_node_uid = prop_update.uid
@@ -114,6 +122,7 @@ class AnalyzerServiceImpl:
         )
         # if matched_graphs empty, that's a textbook miss
         if not matched_graph:
+            LOGGER.debug("No matching graph, returning ExecutionMiss")
             return MISS_RESPONSE
 
         graph_view: graph_query_messages.GraphView = matched_graph.matched_graph
@@ -123,6 +132,7 @@ class AnalyzerServiceImpl:
         if not root_node_properties:
             # todo: log this, it's an error
             # todo: return an error
+            LOGGER.debug("(This should be an error)")
             return MISS_RESPONSE
 
         analyzer = self._analyzer
@@ -140,6 +150,7 @@ class AnalyzerServiceImpl:
             root_node, ctx
         )
         if not execution_hit:
+            LOGGER.debug("No execution hit after calling analyze()")
             return MISS_RESPONSE
         execution_hit = dataclasses.replace(
             execution_hit, analyzer_name=self._analyzer_name
