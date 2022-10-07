@@ -71,12 +71,14 @@ class AnalyzerServiceWrapper(AnalyzerServiceServicer):
         self._cleanup_coroutines.append(server_graceful_shutdown())
 
         # Uncomment to experiment with grpc reflection.
+        """
         from grpc_reflection.v1alpha import reflection
         SERVICE_NAMES = (
             proto.DESCRIPTOR.services_by_name['AnalyzerService'].full_name,
             reflection.SERVICE_NAME,
         )
         reflection.enable_server_reflection(SERVICE_NAMES, server)
+        """
 
         LOGGER.info("Starting analyzer server")
         await server.start()
