@@ -13,6 +13,7 @@ botocore
 click
 confluent-kafka
 grpcio
+grpcio-health-checking
 grpcio-reflection
 hypothesis
 lark-parser
