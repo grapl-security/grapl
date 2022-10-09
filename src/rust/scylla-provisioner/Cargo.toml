@@ -9,7 +9,7 @@ async-trait = "0.1.56"
 clap = { workspace = true }
 grapl-tracing = { path = "../grapl-tracing" }
 rust-proto = { path = "../rust-proto" }
-scylla = "0.5"
+scylla = "0.6"
 secrecy = "0.8.0"
 thiserror = { workspace = true }
 tokio = { workspace = true }

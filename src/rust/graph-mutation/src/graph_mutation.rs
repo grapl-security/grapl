@@ -41,7 +41,6 @@ use crate::{
         ReverseEdgeResolverError,
     },
     table_names::{
-        tenant_keyspace_name,
         IMM_I_64_TABLE_NAME,
         IMM_STRING_TABLE_NAME,
         IMM_U_64_TABLE_NAME,
@@ -130,18 +129,15 @@ impl GraphMutationManager {
                 property_value,
                 || async move {
                     let property_value = property_value as i64;
-                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let mut query = Query::new(format!(
-                        r"
-                        INSERT INTO {tenant_ks}.{MAX_U_64_TABLE_NAME} 
-                        (uid, populated_field, value)
-                        VALUES (?, ?, ?)
-                    "
+                        "INSERT INTO tenant_graph_ks.{MAX_U_64_TABLE_NAME} \
+                        (tenant_id, uid, populated_field, value) \
+                        VALUES (?, ?, ?, ?)"
                     ));
                     query.set_timestamp(Some(property_value));
 
                     self.scylla_client
-                        .execute(query, &(uid.as_i64(), property_name.value, property_value))
+                        .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
                         .await?;
                     Ok(())
                 },
@@ -167,19 +163,16 @@ impl GraphMutationManager {
                 || {
                     async move {
                         let property_value = property_value as i64;
-                        let tenant_ks = tenant_keyspace_name(tenant_id);
                         let mut query = Query::new(format!(
-                            r"
-                        INSERT INTO {tenant_ks}.{MIN_U_64_TABLE_NAME} 
-                        (uid, populated_field, value)
-                        VALUES (?, ?, ?)
-                    "
+                            "INSERT INTO tenant_graph_ks.{MIN_U_64_TABLE_NAME} \
+                            (tenant_id, uid, populated_field, value) \
+                            VALUES (?, ?, ?, ?)"
                         ));
 
                         query.set_timestamp(Some(-property_value));
 
                         self.scylla_client
-                            .execute(query, &(uid.as_i64(), property_name.value, property_value))
+                            .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
                             .timeout(std::time::Duration::from_secs(3))
                             .await
                             .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -207,17 +200,16 @@ impl GraphMutationManager {
             .check_imm_u64(tenant_id, node_type.clone(), property_name.clone(), || {
                 async move {
                     let property_value = property_value as i64;
-                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let query = Query::new(format!(
                         r"
-                        INSERT INTO {tenant_ks}.{IMM_U_64_TABLE_NAME} 
-                        (uid, populated_field, value)
-                        VALUES (?, ?, ?)
+                        INSERT INTO tenant_graph_ks.{IMM_U_64_TABLE_NAME} 
+                        (tenant_id, uid, populated_field, value)
+                        VALUES (?, ?, ?, ?)
                     "
                     ));
 
                     self.scylla_client
-                        .execute(query, &(uid.as_i64(), property_name.value, property_value))
+                        .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
                         .timeout(std::time::Duration::from_secs(3))
                         .await
                         .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -248,18 +240,17 @@ impl GraphMutationManager {
                 property_value,
                 || {
                     async move {
-                        let tenant_ks = tenant_keyspace_name(tenant_id);
                         let mut query = Query::new(format!(
                             r"
-                        INSERT INTO {tenant_ks}.{MAX_I_64_TABLE_NAME} 
-                        (uid, populated_field, value)
-                        VALUES (?, ?, ?)
+                        INSERT INTO tenant_graph_ks.{MAX_I_64_TABLE_NAME} 
+                        (tenant_id, uid, populated_field, value)
+                        VALUES (?, ?, ?, ?)
                     "
                         ));
                         query.set_timestamp(Some(property_value));
 
                         self.scylla_client
-                            .execute(query, &(uid.as_i64(), property_name.value, property_value))
+                            .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
                             .timeout(std::time::Duration::from_secs(3))
                             .await
                             .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -291,18 +282,17 @@ impl GraphMutationManager {
                 property_value,
                 || {
                     async move {
-                        let tenant_ks = tenant_keyspace_name(tenant_id);
                         let mut query = Query::new(format!(
                             r"
-                        INSERT INTO {tenant_ks}.{MIN_I_64_TABLE_NAME} 
-                        (uid, populated_field, value)
-                        VALUES (?, ?, ?)
-                    "
+                                INSERT INTO tenant_graph_ks.{MIN_I_64_TABLE_NAME}
+                                (tenant_id, uid, populated_field, value)
+                                VALUES (?, ?, ?, ?)
+                            "
                         ));
                         query.set_timestamp(Some(-property_value));
 
                         self.scylla_client
-                            .execute(query, &(uid.as_i64(), property_name.value, property_value))
+                            .execute(query, &(&tenant_id, uid.as_i64(), property_name.value, property_value))
                             .timeout(std::time::Duration::from_secs(3))
                             .await
                             .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -329,17 +319,15 @@ impl GraphMutationManager {
         self.write_dropper
             .check_imm_i64(tenant_id, node_type.clone(), property_name.clone(), || {
                 async move {
-                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let query = Query::new(format!(
-                        r"
-                        INSERT INTO {tenant_ks}.{IMM_I_64_TABLE_NAME} 
-                        (uid, populated_field, value)
-                        VALUES (?, ?, ?)
+                        "INSERT INTO tenant_graph_ks.{IMM_I_64_TABLE_NAME} \
+                        (tenant_id, uid, populated_field, value) \
+                        VALUES (?, ?, ?, ?)\
                     "
                     ));
 
                     self.scylla_client
-                        .execute(query, &(uid.as_i64(), property_name.value, property_value))
+                        .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
                         .timeout(std::time::Duration::from_secs(3))
                         .await
                         .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -363,16 +351,14 @@ impl GraphMutationManager {
         self.write_dropper
             .check_node_type(tenant_id, uid, || {
                 async move {
-                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let query = Query::new(format!(
-                        r"
-                        INSERT INTO {tenant_ks}.node_type (uid, node_type)
-                        VALUES (?, ?)
-                    "
+                        "INSERT INTO tenant_graph_ks.node_type \
+                        (tenant_id, uid, node_type) \
+                        VALUES (?, ?, ?)"
                     ));
 
                     self.scylla_client
-                        .execute(query, &(uid.as_i64(), node_type.value))
+                        .execute(query, &(tenant_id, uid.as_i64(), node_type.value))
                         .timeout(std::time::Duration::from_secs(3))
                         .await
                         .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -398,17 +384,14 @@ impl GraphMutationManager {
         self.write_dropper
             .check_imm_string(tenant_id, node_type.clone(), property_name.clone(), || {
                 async move {
-                    let tenant_ks = tenant_keyspace_name(tenant_id);
                     let query = Query::new(format!(
-                        r"
-                        INSERT INTO {tenant_ks}.{IMM_STRING_TABLE_NAME} 
-                        (uid, populated_field, value)
-                        VALUES (?, ?, ?)
-                    "
+                        "INSERT INTO tenant_graph_ks.{IMM_STRING_TABLE_NAME} \
+                        (tenant_id, uid, populated_field, value) \
+                        VALUES (?, ?, ?, ?)"
                     ));
 
                     self.scylla_client
-                        .execute(query, &(uid.as_i64(), property_name.value, property_value))
+                        .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
                         .timeout(std::time::Duration::from_secs(3))
                         .await
                         .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -440,20 +423,15 @@ impl GraphMutationManager {
                 r_edge_name,
                 |f_edge_name, r_edge_name| {
                     async move {
-                        // todo: Batch statements are currently not supported by the Scylla rust client
-                        //       https://github.com/scylladb/scylla-rust-driver/issues/469
-                        let tenant_ks = tenant_keyspace_name(tenant_id);
-
                         let f_statement = format!(
-                            r"
-                        INSERT INTO {tenant_ks}.edges (
-                            source_uid,
-                            destination_uid,
-                            f_edge_name,
-                            r_edge_name
-                        )
-                        VALUES (?, ?, ?, ?)
-                        ",
+                            "INSERT INTO tenant_graph_ks.edges (\
+                                tenant_id, \
+                                source_uid, \
+                                destination_uid, \
+                                f_edge_name, \
+                                r_edge_name\
+                            ) \
+                            VALUES (?, ?, ?, ?, ?)",
                         );
                         let r_statement = f_statement.clone();
 
@@ -464,17 +442,18 @@ impl GraphMutationManager {
                         batch.set_is_idempotent(true);
 
                         self.scylla_client
-                            .session
                             .batch(
                                 &batch,
                                 (
                                     (
+                                        tenant_id,
                                         from_uid.as_i64(),
                                         to_uid.as_i64(),
                                         &f_edge_name.value,
                                         &r_edge_name.value,
                                     ),
                                     (
+                                        tenant_id,
                                         to_uid.as_i64(),
                                         from_uid.as_i64(),
                                         &r_edge_name.value,
