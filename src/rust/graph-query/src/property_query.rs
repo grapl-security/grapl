@@ -18,7 +18,6 @@ use scylla::{
 };
 
 use crate::table_names::{
-    tenant_keyspace_name,
     IMM_STRING_TABLE_NAME,
 };
 
@@ -74,13 +73,12 @@ impl PropertyQueryExecutor {
         uid: Uid,
         property_name: &PropertyName,
     ) -> Result<Option<StringField>, PropertyQueryError> {
-        let tenant_ks = tenant_keyspace_name(tenant_id);
-
         let mut query = scylla::query::Query::from(format!(
             r"
             SELECT value
-            FROM {tenant_ks}.{IMM_STRING_TABLE_NAME}
+            FROM tenant_graph_ks.{IMM_STRING_TABLE_NAME}
             WHERE
+                tenant_id = ? AND
                 uid = ? AND
                 populated_field = ?
             LIMIT 1
@@ -92,7 +90,7 @@ impl PropertyQueryExecutor {
 
         let query_result = self
             .scylla_client
-            .execute(query, &(uid.as_i64(), &property_name.value))
+            .execute(query, &(tenant_id, uid.as_i64(), &property_name.value))
             .await?;
 
         let row = match query_result.maybe_first_row_typed::<(String,)>()? {
@@ -113,13 +111,13 @@ impl PropertyQueryExecutor {
         uid: Uid,
         edge_name: &EdgeName,
     ) -> Result<Option<Vec<EdgeRow>>, PropertyQueryError> {
-        let tenant_ks = tenant_keyspace_name(tenant_id);
 
         let mut query = scylla::query::Query::from(format!(
             r"
             SELECT r_edge_name, destination_uid
-            FROM {tenant_ks}.edges
+            FROM tenant_graph_ks.edges
             WHERE
+                tenant_id = ? AND
                 source_uid = ? AND
                 f_edge_name = ?
             ALLOW FILTERING;
@@ -132,7 +130,7 @@ impl PropertyQueryExecutor {
 
         let query_result = self
             .scylla_client
-            .execute(query, &(uid.as_i64(), &edge_name.value))
+            .execute(query, &(tenant_id, uid.as_i64(), &edge_name.value))
             .await?;
 
         let rows = query_result.rows_typed_or_empty::<(String, i64)>();
