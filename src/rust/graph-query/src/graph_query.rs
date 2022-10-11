@@ -1,5 +1,5 @@
 use futures::future::join_all;
-pub use rust_proto::graplinc::grapl::api::graph_query::v1beta1::messages::StringCmp;
+pub use rust_proto::graplinc::grapl::api::graph_query::v1beta1::comparators::StringCmp;
 use rust_proto::graplinc::grapl::{
     api::graph_query::v1beta1::messages::{
         GraphQuery,

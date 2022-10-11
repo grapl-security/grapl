@@ -5,16 +5,22 @@ use std::{
 
 use async_recursion::async_recursion;
 use rust_proto::graplinc::grapl::{
-    api::graph_query::v1beta1::messages::{
-        AndStringFilters,
-        GraphQuery,
-        GraphView,
-        NodePropertiesView,
-        NodePropertyQuery,
-        OrStringFilters,
-        QueryId,
-        StrCmp,
-        StringProperties,
+    api::graph_query::v1beta1::{
+        comparators::{
+            StrCmp,
+        },
+        messages::{
+            AndIntFilters,
+            AndStringFilters,
+            GraphQuery,
+            GraphView,
+            NodePropertiesView,
+            NodePropertyQuery,
+            OrIntFilters,
+            OrStringFilters,
+            QueryId,
+            StringProperties,
+        },
     },
     common::v1beta1::types::{
         EdgeName,
@@ -45,11 +51,14 @@ pub enum NodeQueryError {
     PropertyQueryError(#[from] PropertyQueryError),
 }
 
-pub(crate) fn match_property(
+pub(crate) fn match_string_property(
     node_properties_query: &NodePropertyQuery,
     property_name: &PropertyName,
     property_value: &str,
 ) -> bool {
+
+    // this is more of a label than a lifetime, telling the `continue` to skip
+    // to the next thing in the or-filters.
     'outer: for or_filters in
         &node_properties_query.string_filters[property_name].and_string_filters
     {
@@ -174,7 +183,7 @@ pub async fn fetch_node_with_edges(
     };
 
     for node_property in node_properties.iter() {
-        if match_property(
+        if match_string_property(
             node_properties_query,
             &node_property.populated_field,
             &node_property.value,
@@ -332,7 +341,25 @@ impl NodeQuery {
             .unwrap()
             .string_filters
             .entry(property_name)
-            .or_insert_with(OrStringFilters::new)
+            .or_insert_with(OrStringFilters::default)
+            .push(comparisons.into());
+        drop(inner);
+        self
+    }
+
+    pub fn with_int_comparisons(
+        &mut self,
+        property_name: PropertyName,
+        comparisons: impl Into<AndIntFilters>,
+    ) -> &mut Self {
+        let mut inner = self.graph.as_mut().unwrap().borrow_mut();
+        inner
+            .node_property_queries
+            .get_mut(&self.query_id)
+            .unwrap()
+            .int_filters
+            .entry(property_name)
+            .or_insert_with(OrIntFilters::default)
             .push(comparisons.into());
         drop(inner);
         self
@@ -349,6 +376,20 @@ impl NodeQuery {
             .get_mut(&self.query_id)
             .unwrap()
             .string_filters
+            .insert(property_name, comparisons);
+    }
+
+    pub fn overwrite_int_comparisons(
+        &mut self,
+        property_name: PropertyName,
+        comparisons: OrIntFilters,
+    ) {
+        let mut inner = self.graph.as_mut().unwrap().borrow_mut();
+        inner
+            .node_property_queries
+            .get_mut(&self.query_id)
+            .unwrap()
+            .int_filters
             .insert(property_name, comparisons);
     }
 

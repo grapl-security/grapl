@@ -1,7 +1,10 @@
 #![cfg(feature = "integration_tests")]
 use bytes::Bytes;
 use clap::Parser;
-use graph_query::node_query::NodeQuery;
+use graph_query::{
+    graph_query::StringCmp,
+    node_query::NodeQuery,
+};
 use rust_proto::{
     client_factory::services::{
         GraphMutationClientConfig,
@@ -30,7 +33,6 @@ use rust_proto::{
                     NodePropertyQuery,
                     QueryGraphFromUidRequest,
                     QueryGraphWithUidRequest,
-                    StringCmp,
                 },
             },
             graph_schema_manager::v1beta1::{
