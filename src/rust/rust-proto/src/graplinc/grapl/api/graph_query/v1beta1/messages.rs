@@ -42,7 +42,7 @@ impl From<QueryId> for proto::QueryId {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum IntOperation {
     Has,
     Equal,
@@ -146,6 +146,18 @@ impl From<AndIntFilters> for proto::AndIntFilters {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct OrIntFilters {
     pub and_int_filters: Vec<AndIntFilters>,
+}
+
+impl OrIntFilters {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            and_int_filters: Vec::with_capacity(capacity),
+        }
+    }
+
+    pub fn push(&mut self, and_int_filters: AndIntFilters) {
+        self.and_int_filters.push(and_int_filters);
+    }
 }
 
 impl TryFrom<proto::OrIntFilters> for OrIntFilters {
@@ -507,7 +519,9 @@ impl From<UidFilters> for proto::UidFilters {
 pub struct NodePropertyQuery {
     pub query_id: QueryId,
     pub node_type: NodeType,
-    pub int_filters: FxHashMap<PropertyName, OrIntFilters>,
+    pub immutable_int_filters: FxHashMap<PropertyName, OrIntFilters>,
+    pub max_int_filters: FxHashMap<PropertyName, OrIntFilters>,
+    pub min_int_filters: FxHashMap<PropertyName, OrIntFilters>,
     pub string_filters: FxHashMap<PropertyName, OrStringFilters>,
     pub uid_filters: UidFilters,
 }
@@ -517,7 +531,9 @@ impl NodePropertyQuery {
         Self {
             node_type,
             query_id: QueryId::default(),
-            int_filters: Default::default(),
+            immutable_int_filters: Default::default(),
+            max_int_filters: Default::default(),
+            min_int_filters: Default::default(),
             string_filters: Default::default(),
             uid_filters: Default::default(),
         }
@@ -527,6 +543,9 @@ impl NodePropertyQuery {
         debug_assert_eq!(self.query_id, other.query_id);
         debug_assert_eq!(self.node_type, other.node_type);
         self.string_filters.extend(other.string_filters);
+        self.immutable_int_filters.extend(other.immutable_int_filters);
+        self.max_int_filters.extend(other.max_int_filters);
+        self.min_int_filters.extend(other.min_int_filters);
     }
 
     pub fn with_string_filters(
@@ -538,6 +557,45 @@ impl NodePropertyQuery {
         self.string_filters
             .entry(property_name)
             .or_insert_with(|| OrStringFilters::with_capacity(1))
+            .push(filters);
+        self
+    }
+
+    pub fn with_immutable_int_filters(
+        &mut self,
+        property_name: PropertyName,
+        filters: impl Into<AndIntFilters>,
+    ) -> &mut Self {
+        let filters = filters.into();
+        self.immutable_int_filters
+            .entry(property_name)
+            .or_insert_with(|| OrIntFilters::with_capacity(1))
+            .push(filters);
+        self
+    }
+
+    pub fn with_max_int_filters(
+        &mut self,
+        property_name: PropertyName,
+        filters: impl Into<AndIntFilters>,
+    ) -> &mut Self {
+        let filters = filters.into();
+        self.max_int_filters
+            .entry(property_name)
+            .or_insert_with(|| OrIntFilters::with_capacity(1))
+            .push(filters);
+        self
+    }
+
+    pub fn with_min_int_filters(
+        &mut self,
+        property_name: PropertyName,
+        filters: impl Into<AndIntFilters>,
+    ) -> &mut Self {
+        let filters = filters.into();
+        self.min_int_filters
+            .entry(property_name)
+            .or_insert_with(|| OrIntFilters::with_capacity(1))
             .push(filters);
         self
     }
@@ -565,13 +623,41 @@ impl TryFrom<proto::NodePropertyQuery> for NodePropertyQuery {
             })
             .collect::<Result<_, SerDeError>>()?;
 
-        let int_filters = value
-            .int_filters
+        let immutable_int_filters = value
+            .immutable_int_filters
             .into_iter()
             .map(|(k, v)| {
                 Ok((
                     PropertyName::try_from(k).map_err(|e| SerDeError::InvalidField {
-                        field_name: "int_filters",
+                        field_name: "immutable_int_filters",
+                        assertion: e.to_string(),
+                    })?,
+                    v.try_into()?,
+                ))
+            })
+            .collect::<Result<_, SerDeError>>()?;
+
+        let max_int_filters = value
+            .max_int_filters
+            .into_iter()
+            .map(|(k, v)| {
+                Ok((
+                    PropertyName::try_from(k).map_err(|e| SerDeError::InvalidField {
+                        field_name: "max_int_filters",
+                        assertion: e.to_string(),
+                    })?,
+                    v.try_into()?,
+                ))
+            })
+            .collect::<Result<_, SerDeError>>()?;
+
+        let min_int_filters = value
+            .min_int_filters
+            .into_iter()
+            .map(|(k, v)| {
+                Ok((
+                    PropertyName::try_from(k).map_err(|e| SerDeError::InvalidField {
+                        field_name: "min_int_filters",
                         assertion: e.to_string(),
                     })?,
                     v.try_into()?,
@@ -591,7 +677,9 @@ impl TryFrom<proto::NodePropertyQuery> for NodePropertyQuery {
         Ok(Self {
             query_id,
             node_type,
-            int_filters,
+            immutable_int_filters,
+            max_int_filters,
+            min_int_filters,
             string_filters,
             uid_filters,
         })
@@ -608,8 +696,20 @@ impl From<NodePropertyQuery> for proto::NodePropertyQuery {
             .map(|(k, v)| (k.value, v.into()))
             .collect();
 
-        let int_filters = value
-            .int_filters
+        let immutable_int_filters = value
+            .immutable_int_filters
+            .into_iter()
+            .map(|(k, v)| (k.value, v.into()))
+            .collect();
+
+        let max_int_filters = value
+            .max_int_filters
+            .into_iter()
+            .map(|(k, v)| (k.value, v.into()))
+            .collect();
+
+        let min_int_filters = value
+            .min_int_filters
             .into_iter()
             .map(|(k, v)| (k.value, v.into()))
             .collect();
@@ -619,7 +719,9 @@ impl From<NodePropertyQuery> for proto::NodePropertyQuery {
         Self {
             query_id,
             node_type,
-            int_filters,
+            immutable_int_filters,
+            max_int_filters,
+            min_int_filters,
             string_filters,
             uid_filters: Some(uid_filters),
         }
@@ -641,7 +743,9 @@ impl GraphQuery {
             NodePropertyQuery {
                 query_id,
                 node_type,
-                int_filters: Default::default(),
+                immutable_int_filters: Default::default(),
+                max_int_filters: Default::default(),
+                min_int_filters: Default::default(),
                 string_filters: Default::default(),
                 uid_filters: Default::default(),
             },
@@ -784,6 +888,54 @@ impl From<GraphQuery> for proto::GraphQuery {
 }
 
 #[derive(Debug, Clone, Default)]
+pub struct I64Properties {
+    pub prop_map: FxHashMap<PropertyName, i64>,
+}
+
+impl I64Properties {
+    pub fn merge(&mut self, other: Self) {
+        self.prop_map.extend(other.prop_map);
+    }
+
+    pub fn add_i64_property(&mut self, property_name: PropertyName, value: i64) {
+        self.prop_map.insert(property_name, value);
+    }
+}
+
+impl TryFrom<proto::I64Properties> for I64Properties {
+    type Error = SerDeError;
+    fn try_from(value: proto::I64Properties) -> Result<Self, Self::Error> {
+        let mut prop_map = FxHashMap::default();
+        prop_map.reserve(value.properties.len());
+
+        for property in value.properties {
+            let property_name = property
+                .property_name
+                .ok_or_else(|| SerDeError::MissingField("property_name"))?;
+            prop_map.insert(property_name.try_into()?, property.property_value);
+        }
+
+        Ok(Self { prop_map })
+    }
+}
+
+impl From<I64Properties> for proto::I64Properties {
+    fn from(value: I64Properties) -> Self {
+        let props_as_vec: Vec<proto::I64Property> = value
+            .prop_map
+            .into_iter()
+            .map(|(k, v)| proto::I64Property {
+                property_name: Some(k.into()),
+                property_value: v,
+            })
+            .collect();
+        proto::I64Properties {
+            properties: props_as_vec,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct StringProperties {
     pub prop_map: FxHashMap<PropertyName, String>,
 }
@@ -836,14 +988,27 @@ pub struct NodePropertiesView {
     pub uid: Uid,
     pub node_type: NodeType,
     pub string_properties: StringProperties,
+    pub immutable_i64_properties: I64Properties,
+    pub max_i64_properties: I64Properties,
+    pub min_i64_properties: I64Properties,
 }
 
 impl NodePropertiesView {
-    pub fn new(uid: Uid, node_type: NodeType, string_properties: StringProperties) -> Self {
+    pub fn new(
+        uid: Uid,
+        node_type: NodeType,
+        string_properties: StringProperties,
+        immutable_i64_properties: I64Properties,
+        max_i64_properties: I64Properties,
+        min_i64_properties: I64Properties,
+    ) -> Self {
         Self {
             uid,
             node_type,
             string_properties,
+            immutable_i64_properties,
+            max_i64_properties,
+            min_i64_properties,
         }
     }
 
@@ -851,12 +1016,34 @@ impl NodePropertiesView {
         debug_assert_eq!(self.uid, other.uid);
         debug_assert_eq!(self.node_type, other.node_type);
         self.string_properties.merge(other.string_properties);
+        self.immutable_i64_properties.merge(other.immutable_i64_properties);
+        self.max_i64_properties.merge(other.max_i64_properties);
+        self.min_i64_properties.merge(other.min_i64_properties);
     }
 
     pub fn add_string_property(&mut self, property_name: PropertyName, value: String) {
         self.string_properties
             .add_string_property(property_name, value);
     }
+
+    pub fn add_immutable_i64_property(&mut self, property_name: PropertyName, value: i64) {
+        self.immutable_i64_properties
+            .add_i64_property(property_name, value);
+    }
+
+
+    pub fn add_max_i64_property(&mut self, property_name: PropertyName, value: i64) {
+        self.immutable_i64_properties
+            .add_i64_property(property_name, value);
+    }
+
+
+    pub fn add_min_i64_property(&mut self, property_name: PropertyName, value: i64) {
+        self.immutable_i64_properties
+            .add_i64_property(property_name, value);
+    }
+
+
 }
 
 impl TryFrom<proto::NodePropertiesView> for NodePropertiesView {
@@ -868,6 +1055,23 @@ impl TryFrom<proto::NodePropertiesView> for NodePropertiesView {
 
         let string_properties = StringProperties::try_from(proto_string_properties)?;
 
+        let proto_immutable_i64_properties = value
+            .immutable_i64_properties
+            .ok_or_else(|| SerDeError::MissingField("immutable_i64_properties"))?;
+
+
+        let proto_max_i64_properties = value
+            .max_i64_properties
+            .ok_or_else(|| SerDeError::MissingField("max_i64_properties"))?;
+
+        let proto_min_i64_properties = value
+            .min_i64_properties
+            .ok_or_else(|| SerDeError::MissingField("min_i64_properties"))?;
+
+        let immutable_i64_properties = I64Properties::try_from(proto_immutable_i64_properties)?;
+        let max_i64_properties = I64Properties::try_from(proto_max_i64_properties)?;
+        let min_i64_properties = I64Properties::try_from(proto_min_i64_properties)?;
+
         Ok(Self {
             uid: value
                 .uid
@@ -878,6 +1082,9 @@ impl TryFrom<proto::NodePropertiesView> for NodePropertiesView {
                 .ok_or(SerDeError::MissingField("node_type"))?
                 .try_into()?,
             string_properties,
+            immutable_i64_properties,
+            max_i64_properties,
+            min_i64_properties,
         })
     }
 }
@@ -885,11 +1092,17 @@ impl TryFrom<proto::NodePropertiesView> for NodePropertiesView {
 impl From<NodePropertiesView> for proto::NodePropertiesView {
     fn from(value: NodePropertiesView) -> Self {
         let string_properties = proto::StringProperties::from(value.string_properties);
+        let immutable_i64_properties = proto::I64Properties::from(value.immutable_i64_properties);
+        let max_i64_properties = proto::I64Properties::from(value.max_i64_properties);
+        let min_i64_properties = proto::I64Properties::from(value.min_i64_properties);
 
         Self {
             uid: Some(value.uid.into()),
             node_type: Some(value.node_type.into()),
             string_properties: Some(string_properties),
+            immutable_i64_properties: Some(immutable_i64_properties),
+            max_i64_properties: Some(max_i64_properties),
+            min_i64_properties: Some(min_i64_properties),
         }
     }
 }
@@ -1059,7 +1272,14 @@ impl GraphView {
     pub fn new_node(&mut self, uid: Uid, node_type: NodeType) -> &mut NodePropertiesView {
         self.nodes
             .entry(uid)
-            .or_insert_with(|| NodePropertiesView::new(uid, node_type, Default::default()))
+            .or_insert_with(|| NodePropertiesView::new(
+                uid,
+                node_type,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+            ))
     }
 
     pub fn add_node(&mut self, node: NodePropertiesView) {
@@ -1104,7 +1324,7 @@ impl GraphView {
         }
 
         for ((src_uid, edge_name), dst_uids) in other.edges.into_iter() {
-            self.add_edges(src_uid.clone(), edge_name.clone(), dst_uids.clone());
+            self.add_edges(src_uid, edge_name, dst_uids);
         }
     }
 

@@ -16,10 +16,10 @@ use scylla::{
     },
     CachingSession,
 };
+use scylla::cql_to_rust::FromCqlVal;
+use scylla::frame::response::result::CqlValue;
 
-use crate::table_names::{
-    IMM_STRING_TABLE_NAME,
-};
+use crate::table_names::{IMM_I_64_TABLE_NAME, IMM_STRING_TABLE_NAME, MAX_I_64_TABLE_NAME, MIN_I_64_TABLE_NAME};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PropertyQueryError {
@@ -49,6 +49,13 @@ pub struct EdgeRow {
 }
 
 #[derive(Debug, Clone)]
+pub struct StoredProperty<T> {
+    pub uid: Uid,
+    pub populated_field: PropertyName,
+    pub value: T,
+}
+
+#[derive(Debug, Clone)]
 pub struct StringField {
     pub uid: Uid,
     pub populated_field: PropertyName,
@@ -67,23 +74,22 @@ impl PropertyQueryExecutor {
         Self { scylla_client }
     }
 
-    pub async fn get_immutable_string(
+    pub async fn get_property<T: FromCqlVal<Option<CqlValue>>>(
         &self,
         tenant_id: uuid::Uuid,
         uid: Uid,
         property_name: &PropertyName,
-    ) -> Result<Option<StringField>, PropertyQueryError> {
+        table_name: &str,
+    ) -> Result<Option<StoredProperty<T>>, PropertyQueryError> {
         let mut query = scylla::query::Query::from(format!(
-            r"
-            SELECT value
-            FROM tenant_graph_ks.{IMM_STRING_TABLE_NAME}
-            WHERE
-                tenant_id = ? AND
-                uid = ? AND
-                populated_field = ?
-            LIMIT 1
-            ALLOW FILTERING;
-            "
+            "SELECT value \
+            FROM tenant_graph_ks.{table_name} \
+            WHERE \
+                tenant_id = ? AND \
+                uid = ? AND \
+                populated_field = ? \
+            LIMIT 1 \
+            ALLOW FILTERING;"
         ));
 
         query.set_is_idempotent(true);
@@ -93,16 +99,56 @@ impl PropertyQueryExecutor {
             .execute(query, &(tenant_id, uid.as_i64(), &property_name.value))
             .await?;
 
-        let row = match query_result.maybe_first_row_typed::<(String,)>()? {
+        let row = match query_result.maybe_first_row_typed::<(T,)>()? {
             Some((row,)) => row,
             None => return Ok(None),
         };
 
-        Ok(Some(StringField {
+        Ok(Some(StoredProperty {
             uid,
             populated_field: property_name.clone(),
             value: row,
         }))
+    }
+
+    pub async fn get_immutable_string(
+        &self,
+        tenant_id: uuid::Uuid,
+        uid: Uid,
+        property_name: &PropertyName,
+    ) -> Result<Option<StoredProperty<String>>, PropertyQueryError> {
+        self.get_property(tenant_id, uid, property_name, IMM_STRING_TABLE_NAME)
+            .await
+    }
+
+    pub async fn get_immutable_i64(
+        &self,
+        tenant_id: uuid::Uuid,
+        uid: Uid,
+        property_name: &PropertyName,
+    ) -> Result<Option<StoredProperty<i64>>, PropertyQueryError> {
+        self.get_property(tenant_id, uid, property_name, IMM_I_64_TABLE_NAME)
+            .await
+    }
+
+    pub async fn get_max_i64(
+        &self,
+        tenant_id: uuid::Uuid,
+        uid: Uid,
+        property_name: &PropertyName,
+    ) -> Result<Option<StoredProperty<i64>>, PropertyQueryError> {
+        self.get_property(tenant_id, uid, property_name, MAX_I_64_TABLE_NAME)
+            .await
+    }
+
+    pub async fn get_min_i64(
+        &self,
+        tenant_id: uuid::Uuid,
+        uid: Uid,
+        property_name: &PropertyName,
+    ) -> Result<Option<StoredProperty<i64>>, PropertyQueryError> {
+        self.get_property(tenant_id, uid, property_name, MIN_I_64_TABLE_NAME)
+            .await
     }
 
     pub async fn get_edges(
@@ -113,18 +159,14 @@ impl PropertyQueryExecutor {
     ) -> Result<Option<Vec<EdgeRow>>, PropertyQueryError> {
 
         let mut query = scylla::query::Query::from(format!(
-            r"
-            SELECT r_edge_name, destination_uid
-            FROM tenant_graph_ks.edges
-            WHERE
-                tenant_id = ? AND
-                source_uid = ? AND
-                f_edge_name = ?
-            ALLOW FILTERING;
-            "
+            "SELECT r_edge_name, destination_uid \
+            FROM tenant_graph_ks.edges \
+            WHERE \
+                tenant_id = ? AND \
+                source_uid = ? AND \
+                f_edge_name = ? \
+            ALLOW FILTERING;"
         ));
-
-        println!("query: \n{}\n", &query.contents);
 
         query.set_is_idempotent(true);
 
