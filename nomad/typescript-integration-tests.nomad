@@ -95,7 +95,6 @@ job "typescript-integration-tests" {
 
       env {
         AWS_REGION = "${var.aws_region}"
-
 #        GRAPL_API_HOST                     = "${NOMAD_UPSTREAM_IP_web-ui}"
 #        GRAPL_HTTP_FRONTEND_PORT           = "${NOMAD_UPSTREAM_PORT_web-ui}"
         GRAPL_TEST_USER_NAME               = var.test_user_name

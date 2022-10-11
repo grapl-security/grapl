@@ -17,34 +17,39 @@ const Login = () => {
 
       <div>
         <Formik
+
           initialValues={{ username: "", password: "" }}
           validationSchema={yupValidationSchema}
-          onSubmit={async (values) => {
-            const loginSuccess = await loginService(values.username, values.password);
+          onSubmit={
+            async (values) => {
+              const loginSuccess = await loginService(values.username, values.password);
 
-            if (loginSuccess) {
-              window.history.replaceState("#/login", "", "#/");
-              window.location.reload();
-              console.log("User successfully logged in using Login Form.");
-            } else {
-              setState({
-                ...state,
-                loginFailed: true,
-              });
-            }
+              if (loginSuccess) {
+                {!state.loginFailed && <div data-testid={"loginSuccess"}> Logging in</div>}
+                window.history.replaceState("#/login", "", "#/");
+                window.location.reload();
+                console.log("User successfully logged in using Login Form.");
+              } else {
+                setState({
+                  ...state,
+                  loginFailed: true,
+                });
+              }
           }}
         >
           {({ errors, touched }) => (
             <Form>
-              <h1> Grapl </h1>
-              <Field name="username" type="text" placeholder="Username" />
+              <h1 data-testid={"Grapl"}> Grapl </h1>
+              <Field data-testid={"username"} name="username" type="text" placeholder="Username" />
               {touched.username && errors.username && <div>{errors.username}</div>}
-              <Field name="password" type="password" placeholder="Password" /> <br />
+
+              <Field data-testid={"password"} name="password" type="password" placeholder="Password" /> <br />
               {touched.password && errors.password && <div>{errors.password}</div>}
-              <button name="submitButton" type="submit">
+
+              <button data-testid={"button"} name="submitButton" type="submit">
                 SUBMIT
               </button>
-              {state.loginFailed && <div>Unsuccessful Login</div>}
+              {state.loginFailed && <div data-testid={"loginError"}>Unsuccessful Login</div>}
             </Form>
           )}
         </Formik>

@@ -19,7 +19,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test --maxWorkers=1",
+    "test": "react-scripts test tests/integration --maxWorkers=1",
+    "unitTest": "react-scripts test tests/unit --maxWorkers=50%",
     "eject": "react-scripts eject",
     "check-types": "tsc --project tsconfig.json --pretty --noEmit",
     "format": "yarn run prettier:fix && yarn run lint:fix",
@@ -41,9 +42,10 @@
     ]
   },
   "devDependencies": {
+    "@testing-library/dom": "^8.18.1",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.2.1",
+    "@testing-library/user-event": "^14.4.3",
     "@types/jest": "^27.0.1",
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
@@ -55,6 +57,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-react": "latest",
     "jest": "^29.0.3",
+    "jest-fetch-mock": "^3.0.3",
     "prettier": "^2.7.1"
   },
   "engines": {

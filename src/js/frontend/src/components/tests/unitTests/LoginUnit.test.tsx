@@ -1,17 +1,25 @@
 import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom/extend-expect";
+
+import {
+  screen,
+  render,
+} from "@testing-library/react";
 
 import Login from "components/login/Login";
+import { act } from "react-dom/test-utils";
 
 // to show the result of render(), use screen.debug() which displays HTML
-describe("Login form, submit button, and SSO Container appear in /#/login", () => {
-  test("Look for Form Components", () => {
-    render(
-      <GoogleOAuthProvider clientId="340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com">
-        <Login />
-      </GoogleOAuthProvider>,
-    );
+describe("Login Component", () => {
+  test("Ensure username, password, submit button, and google SSO button render on screen", () => {
+    act(() => {
+      render(
+        <GoogleOAuthProvider clientId="340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com">
+          <Login />
+        </GoogleOAuthProvider>,
+      );
+    });
 
     const username = screen.getByPlaceholderText(/Username/i);
     expect(username).toBeInTheDocument();
@@ -26,3 +34,5 @@ describe("Login form, submit button, and SSO Container appear in /#/login", () =
     expect(googleSSOContainer).toBeInTheDocument();
   });
 });
+
+

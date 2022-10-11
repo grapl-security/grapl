@@ -90,12 +90,10 @@ build-code: ## Build the code if any files have changed
 # 	$(DOCKER_RUN) yarn analyze-build
 	@echo "$${empty_target_message}" > $@
 
-# Note that `run-tests` is a phony target, so it will run each time it
-# is invoked, whether code has changed or not.
-.PHONY: run-tests
-run-tests: build-code
-run-tests: ## Run all unit tests and gather coverage statistics
-	$(DOCKER_RUN) yarn test \
+.PHONY: run-unit-tests
+run-unit-tests: build-code
+run-unit-tests: ## Run all unit tests and gather coverage statistics
+	$(DOCKER_RUN) yarn unitTest \
 		--coverage \
 		--watchAll=false \
 		--coverageDirectory=/frontend/coverage/

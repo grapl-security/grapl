@@ -253,7 +253,7 @@ test-unit-js: ## Build and run unit tests - JavaScript only
 
 .PHONY: test-unit-frontend
 test-unit-frontend: ## Test Frontend
-	$(FRONTEND_MAKE) run-tests
+	$(FRONTEND_MAKE) run-unit-tests
 
 
 .PHONY: test-unit-python
