@@ -96,10 +96,11 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
                 .query(
                     format!(
                         r"CREATE TABLE IF NOT EXISTS tenant_graph_ks.{table_name} (
+                            tenant_id uuid,
                             uid bigint,
                             populated_field text,
                             value {value_type},
-                            PRIMARY KEY (uid, populated_field)
+                            PRIMARY KEY (tenant_id, uid, populated_field)
                         )"
                     ),
                     &(),
@@ -110,9 +111,10 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
         session
             .query(
                 "CREATE TABLE IF NOT EXISTS tenant_graph_ks.node_type (
+                        tenant_id uuid,
                         uid bigint,
                         node_type text,
-                        PRIMARY KEY (uid, node_type)
+                        PRIMARY KEY (tenant_id, uid, node_type)
                     )",
                 &(),
             )
@@ -120,11 +122,12 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
         session
             .query(
                 r"CREATE TABLE IF NOT EXISTS tenant_graph_ks.edges (
+                        tenant_id uuid,
                         source_uid bigint,
                         destination_uid bigint,
                         f_edge_name text,
                         r_edge_name text,
-                        PRIMARY KEY (source_uid, f_edge_name, destination_uid)
+                        PRIMARY KEY (tenant_id, source_uid, f_edge_name, destination_uid)
                     )",
                 &(),
             )
