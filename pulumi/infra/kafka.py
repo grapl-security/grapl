@@ -170,7 +170,10 @@ class Kafka(pulumi.ComponentResource):
                     )
         else:
             confluent_stack_output = StackReference(
-                "grapl/confluent-cloud/production"
+                # TODO: Once we remove the old TypeScript project,
+                # we'll rename `confluent-cloud-py` back to
+                # `confluent-cloud`.
+                "grapl/confluent-cloud-py/production"
             ).require_output("confluent")
             self.confluent_environment = Confluent.from_json(
                 cast(pulumi.Output[Mapping[str, Any]], confluent_stack_output)
