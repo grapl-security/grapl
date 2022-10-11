@@ -83,6 +83,15 @@ pub(crate) mod protobufs {
                     }
                 }
 
+                pub(crate) mod graph_query_proxy {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.graph_query_proxy.v1beta1.rs"
+                        ));
+                    }
+                }
+
                 pub(crate) mod organization_management {
                     pub(crate) mod v1beta1 {
                         include!(concat!(

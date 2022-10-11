@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.graph_query_proxy.v1beta1;
+
+import "graplinc/grapl/common/v1beta1/types.proto";
+import "graplinc/grapl/api/graph_query/v1beta1/graph_query.proto";
+
+// A Request to find a graph matching `GraphQuery` where
+// a node in that graph has the uid `node_uid`
+message QueryGraphWithUidRequest {
+  // The node to parameterize against
+  graplinc.grapl.common.v1beta1.Uid node_uid = 1;
+  // The query to match
+  graplinc.grapl.api.graph_query.v1beta1.GraphQuery graph_query = 2;
+}
+
+// The QueryGraphFromUidRequest represents a graph query
+// where the `node_uid` and the `graph_query.root_query_id`
+// represent the same node. Used for pivoting from `node_uid`
+// to any connected graphs.
+message QueryGraphFromUidRequest {
+  // The node to parameterize against
+  graplinc.grapl.common.v1beta1.Uid node_uid = 1;
+  // The query to match
+  graplinc.grapl.api.graph_query.v1beta1.GraphQuery graph_query = 2;
+}
+
+// GraphQueryProxyService is a middleman service between an Analyzer plugin
+// and the GraphQuery service that enforces a specific TenantID is being used.
+service GraphQueryProxyService {
+  // Used to find a node within a graph that matches a query
+  rpc QueryGraphWithUid(QueryGraphWithUidRequest) returns (graplinc.grapl.api.graph_query.v1beta1.QueryGraphWithUidResponse);
+  // Performs a query on the node that corresponds to the provided uid as the root
+  rpc QueryGraphFromUid(QueryGraphFromUidRequest) returns (graplinc.grapl.api.graph_query.v1beta1.QueryGraphFromUidResponse);
+}
