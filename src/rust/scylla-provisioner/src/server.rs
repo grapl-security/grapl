@@ -1,8 +1,10 @@
 use std::{
-    sync::Arc,
+    sync::{
+        atomic::AtomicBool,
+        Arc,
+    },
     time::Duration,
 };
-use std::sync::atomic::AtomicBool;
 
 use async_trait::async_trait;
 use rust_proto::{
@@ -65,7 +67,10 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
         &self,
         request: native::ProvisionGraphForTenantRequest,
     ) -> Result<native::ProvisionGraphForTenantResponse, Self::Error> {
-        if self.already_provisioned.load(std::sync::atomic::Ordering::SeqCst) {
+        if self
+            .already_provisioned
+            .load(std::sync::atomic::Ordering::SeqCst)
+        {
             return Ok(native::ProvisionGraphForTenantResponse {});
         }
         let native::ProvisionGraphForTenantRequest { tenant_id: _ } = request;
@@ -132,7 +137,8 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
             .await?;
 
         session.await_schema_agreement().await?;
-        self.already_provisioned.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.already_provisioned
+            .store(true, std::sync::atomic::Ordering::SeqCst);
 
         Ok(native::ProvisionGraphForTenantResponse {})
     }

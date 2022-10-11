@@ -137,7 +137,10 @@ impl GraphMutationManager {
                     query.set_timestamp(Some(property_value));
 
                     self.scylla_client
-                        .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
+                        .execute(
+                            query,
+                            &(tenant_id, uid.as_i64(), property_name.value, property_value),
+                        )
                         .await?;
                     Ok(())
                 },
@@ -172,7 +175,10 @@ impl GraphMutationManager {
                         query.set_timestamp(Some(-property_value));
 
                         self.scylla_client
-                            .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
+                            .execute(
+                                query,
+                                &(tenant_id, uid.as_i64(), property_name.value, property_value),
+                            )
                             .timeout(std::time::Duration::from_secs(3))
                             .await
                             .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -209,7 +215,10 @@ impl GraphMutationManager {
                     ));
 
                     self.scylla_client
-                        .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
+                        .execute(
+                            query,
+                            &(tenant_id, uid.as_i64(), property_name.value, property_value),
+                        )
                         .timeout(std::time::Duration::from_secs(3))
                         .await
                         .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -250,7 +259,10 @@ impl GraphMutationManager {
                         query.set_timestamp(Some(property_value));
 
                         self.scylla_client
-                            .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
+                            .execute(
+                                query,
+                                &(tenant_id, uid.as_i64(), property_name.value, property_value),
+                            )
                             .timeout(std::time::Duration::from_secs(3))
                             .await
                             .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -292,7 +304,15 @@ impl GraphMutationManager {
                         query.set_timestamp(Some(-property_value));
 
                         self.scylla_client
-                            .execute(query, &(&tenant_id, uid.as_i64(), property_name.value, property_value))
+                            .execute(
+                                query,
+                                &(
+                                    &tenant_id,
+                                    uid.as_i64(),
+                                    property_name.value,
+                                    property_value,
+                                ),
+                            )
                             .timeout(std::time::Duration::from_secs(3))
                             .await
                             .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -327,7 +347,10 @@ impl GraphMutationManager {
                     ));
 
                     self.scylla_client
-                        .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
+                        .execute(
+                            query,
+                            &(tenant_id, uid.as_i64(), property_name.value, property_value),
+                        )
                         .timeout(std::time::Duration::from_secs(3))
                         .await
                         .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {
@@ -391,7 +414,10 @@ impl GraphMutationManager {
                     ));
 
                     self.scylla_client
-                        .execute(query, &(tenant_id, uid.as_i64(), property_name.value, property_value))
+                        .execute(
+                            query,
+                            &(tenant_id, uid.as_i64(), property_name.value, property_value),
+                        )
                         .timeout(std::time::Duration::from_secs(3))
                         .await
                         .map_err(|_| GraphMutationManagerError::ScyllaInsertTimeout {

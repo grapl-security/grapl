@@ -17,9 +17,7 @@ use scylla::{
     CachingSession,
 };
 
-use crate::table_names::{
-    IMM_STRING_TABLE_NAME,
-};
+use crate::table_names::IMM_STRING_TABLE_NAME;
 
 #[derive(Debug, thiserror::Error)]
 pub enum PropertyQueryError {
@@ -111,7 +109,6 @@ impl PropertyQueryExecutor {
         uid: Uid,
         edge_name: &EdgeName,
     ) -> Result<Option<Vec<EdgeRow>>, PropertyQueryError> {
-
         let mut query = scylla::query::Query::from(format!(
             r"
             SELECT r_edge_name, destination_uid
