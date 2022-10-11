@@ -69,7 +69,7 @@ impl PropertyQueryExecutor {
         uid: Uid,
         property_name: &PropertyName,
     ) -> Result<Option<StringField>, PropertyQueryError> {
-        let mut query = scylla::query::Query::from(
+        let mut query = scylla::query::Query::from(format!(
             r"
             SELECT value
             FROM tenant_graph_ks.{IMM_STRING_TABLE_NAME}
@@ -80,7 +80,7 @@ impl PropertyQueryExecutor {
             LIMIT 1
             ALLOW FILTERING;
             ",
-        );
+        ));
 
         query.set_is_idempotent(true);
 
