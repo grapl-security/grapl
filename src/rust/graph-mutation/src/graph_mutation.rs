@@ -374,11 +374,11 @@ impl GraphMutationManager {
         self.write_dropper
             .check_node_type(tenant_id, uid, || {
                 async move {
-                    let query = Query::new(format!(
+                    let query = Query::new(
                         "INSERT INTO tenant_graph_ks.node_type \
                         (tenant_id, uid, node_type) \
-                        VALUES (?, ?, ?)"
-                    ));
+                        VALUES (?, ?, ?)",
+                    );
 
                     self.scylla_client
                         .execute(query, &(tenant_id, uid.as_i64(), node_type.value))
@@ -449,16 +449,15 @@ impl GraphMutationManager {
                 r_edge_name,
                 |f_edge_name, r_edge_name| {
                     async move {
-                        let f_statement = format!(
-                            "INSERT INTO tenant_graph_ks.edges (\
+                        let f_statement = "INSERT INTO tenant_graph_ks.edges (\
                                 tenant_id, \
                                 source_uid, \
                                 destination_uid, \
                                 f_edge_name, \
                                 r_edge_name\
                             ) \
-                            VALUES (?, ?, ?, ?, ?)",
-                        );
+                            VALUES (?, ?, ?, ?, ?)"
+                            .to_string();
                         let r_statement = f_statement.clone();
 
                         let mut batch: scylla::batch::Batch = Default::default();

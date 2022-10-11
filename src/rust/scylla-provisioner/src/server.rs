@@ -77,9 +77,7 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
         let session = self.scylla_client.as_ref();
 
         session.query(
-            format!(
-                r"CREATE KEYSPACE IF NOT EXISTS tenant_graph_ks WITH REPLICATION = {{'class' : 'SimpleStrategy', 'replication_factor' : 1}};"
-            ),
+            r"CREATE KEYSPACE IF NOT EXISTS tenant_graph_ks WITH REPLICATION = {{'class' : 'SimpleStrategy', 'replication_factor' : 1}};",
             &[],
         ).await?;
 
@@ -111,27 +109,23 @@ impl ScyllaProvisionerApi for ScyllaProvisioner {
 
         session
             .query(
-                format!(
-                    r"CREATE TABLE IF NOT EXISTS tenant_graph_ks.node_type (
+                "CREATE TABLE IF NOT EXISTS tenant_graph_ks.node_type (
                         uid bigint,
                         node_type text,
                         PRIMARY KEY (uid, node_type)
-                    )"
-                ),
+                    )",
                 &(),
             )
             .await?;
         session
             .query(
-                format!(
-                    r"CREATE TABLE IF NOT EXISTS tenant_graph_ks.edges (
+                r"CREATE TABLE IF NOT EXISTS tenant_graph_ks.edges (
                         source_uid bigint,
                         destination_uid bigint,
                         f_edge_name text,
                         r_edge_name text,
                         PRIMARY KEY (source_uid, f_edge_name, destination_uid)
-                    )"
-                ),
+                    )",
                 &(),
             )
             .await?;
