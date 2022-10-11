@@ -17,6 +17,8 @@ use scylla::{
     CachingSession,
 };
 
+use crate::table_names::IMM_STRING_TABLE_NAME;
+
 #[derive(Debug, thiserror::Error)]
 pub enum PropertyQueryError {
     #[error("QueryError: {0}")]
