@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package graplinc.grapl.api.graph_query_proxy.v1beta1;
 
-import "graplinc/grapl/common/v1beta1/types.proto";
 import "graplinc/grapl/api/graph_query/v1beta1/graph_query.proto";
+import "graplinc/grapl/common/v1beta1/types.proto";
 
 // A Request to find a graph matching `GraphQuery` where
 // a node in that graph has the uid `node_uid`

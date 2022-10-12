@@ -20,8 +20,8 @@ from grapl_plugin_sdk.analyzer.query_and_views import NodeView
 from grpc import aio as grpc_aio  # type: ignore
 
 # ^ grpc_aio: Type checking doesn't exist yet for gRPC asyncio runtime
-from python_proto.api.graph_query.v1beta1 import messages as graph_query_messages
-from python_proto.api.graph_query.v1beta1.client import GraphQueryClient
+from python_proto.api.graph_query_proxy.v1beta1 import messages as graph_query_messages
+from python_proto.api.graph_query_proxy.v1beta1.client import GraphQueryProxyClient
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_messages
 from python_proto.common import Uuid as PythonProtoUuid
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
@@ -68,7 +68,7 @@ MISS_RESPONSE: Final[
 class AnalyzerServiceImpl:
     _analyzer: Analyzer
     _analyzer_name: analyzer_messages.AnalyzerName
-    _graph_query_client: GraphQueryClient
+    _query_client: GraphQueryProxyClient
     _graph_query: graph_query_messages.GraphQuery = field(init=False)
 
     def __post_init__(self) -> None:
@@ -114,7 +114,7 @@ class AnalyzerServiceImpl:
         # Now we have the UID of nodes recently updated, and a
         # query. check if the UID could match any in the query.
         matched_graph: graph_query_messages.MatchedGraphWithUid | None = (
-            self._graph_query_client.query_with_uid(
+            self._query_client.query_with_uid(
                 tenant_id=TENANT_ID,
                 node_uid=updated_node_uid,
                 graph_query=self._graph_query,
@@ -141,7 +141,7 @@ class AnalyzerServiceImpl:
         root_node = NodeView.from_parts(
             root_node_properties,
             graph_view,
-            self._graph_query_client,
+            self._query_client,
             tenant_id=TENANT_ID,
         )
 
@@ -167,7 +167,7 @@ class AnalyzerServiceImpl:
     def _new_ctx(self) -> AnalyzerContext:
         return AnalyzerContext(
             _analyzer_name=self._analyzer_name,
-            _graph_client=self._graph_query_client,
+            _graph_client=self._query_client,
             _start_time=datetime.now(),
             _allowed={},
         )
