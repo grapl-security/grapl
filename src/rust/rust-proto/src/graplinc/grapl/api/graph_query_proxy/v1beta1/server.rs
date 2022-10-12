@@ -21,21 +21,25 @@ use tonic::transport::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::graph_query::v1beta1::messages::{
-        QueryGraphFromUidRequest,
-        QueryGraphFromUidResponse,
-        QueryGraphWithUidRequest,
-        QueryGraphWithUidResponse,
-    },
-    protobufs::graplinc::grapl::api::graph_query::v1beta1::{
-        graph_query_service_server::{
-            GraphQueryProxyService as GraphQueryProxyServiceProto,
-            GraphQueryProxyServiceServer as GraphQueryProxyServiceServerProto,
+    graplinc::grapl::api::{
+        graph_query::v1beta1::messages::{
+            QueryGraphFromUidResponse,
+            QueryGraphWithUidResponse,
         },
-        QueryGraphFromUidRequest as QueryGraphFromUidRequestProto,
-        QueryGraphFromUidResponse as QueryGraphFromUidResponseProto,
-        QueryGraphWithUidRequest as QueryGraphWithUidRequestProto,
-        QueryGraphWithUidResponse as QueryGraphWithUidResponseProto,
+        graph_query_proxy::v1beta1::messages::{
+            QueryGraphFromUidRequest,
+            QueryGraphWithUidRequest,
+        },
+    },
+    protobufs::graplinc::grapl::api::{
+        graph_query::v1beta1 as graph_query_proto,
+        graph_query_proxy::v1beta1::{
+            self as proto,
+            graph_query_proxy_service_server::{
+                GraphQueryProxyService as GraphQueryProxyServiceProto,
+                GraphQueryProxyServiceServer as GraphQueryProxyServiceServerProto,
+            },
+        },
     },
     protocol::{
         error::ServeError,
@@ -48,14 +52,6 @@ use crate::{
     },
     server_internals::GrpcApi,
 };
-
-#[derive(thiserror::Error, Debug)]
-pub enum GraphQueryProxyServiceServerError {
-    #[error("grpc transport error: {0}")]
-    GrpcTransportError(#[from] tonic::transport::Error),
-    #[error("Bind error: {0}")]
-    BindError(std::io::Error),
-}
 
 #[tonic::async_trait]
 pub trait GraphQueryProxyApi {
@@ -77,15 +73,15 @@ where
 {
     async fn query_graph_with_uid(
         &self,
-        request: tonic::Request<QueryGraphWithUidRequestProto>,
-    ) -> Result<tonic::Response<QueryGraphWithUidResponseProto>, tonic::Status> {
+        request: tonic::Request<proto::QueryGraphWithUidRequest>,
+    ) -> Result<tonic::Response<graph_query_proto::QueryGraphWithUidResponse>, tonic::Status> {
         execute_rpc!(self, request, query_graph_with_uid)
     }
 
     async fn query_graph_from_uid(
         &self,
-        request: tonic::Request<QueryGraphFromUidRequestProto>,
-    ) -> Result<tonic::Response<QueryGraphFromUidResponseProto>, tonic::Status> {
+        request: tonic::Request<proto::QueryGraphFromUidRequest>,
+    ) -> Result<tonic::Response<graph_query_proto::QueryGraphFromUidResponse>, tonic::Status> {
         execute_rpc!(self, request, query_graph_from_uid)
     }
 }

@@ -35,7 +35,8 @@ pub struct GraphQueryProxyClient {
 #[async_trait::async_trait]
 impl Connectable for GraphQueryProxyClient {
     type Config = GraphQueryProxyClientConfig;
-    const SERVICE_NAME: &'static str = "graplinc.grapl.api.graph_query_proxy.v1beta1.GraphQueryProxyService";
+    const SERVICE_NAME: &'static str =
+        "graplinc.grapl.api.graph_query_proxy.v1beta1.GraphQueryProxyService";
 
     #[tracing::instrument(err)]
     async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {

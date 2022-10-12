@@ -1,9 +1,9 @@
 use clap::Parser;
 use grapl_tracing::setup_tracing;
 use rust_proto::{
-    graplinc::grapl::api::graph_query::v1beta1::{
-        client::GraphQueryClient,
-        server::GraphQueryServiceServer,
+    graplinc::grapl::api::{
+        graph_query::v1beta1::client::GraphQueryClient,
+        graph_query_proxy::v1beta1::server::GraphQueryProxyServiceServer,
     },
     protocol::{
         healthcheck::HealthcheckStatus,
@@ -49,7 +49,7 @@ pub async fn exec_service(
         socket_address = %addr,
     );
 
-    let (server, _shutdown_tx) = GraphQueryServiceServer::new(
+    let (server, _shutdown_tx) = GraphQueryProxyServiceServer::new(
         api_server,
         TcpListener::bind(addr.clone()).await?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage

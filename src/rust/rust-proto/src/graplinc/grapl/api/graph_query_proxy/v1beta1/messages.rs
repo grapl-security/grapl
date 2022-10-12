@@ -1,16 +1,14 @@
+// Re-export the Response types
+pub use crate::graplinc::grapl::api::graph_query::v1beta1::messages::{
+    GraphQuery,
+    QueryGraphFromUidResponse,
+    QueryGraphWithUidResponse,
+};
 use crate::{
-    graplinc::grapl::common::v1beta1::types::{
-        Uid,
-    },
+    graplinc::grapl::common::v1beta1::types::Uid,
     protobufs::graplinc::grapl::api::graph_query_proxy::v1beta1 as proto,
     SerDeError,
 };
-
-// Re-export the Response types
-pub use crate::graplinc::grapl::api::graph_query::{
-    QueryGraphFromUidResponse,
-    QueryGraphWithUidResponse;
-}
 
 #[derive(Debug, Clone)]
 pub struct QueryGraphWithUidRequest {
