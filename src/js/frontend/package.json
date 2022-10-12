@@ -20,8 +20,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test tests/integration --maxWorkers=1",
-    "unitTest": "react-scripts test tests/unit --maxWorkers=50%",
+    "integrationTest": "react-scripts test tests/integration --maxWorkers=1",
+    "unitTest": "react-scripts test tests/unit --maxWorkers=1",
     "eject": "react-scripts eject",
     "check-types": "tsc --project tsconfig.json --pretty --noEmit",
     "format": "yarn run prettier:fix && yarn run lint:fix",

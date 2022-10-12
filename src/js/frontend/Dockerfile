@@ -31,6 +31,7 @@ COPY --chown=grapl . frontend
 WORKDIR "/home/grapl/frontend"
 
 RUN yarn install \
-    && yarn build
+    && yarn build \
+    && yarn cache clean
 
-CMD ["yarn test --watchAll=false"]
+CMD ["yarn integrationTest --watchAll=false"]
