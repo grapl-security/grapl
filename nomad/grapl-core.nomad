@@ -184,7 +184,7 @@ locals {
 
   # Currently we use the same version for all containers. As such we pick one container to get the version from
   app_version                      = split(":", var.container_images["analyzer-dispatcher"])[1]
-  default_otel_resource_attributes = "service.version=${local.app_version}"
+  default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
 }
 
 job "grapl-core" {
