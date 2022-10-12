@@ -110,6 +110,7 @@ steps:
           stacks:
             - grapl/grapl/testing
             - grapl/rust-integration-tests/testing
+            - grapl/typescript-integration-tests/testing
     env:
       # We're going to be doing some git manipulation, so it's best if
       # we have a clean slate.
