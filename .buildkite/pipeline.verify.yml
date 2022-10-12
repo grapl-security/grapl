@@ -228,7 +228,7 @@ steps:
           queue: "beefy"
         artifact_paths:
           - "test_artifacts/**/*"
-          -
+          
       - label: ":typescript: Typescript Integration Tests"
           command:
             - make test-integration-typescript
