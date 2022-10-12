@@ -46,10 +46,22 @@ impl Visited {
         self.short_circuit.as_ref().store(true, Ordering::Release)
     }
 
-    pub fn check_and_add(&self, src: QueryId, edge_name: EdgeName, dst: QueryId) -> bool {
-        let already_visited =
-            (*self.already_visited.lock().unwrap()).contains(&(src, edge_name.clone(), dst));
-        self.add(src, edge_name, dst);
+    pub fn check_and_add(
+        &self,
+        src: QueryId,
+        f_edge_name: EdgeName,
+        r_edge_name: EdgeName,
+        dst: QueryId,
+    ) -> bool {
+        let mut already_visited = false;
+        if self.check(src, f_edge_name.clone(), dst) {
+            already_visited = true;
+            self.add(src, f_edge_name.clone(), dst);
+        }
+        if self.check(dst, r_edge_name.clone(), src) {
+            already_visited = true;
+            self.add(dst, r_edge_name.clone(), src);
+        }
         already_visited
     }
 

@@ -27,17 +27,18 @@ use rustc_hash::{
     FxHashMap,
     FxHashSet,
 };
+use rust_proto::graplinc::grapl::api::graph_query::v1beta1::messages::{I64Properties, IntOperation};
 
 use crate::{
     property_query::{
         EdgeRow,
         PropertyQueryError,
         PropertyQueryExecutor,
-        StringField,
     },
     short_circuit::ShortCircuit,
     visited::Visited,
 };
+use crate::property_query::StoredProperty;
 
 #[derive(thiserror::Error, Debug)]
 pub enum NodeQueryError {
@@ -45,7 +46,7 @@ pub enum NodeQueryError {
     PropertyQueryError(#[from] PropertyQueryError),
 }
 
-pub(crate) fn match_property(
+pub(crate) fn match_string_property(
     node_properties_query: &NodePropertyQuery,
     property_name: &PropertyName,
     property_value: &str,
@@ -70,17 +71,65 @@ pub(crate) fn match_property(
         }
         return true;
     }
+    false
+}
 
+
+pub(crate) fn match_i64_property(
+    node_properties_query: &NodePropertyQuery,
+    property_name: &PropertyName,
+    property_value: i64,
+) -> bool {
+    'outer: for or_filters in
+    &node_properties_query.immutable_int_filters[property_name].and_int_filters
+    {
+        for and_filter in &or_filters.int_filters {
+            match (and_filter.operation, and_filter.negated) {
+                (IntOperation::Has, _) => (),
+                (IntOperation::Equal, false) => {
+                    if property_value != and_filter.value { continue 'outer }
+                },
+                (IntOperation::Equal, true) => {
+                    if property_value == and_filter.value { continue 'outer }
+                },
+                (IntOperation::LessThan, false) => {
+                    if property_value < and_filter.value { continue 'outer }
+                },
+                (IntOperation::LessThan, true) => {
+                    if property_value >= and_filter.value { continue 'outer }
+                },
+                (IntOperation::LessThanOrEqual, false) => {
+                    if property_value <= and_filter.value { continue 'outer }
+                },
+                (IntOperation::LessThanOrEqual, true) => {
+                    if property_value > and_filter.value { continue 'outer }
+                },
+                (IntOperation::GreaterThan, false) => {
+                    if property_value > and_filter.value { continue 'outer }
+                },
+                (IntOperation::GreaterThan, true) => {
+                    if property_value <= and_filter.value { continue 'outer }
+                },
+                (IntOperation::GreaterThanOrEqual, false) => {
+                    if property_value >= and_filter.value { continue 'outer }
+                },
+                (IntOperation::GreaterThanOrEqual, true) => {
+                    if property_value < and_filter.value { continue 'outer }
+                },
+            }
+        }
+        return true;
+    }
     false
 }
 
 #[tracing::instrument(skip(node_properties_query, property_query_executor))]
-pub async fn fetch_node_properties(
+pub async fn fetch_string_properties(
     node_properties_query: &NodePropertyQuery,
     uid: Uid,
     tenant_id: uuid::Uuid,
     property_query_executor: PropertyQueryExecutor,
-) -> Result<Option<Vec<StringField>>, NodeQueryError> {
+) -> Result<Option<Vec<StoredProperty<String>>>, NodeQueryError> {
     let mut fields = vec![];
     if !node_properties_query.string_filters.is_empty() {
         let mut filter_names: FxHashSet<_> = node_properties_query.string_filters.keys().collect();
@@ -105,13 +154,272 @@ pub async fn fetch_node_properties(
     Ok(Some(fields))
 }
 
+
+#[tracing::instrument(skip(node_properties_query, property_query_executor, visited))]
+pub async fn fetch_and_match_string_properties(
+    node_properties_query: &NodePropertyQuery,
+    uid: Uid,
+    tenant_id: uuid::Uuid,
+    property_query_executor: &PropertyQueryExecutor,
+    visited: &Visited,
+) -> Result<Option<Vec<StoredProperty<String>>>, NodeQueryError> {
+    let mut matched_string_properties = Vec::new();
+    let node_properties = fetch_string_properties(
+        node_properties_query,
+        uid,
+        tenant_id,
+        property_query_executor.clone(),
+    )
+        .await?;
+
+    let node_properties = match node_properties {
+        None => {
+            visited.set_short_circuit();
+            return Ok(None);
+        }
+        Some(node_properties) => node_properties,
+    };
+
+    for node_property in node_properties.iter() {
+        if match_string_property(
+            node_properties_query,
+            &node_property.populated_field,
+            &node_property.value,
+        ) {
+            matched_string_properties.push(node_property.clone());
+        } else {
+            visited.set_short_circuit();
+            return Ok(None);
+        }
+    }
+    Ok(Some(matched_string_properties))
+}
+
+#[tracing::instrument(skip(node_properties_query, property_query_executor))]
+pub async fn fetch_immutable_i64_properties(
+    node_properties_query: &NodePropertyQuery,
+    uid: Uid,
+    tenant_id: uuid::Uuid,
+    property_query_executor: PropertyQueryExecutor,
+) -> Result<Option<Vec<StoredProperty<i64>>>, NodeQueryError> {
+    let mut fields = vec![];
+    if !node_properties_query.immutable_int_filters.is_empty() {
+        let mut filter_names: FxHashSet<_> = node_properties_query.immutable_int_filters.keys().collect();
+
+        for prop_name in node_properties_query.immutable_int_filters.keys() {
+            let property = property_query_executor
+                .get_immutable_i64(tenant_id, uid, prop_name)
+                .await?;
+            match property {
+                Some(p) => fields.push(p),
+                None => return Ok(None),
+            }
+            filter_names.remove(prop_name);
+        }
+
+        if !filter_names.is_empty() {
+            // some values didn't exist, not a match
+            return Ok(None);
+        }
+    }
+
+    Ok(Some(fields))
+}
+
+
+#[tracing::instrument(skip(node_properties_query, property_query_executor, visited))]
+pub async fn fetch_and_match_immutable_i64_properties(
+    node_properties_query: &NodePropertyQuery,
+    uid: Uid,
+    tenant_id: uuid::Uuid,
+    property_query_executor: &PropertyQueryExecutor,
+    visited: &Visited,
+) -> Result<Option<Vec<StoredProperty<i64>>>, NodeQueryError> {
+    let mut matched_i64_properties = Vec::new();
+    let node_properties = fetch_immutable_i64_properties(
+        node_properties_query,
+        uid,
+        tenant_id,
+        property_query_executor.clone(),
+    )
+        .await?;
+
+    let node_properties = match node_properties {
+        None => {
+            visited.set_short_circuit();
+            return Ok(None);
+        }
+        Some(node_properties) => node_properties,
+    };
+
+    for node_property in node_properties.iter() {
+        if match_i64_property(
+            node_properties_query,
+            &node_property.populated_field,
+            node_property.value,
+        ) {
+            matched_i64_properties.push(node_property.clone());
+        } else {
+            visited.set_short_circuit();
+            return Ok(None);
+        }
+    }
+    Ok(Some(matched_i64_properties))
+}
+
+
+#[tracing::instrument(skip(node_properties_query, property_query_executor))]
+pub async fn fetch_max_i64_properties(
+    node_properties_query: &NodePropertyQuery,
+    uid: Uid,
+    tenant_id: uuid::Uuid,
+    property_query_executor: PropertyQueryExecutor,
+) -> Result<Option<Vec<StoredProperty<i64>>>, NodeQueryError> {
+    let mut fields = vec![];
+    if !node_properties_query.max_int_filters.is_empty() {
+        let mut filter_names: FxHashSet<_> = node_properties_query.max_int_filters.keys().collect();
+
+        for prop_name in node_properties_query.max_int_filters.keys() {
+            let property = property_query_executor
+                .get_max_i64(tenant_id, uid, prop_name)
+                .await?;
+            match property {
+                Some(p) => fields.push(p),
+                None => return Ok(None),
+            }
+            filter_names.remove(prop_name);
+        }
+
+        if !filter_names.is_empty() {
+            // some values didn't exist, not a match
+            return Ok(None);
+        }
+    }
+
+    Ok(Some(fields))
+}
+
+
+#[tracing::instrument(skip(node_properties_query, property_query_executor, visited))]
+pub async fn fetch_and_match_max_i64_properties(
+    node_properties_query: &NodePropertyQuery,
+    uid: Uid,
+    tenant_id: uuid::Uuid,
+    property_query_executor: &PropertyQueryExecutor,
+    visited: &Visited,
+) -> Result<Option<Vec<StoredProperty<i64>>>, NodeQueryError> {
+    let mut matched_i64_properties = Vec::new();
+    let node_properties = fetch_max_i64_properties(
+        node_properties_query,
+        uid,
+        tenant_id,
+        property_query_executor.clone(),
+    )
+        .await?;
+
+    let node_properties = match node_properties {
+        None => {
+            visited.set_short_circuit();
+            return Ok(None);
+        }
+        Some(node_properties) => node_properties,
+    };
+
+    for node_property in node_properties.iter() {
+        if match_i64_property(
+            node_properties_query,
+            &node_property.populated_field,
+            node_property.value,
+        ) {
+            matched_i64_properties.push(node_property.clone());
+        } else {
+            visited.set_short_circuit();
+            return Ok(None);
+        }
+    }
+    Ok(Some(matched_i64_properties))
+}
+
+
+#[tracing::instrument(skip(node_properties_query, property_query_executor))]
+pub async fn fetch_min_i64_properties(
+    node_properties_query: &NodePropertyQuery,
+    uid: Uid,
+    tenant_id: uuid::Uuid,
+    property_query_executor: PropertyQueryExecutor,
+) -> Result<Option<Vec<StoredProperty<i64>>>, NodeQueryError> {
+    let mut fields = vec![];
+    if !node_properties_query.min_int_filters.is_empty() {
+        let mut filter_names: FxHashSet<_> = node_properties_query.min_int_filters.keys().collect();
+
+        for prop_name in node_properties_query.min_int_filters.keys() {
+            let property = property_query_executor
+                .get_min_i64(tenant_id, uid, prop_name)
+                .await?;
+            match property {
+                Some(p) => fields.push(p),
+                None => return Ok(None),
+            }
+            filter_names.remove(prop_name);
+        }
+
+        if !filter_names.is_empty() {
+            // some values didn't exist, not a match
+            return Ok(None);
+        }
+    }
+
+    Ok(Some(fields))
+}
+
+
+#[tracing::instrument(skip(node_properties_query, property_query_executor, visited))]
+pub async fn fetch_and_match_min_i64_properties(
+    node_properties_query: &NodePropertyQuery,
+    uid: Uid,
+    tenant_id: uuid::Uuid,
+    property_query_executor: &PropertyQueryExecutor,
+    visited: &Visited,
+) -> Result<Option<Vec<StoredProperty<i64>>>, NodeQueryError> {
+    let mut matched_i64_properties = Vec::new();
+    let node_properties = fetch_min_i64_properties(
+        node_properties_query,
+        uid,
+        tenant_id,
+        property_query_executor.clone(),
+    )
+        .await?;
+
+    let node_properties = match node_properties {
+        None => {
+            visited.set_short_circuit();
+            return Ok(None);
+        }
+        Some(node_properties) => node_properties,
+    };
+
+    for node_property in node_properties.iter() {
+        if match_i64_property(
+            node_properties_query,
+            &node_property.populated_field,
+            node_property.value,
+        ) {
+            matched_i64_properties.push(node_property.clone());
+        } else {
+            visited.set_short_circuit();
+            return Ok(None);
+        }
+    }
+    Ok(Some(matched_i64_properties))
+}
+
 #[tracing::instrument(skip(node_properties_query, graph_query, property_query_executor))]
 pub async fn fetch_edges(
     node_properties_query: &NodePropertyQuery,
     uid: Uid,
     graph_query: &GraphQuery,
     tenant_id: uuid::Uuid,
-    property_query_executor: PropertyQueryExecutor,
+    property_query_executor: &PropertyQueryExecutor,
 ) -> Result<Option<FxHashMap<EdgeName, Vec<EdgeRow>>>, NodeQueryError> {
     let mut edge_rows = FxHashMap::default();
     for (src_id, edge_name) in graph_query.edge_filters.keys() {
@@ -142,8 +450,8 @@ pub async fn fetch_node_with_edges(
     graph_query: &GraphQuery,
     uid: Uid,
     tenant_id: uuid::Uuid,
-    property_query_executor: PropertyQueryExecutor,
-    visited: Visited,
+    property_query_executor: &PropertyQueryExecutor,
+    visited: &Visited,
     x_short_circuit: ShortCircuit,
     root_node_uid: &mut Option<Uid>,
 ) -> Result<Option<GraphView>, NodeQueryError> {
@@ -155,38 +463,98 @@ pub async fn fetch_node_with_edges(
         uid,
         node_properties_query.node_type.clone(),
         StringProperties::default(),
+        I64Properties::default(),
     );
 
-    let node_properties = fetch_node_properties(
+    // Fetch the cheapest data first - immutable I64 and immutable U64 are the cheapest,
+    // Strings are the most expensive
+
+    // Immutable I64
+
+    let matched_immutable_i64_props = fetch_and_match_immutable_i64_properties(
         node_properties_query,
         uid,
         tenant_id,
-        property_query_executor.clone(),
+        &property_query_executor,
+        &visited,
     )
-    .await?;
+        .await?;
 
-    let node_properties = match node_properties {
-        None => {
-            visited.set_short_circuit();
-            return Ok(None);
-        }
-        Some(node_properties) => node_properties,
+    let matched_immutable_i64_props = match matched_immutable_i64_props {
+        Some(matched_immutable_i64_props) => matched_immutable_i64_props,
+        None => return Ok(None)
     };
 
-    for node_property in node_properties.iter() {
-        if match_property(
-            node_properties_query,
-            &node_property.populated_field,
-            &node_property.value,
-        ) {
-            node.add_string_property(
-                node_property.populated_field.clone(),
-                node_property.value.clone(),
-            );
-        } else {
-            visited.set_short_circuit();
-            return Ok(None);
-        }
+    for node_property in matched_immutable_i64_props {
+        node.add_immutable_i64_property(
+            node_property.populated_field,
+            node_property.value,
+        );
+    }
+
+    // Max I64
+
+    let matched_max_i64_props = fetch_and_match_max_i64_properties(
+        node_properties_query,
+        uid,
+        tenant_id,
+        &property_query_executor,
+        &visited,
+    )
+        .await?;
+
+    let matched_max_i64_props = match matched_max_i64_props {
+        Some(matched_max_i64_props) => matched_max_i64_props,
+        None => return Ok(None)
+    };
+
+    for node_property in matched_max_i64_props {
+        node.add_max_i64_property(
+            node_property.populated_field,
+            node_property.value,
+        );
+    }
+
+    // Min I64
+    let matched_min_i64_props = fetch_and_match_min_i64_properties(
+        node_properties_query,
+        uid,
+        tenant_id,
+        &property_query_executor,
+        &visited,
+    )
+        .await?;
+
+    let matched_min_i64_props = match matched_min_i64_props {
+        Some(matched_min_i64_props) => matched_min_i64_props,
+        None => return Ok(None)
+    };
+
+    for node_property in matched_min_i64_props {
+        node.add_min_i64_property(
+            node_property.populated_field,
+            node_property.value,
+        );
+    }
+
+    // Immutable String
+    let matched_string_props = fetch_and_match_string_properties(
+        node_properties_query,
+        uid,
+        tenant_id,
+        &property_query_executor,
+        &visited,
+    )
+        .await?;
+    let matched_string_props = match matched_string_props {
+        Some(matched_string_props) => matched_string_props,
+        None => return Ok(None)
+    };
+    for node_property in matched_string_props {
+        node.add_string_property(
+            node_property.populated_field,
+            node_property.value,
+        );
     }
 
     if node_properties_query.query_id == graph_query.root_query_id {
@@ -195,11 +563,6 @@ pub async fn fetch_node_with_edges(
 
     let mut graph = GraphView::default();
     graph.add_node(node);
-
-    tracing::debug!(
-        message = "Retrieved node indices",
-        count = node_properties.len(),
-    );
 
     if x_short_circuit.get_short_circuit() {
         return Ok(None);
@@ -211,7 +574,7 @@ pub async fn fetch_node_with_edges(
         uid,
         graph_query,
         tenant_id,
-        property_query_executor.clone(),
+        &property_query_executor,
     )
     .await?
     {
@@ -234,15 +597,8 @@ pub async fn fetch_node_with_edges(
             if visited.check_and_add(
                 node_properties_query.query_id,
                 edge_name.clone(),
-                edge_query.query_id,
-            ) {
-                continue;
-            }
-
-            if visited.check_and_add(
-                edge_query.query_id,
                 graph_query.edge_map[edge_name].to_owned(),
-                node_properties_query.query_id,
+                edge_query.query_id,
             ) {
                 continue;
             }
@@ -260,8 +616,8 @@ pub async fn fetch_node_with_edges(
                     graph_query,
                     edge_row.destination_uid,
                     tenant_id,
-                    property_query_executor.clone(),
-                    visited.clone(),
+                    &property_query_executor,
+                    &visited,
                     x_short_circuit.clone(),
                     root_node_uid,
                 )
@@ -300,7 +656,7 @@ impl NodeQuery {
         let inner_query = NodePropertyQuery {
             query_id,
             node_type,
-            int_filters: Default::default(),
+            immutable_int_filters: Default::default(),
             string_filters: Default::default(),
             uid_filters: Default::default(),
         };
