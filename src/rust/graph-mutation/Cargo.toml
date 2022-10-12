@@ -21,3 +21,6 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 uid-allocator = { path = "../uid-allocator" }
 uuid = { workspace = true }
+
+[dev-dependencies]
+eyre = { workspace = true }

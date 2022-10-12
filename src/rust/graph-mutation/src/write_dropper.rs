@@ -1,4 +1,7 @@
-use std::future::Future;
+use std::{
+    future::Future,
+    hash::Hash,
+};
 
 use moka::future::Cache;
 use rust_proto::graplinc::grapl::common::v1beta1::types::{
@@ -19,6 +22,13 @@ struct PropertyKey {
     tenant_id: uuid::Uuid,
     node_type: NodeType,
     property_name: PropertyName,
+}
+
+// This enum/return type mostly exists for testing behavior.
+#[derive(PartialEq, Eq)]
+pub enum WriteDropStatus {
+    Stored,
+    Dropped,
 }
 
 /// WriteDropper lets us save database IO by proactively "dropping" db writes
@@ -66,37 +76,20 @@ impl WriteDropper {
         property_name: PropertyName,
         value: i64,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<WriteDropStatus, E>
     where
         Fut: Future<Output = Result<T, E>>,
         E: std::error::Error,
     {
-        tracing::debug!(message = "Performing insert",);
-        callback().await?;
-        tracing::debug!(message = "Insert performed");
-
-        // TODO: Resurrect the below
-        // https://github.com/grapl-security/issue-tracker/issues/1028
-
-        // match self.max_i64.entry(PropertyKey {
-        //     tenant_id,
-        //     node_type,
-        //     property_name,
-        // }) {
-        //     Entry::Vacant(entry) => {
-        //         callback().await?;
-        //         handle_full!(self, max_i64);
-        //         entry.insert(value);
-        //     }
-        //     Entry::Occupied(mut entry) => {
-        //         if value > *entry.get() {
-        //             callback().await?;
-        //             handle_full!(self, max_i64);
-        //             entry.insert(value);
-        //         }
-        //     }
-        // }
-        Ok(())
+        let key = PropertyKey {
+            tenant_id,
+            node_type,
+            property_name,
+        };
+        get_or_insert_into_cache(self.max_i64.clone(), key, value, callback, |new, old| {
+            new > old
+        })
+        .await
     }
 
     #[tracing::instrument(skip(self, callback), err)]
@@ -107,33 +100,20 @@ impl WriteDropper {
         property_name: PropertyName,
         value: i64,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<WriteDropStatus, E>
     where
         Fut: Future<Output = Result<T, E>>,
         E: std::error::Error,
     {
-        tracing::debug!(message = "Performing insert",);
-        callback().await?;
-        tracing::debug!(message = "Insert performed");
-        // match self.min_i64.entry(PropertyKey {
-        //     tenant_id,
-        //     node_type,
-        //     property_name,
-        // }) {
-        //     Entry::Vacant(entry) => {
-        //         callback().await?;
-        //         handle_full!(self, min_i64);
-        //         entry.insert(value);
-        //     }
-        //     Entry::Occupied(mut entry) => {
-        //         if value < *entry.get() {
-        //             callback().await?;
-        //             handle_full!(self, min_i64);
-        //             entry.insert(value);
-        //         }
-        //     }
-        // }
-        Ok(())
+        let key = PropertyKey {
+            tenant_id,
+            node_type,
+            property_name,
+        };
+        get_or_insert_into_cache(self.min_i64.clone(), key, value, callback, |new, old| {
+            new < old
+        })
+        .await
     }
     #[tracing::instrument(skip(self, callback), err)]
     pub async fn check_imm_i64<T, E, Fut>(
@@ -142,29 +122,17 @@ impl WriteDropper {
         node_type: NodeType,
         property_name: PropertyName,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<WriteDropStatus, E>
     where
         Fut: Future<Output = Result<T, E>>,
         E: std::error::Error,
     {
-        tracing::debug!(message = "Performing insert",);
-        callback().await?;
-        tracing::debug!(message = "Insert performed");
-
-        // TODO: Resurrect the below, delete the above
-        // https://github.com/grapl-security/issue-tracker/issues/1028
-
-        // let key = PropertyKey {
-        //     tenant_id,
-        //     node_type,
-        //     property_name,
-        // };
-        // if !self.imm_i64.contains(&key) {
-        //     callback().await?;
-        //     handle_full!(self, imm_i64);
-        //     self.imm_i64.insert(key);
-        // }
-        Ok(())
+        let key = PropertyKey {
+            tenant_id,
+            node_type,
+            property_name,
+        };
+        get_or_insert_into_cache(self.imm_i64.clone(), key, (), callback, |_, _| false).await
     }
 
     #[tracing::instrument(skip(self, callback), err)]
@@ -175,37 +143,20 @@ impl WriteDropper {
         property_name: PropertyName,
         value: u64,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<WriteDropStatus, E>
     where
         Fut: Future<Output = Result<T, E>>,
         E: std::error::Error,
     {
-        tracing::debug!(message = "Performing insert",);
-        callback().await?;
-        tracing::debug!(message = "Insert performed");
-
-        // TODO: Resurrect the below, delete the above
-        // https://github.com/grapl-security/issue-tracker/issues/1028
-
-        // match self.max_u64.entry(PropertyKey {
-        //     tenant_id,
-        //     node_type,
-        //     property_name,
-        // }) {
-        //     Entry::Vacant(entry) => {
-        //         callback().await?;
-        //         handle_full!(self, max_u64);
-        //         entry.insert(value);
-        //     }
-        //     Entry::Occupied(mut entry) => {
-        //         if value > *entry.get() {
-        //             callback().await?;
-        //             handle_full!(self, max_u64);
-        //             entry.insert(value);
-        //         }
-        //     }
-        // }
-        Ok(())
+        let key = PropertyKey {
+            tenant_id,
+            node_type,
+            property_name,
+        };
+        get_or_insert_into_cache(self.max_u64.clone(), key, value, callback, |new, old| {
+            new > old
+        })
+        .await
     }
 
     #[tracing::instrument(skip(self, callback), err)]
@@ -216,38 +167,22 @@ impl WriteDropper {
         property_name: PropertyName,
         value: u64,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<WriteDropStatus, E>
     where
         Fut: Future<Output = Result<T, E>>,
         E: std::error::Error,
     {
-        tracing::debug!(message = "Performing insert",);
-        callback().await?;
-        tracing::debug!(message = "Insert performed");
-
-        // TODO: Resurrect the below, delete the above
-        // https://github.com/grapl-security/issue-tracker/issues/1028
-
-        // match self.min_u64.entry(PropertyKey {
-        //     tenant_id,
-        //     node_type,
-        //     property_name,
-        // }) {
-        //     Entry::Vacant(entry) => {
-        //         callback().await?;
-        //         handle_full!(self, min_u64);
-        //         entry.insert(value);
-        //     }
-        //     Entry::Occupied(mut entry) => {
-        //         if value < *entry.get() {
-        //             callback().await?;
-        //             handle_full!(self, min_u64);
-        //             entry.insert(value);
-        //         }
-        //     }
-        // }
-        Ok(())
+        let key = PropertyKey {
+            tenant_id,
+            node_type,
+            property_name,
+        };
+        get_or_insert_into_cache(self.min_u64.clone(), key, value, callback, |new, old| {
+            new < old
+        })
+        .await
     }
+
     #[tracing::instrument(skip(self, callback), err)]
     pub async fn check_imm_u64<T, E, Fut>(
         &self,
@@ -255,29 +190,17 @@ impl WriteDropper {
         node_type: NodeType,
         property_name: PropertyName,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<WriteDropStatus, E>
     where
         Fut: Future<Output = Result<T, E>>,
         E: std::error::Error,
     {
-        tracing::debug!(message = "Performing insert",);
-        callback().await?;
-        tracing::debug!(message = "Insert performed");
-
-        // TODO: Resurrect the below, delete the above
-        // https://github.com/grapl-security/issue-tracker/issues/1028
-
-        // let key = PropertyKey {
-        //     tenant_id,
-        //     node_type,
-        //     property_name,
-        // };
-        // if !self.imm_u64.contains(&key) {
-        //     callback().await?;
-        //     handle_full!(self, imm_u64);
-        //     self.imm_u64.insert(key);
-        // }
-        Ok(())
+        let key = PropertyKey {
+            tenant_id,
+            node_type,
+            property_name,
+        };
+        get_or_insert_into_cache(self.imm_u64.clone(), key, (), callback, |_, _| false).await
     }
 
     #[tracing::instrument(skip(self, callback), err)]
@@ -287,29 +210,17 @@ impl WriteDropper {
         node_type: NodeType,
         property_name: PropertyName,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<WriteDropStatus, E>
     where
         Fut: Future<Output = Result<T, E>>,
         E: std::error::Error,
     {
-        tracing::debug!(message = "Performing insert",);
-        callback().await?;
-        tracing::debug!(message = "Insert performed");
-
-        // TODO: Resurrect the below, delete the above
-        // https://github.com/grapl-security/issue-tracker/issues/1028
-
-        // let key = PropertyKey {
-        //     tenant_id,
-        //     node_type,
-        //     property_name,
-        // };
-        // if !self.imm_string.contains(&key) {
-        //     callback().await?;
-        //     handle_full!(self, imm_string);
-        //     self.imm_string.insert(key);
-        // }
-        Ok(())
+        let key = PropertyKey {
+            tenant_id,
+            node_type,
+            property_name,
+        };
+        get_or_insert_into_cache(self.imm_string.clone(), key, (), callback, |_, _| false).await
     }
 
     #[tracing::instrument(skip(self, callback), err)]
@@ -318,25 +229,13 @@ impl WriteDropper {
         tenant_id: uuid::Uuid,
         uid: Uid,
         callback: impl FnOnce() -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<WriteDropStatus, E>
     where
         Fut: Future<Output = Result<T, E>>,
         E: std::error::Error,
     {
-        tracing::debug!(message = "Performing insert",);
-        callback().await?;
-        tracing::debug!(message = "Insert performed");
-
-        // TODO: Resurrect the below, delete the above
-        // https://github.com/grapl-security/issue-tracker/issues/1028
-
-        // let key = NodeTypeKey { tenant_id, uid };
-        // if !self.node_type.contains(&key) {
-        //     callback().await?;
-        //     handle_full!(self, node_type);
-        //     self.node_type.insert(key);
-        // }
-        Ok(())
+        let key = NodeTypeKey { tenant_id, uid };
+        get_or_insert_into_cache(self.node_type.clone(), key, (), callback, |_, _| false).await
     }
 
     #[tracing::instrument(skip(self, callback), err)]
@@ -372,6 +271,242 @@ impl WriteDropper {
         //     self.edges.insert(fkey);
         //     self.edges.insert(rkey);
         // }
+        Ok(())
+    }
+}
+
+async fn get_or_insert_into_cache<Key, Value, T, E, Fut>(
+    cache: Cache<Key, Value>,
+    key: Key,
+    new_value: Value,
+    callback: impl FnOnce() -> Fut,
+    is_new_value_better: impl FnOnce(&Value, &Value) -> bool,
+) -> Result<WriteDropStatus, E>
+where
+    Key: Hash + Eq + Clone + Sync + Send + 'static,
+    Value: Clone + Sync + Send + 'static,
+    Fut: Future<Output = Result<T, E>>,
+    E: std::error::Error,
+{
+    let should_insert_value = match cache.get(&key) {
+        None => true,
+        Some(stored_value) => is_new_value_better(&new_value, &stored_value),
+    };
+
+    if should_insert_value {
+        callback().await?;
+        cache.insert(key, new_value.clone()).await;
+    }
+    Ok(match should_insert_value {
+        true => WriteDropStatus::Stored,
+        false => WriteDropStatus::Dropped,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use super::*;
+
+    #[derive(Debug, thiserror::Error)]
+    enum CallbackError {}
+
+    #[tokio::test]
+    async fn test_every_class_of_cache() -> eyre::Result<()> {
+        let tenant_id = uuid::Uuid::new_v4();
+        let node_type = NodeType {
+            value: "arbitrary_node_type".to_string(),
+        };
+        let property_name = PropertyName {
+            value: "arbitrary_prop_name".to_string(),
+        };
+
+        let callback = || async {
+            let res: Result<(), CallbackError> = Ok(());
+            res
+        };
+        let write_dropper = Arc::new(WriteDropper::new(3));
+
+        // ##### check_max_i64 #####
+        {
+            let write_dropper = Arc::clone(&write_dropper);
+            let nt = node_type.clone();
+            let pn = property_name.clone();
+            let check = move |value| {
+                let write_dropper = Arc::clone(&write_dropper);
+                let nt = nt.clone();
+                let pn = pn.clone();
+                async move {
+                    write_dropper
+                        .check_max_i64(tenant_id, nt, pn, value, callback)
+                        .await
+                }
+            };
+
+            let status = check(3).await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
+            let status = check(3).await?;
+            eyre::ensure!(status == WriteDropStatus::Dropped, "same value, drop it");
+            let status = check(-3).await?;
+            eyre::ensure!(status == WriteDropStatus::Dropped, "lesser value, drop it");
+            let status = check(4).await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "greater value, store it");
+        }
+
+        // ##### check_min_i64 #####
+        {
+            let write_dropper = Arc::clone(&write_dropper);
+            let nt = node_type.clone();
+            let pn = property_name.clone();
+            let check = move |value| {
+                let write_dropper = Arc::clone(&write_dropper);
+                let nt = nt.clone();
+                let pn = pn.clone();
+                async move {
+                    write_dropper
+                        .check_min_i64(tenant_id, nt, pn, value, callback)
+                        .await
+                }
+            };
+
+            let status = check(3).await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
+            let status = check(3).await?;
+            eyre::ensure!(status == WriteDropStatus::Dropped, "same value, drop it");
+            let status = check(4).await?;
+            eyre::ensure!(status == WriteDropStatus::Dropped, "greater value, drop it");
+            let status = check(-3).await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "lesser value, store it");
+        }
+
+        // ##### check_imm_i64 #####
+        {
+            let write_dropper = Arc::clone(&write_dropper);
+            let nt = node_type.clone();
+            let pn = property_name.clone();
+            let check = move || {
+                let write_dropper = Arc::clone(&write_dropper);
+                let nt = nt.clone();
+                let pn = pn.clone();
+                async move {
+                    write_dropper
+                        .check_imm_i64(tenant_id, nt, pn, callback)
+                        .await
+                }
+            };
+
+            let status = check().await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
+            let status = check().await?;
+            eyre::ensure!(
+                status == WriteDropStatus::Dropped,
+                "immutable is immutable!"
+            );
+        }
+
+        // ##### check_max_u64 #####
+        {
+            let write_dropper = Arc::clone(&write_dropper);
+            let nt = node_type.clone();
+            let pn = property_name.clone();
+            let check = move |value| {
+                let write_dropper = Arc::clone(&write_dropper);
+                let nt = nt.clone();
+                let pn = pn.clone();
+                async move {
+                    write_dropper
+                        .check_max_u64(tenant_id, nt, pn, value, callback)
+                        .await
+                }
+            };
+
+            let status = check(3).await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
+            let status = check(3).await?;
+            eyre::ensure!(status == WriteDropStatus::Dropped, "same value, drop it");
+            let status = check(2).await?;
+            eyre::ensure!(status == WriteDropStatus::Dropped, "lesser value, drop it");
+            let status = check(4).await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "greater value, store it");
+        }
+
+        // ##### check_min_u64 #####
+        {
+            let write_dropper = Arc::clone(&write_dropper);
+            let nt = node_type.clone();
+            let pn = property_name.clone();
+            let check = move |value| {
+                let write_dropper = Arc::clone(&write_dropper);
+                let nt = nt.clone();
+                let pn = pn.clone();
+                async move {
+                    write_dropper
+                        .check_min_u64(tenant_id, nt, pn, value, callback)
+                        .await
+                }
+            };
+
+            let status = check(3).await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
+            let status = check(3).await?;
+            eyre::ensure!(status == WriteDropStatus::Dropped, "same value, drop it");
+            let status = check(4).await?;
+            eyre::ensure!(status == WriteDropStatus::Dropped, "greater value, drop it");
+            let status = check(2).await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "lesser value, store it");
+        }
+
+        // ##### check_imm_u64 #####
+        {
+            let write_dropper = Arc::clone(&write_dropper);
+            let nt = node_type.clone();
+            let pn = property_name.clone();
+            let check = move || {
+                let write_dropper = Arc::clone(&write_dropper);
+                let nt = nt.clone();
+                let pn = pn.clone();
+                async move {
+                    write_dropper
+                        .check_imm_u64(tenant_id, nt, pn, callback)
+                        .await
+                }
+            };
+
+            let status = check().await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
+            let status = check().await?;
+            eyre::ensure!(
+                status == WriteDropStatus::Dropped,
+                "immutable is immutable!"
+            );
+        }
+
+        // ##### check_imm_string #####
+        {
+            let write_dropper = Arc::clone(&write_dropper);
+            let nt = node_type.clone();
+            let pn = property_name.clone();
+            let check = move || {
+                let write_dropper = Arc::clone(&write_dropper);
+                let nt = nt.clone();
+                let pn = pn.clone();
+                async move {
+                    write_dropper
+                        .check_imm_string(tenant_id, nt, pn, callback)
+                        .await
+                }
+            };
+
+            let status = check().await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
+            let status = check().await?;
+            eyre::ensure!(
+                status == WriteDropStatus::Dropped,
+                "immutable is immutable!"
+            );
+        }
+
         Ok(())
     }
 }
