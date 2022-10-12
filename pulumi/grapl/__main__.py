@@ -342,12 +342,16 @@ def main() -> None:
     lightstep_is_endpoint_insecure = pulumi_config.get_bool(
         key="lightstep-is-endpoint-insecure", default=False
     )
+    trace_sampling_percentage = pulumi_config.get_float(
+        key="trace-sampling-percentage", default=100.0
+    )
 
     otel_configuration = otel_config(
         lightstep_token=lightstep_access_token,
         nomad_endpoint=nomad_endpoint,
         lightstep_endpoint=lightstep_endpoint,
         lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
+        trace_sampling_percentage=trace_sampling_percentage,
     )
     NomadJob(
         "otel-collector",
