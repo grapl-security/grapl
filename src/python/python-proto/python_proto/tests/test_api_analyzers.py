@@ -4,7 +4,7 @@ pytest.register_assert_rewrite("python_proto.tests.helpers")
 
 import hypothesis.strategies as st
 from python_proto import common as proto_common_msgs
-from python_proto.api.graph_query.v1beta1 import messages as graph_query_msgs
+from python_proto.api.graph_query_proxy.v1beta1 import messages as graph_query_msgs
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_msgs
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_msgs
 from python_proto.tests import strategies

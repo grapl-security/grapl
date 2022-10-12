@@ -1,16 +1,21 @@
 use rust_proto::{
-    graplinc::grapl::api::graph_query::v1beta1::{
-        client::{
-            GraphQueryClient,
-            GraphQueryClientError,
+    graplinc::grapl::api::{
+        graph_query::v1beta1::{
+            client::{
+                GraphQueryClient,
+                GraphQueryClientError,
+            },
+            messages as non_proxy_messages,
         },
-        messages::{
-            QueryGraphFromUidRequest,
-            QueryGraphFromUidResponse,
-            QueryGraphWithUidRequest,
-            QueryGraphWithUidResponse,
+        graph_query_proxy::v1beta1::{
+            messages::{
+                QueryGraphFromUidRequest,
+                QueryGraphFromUidResponse,
+                QueryGraphWithUidRequest,
+                QueryGraphWithUidResponse,
+            },
+            server::GraphQueryProxyApi,
         },
-        server::GraphQueryApi,
     },
     protocol::status::Status,
 };
@@ -22,8 +27,8 @@ pub enum GraphQueryProxyError {
 }
 
 impl From<GraphQueryProxyError> for Status {
-    fn from(gqs_err: GraphQueryProxyError) -> Self {
-        match gqs_err {
+    fn from(gqp_err: GraphQueryProxyError) -> Self {
+        match gqp_err {
             GraphQueryProxyError::GraphQueryClientError(e) => Status::unknown(e.to_string()),
         }
     }
@@ -45,26 +50,40 @@ impl GraphQueryProxy {
 }
 
 #[async_trait::async_trait]
-impl GraphQueryApi for GraphQueryProxy {
+impl GraphQueryProxyApi for GraphQueryProxy {
     type Error = GraphQueryProxyError;
 
     #[tracing::instrument(skip(self), err)]
     async fn query_graph_with_uid(
         &self,
-        mut request: QueryGraphWithUidRequest,
+        request: QueryGraphWithUidRequest,
     ) -> Result<QueryGraphWithUidResponse, GraphQueryProxyError> {
-        request.tenant_id = self.tenant_id;
+        let request = non_proxy_messages::QueryGraphWithUidRequest {
+            tenant_id: self.tenant_id,
+            graph_query: request.graph_query,
+            node_uid: request.node_uid,
+        };
         let mut graph_query_client = self.graph_query_client.clone();
-        Ok(graph_query_client.query_graph_with_uid(request).await?)
+        Ok(graph_query_client
+            .query_graph_with_uid(request)
+            .await?
+            .into())
     }
 
     #[tracing::instrument(skip(self), err)]
     async fn query_graph_from_uid(
         &self,
-        mut request: QueryGraphFromUidRequest,
+        request: QueryGraphFromUidRequest,
     ) -> Result<QueryGraphFromUidResponse, GraphQueryProxyError> {
-        request.tenant_id = self.tenant_id;
+        let request = non_proxy_messages::QueryGraphFromUidRequest {
+            tenant_id: self.tenant_id,
+            graph_query: request.graph_query,
+            node_uid: request.node_uid,
+        };
         let mut graph_query_client = self.graph_query_client.clone();
-        Ok(graph_query_client.query_graph_from_uid(request).await?)
+        Ok(graph_query_client
+            .query_graph_from_uid(request)
+            .await?
+            .into())
     }
 }

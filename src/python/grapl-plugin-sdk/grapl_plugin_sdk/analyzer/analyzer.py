@@ -8,7 +8,7 @@ from typing import Protocol
 from grapl_plugin_sdk.analyzer.analyzer_context import AnalyzerContext
 from grapl_plugin_sdk.analyzer.query_and_views import NodeQuery, NodeView
 from grapl_plugin_sdk.analyzer.service_impl import AnalyzerServiceImpl
-from python_proto.api.graph_query.v1beta1.client import GraphQueryClient
+from python_proto.api.graph_query_proxy.v1beta1.client import GraphQueryProxyClient
 from python_proto.api.plugin_sdk.analyzers.v1beta1.messages import (
     AnalyzerName,
     ExecutionHit,
@@ -90,7 +90,7 @@ def serve_analyzer(
     """
     Runs the gRPC machinery to orchestrate the Analyzer
     """
-    graph_query_client = GraphQueryClient.connect(
+    graph_query_proxy_client = GraphQueryProxyClient.connect(
         client_config=GrpcClientConfig(
             address=graph_query_proxy_address(),
         )
@@ -99,7 +99,7 @@ def serve_analyzer(
     impl: AnalyzerService = AnalyzerServiceImpl(
         _analyzer_name=analyzer_name,
         _analyzer=analyzer,
-        _graph_query_client=graph_query_client,
+        _graph_client=graph_query_proxy_client,
     )
 
     servicer = AnalyzerServiceWrapper(

@@ -1,14 +1,20 @@
+mod analyzer;
+pub use analyzer::AnalyzerClientConfig;
+
 mod event_source;
 pub use event_source::EventSourceClientConfig;
 
 mod generator;
 pub use generator::GeneratorClientConfig;
 
-mod analyzer;
-pub use analyzer::AnalyzerClientConfig;
+mod graph_mutation;
+pub use graph_mutation::GraphMutationClientConfig;
 
 mod graph_query;
 pub use graph_query::GraphQueryClientConfig;
+
+mod graph_query_proxy;
+pub use graph_query_proxy::GraphQueryProxyClientConfig;
 
 mod organization_management;
 pub use organization_management::OrganizationManagementClientConfig;
@@ -33,6 +39,3 @@ pub use scylla_provisioner::ScyllaProvisionerClientConfig;
 
 mod uid_allocator;
 pub use uid_allocator::UidAllocatorClientConfig;
-
-mod graph_mutation;
-pub use graph_mutation::GraphMutationClientConfig;
