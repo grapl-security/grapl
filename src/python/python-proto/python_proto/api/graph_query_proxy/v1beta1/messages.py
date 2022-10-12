@@ -8,7 +8,6 @@ from python_proto.api.graph_query.v1beta1.messages import (
     GraphView,
     MaybeMatchWithUid,
 )
-from python_proto.common import Uuid
 from python_proto.grapl.common.v1beta1.messages import Uid
 from python_proto.serde import SerDe
 
