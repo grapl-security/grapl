@@ -1171,7 +1171,7 @@ impl TryFrom<proto::QueryGraphWithUidRequest> for QueryGraphWithUidRequest {
                 .try_into()?,
             graph_query: value
                 .graph_query
-                .ok_or(SerDeError::MissingField("node_query"))?
+                .ok_or(SerDeError::MissingField("graph_query"))?
                 .try_into()?,
         })
     }
