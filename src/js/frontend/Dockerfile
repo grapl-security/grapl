@@ -28,9 +28,10 @@ ENV YARN_VERSION 3.2.3
 RUN yarn policies set-version $YARN_VERSION
 
 COPY --chown=grapl . frontend
-WORKDIR frontend
+WORKDIR "/grapl/src/js/frontend"
 
 RUN yarn install \
-    && yarn build
+    && yarn build \
+    && yarn cache clean
 
 CMD ["yarn test --watchAll=false"]
