@@ -99,7 +99,7 @@ def serve_analyzer(
     impl: AnalyzerService = AnalyzerServiceImpl(
         _analyzer_name=analyzer_name,
         _analyzer=analyzer,
-        _query_client=graph_query_proxy_client,
+        _graph_client=graph_query_proxy_client,
     )
 
     servicer = AnalyzerServiceWrapper(

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import grpc
-from graplinc.grapl.api.graph_query_proxy.v1beta1.graph_query_pb2_grpc import (
+from graplinc.grapl.api.graph_query_proxy.v1beta1.graph_query_proxy_pb2_grpc import (
     GraphQueryProxyServiceStub,
 )
 from python_proto.api.graph_query.v1beta1.messages import GraphQuery

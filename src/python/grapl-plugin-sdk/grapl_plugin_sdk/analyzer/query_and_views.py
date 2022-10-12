@@ -227,7 +227,6 @@ class NodeView(NodePropertiesView):
         graph_query = node_query.into_graph_query()
 
         response = self.graph_query_client.query_from_uid(
-            tenant_id=self.tenant_id,
             node_uid=self.uid,
             graph_query=graph_query,
         )
@@ -279,7 +278,6 @@ def query_with_uid(
     response = client.query_with_uid(
         node_uid=uid,
         graph_query=graph_query,
-        tenant_id=tenant_id,
     )
     match response.maybe_match:
         case NoMatchWithUid() as inner:

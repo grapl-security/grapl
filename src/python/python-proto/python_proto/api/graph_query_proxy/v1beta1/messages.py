@@ -24,7 +24,6 @@ class QueryGraphWithUidRequest(SerDe[proto.QueryGraphWithUidRequest]):
         cls, proto: proto.QueryGraphWithUidRequest
     ) -> QueryGraphWithUidRequest:
         return QueryGraphWithUidRequest(
-            tenant_id=Uuid.from_proto(proto.tenant_id),
             node_uid=Uid.from_proto(proto.node_uid),
             graph_query=GraphQuery.from_proto(proto.graph_query),
         )
@@ -32,7 +31,6 @@ class QueryGraphWithUidRequest(SerDe[proto.QueryGraphWithUidRequest]):
     def into_proto(self) -> proto.QueryGraphWithUidRequest:
         msg = proto.QueryGraphWithUidRequest()
         msg.graph_query.CopyFrom(self.graph_query.into_proto())
-        msg.tenant_id.CopyFrom(self.tenant_id.into_proto())
         msg.node_uid.CopyFrom(self.node_uid.into_proto())
         return msg
 
@@ -68,7 +66,6 @@ class QueryGraphFromUidRequest(SerDe[proto.QueryGraphFromUidRequest]):
         cls, proto: proto.QueryGraphFromUidRequest
     ) -> QueryGraphFromUidRequest:
         return cls(
-            tenant_id=Uuid.from_proto(proto.tenant_id),
             node_uid=Uid.from_proto(proto.node_uid),
             graph_query=GraphQuery.from_proto(proto.graph_query),
         )
@@ -76,7 +73,6 @@ class QueryGraphFromUidRequest(SerDe[proto.QueryGraphFromUidRequest]):
     def into_proto(self) -> proto.QueryGraphFromUidRequest:
         msg = proto.QueryGraphFromUidRequest()
         msg.graph_query.CopyFrom(self.graph_query.into_proto())
-        msg.tenant_id.CopyFrom(self.tenant_id.into_proto())
         msg.node_uid.CopyFrom(self.node_uid.into_proto())
         return msg
 

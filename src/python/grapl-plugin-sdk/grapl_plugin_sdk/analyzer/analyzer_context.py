@@ -13,12 +13,12 @@ from python_proto.grapl.common.v1beta1.messages import Uid
 @dataclass(slots=True)
 class AnalyzerContext:
     _analyzer_name: AnalyzerName
-    _query_client: GraphQueryProxyClient
+    _graph_client: GraphQueryProxyClient
     _start_time: datetime
     _allowed: dict[Uid, timedelta | None]
 
     def get_graph_client(self) -> GraphQueryProxyClient:
-        return self._query_client
+        return self._graph_client
 
     def get_remaining_time(self) -> timedelta:
         now = datetime.now()
