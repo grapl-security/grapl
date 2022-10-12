@@ -2,21 +2,19 @@ import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import "@testing-library/jest-dom/extend-expect";
 
-import {
-  screen,
-  render,
-} from "@testing-library/react";
+import { screen, render } from "@testing-library/react";
 
-import Login from "components/login/Login";
 import { act } from "react-dom/test-utils";
+import LoginForm from "../../login/LoginForm";
 
 // to show the result of render(), use screen.debug() which displays HTML
 describe("Login Component", () => {
   test("Ensure username, password, submit button, and google SSO button render on screen", () => {
+
     act(() => {
       render(
         <GoogleOAuthProvider clientId="340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com">
-          <Login />
+          <LoginForm  />
         </GoogleOAuthProvider>,
       );
     });
@@ -34,5 +32,3 @@ describe("Login Component", () => {
     expect(googleSSOContainer).toBeInTheDocument();
   });
 });
-
-

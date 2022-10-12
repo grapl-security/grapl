@@ -61,23 +61,23 @@ job "typescript-integration-tests" {
     }
 
     # Enable service discovery
-#    service {
-#      name = "typescript-integration-tests"
-#      connect {
-#        sidecar_service {
-#          proxy {
-#            upstreams {
-#              destination_name = "web-ui"
-#              local_bind_port  = 1234
-#            }
-#            upstreams {
-#              destination_name = "plugin-registry"
-#              local_bind_port  = 1001
-#            }
-#          }
-#        }
-#      }
-#    }
+    #    service {
+    #      name = "typescript-integration-tests"
+    #      connect {
+    #        sidecar_service {
+    #          proxy {
+    #            upstreams {
+    #              destination_name = "web-ui"
+    #              local_bind_port  = 1234
+    #            }
+    #            upstreams {
+    #              destination_name = "plugin-registry"
+    #              local_bind_port  = 1001
+    #            }
+    #          }
+    #        }
+    #      }
+    #    }
 
     task "typescript-integration-tests" {
       driver = "docker"
@@ -95,15 +95,15 @@ job "typescript-integration-tests" {
 
       env {
         AWS_REGION = "${var.aws_region}"
-#        GRAPL_API_HOST                     = "${NOMAD_UPSTREAM_IP_web-ui}"
-#        GRAPL_HTTP_FRONTEND_PORT           = "${NOMAD_UPSTREAM_PORT_web-ui}"
-        GRAPL_TEST_USER_NAME               = var.test_user_name
-#        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
+        #        GRAPL_API_HOST                     = "${NOMAD_UPSTREAM_IP_web-ui}"
+        #        GRAPL_HTTP_FRONTEND_PORT           = "${NOMAD_UPSTREAM_PORT_web-ui}"
+        GRAPL_TEST_USER_NAME = var.test_user_name
+        #        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
       }
 
-#      resources {
-#        memory = 1024
-#      }
+      #      resources {
+      #        memory = 1024
+      #      }
     }
   }
 

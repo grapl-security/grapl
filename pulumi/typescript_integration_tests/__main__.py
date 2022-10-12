@@ -20,7 +20,7 @@ import pulumi
 
 
 def _typescript_integration_container_images(
-        artifacts: ArtifactGetter,
+    artifacts: ArtifactGetter,
 ) -> Mapping[str, DockerImageId]:
     """
     Build a map of {task name -> docker image identifier}.
@@ -31,7 +31,9 @@ def _typescript_integration_container_images(
     )
 
     return {
-        "typescript-integration-tests": builder.build_with_tag("typescript-integration-tests"),
+        "typescript-integration-tests": builder.build_with_tag(
+            "typescript-integration-tests"
+        ),
     }
 
 
@@ -99,9 +101,7 @@ class GraplStack:
         #     NomadServicePostgresDbArgs, ref.require_output("plugin-work-queue-db")
         # )
 
-
         # self.test_user_password_secret_id = require_str("test-user-password-secret-id")
-
 
 
 if __name__ == "__main__":
