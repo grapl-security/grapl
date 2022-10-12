@@ -213,7 +213,8 @@ steps:
           - "test_artifacts/**/*"
           # https://github.com/grapl-security/issue-tracker/issues/894
           - "src/js/frontend/source_map_explorer_result.html"
-N
+
+      - label: ":rust: Rust Integration Tests"
         command:
           - make test-integration-rust
         plugins:
@@ -224,7 +225,7 @@ N
 
       - label: ":typescript: Typescript Integration Tests"
           command:
-            - make test-integration-typescript
+            - make test-integration-frontend
           plugins:
             - grapl-security/vault-login#v0.1.3
             - grapl-security/vault-env#v0.2.0:
