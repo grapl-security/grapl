@@ -230,21 +230,19 @@ steps:
           - "test_artifacts/**/*"
 
       - label: ":typescript: Typescript Integration Tests"
-          command:
-            - make test-integration-typescript
-          plugins:
-            - grapl-security/vault-login#v0.1.3
-            - grapl-security/vault-env#v0.2.0:
-                secrets:
-                  - grapl/TOOLCHAIN_AUTH_TOKEN
-          env:
-            GRAPL_LOG_LEVEL: "DEBUG"
-          agents:
-            queue: "beefy"
-          artifact_paths:
-            - "test_artifacts/**/*"
-
-
+        command:
+          - make test-integration-typescript
+        plugins:
+          - grapl-security/vault-login#v0.1.3
+          - grapl-security/vault-env#v0.2.0:
+              secrets:
+                - grapl/TOOLCHAIN_AUTH_TOKEN
+        env:
+          GRAPL_LOG_LEVEL: "DEBUG"
+        agents:
+          queue: "beefy"
+        artifact_paths:
+          - "test_artifacts/**/*"
 
   - label: "Build docs :book:"
     command:
