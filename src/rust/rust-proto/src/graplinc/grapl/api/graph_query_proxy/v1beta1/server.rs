@@ -21,24 +21,17 @@ use tonic::transport::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::{
-        graph_query::v1beta1::messages::{
-            QueryGraphFromUidResponse,
-            QueryGraphWithUidResponse,
-        },
-        graph_query_proxy::v1beta1::messages::{
-            QueryGraphFromUidRequest,
-            QueryGraphWithUidRequest,
-        },
+    graplinc::grapl::api::graph_query_proxy::v1beta1::messages::{
+        QueryGraphFromUidRequest,
+        QueryGraphFromUidResponse,
+        QueryGraphWithUidRequest,
+        QueryGraphWithUidResponse,
     },
-    protobufs::graplinc::grapl::api::{
-        graph_query::v1beta1 as graph_query_proto,
-        graph_query_proxy::v1beta1::{
-            self as proto,
-            graph_query_proxy_service_server::{
-                GraphQueryProxyService as GraphQueryProxyServiceProto,
-                GraphQueryProxyServiceServer as GraphQueryProxyServiceServerProto,
-            },
+    protobufs::graplinc::grapl::api::graph_query_proxy::v1beta1::{
+        self as proto,
+        graph_query_proxy_service_server::{
+            GraphQueryProxyService as GraphQueryProxyServiceProto,
+            GraphQueryProxyServiceServer as GraphQueryProxyServiceServerProto,
         },
     },
     protocol::{
@@ -74,14 +67,14 @@ where
     async fn query_graph_with_uid(
         &self,
         request: tonic::Request<proto::QueryGraphWithUidRequest>,
-    ) -> Result<tonic::Response<graph_query_proto::QueryGraphWithUidResponse>, tonic::Status> {
+    ) -> Result<tonic::Response<proto::QueryGraphWithUidResponse>, tonic::Status> {
         execute_rpc!(self, request, query_graph_with_uid)
     }
 
     async fn query_graph_from_uid(
         &self,
         request: tonic::Request<proto::QueryGraphFromUidRequest>,
-    ) -> Result<tonic::Response<graph_query_proto::QueryGraphFromUidResponse>, tonic::Status> {
+    ) -> Result<tonic::Response<proto::QueryGraphFromUidResponse>, tonic::Status> {
         execute_rpc!(self, request, query_graph_from_uid)
     }
 }

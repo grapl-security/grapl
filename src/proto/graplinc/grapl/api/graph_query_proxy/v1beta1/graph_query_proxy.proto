@@ -14,6 +14,14 @@ message QueryGraphWithUidRequest {
   graplinc.grapl.api.graph_query.v1beta1.GraphQuery graph_query = 2;
 }
 
+// The Response associated with a QueryGraphWithUidRequest
+// containing a matched graph and the associated uid
+message QueryGraphWithUidResponse {
+  // If we get a match for the root Uid in QueryGraphWithUidRequest,
+  // contains a MatchedGraphWithUid. Otherwise, contains a NoMatchWithUid
+  graplinc.grapl.api.graph_query.v1beta1.MaybeMatchWithUid maybe_match = 1;
+}
+
 // The QueryGraphFromUidRequest represents a graph query
 // where the `node_uid` and the `graph_query.root_query_id`
 // represent the same node. Used for pivoting from `node_uid`
@@ -25,11 +33,19 @@ message QueryGraphFromUidRequest {
   graplinc.grapl.api.graph_query.v1beta1.GraphQuery graph_query = 2;
 }
 
+// The QueryGraphFromUidResponse contains the graph that matched
+// a QueryGraphFromUidResponse
+message QueryGraphFromUidResponse {
+  // A view of the graph that matched our query
+  // or None if query did not match
+  graplinc.grapl.api.graph_query.v1beta1.GraphView matched_graph = 1;
+}
+
 // GraphQueryProxyService is a middleman service between an Analyzer plugin
 // and the GraphQuery service that enforces a specific TenantID is being used.
 service GraphQueryProxyService {
   // Used to find a node within a graph that matches a query
-  rpc QueryGraphWithUid(QueryGraphWithUidRequest) returns (graplinc.grapl.api.graph_query.v1beta1.QueryGraphWithUidResponse);
+  rpc QueryGraphWithUid(QueryGraphWithUidRequest) returns (QueryGraphWithUidResponse);
   // Performs a query on the node that corresponds to the provided uid as the root
-  rpc QueryGraphFromUid(QueryGraphFromUidRequest) returns (graplinc.grapl.api.graph_query.v1beta1.QueryGraphFromUidResponse);
+  rpc QueryGraphFromUid(QueryGraphFromUidRequest) returns (QueryGraphFromUidResponse);
 }

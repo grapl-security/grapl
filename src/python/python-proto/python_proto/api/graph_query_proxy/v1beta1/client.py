@@ -6,14 +6,12 @@ import grpc
 from graplinc.grapl.api.graph_query_proxy.v1beta1.graph_query_pb2_grpc import (
     GraphQueryProxyServiceStub,
 )
-from python_proto.api.graph_query.v1beta1.messages import (
-    GraphQuery,
-    QueryGraphFromUidResponse,
-    QueryGraphWithUidResponse,
-)
+from python_proto.api.graph_query.v1beta1.messages import GraphQuery
 from python_proto.api.graph_query_proxy.v1beta1.messages import (
     QueryGraphFromUidRequest,
+    QueryGraphFromUidResponse,
     QueryGraphWithUidRequest,
+    QueryGraphWithUidResponse,
 )
 from python_proto.client import Connectable, GrpcClientConfig
 from python_proto.grapl.common.v1beta1.messages import Uid

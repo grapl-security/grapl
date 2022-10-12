@@ -64,7 +64,10 @@ impl GraphQueryProxyApi for GraphQueryProxy {
             node_uid: request.node_uid,
         };
         let mut graph_query_client = self.graph_query_client.clone();
-        Ok(graph_query_client.query_graph_with_uid(request).await?)
+        Ok(graph_query_client
+            .query_graph_with_uid(request)
+            .await?
+            .into())
     }
 
     #[tracing::instrument(skip(self), err)]
@@ -78,6 +81,9 @@ impl GraphQueryProxyApi for GraphQueryProxy {
             node_uid: request.node_uid,
         };
         let mut graph_query_client = self.graph_query_client.clone();
-        Ok(graph_query_client.query_graph_from_uid(request).await?)
+        Ok(graph_query_client
+            .query_graph_from_uid(request)
+            .await?
+            .into())
     }
 }
