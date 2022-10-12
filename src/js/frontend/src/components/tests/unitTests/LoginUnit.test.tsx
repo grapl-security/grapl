@@ -10,11 +10,10 @@ import LoginForm from "../../login/LoginForm";
 // to show the result of render(), use screen.debug() which displays HTML
 describe("Login Component", () => {
   test("Ensure username, password, submit button, and google SSO button render on screen", () => {
-
     act(() => {
       render(
         <GoogleOAuthProvider clientId="340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com">
-          <LoginForm  />
+          <LoginForm />
         </GoogleOAuthProvider>,
       );
     });

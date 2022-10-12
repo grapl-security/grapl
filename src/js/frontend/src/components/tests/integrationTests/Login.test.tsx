@@ -2,13 +2,7 @@ import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import "@testing-library/jest-dom";
 
-import {
-  screen,
-  cleanup,
-  fireEvent,
-  render,
-  waitFor,
-} from "@testing-library/react";
+import { screen, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 
 import { expect, test } from "@jest/globals";
 
@@ -55,7 +49,6 @@ describe("Login Component", () => {
     expect(process.env.GRAPL_TEST_USER_NAME).toBe("local-grapl-grapl-test-user");
     expect(process.env.GRAPL_TEST_PASSWORD).not.toBeNull();
 
-    screen.debug()
+    screen.debug();
   });
-
 });

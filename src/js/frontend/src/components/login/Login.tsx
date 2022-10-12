@@ -5,7 +5,7 @@ const Login = () => {
   return (
     <div>
       <h1 data-testid={"Grapl"}> Grapl </h1>
-      <img src={"./assets/graplLogoFull.png"} alt={"Grapl Logo"}/>
+      <img src={"./assets/graplLogoFull.png"} alt={"Grapl Logo"} />
       <LoginForm />
     </div>
   );

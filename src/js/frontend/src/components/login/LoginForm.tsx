@@ -5,7 +5,6 @@ import { GoogleSSO } from "./GoogleSSO";
 import { loginService } from "../../services/login/loginService";
 import { yupValidationSchema } from "./yupValidationSchema";
 
-
 const LoginForm = () => {
   const [state, setState] = React.useState({
     loginFailed: false, // Boolean represented as true when user is successfully authenticated,
