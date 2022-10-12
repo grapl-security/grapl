@@ -21,13 +21,13 @@ use tonic::transport::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::graph_query_service::v1beta1::messages::{
+    graplinc::grapl::api::graph_query::v1beta1::messages::{
         QueryGraphFromUidRequest,
         QueryGraphFromUidResponse,
         QueryGraphWithUidRequest,
         QueryGraphWithUidResponse,
     },
-    protobufs::graplinc::grapl::api::graph_query_service::v1beta1::{
+    protobufs::graplinc::grapl::api::graph_query::v1beta1::{
         graph_query_service_server::{
             GraphQueryService as GraphQueryServiceProto,
             GraphQueryServiceServer as GraphQueryServiceServerProto,

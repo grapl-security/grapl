@@ -5,7 +5,7 @@ use std::time::Duration;
 use bytes::Bytes;
 use e2e_tests::test_utils::context::{
     E2eTestContext,
-    SetupResult,
+    SetupGeneratorResult,
 };
 use kafka::{
     config::ConsumerConfig,
@@ -45,9 +45,9 @@ fn find_node<'a>(
 async fn test_sysmon_event_produces_identified_graph(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let test_name = "test_sysmon_event_produces_identified_graph";
     let tenant_id = ctx.create_tenant().await?;
-    let SetupResult {
+    let SetupGeneratorResult {
         tenant_id,
-        plugin_id: _,
+        generator_plugin_id: _,
         event_source_id,
     } = ctx.setup_sysmon_generator(tenant_id, test_name).await?;
 

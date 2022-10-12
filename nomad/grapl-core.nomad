@@ -177,6 +177,14 @@ locals {
 
   # enabled
   rust_backtrace = 1
+
+  # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
+  # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
+  # Examples of keys we may add in the future: language, instance_id/ip, team
+
+  # Currently we use the same version for all containers. As such we pick one container to get the version from
+  app_version                      = split(":", var.container_images["analyzer-dispatcher"])[1]
+  default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
 }
 
 job "grapl-core" {
@@ -249,6 +257,8 @@ job "grapl-core" {
 
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -321,6 +331,8 @@ job "grapl-core" {
 
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -392,6 +404,8 @@ job "grapl-core" {
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["graph-merger"]
         KAFKA_CONSUMER_TOPIC      = "identified-graphs"
         KAFKA_PRODUCER_TOPIC      = "merged-graphs"
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -462,6 +476,8 @@ job "grapl-core" {
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
         GRAPL_STATIC_MAPPING_TABLE  = var.static_mapping_table_name
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -519,6 +535,8 @@ job "grapl-core" {
 
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -555,6 +573,8 @@ job "grapl-core" {
 
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -613,6 +633,8 @@ job "grapl-core" {
         GRAPL_GOOGLE_CLIENT_ID    = var.google_client_id
         RUST_LOG                  = var.rust_log
         RUST_BACKTRACE            = local.rust_backtrace
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -692,6 +714,8 @@ job "grapl-core" {
         ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db.username
 
         ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = var.organization_management_healthcheck_polling_interval_ms
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -752,6 +776,8 @@ job "grapl-core" {
         KAFKA_SASL_USERNAME                              = var.kafka_credentials["pipeline-ingress"].sasl_username
         KAFKA_SASL_PASSWORD                              = var.kafka_credentials["pipeline-ingress"].sasl_password
         KAFKA_PRODUCER_TOPIC                             = "raw-logs"
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -830,6 +856,8 @@ job "grapl-core" {
         # common Rust env vars
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -907,6 +935,8 @@ job "grapl-core" {
         # common Rust env vars
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {
@@ -975,6 +1005,8 @@ job "grapl-core" {
         # common Rust env vars
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
 
       resources {

@@ -22,7 +22,7 @@ use rust_proto::{
                 client::GraphMutationClient,
                 messages as mutation,
             },
-            graph_query_service::v1beta1::{
+            graph_query::v1beta1::{
                 client::GraphQueryClient,
                 messages::{
                     MatchedGraphWithUid,

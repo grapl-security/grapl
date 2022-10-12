@@ -8,12 +8,11 @@ T = TypeVar("T", covariant=True)
 
 @dataclass(frozen=True, slots=True)
 class GrpcClientConfig:
-    # We don't yet have anything in the Client Config, but we may add
-    # things like client-wide retry settings, etc.
+    address: str
 
-    @classmethod
-    def default(cls) -> GrpcClientConfig:
-        return cls()
+    def __post_init__(self) -> None:
+        if not self.address.startswith("http://"):
+            raise ValueError(f"Expected {self.address} to start with http://")
 
 
 class Connectable(Protocol, Generic[T]):

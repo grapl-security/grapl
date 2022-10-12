@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 
 import grpc
-from graplinc.grapl.api.graph_query_service.v1beta1.graph_query_service_pb2_grpc import (
+from graplinc.grapl.api.graph_query.v1beta1.graph_query_pb2_grpc import (
     GraphQueryServiceStub,
 )
 from python_proto import common as proto_common_msgs
@@ -27,7 +26,7 @@ class GraphQueryClient(Connectable):
     # implements Connectable
     @classmethod
     def connect(cls, client_config: GrpcClientConfig) -> GraphQueryClient:
-        address = os.environ["GRAPH_QUERY_CLIENT_ADDRESS"]
+        address = client_config.address
         channel = grpc.insecure_channel(address)
         stub = GraphQueryServiceStub(channel)
 

@@ -70,6 +70,18 @@ class AnalyzerServiceConfig:
         return cls(bind_address=os.environ["PLUGIN_BIND_ADDRESS"])
 
 
+def graph_query_proxy_address() -> str:
+    # Ideally we'd specify GRAPH_QUERY_CLIENT_ADDRESS in env{}, but
+    # due to HCL limitations + the fact each `graph-query-proxy` service
+    # has a different name, we instead construct the CLIENT_ADDRESS at
+    # runtime here instead.
+    # https://github.com/hashicorp/nomad/issues/14813
+    plugin_id = os.environ["PLUGIN_ID"]
+    upstream_addr_env_var = f"NOMAD_UPSTREAM_ADDR_graph-query-proxy-{plugin_id}"
+    upstream_addr = os.environ[upstream_addr_env_var]
+    return f"http://{upstream_addr}"
+
+
 def serve_analyzer(
     analyzer_name: AnalyzerName,
     analyzer: Analyzer,
@@ -79,7 +91,9 @@ def serve_analyzer(
     Runs the gRPC machinery to orchestrate the Analyzer
     """
     graph_query_client = GraphQueryClient.connect(
-        client_config=GrpcClientConfig.default()
+        client_config=GrpcClientConfig(
+            address=graph_query_proxy_address(),
+        )
     )
 
     impl: AnalyzerService = AnalyzerServiceImpl(

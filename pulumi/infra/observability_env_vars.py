@@ -29,15 +29,17 @@ def get_observability_env_vars() -> str:
 def otel_config(
     lightstep_token: pulumi.Output,
     nomad_endpoint: pulumi.Output | str,
-    lightstep_endpoint: str = "ingest.lightstep.com:443",
+    lightstep_endpoint: str,
     # This is optional because pulumi.config.get_bool returns Optional[bool]
-    lightstep_is_endpoint_insecure: bool | None = False,
+    lightstep_is_endpoint_insecure: bool | None,
+    trace_sampling_percentage: float | None,
 ) -> pulumi.Output[str]:
     return pulumi.Output.all(
         lightstep_endpoint=lightstep_endpoint,
         lightstep_token=lightstep_token,
         lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
         nomad_endpoint=nomad_endpoint,
+        trace_sampling_percentage=trace_sampling_percentage,
     ).apply(
         lambda args: f"""
 receivers:
@@ -72,6 +74,13 @@ processors:
     # 25% of limit up to 2G
     spike_limit_mib: 512
     check_interval: 5s
+  # This sets up head-based sampling as the simplest way to add sampling. Ideally, we'd use tail-based sampling which 
+  # allows for rule-based sampling. Unfortunately tail-based sampling doesn't work well with multiple collector 
+  # instances. For it to work, you need agents doing load-balancer exporting to a dedicated processing cluster/service,
+  # which is overkill for our current scale.
+  # TODO create a dedicated processing cluster and switch over to tail-based sampling.
+  probabilistic_sampler:
+    sampling_percentage: {args["trace_sampling_percentage"]}
 exporters:
   logging:
     logLevel: debug
