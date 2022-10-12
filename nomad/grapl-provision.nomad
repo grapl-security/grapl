@@ -68,6 +68,16 @@ variable "py_log_level" {
   description = "Controls the logging behavior of Python-based services."
 }
 
+locals {
+  # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
+  # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
+  # Examples of keys we may add in the future: language, instance_id/ip, team
+
+  # Currently we use the same version for all containers. As such we pick one container to get the version from
+  app_version                      = split(":", var.container_images["provisioner"])[1]
+  default_otel_resource_attributes = "service.version=${local.app_version}"
+}
+
 job "grapl-provision" {
   datacenters = ["dc1"]
 
@@ -116,6 +126,8 @@ job "grapl-provision" {
         GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
         GRAPL_LOG_LEVEL                    = var.py_log_level
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
     }
 
