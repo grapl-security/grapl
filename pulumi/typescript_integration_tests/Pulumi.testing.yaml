@@ -1,0 +1,4 @@
+config:
+  aws:region: us-east-1
+  typescript-integration-tests:cloudsmith-repository-name: grapl/testing
+  typescript-integration-tests:confluent-environment-name: "testing"
