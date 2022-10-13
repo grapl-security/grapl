@@ -63,7 +63,8 @@ receivers:
           params:
             format: ['prometheus']
           static_configs:
-            # This should be pointing to the Nomad network IP. Locally that would be the eth0 private IP. in AWS that's the Nomad ALB.
+            # This should be pointing to the Nomad network IP. Locally that would be the eth0 private IP. in AWS that's
+            # the Nomad ALB.
             - targets: [{args["nomad_endpoint"]}]
 processors:
   batch:
@@ -97,9 +98,11 @@ service:
   pipelines:
     metrics:
       receivers: [prometheus]
-      exporters: [otlp/ls]
+      processors: [batch]
+      exporters: [logging, otlp/ls]
     traces:
       receivers: [jaeger, otlp, zipkin]
+      processors: [batch, memory_limiter, probabilistic_sampler]
       exporters: [logging, otlp/ls]
 """
     )
