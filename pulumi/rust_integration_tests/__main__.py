@@ -2,7 +2,7 @@ import sys
 
 sys.path.insert(0, "..")
 
-from typing import Mapping, cast
+from typing import Mapping
 
 import pulumi_aws as aws
 from infra import config, log_levels
@@ -10,11 +10,10 @@ from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.config import repository_path
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
+from infra.grapl_stack import GraplStack
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Credential, Kafka
 from infra.nomad_job import NomadJob, NomadVars
-from infra.nomad_service_postgres import NomadServicePostgresDbArgs
-from infra.scylla import NomadServiceScyllaDbArgs
 
 import pulumi
 
@@ -81,44 +80,12 @@ def main() -> None:
         "user_session_table": grapl_stack.user_session_table,
     }
 
-    rust_integration_tests = NomadJob(
+    NomadJob(
         "rust-integration-tests",
         jobspec=repository_path("nomad/rust-integration-tests.nomad"),
         vars=rust_integration_tests_job_vars,
         opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
-
-
-class GraplStack:
-    def __init__(self, stack_name: str) -> None:
-        self.upstream_stack_name = (
-            "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
-        )
-        ref = pulumi.StackReference(self.upstream_stack_name)
-
-        def require_str(key: str) -> str:
-            return cast(str, ref.require_output(key))
-
-        # FIXME: audit these, they're not all required for rust integration tests
-        self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
-        self.schema_properties_table_name = require_str("schema-properties-table")
-        self.schema_table_name = require_str("schema-table")
-        self.test_user_name = require_str("test-user-name")
-
-        self.plugin_work_queue_db = cast(
-            NomadServicePostgresDbArgs, ref.require_output("plugin-work-queue-db")
-        )
-
-        self.organization_management_db = cast(
-            NomadServicePostgresDbArgs, ref.require_output("organization-management-db")
-        )
-
-        self.test_user_password_secret_id = require_str("test-user-password-secret-id")
-
-        self.user_auth_table = require_str("user-auth-table")
-        self.user_session_table = require_str("user-session-table")
-
-        self.graph_db = cast(NomadServiceScyllaDbArgs, ref.require_output("graph-db"))
 
 
 if __name__ == "__main__":

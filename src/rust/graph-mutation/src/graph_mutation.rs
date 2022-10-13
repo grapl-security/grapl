@@ -147,6 +147,7 @@ impl GraphMutationManager {
                 },
             )
             .await
+            .map(|_| ())
     }
 
     #[tracing::instrument(skip(self), err)]
@@ -192,6 +193,7 @@ impl GraphMutationManager {
                 },
             )
             .await
+            .map(|_| ())
     }
 
     #[tracing::instrument(skip(self), err)]
@@ -229,6 +231,7 @@ impl GraphMutationManager {
                 .instrument(tracing::info_span!("upsert_max_u64"))
             })
             .await
+            .map(|_| ())
     }
 
     #[tracing::instrument(skip(self), err)]
@@ -272,6 +275,7 @@ impl GraphMutationManager {
                 },
             )
             .await
+            .map(|_| ())
     }
 
     #[tracing::instrument(skip(self), err)]
@@ -315,6 +319,7 @@ impl GraphMutationManager {
                 },
             )
             .await
+            .map(|_| ())
     }
 
     #[tracing::instrument(skip(self), err)]
@@ -351,6 +356,7 @@ impl GraphMutationManager {
                 .instrument(tracing::info_span!("upsert_imm_i64"))
             })
             .await
+            .map(|_| ())
     }
 
     #[tracing::instrument(skip(self), err)]
@@ -384,6 +390,7 @@ impl GraphMutationManager {
                 .instrument(tracing::info_span!("set_node_type"))
             })
             .await
+            .map(|_| ())
     }
 
     #[tracing::instrument(skip(self), err)]
@@ -420,6 +427,7 @@ impl GraphMutationManager {
                 .instrument(tracing::info_span!("upsert_imm_string"))
             })
             .await
+            .map(|_| ())
     }
 
     #[tracing::instrument(skip(self), err)]
@@ -494,6 +502,7 @@ impl GraphMutationManager {
                 },
             )
             .await
+            .map(|_| ())
     }
 }
 
