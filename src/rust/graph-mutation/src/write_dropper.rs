@@ -46,7 +46,6 @@ pub enum WriteDropStatus {
 /// EXAMPLE 2: Max u64/i64 (aka IncrOnly)
 ///   If you have a property that can only increment, and we've previously
 ///   written 5 to the DB, there's no reason to write a 4 if we encounter it.
-#[allow(dead_code)] // TODO https://github.com/grapl-security/issue-tracker/issues/1028
 #[derive(Clone, Debug)]
 pub struct WriteDropper {
     max_i64: Cache<PropertyKey, i64>,

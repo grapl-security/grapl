@@ -10,7 +10,7 @@ config:
     generator-dispatcher: 20221013175527-c11eeaa
     generator-execution-sidecar: 20221013175527-c11eeaa
     graph-merger: 20221013175527-c11eeaa
-    graph-mutation: 20221013183503-1a27b1b
+    graph-mutation: 20221013192551-796afaf
     graph-query: 20221013175527-c11eeaa
     graph-query-proxy: 20221013175527-c11eeaa
     graph-query-service: 20220826220940-9c5575d
