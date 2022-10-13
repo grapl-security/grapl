@@ -332,7 +332,7 @@ mod tests {
     enum CallbackError {}
 
     #[tokio::test]
-    async fn test_every_class_of_cache() -> eyre::Result<()> {
+    async fn test_every_cache_drops_when_expected() -> eyre::Result<()> {
         let tenant_id = uuid::Uuid::new_v4();
         let node_type = NodeType {
             value: "arbitrary_node_type".to_string(),
