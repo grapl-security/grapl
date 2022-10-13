@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-trait = "0.1.53"
-blake2 = "0.10.4"
+blake2 = { workspace = true }
 clap = { workspace = true }
 dashmap = "5.2.0"
 grapl-tracing = { path = "../grapl-tracing" }
@@ -21,3 +21,6 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 uid-allocator = { path = "../uid-allocator" }
 uuid = { workspace = true }
+
+[dev-dependencies]
+eyre = { workspace = true }

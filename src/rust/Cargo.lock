@@ -1838,6 +1838,7 @@ dependencies = [
  "blake2",
  "clap 3.2.13",
  "dashmap",
+ "eyre",
  "grapl-tracing",
  "grapl-utils",
  "hash_hasher",
