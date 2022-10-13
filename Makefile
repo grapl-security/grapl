@@ -15,7 +15,7 @@
 IMAGE_TAG ?= dev
 # This is a build argument for our Python images, and is thus used in
 # docker-bake.hcl
-PYTHON_VERSION ?= $(shell cat .python-version)
+PYTHON_VERSION ?= $(shell build-support/python_version.sh)
 # This is a build argument for our Rust images, and is thus used in
 # docker-bake.hcl
 RUST_VERSION ?= $(shell build-support/rust_version.sh)
