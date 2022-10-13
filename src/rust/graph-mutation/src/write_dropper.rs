@@ -401,7 +401,7 @@ mod tests {
             let status = check().await?;
             eyre::ensure!(
                 status == WriteDropStatus::Dropped,
-                "immutable is immutable!"
+                "immutable"
             );
         }
 
@@ -478,7 +478,7 @@ mod tests {
             let status = check().await?;
             eyre::ensure!(
                 status == WriteDropStatus::Dropped,
-                "immutable is immutable!"
+                "immutable"
             );
         }
 
@@ -503,8 +503,19 @@ mod tests {
             let status = check().await?;
             eyre::ensure!(
                 status == WriteDropStatus::Dropped,
-                "immutable is immutable!"
+                "immutable"
             );
+        }
+
+        // ##### check_node_type #####
+        {
+            let write_dropper = Arc::clone(&write_dropper);
+            let uid = Uid::from_u64(123).unwrap();
+
+            let status = write_dropper.check_node_type(tenant_id, uid, callback).await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
+            let status = write_dropper.check_node_type(tenant_id, uid, callback).await?;
+            eyre::ensure!(status == WriteDropStatus::Dropped, "immutable");
         }
 
         Ok(())
