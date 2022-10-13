@@ -1837,7 +1837,6 @@ dependencies = [
  "async-trait",
  "blake2",
  "clap 3.2.13",
- "dashmap",
  "eyre",
  "grapl-tracing",
  "grapl-utils",
