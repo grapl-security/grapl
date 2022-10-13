@@ -3,6 +3,11 @@ use std::{
     hash::Hash,
 };
 
+use blake2::{
+    digest::typenum::U16,
+    Blake2b,
+    Digest,
+};
 use moka::future::Cache;
 use rust_proto::graplinc::grapl::common::v1beta1::types::{
     EdgeName,
@@ -10,6 +15,8 @@ use rust_proto::graplinc::grapl::common::v1beta1::types::{
     PropertyName,
     Uid,
 };
+
+type Blake2b16 = Blake2b<U16>;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct NodeTypeKey {
@@ -247,31 +254,29 @@ impl WriteDropper {
         f_edge_name: EdgeName,
         r_edge_name: EdgeName,
         callback: impl FnOnce(EdgeName, EdgeName) -> Fut,
-    ) -> Result<(), E>
+    ) -> Result<WriteDropStatus, E>
     where
         Fut: Future<Output = Result<T, E>>,
         E: std::error::Error,
     {
-        tracing::debug!(message = "Performing insert",);
-        callback(f_edge_name, r_edge_name).await?;
-        tracing::debug!(message = "Insert performed");
+        let cache = self.edges.clone();
+        let fkey = edge_key(tenant_id, source_uid, dest_uid, &f_edge_name);
 
-        // TODO: Resurrect the below, delete the above
-        // https://github.com/grapl-security/issue-tracker/issues/1028
+        let should_insert_value = match cache.get(&fkey) {
+            None => true,
+            Some(_) => false,
+        };
 
-        // let fkey = edge_key(tenant_id, source_uid, dest_uid, &f_edge_name);
-        //
-        // // We always insert both the forward and reverse edges in a batch insert
-        // if !self.edges.contains(&fkey) {
-        //     handle_full!(self, edges);
-        //     let rkey = edge_key(tenant_id, dest_uid, source_uid, &r_edge_name);
-        //
-        //     callback(f_edge_name, r_edge_name).await?;
-        //
-        //     self.edges.insert(fkey);
-        //     self.edges.insert(rkey);
-        // }
-        Ok(())
+        if should_insert_value {
+            let rkey = edge_key(tenant_id, dest_uid, source_uid, &r_edge_name);
+            callback(f_edge_name, r_edge_name).await?;
+            cache.insert(fkey, ()).await;
+            cache.insert(rkey, ()).await;
+        }
+        Ok(match should_insert_value {
+            true => WriteDropStatus::Stored,
+            false => WriteDropStatus::Dropped,
+        })
     }
 }
 
@@ -301,6 +306,20 @@ where
         true => WriteDropStatus::Stored,
         false => WriteDropStatus::Dropped,
     })
+}
+
+fn edge_key(
+    tenant_id: uuid::Uuid,
+    source_uid: Uid,
+    dst_uid: Uid,
+    edge_name: &EdgeName,
+) -> [u8; 16] {
+    let mut hasher = Blake2b16::new();
+    hasher.update(tenant_id.as_bytes());
+    hasher.update(source_uid.as_u64().to_le_bytes());
+    hasher.update(dst_uid.as_u64().to_le_bytes());
+    hasher.update(edge_name.value.as_bytes());
+    hasher.finalize().into()
 }
 
 #[cfg(test)]
@@ -399,10 +418,7 @@ mod tests {
             let status = check().await?;
             eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
             let status = check().await?;
-            eyre::ensure!(
-                status == WriteDropStatus::Dropped,
-                "immutable"
-            );
+            eyre::ensure!(status == WriteDropStatus::Dropped, "immutable");
         }
 
         // ##### check_max_u64 #####
@@ -476,10 +492,7 @@ mod tests {
             let status = check().await?;
             eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
             let status = check().await?;
-            eyre::ensure!(
-                status == WriteDropStatus::Dropped,
-                "immutable"
-            );
+            eyre::ensure!(status == WriteDropStatus::Dropped, "immutable");
         }
 
         // ##### check_imm_string #####
@@ -501,10 +514,7 @@ mod tests {
             let status = check().await?;
             eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
             let status = check().await?;
-            eyre::ensure!(
-                status == WriteDropStatus::Dropped,
-                "immutable"
-            );
+            eyre::ensure!(status == WriteDropStatus::Dropped, "immutable");
         }
 
         // ##### check_node_type #####
@@ -512,10 +522,69 @@ mod tests {
             let write_dropper = Arc::clone(&write_dropper);
             let uid = Uid::from_u64(123).unwrap();
 
-            let status = write_dropper.check_node_type(tenant_id, uid, callback).await?;
+            let status = write_dropper
+                .check_node_type(tenant_id, uid, callback)
+                .await?;
             eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
-            let status = write_dropper.check_node_type(tenant_id, uid, callback).await?;
+            let status = write_dropper
+                .check_node_type(tenant_id, uid, callback)
+                .await?;
             eyre::ensure!(status == WriteDropStatus::Dropped, "immutable");
+        }
+
+        // ##### check_edge #####
+        {
+            let write_dropper = Arc::clone(&write_dropper);
+            let source_uid = Uid::from_u64(123).unwrap();
+            let dest_uid = Uid::from_u64(456).unwrap();
+            let f_edge_name = EdgeName::try_from("a_to_b")?;
+            let r_edge_name = EdgeName::try_from("b_to_a")?;
+
+            let edge_names_callback = |_, _| async {
+                let res: Result<(), CallbackError> = Ok(());
+                res
+            };
+
+            let status = write_dropper
+                .check_edges(
+                    tenant_id,
+                    source_uid,
+                    dest_uid,
+                    f_edge_name.clone(),
+                    r_edge_name.clone(),
+                    edge_names_callback,
+                )
+                .await?;
+            eyre::ensure!(status == WriteDropStatus::Stored, "initial always stores");
+            let status = write_dropper
+                .check_edges(
+                    tenant_id,
+                    source_uid,
+                    dest_uid,
+                    f_edge_name.clone(),
+                    r_edge_name.clone(),
+                    edge_names_callback,
+                )
+                .await?;
+            eyre::ensure!(
+                status == WriteDropStatus::Dropped,
+                "forward is already stored"
+            );
+            // Do the other direction
+            let status = write_dropper
+                .check_edges(
+                    tenant_id,
+                    dest_uid,
+                    source_uid,
+                    r_edge_name.clone(),
+                    f_edge_name.clone(),
+                    edge_names_callback,
+                )
+                .await?;
+            eyre::ensure!(
+                status == WriteDropStatus::Dropped,
+                "reverse is already stored"
+            );
         }
 
         Ok(())

@@ -16,7 +16,7 @@ path = "src/main.rs"
 integration_tests = []
 
 [dependencies]
-blake2 = "0.10.4"
+blake2 = { workspace = true }
 bytes = { workspace = true }
 chrono = "0.4"
 clap = { workspace = true }
