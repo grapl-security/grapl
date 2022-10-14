@@ -237,10 +237,10 @@ steps:
           - grapl-security/vault-env#v0.2.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
-          agents:
-            queue: "beefy"
-          artifact_paths:
-            - "test_artifacts/**/*"
+        agents:
+          queue: "beefy"
+        artifact_paths:
+          - "test_artifacts/**/*"
 
   - label: "Build docs :book:"
     command:
