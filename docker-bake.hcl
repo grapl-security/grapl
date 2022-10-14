@@ -148,6 +148,14 @@ group "grapl-services" {
   ]
 }
 
+
+group "aws-integration-tests" {
+  targets:[
+    "typescript-integration-tests",
+    "rust-integration-tests"
+  ]
+}
+
 # This is the subset of images that we will build in CI and push to
 # our Cloudsmith repository for provisioned infrastructure testing and
 # deployment.
@@ -155,7 +163,7 @@ group "cloudsmith-images" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "grapl-services",
-    "rust-integration-tests"
+    aws-integration-tests
   ]
 }
 
@@ -218,20 +226,6 @@ group "local-infrastructure" {
   targets = [
     "grapl-services",
     "local-only-services"
-  ]
-}
-
-group "typescript-integration-tests" {
-  # NOTE: Please keep this list sorted in alphabetical order
-  targets = [
-    "typescript-integration-tests",
-  ]
-}
-
-group "python-integration-tests" {
-  # NOTE: Please keep this list sorted in alphabetical order
-  targets = [
-    "python-integration-tests",
   ]
 }
 
@@ -526,7 +520,7 @@ target "typescript-integration-tests" {
   dockerfile = "Dockerfile"
   target     = "integration-tests"
   tags = [
-    local_only_tag("typescript-integration-tests")
+    upstream_aware_tag("typescript-integration-tests")
   ]
 }
 

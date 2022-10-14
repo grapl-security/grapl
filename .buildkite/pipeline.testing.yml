@@ -19,7 +19,7 @@ steps:
           post-command: |
             .buildkite/scripts/grapl_testing_stack/dump_artifacts.sh
     command:
-      - .buildkite/scripts/grapl_testing_stack/run_parameterized_job.sh rust-integration-tests 6
       - .buildkite/scripts/grapl_testing_stack/run_parameterized_job.sh typescript-integration-tests 6
+      - .buildkite/scripts/grapl_testing_stack/run_parameterized_job.sh rust-integration-tests 6
     artifact_paths:
       - "test_artifacts/**/*"
