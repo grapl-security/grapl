@@ -70,3 +70,9 @@ impl TestUser {
         Ok(())
     }
 }
+
+impl Default for TestUser {
+    fn default() -> Self {
+        Self::new()
+    }
+}

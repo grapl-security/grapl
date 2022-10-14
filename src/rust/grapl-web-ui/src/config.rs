@@ -3,8 +3,14 @@ use grapl_config::env_helpers::FromEnv;
 use rand::Rng;
 use rusoto_dynamodb::DynamoDbClient;
 use rust_proto::{
-    client_factory::services::PluginRegistryClientConfig,
-    graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryServiceClient,
+    client_factory::services::{
+        PipelineIngressClientConfig,
+        PluginRegistryClientConfig,
+    },
+    graplinc::grapl::api::{
+        pipeline_ingress::v1beta1::client::PipelineIngressClient,
+        plugin_registry::v1beta1::PluginRegistryServiceClient,
+    },
     protocol::service_client::ConnectWithConfig,
 };
 
@@ -31,6 +37,7 @@ pub struct Config {
     pub user_auth_table_name: String,
     pub user_session_table_name: String,
     pub plugin_registry_client: PluginRegistryServiceClient,
+    pub pipeline_ingress_client: PipelineIngressClient,
     pub google_client_id: String,
 }
 
@@ -44,6 +51,9 @@ impl Config {
             PluginRegistryServiceClient::connect_with_config(builder.plugin_registry_config)
                 .await?;
 
+        let pipeline_ingress_client =
+            PipelineIngressClient::connect_with_config(builder.pipeline_ingress_config).await?;
+
         let dynamodb_client = DynamoDbClient::from_env();
 
         // generate a random key for encrypting user state.
@@ -56,6 +66,7 @@ impl Config {
             user_auth_table_name: builder.user_auth_table_name,
             user_session_table_name: builder.user_session_table_name,
             plugin_registry_client,
+            pipeline_ingress_client,
             google_client_id: builder.google_client_id,
         };
 
@@ -74,6 +85,8 @@ pub struct ConfigBuilder {
     pub user_session_table_name: String,
     #[clap(flatten)]
     pub plugin_registry_config: PluginRegistryClientConfig,
+    #[clap(flatten)]
+    pub pipeline_ingress_config: PipelineIngressClientConfig,
     #[clap(env = "GRAPL_GOOGLE_CLIENT_ID")]
     pub google_client_id: String,
 }
