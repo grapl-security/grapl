@@ -7,7 +7,7 @@ env:
 # from our grapl/testing stack.
 
 steps:
-  - label: ":aws: Integration tests in AWS"
+  - label: ":aws: Typescript Integration tests in AWS"
     agents:
       queue: "pulumi-staging"
     plugins:
@@ -25,7 +25,7 @@ steps:
 
   - wait
 
-  - label: ":aws: Integration tests in AWS"
+  - label: ":aws: Rust Integration tests in AWS"
     agents:
       queue: "pulumi-staging"
     plugins:
