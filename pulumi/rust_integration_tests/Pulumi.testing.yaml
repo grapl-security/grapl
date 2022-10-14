@@ -1,33 +1,33 @@
 config:
   aws:region: us-east-1
   rust-integration-tests:artifacts:
-    analyzer-dispatcher: 20221013175527-c11eeaa
-    analyzer-execution-sidecar: 20221013175527-c11eeaa
+    analyzer-dispatcher: 20221014230631-c18f47f
+    analyzer-execution-sidecar: 20221014230631-c18f47f
     docker-plugin-runtime: 20221005224441-420044e
     engagement-creator: 20220817005938-11d3f75
-    event-source: 20221013175527-c11eeaa
+    event-source: 20221014230631-c18f47f
     firecracker_rootfs.tar.gz: 20220801204214-06bb008
-    generator-dispatcher: 20221013175527-c11eeaa
-    generator-execution-sidecar: 20221013175527-c11eeaa
-    graph-merger: 20221013175527-c11eeaa
-    graph-mutation: 20221013192551-796afaf
-    graph-query: 20221013175527-c11eeaa
-    graph-query-proxy: 20221013175527-c11eeaa
+    generator-dispatcher: 20221014230631-c18f47f
+    generator-execution-sidecar: 20221014230631-c18f47f
+    graph-merger: 20221014230631-c18f47f
+    graph-mutation: 20221014230631-c18f47f
+    graph-query: 20221014230631-c18f47f
+    graph-query-proxy: 20221014230631-c18f47f
     graph-query-service: 20220826220940-9c5575d
-    graph-schema-manager: 20221013175527-c11eeaa
+    graph-schema-manager: 20221014230631-c18f47f
     graphql-endpoint: 20220926195707-34120fa
-    grapl-web-ui: 20221013175527-c11eeaa
-    kafka-retry: 20221013175527-c11eeaa
-    node-identifier: 20221013175527-c11eeaa
-    organization-management: 20221013175527-c11eeaa
-    pipeline-ingress: 20221013175527-c11eeaa
-    plugin-bootstrap: 20221013175527-c11eeaa
-    plugin-registry: 20221013175527-c11eeaa
-    plugin-work-queue: 20221013175527-c11eeaa
-    provisioner: 20221013175527-c11eeaa
-    rust-integration-tests: 20221013175527-c11eeaa
-    scylla-provisioner: 20221013175527-c11eeaa
+    grapl-web-ui: 20221014230631-c18f47f
+    kafka-retry: 20221014230631-c18f47f
+    node-identifier: 20221014230631-c18f47f
+    organization-management: 20221014230631-c18f47f
+    pipeline-ingress: 20221014230631-c18f47f
+    plugin-bootstrap: 20221014230631-c18f47f
+    plugin-registry: 20221014230631-c18f47f
+    plugin-work-queue: 20221014230631-c18f47f
+    provisioner: 20221014230631-c18f47f
+    rust-integration-tests: 20221014230631-c18f47f
+    scylla-provisioner: 20221014230631-c18f47f
     sysmon-generator: 20220809152144-3c3caf3
-    uid-allocator: 20221013175527-c11eeaa
+    uid-allocator: 20221014230631-c18f47f
   rust-integration-tests:cloudsmith-repository-name: grapl/testing
   rust-integration-tests:confluent-environment-name: testing
