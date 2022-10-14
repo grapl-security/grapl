@@ -232,11 +232,11 @@ steps:
       - label: ":typescript: Typescript Integration Tests"
         command:
           - make test-integration-typescript
-          plugins:
-            - grapl-security/vault-login#v0.1.3
-            - grapl-security/vault-env#v0.2.0:
-                secrets:
-                  - grapl/TOOLCHAIN_AUTH_TOKEN
+        plugins:
+          - grapl-security/vault-login#v0.1.3
+          - grapl-security/vault-env#v0.2.0:
+              secrets:
+                - grapl/TOOLCHAIN_AUTH_TOKEN
           agents:
             queue: "beefy"
           artifact_paths:
