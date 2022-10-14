@@ -99,7 +99,7 @@ class GraplStack:
         #     NomadServicePostgresDbArgs, ref.require_output("plugin-work-queue-db")
         # )
 
-        # self.test_user_password_secret_id = require_str("test-user-password-secret-id")
+        self.test_user_password_secret_id = require_str("test-user-password-secret-id")
 
 
 if __name__ == "__main__":
