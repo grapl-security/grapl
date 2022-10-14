@@ -237,6 +237,8 @@ steps:
           - grapl-security/vault-env#v0.2.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
+        env:
+          GRAPL_LOG_LEVEL: "DEBUG"
         agents:
           queue: "beefy"
         artifact_paths:
