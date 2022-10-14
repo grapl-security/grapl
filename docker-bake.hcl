@@ -148,11 +148,12 @@ group "grapl-services" {
   ]
 }
 
-
+# Tests that run in AWS
 group "aws-integration-tests" {
-  targets:[
+  # NOTE: Please keep this list sorted in alphabetical order
+  targets = [
     "typescript-integration-tests",
-    "rust-integration-tests"
+    "rust-integration-tests",
   ]
 }
 
@@ -163,7 +164,7 @@ group "cloudsmith-images" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "grapl-services",
-    aws-integration-tests
+    "aws-integration-tests",
   ]
 }
 
