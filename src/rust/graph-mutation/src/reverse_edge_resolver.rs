@@ -1,13 +1,11 @@
+use moka::future::Cache;
 use rust_proto::graplinc::grapl::{
     api::graph_schema_manager::v1beta1::{
         client::{
             GraphSchemaManagerClient,
             GraphSchemaManagerClientError,
         },
-        messages::{
-            GetEdgeSchemaRequest,
-            GetEdgeSchemaResponse,
-        },
+        messages::GetEdgeSchemaRequest,
     },
     common::v1beta1::types::{
         EdgeName,
@@ -24,13 +22,12 @@ pub enum ReverseEdgeResolverError {
 #[derive(Clone)]
 pub struct ReverseEdgeResolver {
     schema_client: GraphSchemaManagerClient,
-    #[allow(dead_code)] // https://github.com/grapl-security/issue-tracker/issues/1028
-    r_edge_cache: dashmap::DashMap<(uuid::Uuid, EdgeName, NodeType), GetEdgeSchemaResponse>,
+    r_edge_cache: Cache<(uuid::Uuid, EdgeName, NodeType), EdgeName>,
 }
 
 impl ReverseEdgeResolver {
-    pub fn new(schema_client: GraphSchemaManagerClient, cache_size: usize) -> Self {
-        let r_edge_cache = dashmap::DashMap::with_capacity(cache_size);
+    pub fn new(schema_client: GraphSchemaManagerClient, cache_size: u64) -> Self {
+        let r_edge_cache = Cache::new(cache_size);
         Self {
             schema_client,
             r_edge_cache,
@@ -44,43 +41,25 @@ impl ReverseEdgeResolver {
         node_type: NodeType,
         edge_name: EdgeName,
     ) -> Result<EdgeName, ReverseEdgeResolverError> {
-        let mut schema_client = self.schema_client.clone();
-        let response = schema_client
-            .get_edge_schema(GetEdgeSchemaRequest {
-                tenant_id,
-                node_type: node_type.clone(),
-                edge_name: edge_name.clone(),
-            })
-            .await?;
+        let cache = &self.r_edge_cache;
+        let key = (tenant_id, edge_name.clone(), node_type.clone());
 
-        let reverse_name = response.reverse_edge_name;
-        Ok(reverse_name)
+        match cache.get(&key) {
+            Some(r_edge_name) => Ok(r_edge_name),
+            None => {
+                let mut schema_client = self.schema_client.clone();
+                let response = schema_client
+                    .get_edge_schema(GetEdgeSchemaRequest {
+                        tenant_id,
+                        node_type: node_type.clone(),
+                        edge_name: edge_name.clone(),
+                    })
+                    .await?;
 
-        // TODO: Resurrect the below once we figure out caching for Graph Mutation
-        // https://github.com/grapl-security/issue-tracker/issues/1028
-
-        // entry.insert(response);
-        // match self
-        //     .r_edge_cache
-        //     .entry((tenant_id, edge_name.clone(), node_type.clone()))
-        // {
-        //     dashmap::mapref::entry::Entry::Occupied(entry) => {
-        //         Ok(entry.get().reverse_edge_name.clone())
-        //     }
-        //     dashmap::mapref::entry::Entry::Vacant(entry) => {
-        //         let mut schema_client = self.schema_client.clone();
-        //         let response = schema_client
-        //             .get_edge_schema(GetEdgeSchemaRequest {
-        //                 tenant_id,
-        //                 node_type: node_type.clone(),
-        //                 edge_name: edge_name.clone(),
-        //             })
-        //             .await?;
-        //
-        //         let reverse_name = response.reverse_edge_name.clone();
-        //         entry.insert(response);
-        //         Ok(reverse_name)
-        //     }
-        // }
+                let r_edge_name = response.reverse_edge_name.clone();
+                cache.insert(key, r_edge_name.clone()).await;
+                Ok(r_edge_name)
+            }
+        }
     }
 }

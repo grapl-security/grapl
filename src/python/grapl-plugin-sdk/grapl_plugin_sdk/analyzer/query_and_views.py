@@ -12,7 +12,6 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import DefaultDict, Deque, Iterable, Iterator, Mapping, Sequence
 
-from python_proto.api.graph_query.v1beta1.client import GraphQueryClient
 from python_proto.api.graph_query.v1beta1.messages import (
     EdgeNameMap,
     EdgeQueryMap,
@@ -28,6 +27,7 @@ from python_proto.api.graph_query.v1beta1.messages import (
     StringFilter,
     UidFilter,
 )
+from python_proto.api.graph_query_proxy.v1beta1.client import GraphQueryProxyClient
 from python_proto.common import Uuid
 from python_proto.grapl.common.v1beta1.messages import (
     EdgeName,
@@ -173,14 +173,14 @@ class NodeQueryIterator:
 @dataclass(frozen=True, slots=True)
 class NodeView(NodePropertiesView):
     graph: GraphView
-    graph_query_client: GraphQueryClient
+    graph_query_client: GraphQueryProxyClient
     tenant_id: Uuid
 
     @staticmethod
     def from_parts(
         node_properties: NodePropertiesView,
         graph: GraphView,
-        graph_query_client: GraphQueryClient,
+        graph_query_client: GraphQueryProxyClient,
         tenant_id: Uuid,
     ) -> NodeView:
         return NodeView(
@@ -227,7 +227,6 @@ class NodeView(NodePropertiesView):
         graph_query = node_query.into_graph_query()
 
         response = self.graph_query_client.query_from_uid(
-            tenant_id=self.tenant_id,
             node_uid=self.uid,
             graph_query=graph_query,
         )
@@ -273,13 +272,12 @@ class NodeSchema:
 def query_with_uid(
     graph_query: GraphQuery,
     uid: Uid,
-    client: GraphQueryClient,
+    client: GraphQueryProxyClient,
     tenant_id: Uuid,
 ) -> NodeView | None:
     response = client.query_with_uid(
         node_uid=uid,
         graph_query=graph_query,
-        tenant_id=tenant_id,
     )
     match response.maybe_match:
         case NoMatchWithUid() as inner:
