@@ -96,9 +96,11 @@ service:
   pipelines:
     metrics:
       receivers: [prometheus]
-      exporters: [otlp/ls]
+      processors: [batch]
+      exporters: [logging, otlp/ls]
     traces:
       receivers: [jaeger, otlp, zipkin]
+      processors: [batch, memory_limiter, probabilistic_sampler]
       exporters: [logging, otlp/ls]
 """
     )
