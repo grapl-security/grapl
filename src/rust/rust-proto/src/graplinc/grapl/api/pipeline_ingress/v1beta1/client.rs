@@ -30,6 +30,7 @@ use crate::{
 
 pub type PipelineIngressClientError = GrpcClientError;
 
+#[derive(Clone)]
 pub struct PipelineIngressClient {
     executor: Executor,
     proto_client: PipelineIngressServiceClientProto<tonic::transport::Channel>,

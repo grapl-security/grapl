@@ -627,7 +627,8 @@ job "grapl-core" {
         GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
 
-        PLUGIN_REGISTRY_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+        PLUGIN_REGISTRY_CLIENT_ADDRESS  = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+        PIPELINE_INGRESS_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
 
         GRAPL_WEB_UI_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_web-ui-port}"
         GRAPL_GOOGLE_CLIENT_ID    = var.google_client_id
@@ -657,6 +658,10 @@ job "grapl-core" {
             upstreams {
               destination_name = "plugin-registry"
               local_bind_port  = 1001
+            }
+            upstreams {
+              destination_name = "pipeline-ingress"
+              local_bind_port  = 1002
             }
           }
         }

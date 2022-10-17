@@ -1994,6 +1994,7 @@ dependencies = [
  "actix-web",
  "argon2",
  "awc",
+ "bytes",
  "chrono",
  "clap 3.2.13",
  "e2e-tests",
