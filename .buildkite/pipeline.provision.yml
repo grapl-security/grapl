@@ -120,6 +120,8 @@ steps:
     build:
       commit: "${BULIDKITE_COMMIT}"
       branch: "${BUILDKITE_BRANCH}"
+
+  - wait
   # This makes use of the Pulumi binary installed on our agents, and
   # uses it *only* to extract information from the Pulumi YAML stack
   # file.
