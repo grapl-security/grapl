@@ -15,6 +15,8 @@ steps:
       - grapl-security/vault-env#v0.2.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
+            # dump_artifacts.sh uses Pants; let's benefit from the cache
+            - grapl/TOOLCHAIN_AUTH_TOKEN
       - improbable-eng/metahook#v0.4.1:
           post-command: |
             .buildkite/scripts/grapl_testing_stack/dump_artifacts.sh
