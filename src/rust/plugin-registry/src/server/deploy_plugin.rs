@@ -84,7 +84,6 @@ pub fn get_job(
                 ("tenant_id", plugin.tenant_id.to_string()),
                 // Passthrough vars
                 ("rust_log", passthru.rust_log),
-                ("observability_env_vars", passthru.observability_env_vars),
             ]);
             if plugin_type == PluginType::Analyzer {
                 job_file_vars.insert("graph_query_proxy_image", passthru.graph_query_proxy_image);
