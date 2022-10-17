@@ -16,11 +16,15 @@ def get_observability_env_vars() -> str:
     # Default is 512. We were getting errors that our Thrift messages were too big.
     otel_bsp_max_export_batch_size = 32
 
+    # metrics_exporter_endpoint = "http://${NOMAD_UPSTREAM_ADDR_otel-grpc}"
+    metrics_exporter_endpoint = f"http://{otel_host}:4317"
+
     return f"""
         OTEL_EXPORTER_JAEGER_AGENT_HOST = {otel_host}
         OTEL_EXPORTER_JAEGER_AGENT_PORT = {otel_port}
         OTEL_EXPORTER_ZIPKIN_ENDPOINT   = {zipkin_endpoint}
         OTEL_BSP_MAX_EXPORT_BATCH_SIZE = {otel_bsp_max_export_batch_size}
+        OTEL_OTLP_METRICS_EXPORTER_ENDPOINT = "{metrics_exporter_endpoint}"
     """
 
 
@@ -95,14 +99,14 @@ service:
       level: "debug"
   pipelines:
     metrics:
-      receivers: [prometheus]
+      receivers: [prometheus, otlp]
       processors: [batch]
-      # To enable debug logging, add logging to exporters
+      # To enable debug logging, add logging to the exporters array below
       exporters: [otlp/ls]
     traces:
       receivers: [jaeger, otlp, zipkin]
       processors: [batch, memory_limiter, probabilistic_sampler]
-      # To enable debug logging, add logging to exporters
+      # To enable debug logging, add logging to the exporters array below
       exporters: [otlp/ls]
 """
     )
