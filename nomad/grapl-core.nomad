@@ -627,7 +627,8 @@ job "grapl-core" {
         GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
 
-        PLUGIN_REGISTRY_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+        PLUGIN_REGISTRY_CLIENT_ADDRESS  = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+        PIPELINE_INGRESS_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
 
         GRAPL_WEB_UI_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_web-ui-port}"
         GRAPL_GOOGLE_CLIENT_ID    = var.google_client_id
@@ -657,6 +658,10 @@ job "grapl-core" {
             upstreams {
               destination_name = "plugin-registry"
               local_bind_port  = 1001
+            }
+            upstreams {
+              destination_name = "pipeline-ingress"
+              local_bind_port  = 1002
             }
           }
         }
@@ -848,7 +853,6 @@ job "grapl-core" {
         PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE = var.container_images["hax-docker-plugin-runtime"]
         PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID           = var.plugin_registry_bucket_aws_account_id
         PLUGIN_REGISTRY_BUCKET_NAME                     = var.plugin_registry_bucket_name
-        PLUGIN_EXECUTION_OBSERVABILITY_ENV_VARS         = var.observability_env_vars
         PLUGIN_EXECUTION_GENERATOR_SIDECAR_IMAGE        = var.container_images["generator-execution-sidecar"]
         PLUGIN_EXECUTION_ANALYZER_SIDECAR_IMAGE         = var.container_images["analyzer-execution-sidecar"]
         PLUGIN_EXECUTION_GRAPH_QUERY_PROXY_IMAGE        = var.container_images["graph-query-proxy"]

@@ -3,7 +3,6 @@ import sys
 sys.path.insert(0, "..")
 
 from typing import Mapping, cast
-from urllib.parse import urlparse
 
 import pulumi_aws as aws
 from infra import config, dynamodb, log_levels
@@ -135,21 +134,9 @@ def main() -> None:
     nomad_provider: pulumi.ProviderResource | None = None
     consul_provider: pulumi.ProviderResource | None = None
 
-    # Use the nomad ALB address or default to the local host address.
-    # Apparently nomad templates use a different templating syntax than anywhere else
-    nomad_endpoint: pulumi.Output[
-        str
-    ] | str = '{{ env "attr.unique.network.ip-address" }}:4646'
-
     if not config.LOCAL_GRAPL:
         upstream_stacks = UpstreamStacks()
         nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server)
-
-        # The nomad address is prepended with http:// by default. However that combined with a non-standard port is an
-        # invalid hostname, which causes the otel-collector to break. As such we need to strip this out.
-        nomad_endpoint = pulumi.Output.all(
-            nomad_endpoint=nomad_provider.address,
-        ).apply(lambda endpoint: urlparse(f"{nomad_endpoint}").netloc)
 
         # Using get_output instead of require_output so that preview passes.
         # NOTE wimax Feb 2022: Not sure the above is still the case
@@ -342,10 +329,12 @@ def main() -> None:
     trace_sampling_percentage = pulumi_config.get_float(
         key="trace-sampling-percentage", default=100.0
     )
+    # Apparently nomad templates use a different templating syntax than anywhere else
+    nomad_agent_endpoint: str = '{{ env "attr.unique.network.ip-address" }}:4646'
 
     otel_configuration = otel_config(
         lightstep_token=lightstep_access_token,
-        nomad_endpoint=nomad_endpoint,
+        nomad_agent_endpoint=nomad_agent_endpoint,
         lightstep_endpoint=lightstep_endpoint,
         lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
         trace_sampling_percentage=trace_sampling_percentage,

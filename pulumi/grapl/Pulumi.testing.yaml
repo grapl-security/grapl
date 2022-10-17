@@ -24,10 +24,10 @@ config:
     organization-management: 20221017141903-3522c6a
     pipeline-ingress: 20221017141903-3522c6a
     plugin-bootstrap: 20221017141903-3522c6a
-    plugin-registry: 20221017141903-3522c6a
+    plugin-registry: 20221017162416-73bde83
     plugin-work-queue: 20221017141903-3522c6a
     provisioner: 20221017141903-3522c6a
-    rust-integration-tests: 20221017141903-3522c6a
+    rust-integration-tests: 20221017162416-73bde83
     scylla-provisioner: 20221017141903-3522c6a
     sysmon-generator: 20220809152144-3c3caf3
     uid-allocator: 20221017141903-3522c6a
