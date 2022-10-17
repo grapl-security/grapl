@@ -169,6 +169,7 @@ def _get_allocations(
         job_name: [
             NomadAllocation(a, parent=parent, opts=opts)
             for a in nomad_client.job.get_allocations(job_name)
+            if a["ClientStatus"] != "lost"
         ]
         for job_name in job_names
     }
