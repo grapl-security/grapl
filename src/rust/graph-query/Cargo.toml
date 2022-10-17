@@ -14,7 +14,6 @@ env_logger = "0.9.0"
 futures = "0.3.21"
 grapl-tracing = { path = "../grapl-tracing" }
 itertools = "0.10.3"
-prost = "0.9.0"
 rand = "0.8.5"
 rust-proto = { path = "../rust-proto" }
 rustc-hash = "1.1.0"
@@ -24,16 +23,12 @@ serde = { version = "1.0.136", features = ["derive"] }
 test-log = { version = "0.2.8", features = ["trace"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
-tonic = "0.6.1"
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "fmt"
 ] }
 uuid = { workspace = true }
-
-[build-dependencies]
-tonic-build = { version = "0.6.0", features = ["prost"] }
 
 [dev-dependencies]
 e2e-tests = { path = "../e2e-tests" }
