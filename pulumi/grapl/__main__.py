@@ -40,7 +40,6 @@ from infra.scylla import ScyllaInstance
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
 from infra.upstream_stacks import UpstreamStacks
-from pulumi.resource import CustomTimeouts
 from typing_extensions import Final
 
 import pulumi
@@ -285,8 +284,6 @@ def main() -> None:
         ),
     }
 
-    nomad_grapl_core_timeout = "5m"
-
     ConsulIntentions(
         "consul-intentions",
         # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
@@ -359,9 +356,6 @@ def main() -> None:
         vars=dict(otel_config=otel_configuration),
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
-            custom_timeouts=CustomTimeouts(
-                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-            ),
         ),
     )
 
@@ -509,9 +503,6 @@ def main() -> None:
         vars=graph_db_args,
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
-            custom_timeouts=CustomTimeouts(
-                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-            ),
         ),
     )
 
@@ -529,9 +520,6 @@ def main() -> None:
         vars=grapl_core_vars,
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
-            custom_timeouts=CustomTimeouts(
-                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-            ),
         ),
     )
 
