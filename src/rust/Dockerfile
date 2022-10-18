@@ -6,6 +6,7 @@ ARG RUST_VERSION
 
 FROM rust:${RUST_VERSION}-slim-bullseye AS base
 
+ARG PROTOC_VERSION
 ARG RUST_BUILD=dev-local-grapl
 
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
@@ -35,12 +36,30 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
 # - in plugin-registry image
 WORKDIR /nomad
 RUN <<EOF
-NOMAD_VERSION="1.2.4"
+NOMAD_VERSION="1.2.4"  # TODO: ARG-ify this like PROTOC_VERSION
 ZIP_NAME="nomad_${NOMAD_VERSION}_linux_amd64.zip"
 curl --remote-name --proto '=https' --tlsv1.2 -sSf \
   "https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/${ZIP_NAME}"
 unzip "${ZIP_NAME}"
 rm "${ZIP_NAME}"
+EOF
+
+WORKDIR /protoc-install
+RUN <<EOF
+    echo "${PROTOC_VERSION}"
+    PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+    ZIP_PATH="/tmp/protoc.zip"
+
+    # Download the zip
+    curl \
+        --location \
+        --output "${ZIP_PATH}" \
+        "${PB_REL}/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+
+    mkdir --parents ~/.local
+    # -d: Unzip it into / - which drops `protoc` in /bin.
+    unzip -d / "${ZIP_PATH}"
+    rm "${ZIP_PATH}"
 EOF
 
 # Install rust toolchain before copying sources to avoid unecessarily

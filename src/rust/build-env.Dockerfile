@@ -42,7 +42,6 @@ EOF
 
 WORKDIR /protoc-install
 RUN <<EOF
-    echo "${PROTOC_VERSION}"
     PB_REL="https://github.com/protocolbuffers/protobuf/releases"
     ZIP_PATH="/tmp/protoc.zip"
 
@@ -57,7 +56,6 @@ RUN <<EOF
     unzip -d / "${ZIP_PATH}"
     rm "${ZIP_PATH}"
 EOF
-
 
 # This is where tarpaulin gets installed; using a volume means we get
 # to install it (and compile it!) once and forget it.
