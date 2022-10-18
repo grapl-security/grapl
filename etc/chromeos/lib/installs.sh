@@ -13,6 +13,8 @@ else
     ssm_arch_alias="arm64"
 fi
 
+GIT_ROOT=$(git rev-parse --show-toplevel)
+
 ## helper functions
 source_profile() {
     # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
@@ -402,7 +404,6 @@ install_nomad_chromeos_workaround() {
 
 install_git_hooks() {
     echo_banner "Installing git hooks"
-    GIT_ROOT=$(git rev-parse --show-toplevel)
     ln --symbolic --relative --force "$GIT_ROOT/etc/hooks/pre-commit.sh" "$GIT_ROOT/.git/hooks/pre-commit"
 }
 
@@ -412,7 +413,7 @@ install_sqlx_prepare_deps() {
 }
 
 install_protoc() {
-    PROTOC_VERSION="3.21.7"
+    PROTOC_VERSION="$("${GIT_ROOT}"/build-support/protoc_version.sh)"
     PB_REL="https://github.com/protocolbuffers/protobuf/releases"
     ZIP_PATH="/tmp/protoc.zip"
 
