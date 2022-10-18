@@ -40,7 +40,7 @@ rm "${ZIP_NAME}"
 mv /nomad/nomad /bin
 EOF
 
-WORKDIR /protoc-install
+WORKDIR /tmp
 RUN <<EOF
     PB_REL="https://github.com/protocolbuffers/protobuf/releases"
     ZIP_PATH="/tmp/protoc.zip"

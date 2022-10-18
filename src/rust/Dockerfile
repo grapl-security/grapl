@@ -44,7 +44,7 @@ unzip "${ZIP_NAME}"
 rm "${ZIP_NAME}"
 EOF
 
-WORKDIR /protoc-install
+WORKDIR /tmp
 RUN <<EOF
     echo "${PROTOC_VERSION}"
     PB_REL="https://github.com/protocolbuffers/protobuf/releases"
