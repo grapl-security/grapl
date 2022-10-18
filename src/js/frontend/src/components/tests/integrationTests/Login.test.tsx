@@ -54,7 +54,6 @@ describe("Login Component", () => {
       fireEvent.click(submitButton);
     });
 
-
     await waitFor(() => {
       expect(username).not.toBeNull();
       expect(getCreds).not.toBeNull();
@@ -64,4 +63,3 @@ describe("Login Component", () => {
     screen.debug();
   });
 });
-

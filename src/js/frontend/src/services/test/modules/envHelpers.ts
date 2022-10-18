@@ -16,10 +16,15 @@ export default function getAwsClient<T>(clientType: Constructable<T>): T {
     const endpoint = process.env.GRAPL_AWS_ENDPOINT;
     const region = process.env.AWS_DEFAULT_REGION || process.env.AWS_REGION;
 
+    const username = process.env.GRAPL_TEST_USER_NAME;
+    const password = process.env.GRAPL_TEST_USER_PASSWORD_SECRET_ID;
+
     return new clientType({
       endpoint: endpoint,
       credentials: credentials,
       region: region,
+      username: username,
+      password: password
     });
   } else {
     // Running on AWS

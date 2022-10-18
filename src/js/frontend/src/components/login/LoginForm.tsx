@@ -25,7 +25,6 @@ const LoginForm = () => {
         ...state,
         loginFailed: true,
       });
-
     }
   };
 

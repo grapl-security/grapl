@@ -82,5 +82,6 @@ def main() -> None:
         opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
 
+
 if __name__ == "__main__":
     main()
