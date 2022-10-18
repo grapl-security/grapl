@@ -1,4 +1,5 @@
 .python-version @christophermaier
+.protoc-version @christophermaier
 /3rdparty/ @christophermaier
 /bin/ @christophermaier
 /buf.yaml @christophermaier

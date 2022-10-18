@@ -14,6 +14,7 @@ update_linux
 fix_shell_completion
 install_build_tooling
 install_utilities
+install_protoc
 install_rust_and_utilities
 install_pyenv
 install_pipx

@@ -15,6 +15,8 @@ RUST_VERSION="$(./build-support/rust_version.sh)"
 export RUST_VERSION
 PYTHON_VERSION="$(./build-support/python_version.sh)"
 export PYTHON_VERSION
+PROTOC_VERSION="$(./build-support/protoc_version.sh)"
+export PROTOC_VERSION
 
 # While we have Docker Compose files present, we have to explicitly
 # declare we're using an HCL file (compose YAML files are used
