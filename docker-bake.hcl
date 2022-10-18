@@ -87,6 +87,11 @@ variable "PYTHON_VERSION" {
 variable "DIST_DIR" {
 }
 
+# As of Tonic 0.8, we need to download/install our own `protoc` 
+# in the Rust base image.
+variable "PROTOC_VERSION" {
+}
+
 # When performing a release build, we will tag our images with our
 # "raw" Cloudsmith repository Docker registry address. We have a
 # series of repositories that we promote containers through as they
@@ -290,8 +295,9 @@ target "_rust-base" {
   }
   dockerfile = "rust/Dockerfile"
   args = {
-    RUST_BUILD   = "${RUST_BUILD}"
-    RUST_VERSION = "${RUST_VERSION}"
+    RUST_BUILD     = "${RUST_BUILD}"
+    RUST_VERSION   = "${RUST_VERSION}"
+    PROTOC_VERSION = "${PROTOC_VERSION}"
   }
 }
 
