@@ -411,6 +411,24 @@ install_sqlx_prepare_deps() {
     sudo apt install --yes netcat # used for `nc`
 }
 
+install_protoc() {
+    PROTOC_VERSION="3.15.8"
+    PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+    ZIP_PATH="/tmp/protoc.zip"
+
+    # Download the zip
+    curl \
+        --location \
+        --output "${ZIP_PATH}" \
+        "${PB_REL}/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+
+    mkdir --parents ~/.local
+    # -o: overwrite preexisting ones
+    # -d: Unzip it into ~/.local - which drops `protoc` in ~/.local/bin.
+    unzip -o -d ~/.local "${ZIP_PATH}"
+    rm "${ZIP_PATH}"
+}
+
 install_bk() {
     echo_banner "Installing Buildkite's 'bk' CLI tool"
 
