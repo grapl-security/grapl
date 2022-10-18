@@ -880,10 +880,11 @@ job "grapl-core" {
       }
 
       check {
-        type     = "grpc"
-        port     = "plugin-registry-port"
-        interval = "10s"
-        timeout  = "3s"
+        type         = "grpc"
+        port         = "plugin-registry-port"
+        grpc_service = "PluginRegistryService"
+        interval     = "10s"
+        timeout      = "3s"
       }
     }
   }
