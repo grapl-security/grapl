@@ -47,6 +47,7 @@ RUN <<EOF
 
     # Download the zip
     curl \
+        --proto '=https' --tlsv1.2 -sSf \
         --location \
         --output "${ZIP_PATH}" \
         "${PB_REL}/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
