@@ -227,7 +227,7 @@ dump-artifacts-local:  ## Run the script that dumps Nomad/Docker logs after test
 	# `--dump-connect-proxy-logs` to debug Consul Connect.
 	./pants dump-artifacts \
 		--compose-project="${COMPOSE_PROJECT_NAME}" \
-		--dump-agent-logs
+		--dump-agent-logs --dump-connect-proxy-logs
 
 ##@ Test 🧪
 
