@@ -412,7 +412,7 @@ install_sqlx_prepare_deps() {
 }
 
 install_protoc() {
-    PROTOC_VERSION="3.15.8"
+    PROTOC_VERSION="3.21.7"
     PB_REL="https://github.com/protocolbuffers/protobuf/releases"
     ZIP_PATH="/tmp/protoc.zip"
 

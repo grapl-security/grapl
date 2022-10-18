@@ -13,20 +13,20 @@ clap = { workspace = true }
 client-executor = { path = "../client-executor" }
 futures = "0.3"
 grapl-utils = { path = "../grapl-utils" }
-prost = "0.10"
+prost = "0.11"
 rand = "0.8.5"
 rustc-hash = "1.1.0"
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["time"] }
 tokio-stream = { version = "0.1", features = ["net"] }
-tonic = { version = "0.7", features = ["default", "compression", "tls"] }
-tonic-health = "0.6"
+tonic = { version = "0.8", features = ["default", "tls"] }
+tonic-health = "0.7"
 tracing = { workspace = true }
 uuid = { workspace = true }
 
 [build-dependencies]
-prost-build = "0.10"
-tonic-build = { version = "0.7", features = ["default", "compression"] }
+prost-build = "0.11"
+tonic-build = { version = "0.8", features = ["default"] }
 
 [dev-dependencies]
 proptest = "1.0"
