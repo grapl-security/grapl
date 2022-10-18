@@ -37,6 +37,27 @@ rm "${ZIP_NAME}"
 mv /nomad/nomad /bin
 EOF
 
+ARG PROTOC_VERSION
+WORKDIR /protoc-install
+RUN <<EOF
+    echo "${PROTOC_VERSION}"
+    PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+    ZIP_PATH="/tmp/protoc.zip"
+
+    # Download the zip
+    curl \
+        --location \
+        --output "${ZIP_PATH}" \
+        "${PB_REL}/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+
+    mkdir --parents ~/.local
+    # -o: overwrite preexisting ones
+    # -d: Unzip it into / - which drops `protoc` in /bin.
+    unzip -o -d / "${ZIP_PATH}"
+    rm "${ZIP_PATH}"
+EOF
+
+
 # This is where tarpaulin gets installed; using a volume means we get
 # to install it (and compile it!) once and forget it.
 ENV CARGO_HOME=/grapl/cargo
