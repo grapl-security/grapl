@@ -114,7 +114,7 @@ job "rust-integration-tests" {
     }
 
     network {
-      mode = "bridge"
+      mode = "host"
       dns {
         servers = local.dns_servers
       }
@@ -208,7 +208,7 @@ job "rust-integration-tests" {
         # web-ui
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table
         GRAPL_USER_SESSION_TABLE      = var.user_session_table
-        GRAPL_WEB_UI_ENDPOINT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_web-ui}"
+        GRAPL_WEB_UI_ENDPOINT_ADDRESS = "http://localhost:1234"
 
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:1004" # not used but required due to clap
         ORGANIZATION_MANAGEMENT_DB_ADDRESS   = "${var.organization_management_db.hostname}:${var.organization_management_db.port}"
