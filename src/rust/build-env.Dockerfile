@@ -4,6 +4,9 @@ ARG RUST_VERSION
 
 FROM rust:${RUST_VERSION}-slim-bullseye
 
+# Fun fact: ARGs before FROM are out-of-scope after the FROM
+ARG PROTOC_VERSION
+
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-build-env-apt <<EOF
@@ -27,7 +30,7 @@ EOF
 # - in plugin-registry unit tests
 WORKDIR /nomad
 RUN <<EOF
-NOMAD_VERSION="1.2.4"
+NOMAD_VERSION="1.2.4"  # TODO: ARG-ify this like PROTOC_VERSION
 ZIP_NAME="nomad_${NOMAD_VERSION}_linux_amd64.zip"
 curl --remote-name --proto '=https' --tlsv1.2 -sSf \
   "https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/${ZIP_NAME}"
@@ -37,7 +40,6 @@ rm "${ZIP_NAME}"
 mv /nomad/nomad /bin
 EOF
 
-ARG PROTOC_VERSION
 WORKDIR /protoc-install
 RUN <<EOF
     echo "${PROTOC_VERSION}"
@@ -51,9 +53,8 @@ RUN <<EOF
         "${PB_REL}/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
 
     mkdir --parents ~/.local
-    # -o: overwrite preexisting ones
     # -d: Unzip it into / - which drops `protoc` in /bin.
-    unzip -o -d / "${ZIP_PATH}"
+    unzip -d / "${ZIP_PATH}"
     rm "${ZIP_PATH}"
 EOF
 
