@@ -20,12 +20,12 @@ const LoginForm = () => {
       }
       window.history.replaceState("#/login", "", "#/");
       window.location.reload();
-      console.log("User successfully logged in using Login Form.");
     } else {
       setState({
         ...state,
         loginFailed: true,
       });
+
     }
   };
 

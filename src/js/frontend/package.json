@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.190.0",
     "@react-oauth/google": "latest",
     "axios": "^0.27.2",
     "formik": "^2.2.9",

@@ -31,10 +31,10 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
-#variable "test_user_password_secret_id" {
-#  type        = string
-#  description = "The SecretsManager SecretID for the test user's password"
-#}
+variable "test_user_password_secret_id" {
+  type        = string
+  description = "The SecretsManager SecretID for the test user's password"
+}
 
 
 job "typescript-integration-tests" {
@@ -77,6 +77,7 @@ job "typescript-integration-tests" {
       env {
         AWS_REGION           = "${var.aws_region}"
         GRAPL_TEST_USER_NAME = var.test_user_name
+        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
       }
     }
   }
