@@ -119,6 +119,7 @@ fn producer(
     sasl_password: secrecy::SecretString,
 ) -> Result<FutureProducer, ConfigurationError> {
     configure(bootstrap_servers, sasl_username, sasl_password)
+        .set("compression.type", "zstd")
         .set("acks", "all")
         .create()
         .map_err(|e| ConfigurationError::ProducerCreateFailed(e))
