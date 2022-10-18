@@ -33,7 +33,7 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
             .wrap(
                 CookieSession::private(&config.session_key)
                     .path("/")
-                    // .secure(true),
+                    .secure(true),
             )
             .wrap(actix_web::middleware::DefaultHeaders::new().add((
                 actix_web::http::header::CONTENT_SECURITY_POLICY_REPORT_ONLY,
