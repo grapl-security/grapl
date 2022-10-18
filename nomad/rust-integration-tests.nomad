@@ -248,7 +248,7 @@ job "rust-integration-tests" {
         # We need a lot of memory because we load the 150MB
         # /test-fixtures/example-generator
         # into memory
-        memory = 1024
+        memory = 2048
       }
     }
   }
