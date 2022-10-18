@@ -144,7 +144,7 @@ class Kafka(pulumi.ComponentResource):
                         partitions=2,
                         replication_factor=3,
                         config={
-                            "compression.type": "zstd",
+                            "compression.type": "producer",
                             "min.insync.replicas": 2,
                         },
                         opts=pulumi.ResourceOptions(provider=provider),
