@@ -14,10 +14,6 @@ async fn publish_log() -> eyre::Result<()> {
 
     let create_response = crate::plugin::create_plugin(&app, plugin_name).await?;
 
-    //TODO: this shouldn't be necessary, but we're seeing 500 errors without it.
-    // I'll file a task to look into it for now so we can unblock frontend work.
-    std::thread::sleep(std::time::Duration::from_secs(5));
-
     let plugin_metadata =
         crate::plugin::get_plugin_metadata(&app, &create_response.plugin_id).await?;
 
