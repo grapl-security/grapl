@@ -9,8 +9,7 @@ import { expect, test } from "@jest/globals";
 import { act } from "react-dom/test-utils";
 import LoginForm from "components/login/Login";
 
-import getAwsClient from "../../../services/test/modules/envHelpers";
-import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
+import getSecrets from "../../../services/test/modules/getSecretValues";
 
 // to show the result of render(), use screen.debug() which displays HTML
 describe("Login Component", () => {
@@ -29,7 +28,8 @@ describe("Login Component", () => {
     const password = screen.getByPlaceholderText(/Password/i);
     const submitButton = screen.getByText("SUBMIT");
 
-    let getCreds = getAwsClient(SecretsManagerClient);
+    let getCreds = await getSecrets;
+    console.log("getCreds", getCreds);
 
     await waitFor(() => {
       fireEvent.change(username, {
@@ -45,7 +45,7 @@ describe("Login Component", () => {
     await waitFor(() => {
       fireEvent.change(password, {
         target: {
-          value: getCreds.GRAPL_TEST_USER_PASSWORD_SECRET_ID,
+          value: getCreds,
         },
       });
     });
