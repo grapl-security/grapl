@@ -209,6 +209,11 @@ lockfile = "3rdparty/python/pyupgrade.lockfile"
 # For keep-runtime-typing to work we also can't use py30-plus
 args = ["--py39-plus", "--keep-runtime-typing"]
 
+# The protoc section here is consumed both by Pants and also
+# the `build-support/protoc_version.sh` script.
+# It is the single source of truth for the version of protoc both our
+# Python and Rust libraries should be consuming.
+# Please don't refactor it away!
 [protoc]
 version = "3.20.1"
 
