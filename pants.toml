@@ -209,6 +209,9 @@ lockfile = "3rdparty/python/pyupgrade.lockfile"
 # For keep-runtime-typing to work we also can't use py30-plus
 args = ["--py39-plus", "--keep-runtime-typing"]
 
+[protoc]
+protoc-version = "3.20.1"
+
 [tailor]
 ignore_paths = [
   # TODO: We need to find a better way to manage our docs
