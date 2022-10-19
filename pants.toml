@@ -210,7 +210,7 @@ lockfile = "3rdparty/python/pyupgrade.lockfile"
 args = ["--py39-plus", "--keep-runtime-typing"]
 
 [protoc]
-protoc-version = "3.20.1"
+version = "3.20.1"
 
 [tailor]
 ignore_paths = [
