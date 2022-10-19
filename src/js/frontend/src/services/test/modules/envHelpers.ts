@@ -24,7 +24,7 @@ export default function getAwsClient<T>(clientType: Constructable<T>): T {
       credentials: credentials,
       region: region,
       username: username,
-      password: password
+      password: password,
     });
   } else {
     // Running on AWS
