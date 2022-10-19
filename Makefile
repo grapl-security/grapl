@@ -21,6 +21,9 @@ PYTHON_VERSION ?= $(shell build-support/python_version.sh)
 RUST_VERSION ?= $(shell build-support/rust_version.sh)
 # Also influences Rust image build via docker-bake.hcl
 RUST_BUILD ?= dev-local-grapl
+# Also influences Rust image build via docker-bake.hcl
+PROTOC_VERSION ?= $(shell build-support/protoc_version.sh)
+
 UID = $(shell id --user)
 GID = $(shell id --group)
 PWD = $(shell pwd)

@@ -2,5 +2,6 @@
 
 mod auth;
 mod config;
-mod plugin;
+mod ingress;
+pub mod plugin;
 mod test_app;

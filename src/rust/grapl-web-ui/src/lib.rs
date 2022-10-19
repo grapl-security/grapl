@@ -25,6 +25,7 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
             jsonwebtoken_google::Parser::new(&config.google_client_id),
         ));
         let plugin_registry_client = Data::new(config.plugin_registry_client.clone());
+        let pipeline_ingress_client = Data::new(config.pipeline_ingress_client.clone());
 
         App::new()
             .wrap(actix_web::middleware::Logger::default())
@@ -47,6 +48,7 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
             )))
             .app_data(web_client)
             .app_data(plugin_registry_client)
+            .app_data(pipeline_ingress_client)
             .app_data(web_authenticator)
             .configure(routes::config)
     })

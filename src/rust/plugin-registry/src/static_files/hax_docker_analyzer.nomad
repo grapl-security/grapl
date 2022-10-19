@@ -45,14 +45,6 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
-variable "observability_env_vars" {
-  type        = string
-  description = <<EOF
-With local-grapl, we have to inject env vars for Opentelemetry.
-In prod, this is currently disabled.
-EOF
-}
-
 job "grapl-plugin" {
   datacenters = ["dc1"]
   namespace   = "plugin-${var.plugin_id}"
@@ -148,12 +140,6 @@ job "grapl-plugin" {
         image = var.plugin_execution_sidecar_image
       }
 
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
-      }
-
       env {
         PLUGIN_EXECUTOR_PLUGIN_ID = var.plugin_id
 
@@ -175,12 +161,6 @@ job "grapl-plugin" {
 
       config {
         image = var.graph_query_proxy_image
-      }
-
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
       }
 
       env {
@@ -273,12 +253,6 @@ EOF
           x-amz-expected-bucket-owner = var.aws_account_id
           x-amz-meta-client-id        = "nomad-deployer"
         }
-      }
-
-      template {
-        data        = var.observability_env_vars
-        destination = "observability.env"
-        env         = true
       }
 
       env {

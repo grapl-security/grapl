@@ -4,6 +4,9 @@ ARG RUST_VERSION
 
 FROM rust:${RUST_VERSION}-slim-bullseye
 
+# Fun fact: ARGs before FROM are out-of-scope after the FROM
+ARG PROTOC_VERSION
+
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-build-env-apt <<EOF
@@ -27,7 +30,7 @@ EOF
 # - in plugin-registry unit tests
 WORKDIR /nomad
 RUN <<EOF
-NOMAD_VERSION="1.2.4"
+NOMAD_VERSION="1.2.4"  # TODO: ARG-ify this like PROTOC_VERSION
 ZIP_NAME="nomad_${NOMAD_VERSION}_linux_amd64.zip"
 curl --remote-name --proto '=https' --tlsv1.2 -sSf \
   "https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/${ZIP_NAME}"
@@ -35,6 +38,24 @@ unzip "${ZIP_NAME}"
 rm "${ZIP_NAME}"
 # Put it somewhere on PATH
 mv /nomad/nomad /bin
+EOF
+
+WORKDIR /tmp
+RUN <<EOF
+    PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+    ZIP_PATH="/tmp/protoc.zip"
+
+    # Download the zip
+    curl \
+        --proto '=https' --tlsv1.2 -sSf \
+        --location \
+        --output "${ZIP_PATH}" \
+        "${PB_REL}/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+
+    mkdir --parents ~/.local
+    # -d: Unzip it into / - which drops `protoc` in /bin.
+    unzip -d / "${ZIP_PATH}"
+    rm "${ZIP_PATH}"
 EOF
 
 # This is where tarpaulin gets installed; using a volume means we get

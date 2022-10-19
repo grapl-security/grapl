@@ -102,7 +102,7 @@ async fn plugin_lifecycle() -> eyre::Result<()> {
     Ok(())
 }
 
-async fn create_plugin(app: &TestApp, plugin_name: &str) -> eyre::Result<CreateResponse> {
+pub async fn create_plugin(app: &TestApp, plugin_name: &str) -> eyre::Result<CreateResponse> {
     let create_metadata_body = serde_json::json!({
             "plugin_name": plugin_name,
             "plugin_type": "generator",
@@ -136,7 +136,7 @@ async fn create_plugin(app: &TestApp, plugin_name: &str) -> eyre::Result<CreateR
     Ok(response_body)
 }
 
-async fn get_plugin_metadata(
+pub async fn get_plugin_metadata(
     app: &TestApp,
     plugin_id: &uuid::Uuid,
 ) -> eyre::Result<GetPluginMetadataResponse> {

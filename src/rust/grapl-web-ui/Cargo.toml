@@ -25,6 +25,7 @@ argon2 = { version = "0.4", features = ["std"] }
 awc = { version = "3", default_features = false, features = [
   "compress-brotli"
 ] }
+bytes = { workspace = true }
 chrono = { version = "0.4" }
 clap = { workspace = true }
 futures = "0.3"
