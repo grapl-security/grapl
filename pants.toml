@@ -209,6 +209,20 @@ lockfile = "3rdparty/python/pyupgrade.lockfile"
 # For keep-runtime-typing to work we also can't use py30-plus
 args = ["--py39-plus", "--keep-runtime-typing"]
 
+[protoc]
+# While this is the current default value for Pants (as of Pants
+# 2.13.0), we're going to explicitly list it. We programmatically read
+# this value in `build-support/protoc_version.sh` in order to use the
+# same version in our Rust build process. That script can find out
+# what version Pants would use even if we didn't explicitly list it
+# here, but being explicit here makes it very easy to find out what
+# version we're using, without having to run any script.
+#
+# As such, there's nothing magical or special about this value, and
+# you should feel no compunctions about updating it if you need to, or
+# when Pants updates its defaults.
+version = "3.20.1"
+
 [tailor]
 ignore_paths = [
   # TODO: We need to find a better way to manage our docs
