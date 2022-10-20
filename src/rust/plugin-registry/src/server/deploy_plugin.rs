@@ -5,7 +5,7 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginType;
 
 use super::{
     plugin_nomad_job,
-    s3_url::get_s3_url,
+    s3_uri::get_s3_uri,
     service::PluginRegistryServiceConfig,
 };
 use crate::{
@@ -54,7 +54,7 @@ pub fn get_job(
     let plugin_artifact_url = {
         let key = &plugin.artifact_s3_key;
         let bucket = &service_config.bucket_name;
-        get_s3_url(bucket, key)
+        get_s3_uri(bucket, key)
     };
     let passthru = service_config.passthrough_vars;
     let plugin_type = PluginType::try_from(plugin.plugin_type.as_str())
