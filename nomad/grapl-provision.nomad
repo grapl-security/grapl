@@ -69,6 +69,8 @@ variable "py_log_level" {
 }
 
 locals {
+  dns_servers = [attr.unique.network.ip-address]
+
   # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
   # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
   # Examples of keys we may add in the future: language, instance_id/ip, team
@@ -87,6 +89,9 @@ job "grapl-provision" {
   group "provisioner" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     task "provisioner" {
