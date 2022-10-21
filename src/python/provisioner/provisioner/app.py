@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 import boto3
 from argon2 import PasswordHasher
@@ -13,6 +14,9 @@ from grapl_common.env_helpers import (
 )
 from grapl_common.grapl_tracer import get_tracer
 from grapl_common.test_user_creds import get_test_user_creds
+from python_proto.api.scylla_provisioner.v1beta1.client import ScyllaProvisionerClient
+from python_proto.client import GrpcClientConfig
+from python_proto.common import Uuid
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -80,3 +84,16 @@ def provision() -> None:
         LOGGER.info("created test user")
 
         LOGGER.info("provisioning scylla")
+        scylla_provisioner_client = ScyllaProvisionerClient.connect(
+            client_config=GrpcClientConfig(
+                address=os.env["SCYLLA_PROVISIONER_CLIENT_ADDRESS"],
+            )
+        )
+
+        # scylla_provisioner's API takes a tenant_id but it doesn't use it
+        # anymore
+        arbitrary_tenant_id = uuid4()
+        scylla_provisioner_client.provision_graph_for_tenant(
+            tenant_id=Uuid.from_uuid(arbitrary_tenant_id)
+        )
+        LOGGER.info("provisioned scylla")

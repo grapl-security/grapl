@@ -14,6 +14,8 @@ from python_proto.serde import SerDe
 class ProvisionGraphForTenantRequest(SerDe[proto.ProvisionGraphForTenantRequest]):
     tenant_id: Uuid
 
+    _proto_cls = proto.ProvisionGraphForTenantResponse
+
     @classmethod
     def from_proto(
         cls, proto: proto.ProvisionGraphForTenantRequest
@@ -28,6 +30,8 @@ class ProvisionGraphForTenantRequest(SerDe[proto.ProvisionGraphForTenantRequest]
 
 @dataclass(frozen=True, slots=True)
 class ProvisionGraphForTenantResponse(SerDe[proto.ProvisionGraphForTenantResponse]):
+    _proto_cls = proto.ProvisionGraphForTenantResponse
+
     @classmethod
     def from_proto(
         cls,
