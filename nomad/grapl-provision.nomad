@@ -127,6 +127,8 @@ job "grapl-provision" {
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
         GRAPL_LOG_LEVEL                    = var.py_log_level
 
+        SCYLLA_PROVISIONER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_scylla-provisioner}"
+
         OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
     }
@@ -135,7 +137,12 @@ job "grapl-provision" {
       name = "provisioner"
       connect {
         sidecar_service {
-          proxy {}
+          proxy {
+            upstreams {
+              destination_name = "scylla-provisioner"
+              local_bind_port  = 1000
+            }
+          }
         }
       }
     }
