@@ -6,7 +6,6 @@ from graplinc.grapl.api.scylla_provisioner.v1beta1 import (
     scylla_provisioner_pb2 as proto,
 )
 from python_proto.common import Uuid
-from python_proto.grapl.common.v1beta1.messages import Uid
 from python_proto.serde import SerDe
 
 
