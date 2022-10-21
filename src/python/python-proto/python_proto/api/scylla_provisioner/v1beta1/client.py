@@ -6,7 +6,6 @@ import grpc
 from graplinc.grapl.api.scylla_provisioner.v1beta1.scylla_provisioner_pb2_grpc import (
     ScyllaProvisionerServiceStub,
 )
-from python_proto.api.graph_query.v1beta1.messages import GraphQuery
 from python_proto.api.scylla_provisioner.v1beta1.messages import (
     ProvisionGraphForTenantRequest,
     ProvisionGraphForTenantResponse,

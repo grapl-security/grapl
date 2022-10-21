@@ -86,7 +86,7 @@ def provision() -> None:
         LOGGER.info("provisioning scylla")
         scylla_provisioner_client = ScyllaProvisionerClient.connect(
             client_config=GrpcClientConfig(
-                address=os.env["SCYLLA_PROVISIONER_CLIENT_ADDRESS"],
+                address=os.environ["SCYLLA_PROVISIONER_CLIENT_ADDRESS"],
             )
         )
 

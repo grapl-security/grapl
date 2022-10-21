@@ -119,7 +119,6 @@ job "grapl-provision" {
 
       env {
         AWS_DEFAULT_REGION                 = var.aws_region
-        DGRAPH_DROP_ALL_DATA               = 1
         GRAPL_SCHEMA_TABLE                 = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE              = var.user_auth_table
