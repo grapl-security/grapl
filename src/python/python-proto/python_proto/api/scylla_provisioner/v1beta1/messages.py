@@ -13,7 +13,7 @@ from python_proto.serde import SerDe
 class ProvisionGraphForTenantRequest(SerDe[proto.ProvisionGraphForTenantRequest]):
     tenant_id: Uuid
 
-    _proto_cls = proto.ProvisionGraphForTenantResponse
+    _proto_cls = proto.ProvisionGraphForTenantRequest
 
     @classmethod
     def from_proto(
