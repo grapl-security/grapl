@@ -13,7 +13,6 @@ from grapl_common.env_helpers import (
     SecretsManagerClientFactory,
 )
 from grapl_common.grapl_tracer import get_tracer
-from grapl_common.retry import retry
 from grapl_common.test_user_creds import get_test_user_creds
 from python_proto.api.scylla_provisioner.v1beta1.client import ScyllaProvisionerClient
 from python_proto.client import GrpcClientConfig
@@ -70,11 +69,6 @@ def _retrieve_test_user_password(
     )["SecretString"]
 
 
-@retry(
-    exception_cls=Exception,
-    logger=LOGGER,
-    tries=8,
-)
 def provision_scylla() -> None:
     LOGGER.info("provisioning scylla")
     scylla_provisioner_client = ScyllaProvisionerClient.connect(
