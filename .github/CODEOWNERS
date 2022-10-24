@@ -1,5 +1,4 @@
 .python-version @christophermaier
-.protoc-version @christophermaier
 /3rdparty/ @christophermaier
 /bin/ @christophermaier
 /buf.yaml @christophermaier
@@ -7,6 +6,7 @@ BUILD @christophermaier
 /BUILDING.md @christophermaier
 /.buildkite/ @christophermaier
 /build-support/ @christophermaier
+/build-support/protoc_version.sh @wimax-grapl
 /CHORES.md @christophermaier
 /CODE_OF_CONDUCT.md @christophermaier
 /codecov.yml @christophermaier

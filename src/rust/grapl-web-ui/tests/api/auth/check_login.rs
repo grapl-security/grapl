@@ -2,7 +2,8 @@
 async fn auth_unauthenticated_check_login() -> eyre::Result<()> {
     let app = crate::test_app::TestApp::init().await?;
 
-    let response = app.post("api/auth/checkLogin").send().await?;
+    let request = app.post("api/auth/checkLogin");
+    let response = app.send_with_retries(request).await?;
 
     eyre::ensure!(
         response.status() == actix_web::http::StatusCode::UNAUTHORIZED,
@@ -19,7 +20,8 @@ async fn auth_authenticated_check_login() -> eyre::Result<()> {
 
     app.login_with_test_user().await?;
 
-    let response = app.post("api/auth/checkLogin").send().await?;
+    let request = app.post("api/auth/checkLogin");
+    let response = app.send_with_retries(request).await?;
 
     eyre::ensure!(
         response.status() == actix_web::http::StatusCode::OK,

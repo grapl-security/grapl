@@ -7,7 +7,6 @@ use rust_proto::{
         GraphMutationClientConfig,
         GraphQueryClientConfig,
         GraphSchemaManagerClientConfig,
-        ScyllaProvisionerClientConfig,
         UidAllocatorClientConfig,
     },
     graplinc::grapl::{
@@ -36,10 +35,6 @@ use rust_proto::{
             graph_schema_manager::v1beta1::{
                 client::GraphSchemaManagerClient,
                 messages as graph_schema_manager_api,
-            },
-            scylla_provisioner::v1beta1::{
-                client::ScyllaProvisionerClient,
-                messages as scylla_provisioner_msgs,
             },
             uid_allocator::v1beta1::{
                 client::UidAllocatorServiceClient,
@@ -98,18 +93,8 @@ impl GraphQueryIntegTestSetup {
         let graph_mutation_client =
             GraphMutationClient::connect_with_config(mutation_client_config).await?;
 
-        let provisioner_client_config = ScyllaProvisionerClientConfig::parse();
-        let mut provisioner_client =
-            ScyllaProvisionerClient::connect_with_config(provisioner_client_config).await?;
-
         let tenant_id = uuid::Uuid::new_v4();
         _span.record("tenant_id", &format!("{tenant_id}"));
-
-        provisioner_client
-            .provision_graph_for_tenant(scylla_provisioner_msgs::ProvisionGraphForTenantRequest {
-                tenant_id,
-            })
-            .await?;
 
         // Only used to provision the keyspace. It's okay here to use the
         // otherwise-unrecommended non-caching UidAllocator client.
