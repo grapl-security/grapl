@@ -97,10 +97,12 @@ service:
     metrics:
       receivers: [prometheus]
       processors: [batch]
-      exporters: [logging, otlp/ls]
+      # To enable debug logging, add logging to exporters
+      exporters: [otlp/ls]
     traces:
       receivers: [jaeger, otlp, zipkin]
       processors: [batch, memory_limiter, probabilistic_sampler]
-      exporters: [logging, otlp/ls]
+      # To enable debug logging, add logging to exporters
+      exporters: [otlp/ls]
 """
     )
