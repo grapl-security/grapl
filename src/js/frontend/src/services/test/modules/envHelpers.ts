@@ -6,7 +6,6 @@ type Constructable<T> = {
 
 export default function getAwsClient<T>(clientType: Constructable<T>): T {
   if ("GRAPL_AWS_ENDPOINT" in process.env) {
-    try{
       // Running locally
       console.debug("Creating a local client");
       const region = process.env.AWS_DEFAULT_REGION || process.env.AWS_REGION;
@@ -28,9 +27,7 @@ export default function getAwsClient<T>(clientType: Constructable<T>): T {
         username: username,
         password: password,
       });
-    } catch (e) {
-      console.error("Error creating AWS client", e)
-    }
+    
 
   } else {
     // Running on AWS

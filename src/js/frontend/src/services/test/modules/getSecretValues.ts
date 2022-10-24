@@ -2,7 +2,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-sec
 import getAwsClient from "./envHelpers";
 
 const getSecrets = async () => {
-  const client = new SecretsManagerClient(getAwsClient);
+  const client = getAwsClient(SecretsManagerClient)
   const command = new GetSecretValueCommand({ SecretId: "local-grapl-TestUserPassword" });
   const response = await client.send(command);
   console.log("secret manager response", response);
