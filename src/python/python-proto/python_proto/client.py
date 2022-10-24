@@ -11,8 +11,8 @@ class GrpcClientConfig:
     address: str
 
     def __post_init__(self) -> None:
-        if not self.address.startswith("http://"):
-            raise ValueError(f"Expected {self.address} to start with http://")
+        # Do any validation stuff here.
+        pass
 
 
 class Connectable(Protocol, Generic[T]):
