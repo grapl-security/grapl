@@ -29,7 +29,6 @@ describe("Login Component", () => {
     const submitButton = screen.getByText("SUBMIT");
 
     let getCreds = await getSecrets;
-    console.log("getCreds", getCreds);
 
     await waitFor(() => {
       fireEvent.change(username, {
@@ -39,13 +38,10 @@ describe("Login Component", () => {
       });
     });
 
-    // make call to AWS secrets manager
-    // get secret stored upder this id: GRAPL_TEST_USER_PASSWORD_SECRET_ID
-
     await waitFor(() => {
       fireEvent.change(password, {
         target: {
-          value: getCreds,
+          value: getCreds.SecretString,
         },
       });
     });
@@ -58,6 +54,7 @@ describe("Login Component", () => {
       expect(username).not.toBeNull();
       expect(getCreds).not.toBeNull();
       expect(getCreds).toBeDefined();
+      expect(getCreds).toContain("SecretString")
     });
 
     screen.debug();
