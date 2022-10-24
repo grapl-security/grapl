@@ -7,7 +7,6 @@ use rust_proto::{
         GraphMutationClientConfig,
         GraphQueryClientConfig,
         GraphSchemaManagerClientConfig,
-        ScyllaProvisionerClientConfig,
         UidAllocatorClientConfig,
     },
     graplinc::grapl::{
@@ -36,10 +35,6 @@ use rust_proto::{
             graph_schema_manager::v1beta1::{
                 client::GraphSchemaManagerClient,
                 messages as graph_schema_manager_api,
-            },
-            scylla_provisioner::v1beta1::{
-                client::ScyllaProvisionerClient,
-                messages as scylla_provisioner_msgs,
             },
             uid_allocator::v1beta1::{
                 client::UidAllocatorServiceClient,
