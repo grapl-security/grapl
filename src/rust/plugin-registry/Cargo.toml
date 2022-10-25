@@ -37,9 +37,9 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 e2e-tests = { path = "../e2e-tests" }
-env_logger = "0.9.0"
+env_logger = { workspace = true }
 eyre = { workspace = true }
-test-log = { version = "0.2", default-features = false, features = ["trace"] }
+test-log = { workspace = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
   "fmt"
