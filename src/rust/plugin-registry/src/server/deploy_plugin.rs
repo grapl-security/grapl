@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
 use nomad_client_gen::models;
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginType;
 
 use super::{
-    s3_url::get_s3_url,
+    plugin_nomad_job,
+    s3_uri::get_s3_uri,
     service::PluginRegistryServiceConfig,
 };
 use crate::{
@@ -45,60 +47,67 @@ static HARDCODED_PLUGIN_RUNTIME: PluginRuntime = PluginRuntime::HaxDocker;
 
 pub fn get_job(
     plugin: &PluginRow,
-    service_config: &PluginRegistryServiceConfig,
+    service_config: PluginRegistryServiceConfig,
     cli: &NomadCli,
     plugin_runtime: &PluginRuntime,
 ) -> Result<models::Job, NomadCliError> {
     let plugin_artifact_url = {
         let key = &plugin.artifact_s3_key;
-        let bucket = &service_config.plugin_s3_bucket_name;
-        get_s3_url(bucket, key)
+        let bucket = &service_config.bucket_name;
+        get_s3_uri(bucket, key)
+    };
+    let passthru = service_config.passthrough_vars;
+    let plugin_type = PluginType::try_from(plugin.plugin_type.as_str())
+        .expect("Unknown plugin-type in DB is bad news");
+    let plugin_execution_sidecar_image = match plugin_type {
+        PluginType::Generator => passthru.generator_sidecar_image,
+        PluginType::Analyzer => passthru.analyzer_sidecar_image,
     };
     match plugin_runtime {
         PluginRuntime::HaxDocker => {
-            let job_file_hcl = static_files::HAX_DOCKER_PLUGIN_JOB;
-            let job_file_vars: NomadVars = HashMap::from([
-                (
-                    "aws_account_id",
-                    service_config.plugin_s3_bucket_aws_account_id.to_owned(),
-                ),
+            let hax_docker_nomad_job = match plugin_type {
+                PluginType::Generator => static_files::HAX_DOCKER_GENERATOR_JOB,
+                PluginType::Analyzer => static_files::HAX_DOCKER_ANALYZER_JOB,
+            };
+            let mut job_file_vars: NomadVars = HashMap::from([
+                ("aws_account_id", service_config.bucket_aws_account_id),
                 ("plugin_artifact_url", plugin_artifact_url),
                 (
                     "plugin_runtime_image",
-                    service_config.hax_docker_plugin_runtime_image.to_owned(),
+                    service_config.hax_docker_plugin_runtime_image,
+                ),
+                (
+                    "plugin_execution_sidecar_image",
+                    plugin_execution_sidecar_image,
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
                 ("tenant_id", plugin.tenant_id.to_string()),
+                // Passthrough vars
+                ("rust_log", passthru.rust_log),
             ]);
-            cli.parse_hcl2(job_file_hcl, job_file_vars)
+            if plugin_type == PluginType::Analyzer {
+                job_file_vars.insert("graph_query_proxy_image", passthru.graph_query_proxy_image);
+            }
+            cli.parse_hcl2(hax_docker_nomad_job, job_file_vars)
         }
         PluginRuntime::Firecracker => {
             // This is currently dead code until we revive our Firecracker
             // efforts.
             let job_file_hcl = static_files::PLUGIN_JOB;
             let job_file_vars: NomadVars = HashMap::from([
-                (
-                    "aws_account_id",
-                    service_config.plugin_s3_bucket_aws_account_id.to_owned(),
-                ),
-                (
-                    "kernel_artifact_url",
-                    service_config.kernel_artifact_url.to_owned(),
-                ),
+                ("aws_account_id", service_config.bucket_aws_account_id),
+                ("kernel_artifact_url", service_config.kernel_artifact_url),
                 ("plugin_artifact_url", plugin_artifact_url),
                 (
                     "plugin_bootstrap_container_image",
-                    service_config.plugin_bootstrap_container_image.to_owned(),
+                    service_config.plugin_bootstrap_container_image,
                 ),
                 (
-                    "plugin_execution_container_image",
-                    service_config.plugin_execution_container_image.to_owned(),
+                    "plugin_execution_sidecar_image",
+                    plugin_execution_sidecar_image,
                 ),
                 ("plugin_id", plugin.plugin_id.to_string()),
-                (
-                    "rootfs_artifact_url",
-                    service_config.rootfs_artifact_url.to_owned(),
-                ),
+                ("rootfs_artifact_url", service_config.rootfs_artifact_url),
                 ("tenant_id", plugin.tenant_id.to_string()),
             ]);
             cli.parse_hcl2(job_file_hcl, job_file_vars)
@@ -107,7 +116,7 @@ pub fn get_job(
 }
 
 /// https://github.com/grapl-security/grapl-rfcs/blob/main/text/0000-plugins.md#deployplugin-details
-#[tracing::instrument(skip(client, cli, db_client, plugin), err)]
+#[tracing::instrument(skip(client, cli, db_client, plugin, service_config), err)]
 pub async fn deploy_plugin(
     client: &NomadClient,
     cli: &NomadCli,
@@ -116,12 +125,17 @@ pub async fn deploy_plugin(
     service_config: &PluginRegistryServiceConfig,
 ) -> Result<(), PluginRegistryServiceError> {
     // --- Convert HCL to JSON Job model
-    let job_name = "grapl-plugin"; // Matches what's in `plugin.nomad`
+    let job_name = plugin_nomad_job::job_name();
 
-    let job = get_job(&plugin, service_config, cli, &HARDCODED_PLUGIN_RUNTIME)?;
+    let job = get_job(
+        &plugin,
+        service_config.clone(),
+        cli,
+        &HARDCODED_PLUGIN_RUNTIME,
+    )?;
 
     // --- Deploy namespace
-    let namespace_name = format!("plugin-{id}", id = plugin.plugin_id);
+    let namespace_name = plugin_nomad_job::namespace_name(&plugin.plugin_id);
     let namespace_description = format!("Plugin for {name}", name = plugin.display_name);
     client
         .create_update_namespace(models::Namespace {
@@ -137,7 +151,7 @@ pub async fn deploy_plugin(
         .await?;
     plan_result
         .ensure_allocation()
-        .map_err(|_| PluginRegistryServiceError::NomadJobAllocationError)?;
+        .map_err(|e| PluginRegistryServiceError::NomadJobAllocationError(e))?;
 
     // --- Start the job
     let job_result = client
@@ -158,6 +172,30 @@ pub async fn deploy_plugin(
     Ok(())
 }
 
+#[tracing::instrument(skip(client, db_client, plugin), err)]
+pub async fn teardown_plugin(
+    client: &NomadClient,
+    db_client: &PluginRegistryDbClient,
+    plugin: PluginRow,
+    service_config: &PluginRegistryServiceConfig,
+) -> Result<(), PluginRegistryServiceError> {
+    // --- Convert HCL to JSON Job model
+    let job_name = plugin_nomad_job::job_name();
+    let namespace_name = plugin_nomad_job::namespace_name(&plugin.plugin_id);
+
+    // --- Delete the job
+    client
+        .delete_job(job_name.to_owned(), Some(namespace_name.clone()))
+        .await?;
+
+    // --- Mark plugin as inactive in `plugins` table
+    db_client
+        .deactivate_plugin_deployment(&plugin.plugin_id)
+        .await?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -168,12 +206,14 @@ mod tests {
             hax_docker_plugin_runtime_image: Default::default(),
             kernel_artifact_url: Default::default(),
             plugin_bootstrap_container_image: Default::default(),
-            plugin_execution_container_image: Default::default(),
-            plugin_s3_bucket_aws_account_id: Default::default(),
-            plugin_s3_bucket_name: Default::default(),
+            bucket_aws_account_id: Default::default(),
+            bucket_name: Default::default(),
             rootfs_artifact_url: Default::default(),
+            artifact_size_limit_mb: Default::default(),
+            passthrough_vars: Default::default(),
         }
     }
+
     /// This is used to keep test coverage on the eventually-desirable-but-
     /// currently-deadcode `get_job` logic branch.
     #[test]
@@ -183,13 +223,14 @@ mod tests {
             plugin_id: arbitrary_uuid,
             tenant_id: arbitrary_uuid,
             display_name: "arbitrary".to_owned(),
-            plugin_type: "analyzer".to_owned(),
+            plugin_type: "generator".to_owned(),
+            event_source_id: None,
             artifact_s3_key: "arbitrary".to_owned(),
         };
         let service_config = arbitrary_service_config();
         let cli = NomadCli::default();
         let plugin_runtime = PluginRuntime::Firecracker;
-        get_job(&plugin, &service_config, &cli, &plugin_runtime)?;
+        get_job(&plugin, service_config, &cli, &plugin_runtime)?;
         Ok(())
     }
 }

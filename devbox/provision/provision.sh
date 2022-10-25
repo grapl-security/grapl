@@ -6,6 +6,8 @@ readonly GRAPL_ROOT="${PWD}"
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 # shellcheck source-path=SCRIPTDIR
 source "${THIS_DIR}/../lib.sh"
+# shellcheck source-path=SCRIPTDIR
+source "${THIS_DIR}/../../src/sh/log.sh"
 
 mkdir -p "${GRAPL_DEVBOX_DIR}"
 
@@ -23,7 +25,7 @@ has_key() {
 ########################################
 if [ ! -f build-support/venv/bin/activate ]; then
     echo "Set up your virtualenv with 'build-support/manage_virtualenv.sh'"
-    exit 42
+    exit 49
 fi
 # shellcheck disable=SC1091
 source build-support/venv/bin/activate
@@ -90,13 +92,13 @@ EOF
     fi
 
     config=$(pulumi config --json)
-    if ! has_key "${config}" "devbox:public-key}"; then
+    if ! has_key "${config}" "devbox:public-key"; then
         pulumi config set devbox:public-key -- < "${SSH_PUBLIC_KEY_FILE}"
     fi
-    if ! has_key "${config}" "devbox:instance-volume-size-gb}"; then
-        pulumi config set devbox:instance-volume-size-gb 100
+    if ! has_key "${config}" "devbox:instance-volume-size-gb"; then
+        pulumi config set devbox:instance-volume-size-gb 250
     fi
-    if ! has_key "${config}" "devbox:instance-type}"; then
+    if ! has_key "${config}" "devbox:instance-type"; then
         # 32GB RAM
         # $5.80 daily reserved cost
         pulumi config set devbox:instance-type "m5.2xlarge"
@@ -106,7 +108,7 @@ EOF
         echo "'pulumi config set aws:region <value>'"
         echo "Choose well - responsiveness is a genuine concern here!"
         echo "  ex: us-east-2, us-west-2, ap-east-1"
-        exit 42
+        exit 48
     fi
 )
 
@@ -158,5 +160,9 @@ EOF
     )"
     # There's a minor race condition here, where Pulumi starts the box but it's
     # not ready to take SSH-over-SSM commands quite yet.
+    "${THIS_DIR}/../ssh.sh" -- "echo 'ensuring devbox reachable'" || (
+        fatal "Wait 2-5m for the box to come up and rerun this script to complete provisioning!"
+    )
     "${THIS_DIR}/../ssh.sh" -- "${CMD}"
+    info "Your devbox is set up!"
 )

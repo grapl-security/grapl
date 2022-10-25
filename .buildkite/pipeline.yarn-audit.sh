@@ -29,11 +29,11 @@ steps:
     steps:
       - label: ":nodejs: yarn audit"
         command:
-          - cd src/js/engagement_view
+          - cd src/js/frontend
           - yarn audit --level high
         plugins:
-          - docker#v3.8.0:
-              image: "node:17-alpine"
+          - docker#v3.14.0:
+              image: "node:18-alpine"
         soft_fail: ${soft_fail}
         agents:
           queue: beefy

@@ -1,0 +1,38 @@
+[package]
+name = "uid-allocator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1.53"
+chrono = "0.4.19"
+clap = { workspace = true }
+dashmap = "5.2.0"
+futures = "0.3.21"
+grapl-config = { path = "../grapl-config" }
+grapl-tracing = { path = "../grapl-tracing" }
+itertools = "0.10.3"
+opentelemetry = { workspace = true }
+opentelemetry-jaeger = { workspace = true }
+rand = "0.8.5"
+rust-proto = { path = "../rust-proto" }
+serde = { version = "1.0.136", features = ["derive"] }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-appender = "0.2"
+tracing-opentelemetry = { workspace = true }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "json"
+] }
+uuid = { workspace = true }
+
+[dev-dependencies]
+env_logger = "0.9.0"
+eyre = { workspace = true }
+tracing-subscriber = "0.3.2"
+
+[features]
+integration_tests = []

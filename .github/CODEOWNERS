@@ -1,3 +1,4 @@
+.python-version @christophermaier
 /3rdparty/ @christophermaier
 /bin/ @christophermaier
 /buf.yaml @christophermaier
@@ -5,6 +6,7 @@ BUILD @christophermaier
 /BUILDING.md @christophermaier
 /.buildkite/ @christophermaier
 /build-support/ @christophermaier
+/build-support/protoc_version.sh @wimax-grapl
 /CHORES.md @christophermaier
 /CODE_OF_CONDUCT.md @christophermaier
 /codecov.yml @christophermaier
@@ -14,6 +16,7 @@ BUILD @christophermaier
 /docker-bake.hcl @christophermaier
 /docker-compose*.yml @christophermaier
 *Dockerfile* @christophermaier @inickles-grapl
+/docker-plugin-runtime @wimax-grapl
 /Dockerfile.pulumi @christophermaier
 .dockerignore @christophermaier @inickles-grapl
 /docs/ @wimax-grapl
@@ -32,62 +35,64 @@ BUILD @christophermaier
 /nomad @twunderlich-grapl
 /pants @christophermaier
 /pants.ci.toml @christophermaier
-/pants-plugins/ @christophermaier
 /pants.toml @christophermaier
+/postgres/ @colin-grapl @wimax-grapl
 /pulumi/ @christophermaier
 /pyproject.toml @christophermaier
 /README.md @christophermaier
 /.rustfmt.toml @christophermaier
 /scylladb/ @twunderlich-grapl
-/src/js/engagement_view/ @andrea-grapl
-/src/js/graphql_endpoint/ @andrea-grapl
+/src/js/frontend/ @andrea-grapl
 /src/proto/ @grapl-security/wg-data-infra
-/src/python/analyzer_executor/ @wimax-grapl @grapl-security/wg-data-infra
-/src/python/e2e-test-runner/ @jgrillo-grapl
-/src/python/engagement-creator/ @wimax-grapl @grapl-security/wg-data-infra
-/src/python/graphql_endpoint_tests/ @wimax-grapl
-/src/python/grapl_analyzerlib/ @colin-grapl
+/src/python/grapl-plugin-sdk/ @colin-grapl @wimax-grapl
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
 /src/python/grapl-tests-common/ @wimax-grapl
 /src/python/mypy.ini @christophermaier @wimax-grapl
 /src/python/provisioner/ @jgrillo-grapl
 /src/python/python-proto/ @grapl-security/wg-data-infra
-/src/sh/BUILD @wimax-grapl
-/src/sh/shell_color.sh @wimax-grapl
-/src/rust/analyzer-dispatcher/ @grapl-security/wg-data-infra
 /src/rust/bin/ @christophermaier
 /src/rust/.cargo @christophermaier
 /src/rust/.cargo/audit.toml @colin-grapl @inickles-grapl
 /src/rust/Cargo.lock @christophermaier
 /src/rust/Cargo.toml @christophermaier
+/src/rust/async-cache/ @jgrillo-grapl
+/src/rust/analyzer-dispatcher/ @jgrillo-grapl
+/src/rust/client-executor/ @colin-grapl
 /src/rust/consul-connect/ @colin-grapl @wimax-grapl
 /src/rust/derive-dynamic-node/ @colin-grapl
+/src/rust/e2e-tests/ @wimax-grapl
 /src/rust/endpoint-plugin/ @inickles-grapl
+/src/rust/event-source/ @wimax-grapl
+/src/rust/generator-dispatcher/ @wimax-grapl
 /src/rust/generators/ @inickles-grapl
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
+/src/rust/graph-mutation/ @colin-grapl
+/src/rust/graph-query-proxy/ @colin-grapl
+/src/rust/graph-query/ @colin-grapl
+/src/rust/graph-schema-manager @colin-grapl @wimax-grapl
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
-/src/rust/grapl/ @inickles-grapl
-/src/rust/grapl-observe/ @wimax-grapl
-/src/rust/grapl-service/ @inickles-grapl
+/src/rust/grapl-tracing/ @wimax-grapl
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/grapl-web-ui/ @inickles-grapl
 /src/rust/kafka/ @grapl-security/wg-data-infra
-/src/rust/model-plugin-deployer/ @wimax-grapl
+/src/rust/kafka-retry/ @jgrillo-grapl
+/src/rust/node-identifier/ @grapl-security/wg-data-infra
+/src/rust/nomad-client-gen/ @wimax-grapl
 /src/rust/organization-management/ @andrea-grapl
 /src/rust/pipeline-ingress/ @jgrillo-grapl
 /src/rust/plugin-bootstrap/ @colin-grapl
+/src/rust/plugin-execution-sidecar/ @wimax-grapl
 /src/rust/plugin-registry/ @colin-grapl
 /src/rust/plugin-sdk/ @colin-grapl
 /src/rust/plugin-work-queue/ @colin-grapl
-/src/rust/node-identifier/ @grapl-security/wg-data-infra
-/src/rust/nomad-client-gen/ @wimax-grapl
 /src/rust/rust-proto/ @grapl-security/wg-data-infra
-src/rust/rust-proto-new/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain.toml @inickles-grapl
-/src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
+/src/rust/scylla-provisioner/ @colin-grapl @wimax-grapl
 /src/rust/sysmon-parser/ @inickles-grapl
+/src/rust/uid-allocator/ @colin-grapl
+/src/sh/ @wimax-grapl @christophermaier
 /test/docker-compose* @inickles-grapl @christophermaier
 /test/run @wimax-grapl
 

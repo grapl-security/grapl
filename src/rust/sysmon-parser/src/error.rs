@@ -4,7 +4,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// Represents all possible errors that can occur when parsing Sysmon XML events.
 #[non_exhaustive]
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum Error {
     #[error("starting Sysmon event XML element not found")]
     SysmonEventNotFound,
@@ -45,6 +45,10 @@ pub enum Error {
         position: usize,
         source: uuid::Error,
     },
+    #[error("unexpected XML at position `{position}`: {message}")]
+    ParseSysmon { message: String, position: usize },
+    #[error("unexpected end of stream")]
+    UnexpectedEndOfStream,
     // these errors are useful just as they are
     #[error(transparent)]
     XmlError(#[from] xmlparser::Error),

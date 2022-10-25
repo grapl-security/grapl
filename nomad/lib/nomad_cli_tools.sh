@@ -40,11 +40,8 @@ nomad_stop_job() {
 
 nomad_get_per_task_results() {
     # Returns something like {
-    #   "analyzer-executor-integration-tests": {
+    #   "graph-merger-integration-tests": {
     #     "Complete": 1
-    #   },
-    #   "graphql-endpoint-tests": {
-    #     "Failed": 1
     #   }
     # }
     local -r job_id="${1}"
@@ -52,8 +49,8 @@ nomad_get_per_task_results() {
     jq_filter_out_zero_fields=$(
         cat << EOF
         .JobSummary.Summary | to_entries | map({
-            key, 
-            value: .value | to_entries | map(select(.value > 0)) | from_entries 
+            key,
+            value: .value | to_entries | map(select(.value > 0)) | from_entries
         }) | from_entries
 EOF
     )
@@ -110,7 +107,7 @@ check_for_task_failures_in_job() {
         # the `-e` and the weird escape codes are for color
         important_looking_banner "${num_failed} jobs failed - exiting!"
         nomad_stop_job "${job_id}"
-        return 42
+        return 52
     fi
 }
 

@@ -1,0 +1,13 @@
+[package]
+name = "kafka-retry"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { workspace = true }
+futures = "0.3"
+grapl-tracing = { path = "../grapl-tracing" }
+kafka = { path = "../kafka", version = "*" }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }

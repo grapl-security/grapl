@@ -1,13 +1,18 @@
 #!/bin/bash
 
 set -euo pipefail
-
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
-cd "${THIS_DIR}"
 
-python3 -m venv venv
-# shellcheck disable=SC1091
-source venv/bin/activate
+cd "${THIS_DIR}/.."
+# Create a virtualenv from Pants
+./pants export ::
+
+# Since Pants doesn't support 3.10, this won't use the `.python-version`.
+PYTHON_VERSION=$(ls "dist/export/python/virtualenv/")
+# shellcheck disable=SC1090
+source "dist/export/python/virtualenv/${PYTHON_VERSION}/bin/activate"
+
+cd "${THIS_DIR}"
 pip install wheel
 pip install -r requirements.txt
 

@@ -2,21 +2,18 @@
 
 set -euo pipefail
 
-# Set versions
-PYENV_PYTHON_VERSION="3.7.10"
-
 # We're starting to use this  script for more than chromebooks. As such we're starting to make this
 # architecture-independent, so that in the future we can use it for AWS graviton instances, which are significantly
 # more cost-effective, especially the metal ones.
 # As such this section sets up some architecture variables..
 ARCH=$(arch)
 if [ "${ARCH}" == "x86_64" ]; then
-    hashicorp_arch_alias="amd64"
     ssm_arch_alias="64bit"
 else
-    hashicorp_arch_alias="arm64"
     ssm_arch_alias="arm64"
 fi
+
+GIT_ROOT=$(git rev-parse --show-toplevel)
 
 ## helper functions
 source_profile() {
@@ -60,6 +57,17 @@ get_latest_release() {
 }
 ## end helper functions
 
+configure_grapl_repository() {
+    echo_banner "Setting up Grapl Repository"
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --fail \
+        --silent \
+        "https://dl.cloudsmith.io/public/grapl/deb/setup.deb.sh" |
+        sudo -E bash
+}
+
 update_linux() {
     sudo apt update
     sudo apt upgrade --yes
@@ -96,14 +104,6 @@ install_docker() {
             https://get.docker.com/ | sh
         sudo usermod -a -G docker "$USER"
     fi
-
-    echo_banner "Install docker-compose (v1, old, Python)"
-    sudo curl --proto "=https" \
-        --tlsv1.2 \
-        --location \
-        --output /usr/local/bin/docker-compose \
-        "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname --kernel-name)-$(uname --machine)"
-    sudo chmod +x /usr/local/bin/docker-compose
 
     echo_banner "Install docker compose (v2, new, Go) CLI plugin"
     user_docker_cli_plugins_dir="${HOME}/.docker/cli-plugins"
@@ -144,7 +144,7 @@ install_rust_and_utilities() {
 }
 
 install_pyenv() {
-    echo_banner "Install pyenv and set python version to ${PYENV_PYTHON_VERSION}"
+    echo_banner "Install pyenv"
     sudo apt-get install --yes make libssl-dev zlib1g-dev libbz2-dev \
         libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
         xz-utils tk-dev libffi-dev liblzma-dev python3-dev
@@ -188,9 +188,10 @@ install_pyenv() {
     fi
 
     source_profile
-    pyenv install --skip-existing "${PYENV_PYTHON_VERSION}"
-    pyenv global "${PYENV_PYTHON_VERSION}"
-
+    pyenv install --skip-existing
+    # Sets global Python to the same thing that is configured in
+    # .python-version in this repository
+    pyenv global "$(pyenv local)"
 }
 
 install_pipx() {
@@ -215,8 +216,8 @@ install_nvm() {
     # shellcheck disable=SC1091
     [ -s "${NVM_DIR}/bash_completion" ] && \. "${NVM_DIR}/bash_completion" # This loads nvm bash_completion
 
-    # Install latest node 16.x. This matches up with engagement_view, although graphql_endpoint is on 17 :(
-    nvm install 16
+    # Install latest node 18.x.
+    nvm install 18
     # Opt in to corepack. With this on, we'll use the version of yarn set by the packageManager property in package.json
     # Yes, with this on we'll have one source of truth for yarn versions!
     corepack enable
@@ -266,17 +267,17 @@ install_utilities() {
 
 install_hashicorp_tools() {
     echo_banner "Installing hashicorp tools: consul nomad packer"
-    curl --proto '=https' \
-        --tlsv1.2 \
-        --silent \
-        --show-error \
-        --fail \
-        https://apt.releases.hashicorp.com/gpg |
-        sudo gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/hashicorp-apt.gpg --import &&
-        sudo chmod 644 /etc/apt/trusted.gpg.d/hashicorp-apt.gpg
-    sudo apt-add-repository "deb [arch=${hashicorp_arch_alias}] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-    sudo apt-get update
-    sudo apt-get install --yes consul nomad packer vault
+
+    CONSUL_VERSION="1.12.5-1"
+    NOMAD_VERSION="1.3.5-1"
+    PACKER_VERSION="1.8.2-1"
+    VAULT_VERSION="1.10.4-1"
+
+    sudo apt-get install --yes --allow-downgrades \
+        consul="${CONSUL_VERSION}" \
+        nomad="${NOMAD_VERSION}" \
+        packer="${PACKER_VERSION}" \
+        vault="${VAULT_VERSION}"
 }
 
 # Download and install a tarball.
@@ -403,11 +404,43 @@ install_nomad_chromeos_workaround() {
 
 install_git_hooks() {
     echo_banner "Installing git hooks"
-    GIT_ROOT=$(git rev-parse --show-toplevel)
     ln --symbolic --relative --force "$GIT_ROOT/etc/hooks/pre-commit.sh" "$GIT_ROOT/.git/hooks/pre-commit"
 }
 
 install_sqlx_prepare_deps() {
     _cargo_install sqlx-cli --no-default-features --features postgres,rustls
     sudo apt install --yes netcat # used for `nc`
+}
+
+install_protoc() {
+    PROTOC_VERSION="$("${GIT_ROOT}"/build-support/protoc_version.sh)"
+    PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+    ZIP_PATH="/tmp/protoc.zip"
+
+    # Download the zip
+    curl \
+        --proto '=https' --tlsv1.2 -sSf \
+        --location \
+        --output "${ZIP_PATH}" \
+        "${PB_REL}/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+
+    mkdir --parents ~/.local
+    # -o: overwrite preexisting ones
+    # -d: Unzip it into ~/.local - which drops `protoc` in ~/.local/bin.
+    unzip -o -d ~/.local "${ZIP_PATH}"
+    rm "${ZIP_PATH}"
+}
+
+install_bk() {
+    echo_banner "Installing Buildkite's 'bk' CLI tool"
+
+    version="v2.0.0"
+
+    mkdir --parents ~/.local/bin
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --output ~/.local/bin/bk \
+        "https://github.com/buildkite/cli/releases/download/${version}/cli-linux-amd64"
+    chmod a+x ~/.local/bin/bk
 }

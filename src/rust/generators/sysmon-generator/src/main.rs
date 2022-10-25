@@ -1,27 +1,17 @@
-use graph_generator_lib::run_graph_generator;
-use sysmon_generator_lib::{
-    generator::SysmonGenerator,
-    metrics::SysmonGeneratorMetrics,
-    serialization::SysmonDecoder,
+use generator_sdk::server::{
+    self,
+    GeneratorServiceConfig,
 };
+use grapl_tracing::setup_tracing;
+use sysmon_generator::api;
+
+const SERVICE_NAME: &'static str = "sysmon-generator";
 
 #[tokio::main]
-#[tracing::instrument]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (env, _guard) = grapl_config::init_grapl_env!();
-    let service_name = env.service_name.clone();
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
-    tracing::info!(
-        message = "Starting generator.",
-        name =% service_name
-    );
-
-    run_graph_generator(
-        env,
-        move |cache| SysmonGenerator::new(cache, SysmonGeneratorMetrics::new(&service_name)),
-        SysmonDecoder::default(),
-    )
-    .await;
-
-    Ok(())
+    let config = GeneratorServiceConfig::from_env_vars();
+    let generator = api::SysmonGenerator {};
+    server::exec_service(generator, config).await
 }

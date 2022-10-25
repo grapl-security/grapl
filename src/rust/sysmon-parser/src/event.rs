@@ -16,7 +16,7 @@ use crate::{
 ///
 /// `<https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon>`
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, IntoOwned)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SysmonEvent<'a> {
     /// Defines the information that identifies the provider and how it was enabled, the event, the
@@ -74,7 +74,7 @@ impl<'a> SysmonEvent<'a> {
     /// let event = result.unwrap();
     /// assert_eq!(event.system.computer, "hostname");
     /// ```
-    pub fn from_str(input: &'a str) -> Result<SysmonEvent<'a>> {
+    pub fn from_str<'input: 'a>(input: &'input str) -> Result<SysmonEvent<'a>> {
         let mut tokenizer = xmlparser::Tokenizer::from(input);
 
         from_tokenizer(&mut tokenizer)
@@ -95,8 +95,8 @@ fn find_start_element(tokenizer: &mut xmlparser::Tokenizer) -> Result<()> {
     Err(crate::error::Error::SysmonEventNotFound)
 }
 
-pub(crate) fn from_tokenizer<'a, 'b: 'a>(
-    tokenizer: &mut xmlparser::Tokenizer<'b>,
+pub(crate) fn from_tokenizer<'a, 'input: 'a>(
+    tokenizer: &mut xmlparser::Tokenizer<'input>,
 ) -> Result<SysmonEvent<'a>> {
     find_start_element(tokenizer)?;
 

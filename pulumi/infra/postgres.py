@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional, cast
+from typing import cast
 
 import pulumi_aws as aws
 import pulumi_random as random
+from infra.nomad_service_postgres import NomadServicePostgresDbArgs
 from packaging.version import parse as version_parse
 
 import pulumi
@@ -19,7 +20,7 @@ class PostgresConfigValues:
     def __post_init__(self) -> None:
         # postgres uses 2-part semver
         assert version_parse(self.postgres_version) >= version_parse(
-            "13.4"
+            "13.7"
         ), "Version must be >= 13.4"
 
     @staticmethod
@@ -39,10 +40,10 @@ class Postgres(pulumi.ComponentResource):
         self,
         name: str,
         vpc_id: pulumi.Input[str],
-        subnet_ids: pulumi.Input[List[str]],
+        subnet_ids: pulumi.Input[list[str]],
         nomad_agent_security_group_id: pulumi.Input[str],
         availability_zone: pulumi.Input[str],
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
     ) -> None:
         super().__init__("grapl:Postgres", name, None, opts)
 
@@ -140,7 +141,7 @@ class Postgres(pulumi.ComponentResource):
         self._instance = aws.rds.Instance(
             instance_name,
             identifier=instance_name,
-            name=database_name,  # See above diatribe
+            db_name=database_name,  # See above diatribe
             engine="postgres",
             engine_version=postgres_config.postgres_version,
             instance_class=postgres_config.instance_type,
@@ -170,18 +171,13 @@ class Postgres(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
         )
 
-    def host(self) -> pulumi.Output[str]:
-        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
-        return cast(pulumi.Output[str], self._instance.address)
-
-    def port(self) -> pulumi.Output[int]:
-        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
-        return cast(pulumi.Output[int], self._instance.port)
-
-    def username(self) -> pulumi.Output[str]:
-        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
-        return cast(pulumi.Output[str], self._instance.username)
-
-    def password(self) -> pulumi.Output[str]:
-        # just to be safe...
-        return pulumi.Output.secret(self._instance.password)
+    def to_nomad_service_db_args(self) -> pulumi.Output[NomadServicePostgresDbArgs]:
+        return cast(
+            pulumi.Output[NomadServicePostgresDbArgs],
+            pulumi.Output.all(
+                hostname=self._instance.address,
+                port=self._instance.port,
+                username=self._instance.username,
+                password=self._instance.password,
+            ),
+        )

@@ -3,45 +3,54 @@ use std::{
     time::Duration,
 };
 
-use grapl_config::env_helpers::FromEnv;
-use rusoto_s3::{
-    GetObjectRequest,
-    PutObjectRequest,
-    S3Client,
-    S3,
+use async_trait::async_trait;
+use futures::StreamExt;
+use grapl_config::{
+    env_helpers::FromEnv,
+    PostgresClient,
 };
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-    CreatePluginRequest,
-    CreatePluginResponse,
-    DeployPluginRequest,
-    DeployPluginResponse,
-    GetAnalyzersForTenantRequest,
-    GetAnalyzersForTenantResponse,
-    GetGeneratorsForEventSourceRequest,
-    GetGeneratorsForEventSourceResponse,
-    GetPluginRequest,
-    GetPluginResponse,
-    HealthcheckStatus,
-    Plugin,
-    PluginRegistryApi,
-    PluginRegistryServer,
-    PluginType,
-    TearDownPluginRequest,
-    TearDownPluginResponse,
+use rusoto_s3::S3Client;
+use rust_proto::{
+    graplinc::grapl::api::plugin_registry::v1beta1::{
+        CreatePluginRequest,
+        CreatePluginResponse,
+        DeployPluginRequest,
+        DeployPluginResponse,
+        GetAnalyzersForTenantRequest,
+        GetAnalyzersForTenantResponse,
+        GetGeneratorsForEventSourceRequest,
+        GetGeneratorsForEventSourceResponse,
+        GetPluginDeploymentRequest,
+        GetPluginDeploymentResponse,
+        GetPluginHealthRequest,
+        GetPluginHealthResponse,
+        GetPluginRequest,
+        GetPluginResponse,
+        ListPluginsRequest,
+        ListPluginsResponse,
+        PluginDeployment,
+        PluginMetadata,
+        PluginRegistryApi,
+        PluginRegistryServer,
+        PluginType,
+        TearDownPluginRequest,
+        TearDownPluginResponse,
+    },
+    protocol::healthcheck::HealthcheckStatus,
 };
-use structopt::StructOpt;
-use tokio::{
-    io::AsyncReadExt,
-    net::TcpListener,
-};
-use tonic::{
-    async_trait,
-    Status,
-};
+use tokio::net::TcpListener;
+use uuid::Uuid;
 
+use super::{
+    create_plugin::upload_stream_multipart_to_s3,
+    get_plugin_health,
+};
 use crate::{
     db::{
-        client::PluginRegistryDbClient,
+        client::{
+            DbCreatePluginArgs,
+            PluginRegistryDbClient,
+        },
         models::PluginRow,
         serde::try_from,
     },
@@ -50,38 +59,13 @@ use crate::{
         cli::NomadCli,
         client::NomadClient,
     },
-    server::deploy_plugin,
+    server::{
+        create_plugin,
+        deploy_plugin,
+    },
 };
 
-impl From<PluginRegistryServiceError> for Status {
-    /**
-     * Convert useful internal errors into tonic::Status that can be
-     * safely sent over the wire. (Don't include any specific IDs etc)
-     */
-    fn from(err: PluginRegistryServiceError) -> Self {
-        type Error = PluginRegistryServiceError;
-        match err {
-            Error::SqlxError(sqlx::Error::Configuration(_)) => {
-                Status::internal("Invalid SQL configuration")
-            }
-            Error::SqlxError(_) => Status::internal("Failed to operate on postgres"),
-            Error::PutObjectError(_) => Status::internal("Failed to put s3 object"),
-            Error::GetObjectError(_) => Status::internal("Failed to get s3 object"),
-            Error::EmptyObject => Status::internal("S3 Object was unexpectedly empty"),
-            Error::IoError(_) => Status::internal("IoError"),
-            Error::SerDeError(_) => Status::invalid_argument("Unable to deserialize message"),
-            Error::DatabaseSerDeError(_) => {
-                Status::invalid_argument("Unable to deserialize message from database")
-            }
-            Error::NomadClientError(_) => Status::internal("Failed RPC with Nomad"),
-            Error::NomadCliError(_) => Status::internal("Failed using Nomad CLI"),
-            Error::NomadJobAllocationError => {
-                Status::internal("Unable to allocate Nomad job - it may be out of resources.")
-            }
-        }
-    }
-}
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct PluginRegistryConfig {
     #[structopt(flatten)]
     db_config: PluginRegistryDbConfig,
@@ -89,36 +73,66 @@ pub struct PluginRegistryConfig {
     service_config: PluginRegistryServiceConfig,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct PluginRegistryDbConfig {
-    #[structopt(env)]
-    plugin_registry_db_hostname: String,
-    #[structopt(env)]
-    plugin_registry_db_port: u16,
-    #[structopt(env)]
+    #[clap(long, env)]
+    plugin_registry_db_address: String,
+    #[clap(long, env)]
     plugin_registry_db_username: String,
-    #[structopt(env)]
-    plugin_registry_db_password: String,
+    #[clap(long, env)]
+    plugin_registry_db_password: grapl_config::SecretString,
 }
 
-#[derive(StructOpt, Debug)]
+impl grapl_config::ToPostgresUrl for PluginRegistryDbConfig {
+    fn to_postgres_url(self) -> grapl_config::PostgresUrl {
+        grapl_config::PostgresUrl {
+            address: self.plugin_registry_db_address,
+            username: self.plugin_registry_db_username,
+            password: self.plugin_registry_db_password,
+        }
+    }
+}
+
+#[derive(clap::Parser, Clone, Debug)]
 pub struct PluginRegistryServiceConfig {
-    #[structopt(env)]
-    pub plugin_s3_bucket_aws_account_id: String,
-    #[structopt(env)]
-    pub plugin_s3_bucket_name: String,
-    #[structopt(env)]
+    #[clap(long, env = "PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID")]
+    pub bucket_aws_account_id: String,
+    #[clap(long, env = "PLUGIN_REGISTRY_BUCKET_NAME")]
+    pub bucket_name: String,
+    #[clap(long, env)]
     pub plugin_registry_bind_address: SocketAddr,
-    #[structopt(env)]
+    #[clap(long, env)]
     pub plugin_bootstrap_container_image: String,
-    #[structopt(env)]
-    pub plugin_execution_container_image: String,
-    #[structopt(env = "PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL")]
+    #[clap(long, env = "PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL")]
     pub kernel_artifact_url: String,
-    #[structopt(env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]
+    #[clap(long, env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]
     pub rootfs_artifact_url: String,
-    #[structopt(env = "PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE")]
+    #[clap(long, env = "PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE")]
     pub hax_docker_plugin_runtime_image: String,
+    #[clap(
+        long,
+        env = "PLUGIN_REGISTRY_ARTIFACT_SIZE_LIMIT_MB",
+        default_value = "250"
+    )]
+    pub artifact_size_limit_mb: usize,
+    #[clap(flatten)]
+    pub passthrough_vars: PluginExecutionPassthroughVars,
+}
+
+#[derive(clap::Parser, Clone, Debug, Default)]
+pub struct PluginExecutionPassthroughVars {
+    #[clap(long, env = "PLUGIN_EXECUTION_GENERATOR_SIDECAR_IMAGE")]
+    pub generator_sidecar_image: String,
+    #[clap(long, env = "PLUGIN_EXECUTION_ANALYZER_SIDECAR_IMAGE")]
+    pub analyzer_sidecar_image: String,
+    #[clap(long, env = "PLUGIN_EXECUTION_GRAPH_QUERY_PROXY_IMAGE")]
+    pub graph_query_proxy_image: String,
+
+    // Pass through a couple env vars also used for the plugin-registry service
+    // Since they're used in both ways - locally for this service, and the
+    // spawned plugins - I decided against prefixing PLUGIN_EXECUTION_.
+    #[clap(long, env)]
+    pub rust_log: String,
 }
 
 pub struct PluginRegistry {
@@ -130,91 +144,148 @@ pub struct PluginRegistry {
 }
 
 #[async_trait]
-impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
+impl PluginRegistryApi for PluginRegistry {
+    type Error = PluginRegistryServiceError;
+
+    // TODO: This function is so long I'm gonna split it out into its own file soon.
     #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
-        request: CreatePluginRequest,
-    ) -> Result<CreatePluginResponse, PluginRegistryServiceError> {
-        let plugin_id = generate_plugin_id(&request.tenant_id, request.plugin_artifact.as_slice());
+        request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
+    ) -> Result<CreatePluginResponse, Self::Error> {
+        let start_time = std::time::SystemTime::now();
 
-        let s3_key = generate_artifact_s3_key(request.plugin_type, &request.tenant_id, &plugin_id);
+        let mut request = request;
 
-        self.s3
-            .put_object(PutObjectRequest {
-                content_length: Some(request.plugin_artifact.len() as i64),
-                body: Some(request.plugin_artifact.clone().into()),
-                bucket: self.config.plugin_s3_bucket_name.clone(),
-                key: s3_key.clone(),
-                expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
-                ..Default::default()
-            })
-            .await?;
+        let plugin_metadata = match request.next().await {
+            Some(CreatePluginRequest::Metadata(m)) => m,
+            _ => {
+                return Err(Self::Error::StreamInputError(
+                    "Expected request 0 to be Metadata",
+                ));
+            }
+        };
+        let tenant_id = plugin_metadata.tenant_id();
+        let plugin_type = plugin_metadata.plugin_type();
+        let display_name = plugin_metadata.display_name();
+
+        let plugin_id = generate_plugin_id();
+        let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
+        let s3_multipart_fields = create_plugin::S3MultipartFields {
+            bucket: self.config.bucket_name.clone(),
+            key: s3_key.clone(),
+            expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
+        };
+
+        let multipart_upload =
+            upload_stream_multipart_to_s3(request, &self.s3, &self.config, s3_multipart_fields)
+                .await?;
+        // Emit some benchmark info
+        {
+            let total_duration = std::time::SystemTime::now()
+                .duration_since(start_time)
+                .unwrap_or_default();
+
+            tracing::info!(
+                message = "CreatePlugin benchmark",
+                display_name = ?display_name,
+                duration_millis = ?total_duration.as_millis(),
+                stream_length_bytes = multipart_upload.stream_length,
+            );
+        }
 
         self.db_client
-            .create_plugin(&plugin_id, &request, &s3_key)
+            .create_plugin(
+                &plugin_id,
+                DbCreatePluginArgs {
+                    tenant_id,
+                    display_name: display_name.to_string(),
+                    plugin_type,
+                    event_source_id: plugin_metadata.event_source_id(),
+                },
+                &s3_key,
+            )
             .await?;
 
-        let response = CreatePluginResponse { plugin_id };
-        Ok(response)
+        Ok(CreatePluginResponse::new(plugin_id))
     }
 
     #[tracing::instrument(skip(self, request), err)]
     async fn get_plugin(
         &self,
         request: GetPluginRequest,
-    ) -> Result<GetPluginResponse, PluginRegistryServiceError> {
+    ) -> Result<GetPluginResponse, Self::Error> {
         let PluginRow {
-            artifact_s3_key,
+            artifact_s3_key: _,
             plugin_type,
             plugin_id,
             display_name,
-            tenant_id: _,
-        } = self.db_client.get_plugin(&request.plugin_id).await?;
+            tenant_id,
+            event_source_id,
+        } = self.db_client.get_plugin(&request.plugin_id()).await?;
 
-        let s3_key: String = artifact_s3_key;
         let plugin_type: PluginType = try_from(&plugin_type)?;
 
-        let get_object_output = self
-            .s3
-            .get_object(GetObjectRequest {
-                bucket: self.config.plugin_s3_bucket_name.clone(),
-                key: s3_key.clone(),
-                expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
-                ..Default::default()
-            })
-            .await?;
-
-        let stream = get_object_output
-            .body
-            .ok_or(PluginRegistryServiceError::EmptyObject)?;
-
-        let mut plugin_binary = Vec::new();
-
-        // read the whole file
-        stream
-            .into_async_read()
-            .read_to_end(&mut plugin_binary)
-            .await?;
-
-        let response = GetPluginResponse {
-            plugin: Plugin {
-                plugin_id,
-                display_name,
-                plugin_type,
-                plugin_binary,
-            },
-        };
+        let response = GetPluginResponse::new(
+            plugin_id,
+            PluginMetadata::new(tenant_id, display_name, plugin_type, event_source_id),
+        );
 
         Ok(response)
+    }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn list_plugins(
+        &self,
+        request: ListPluginsRequest,
+    ) -> Result<ListPluginsResponse, Self::Error> {
+        let plugin_rows = self
+            .db_client
+            .list_plugins(&request.tenant_id(), &request.plugin_type())
+            .await?;
+
+        let plugins: Result<Vec<GetPluginResponse>, Self::Error> = plugin_rows
+            .iter()
+            .map(|plugin_row| {
+                Ok(GetPluginResponse::new(
+                    plugin_row.plugin_id,
+                    PluginMetadata::new(
+                        plugin_row.tenant_id,
+                        plugin_row.display_name.clone(),
+                        try_from(&plugin_row.plugin_type)?,
+                        plugin_row.event_source_id,
+                    ),
+                ))
+            })
+            .collect();
+
+        Ok(ListPluginsResponse::new(plugins?))
+    }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn get_plugin_deployment(
+        &self,
+        request: GetPluginDeploymentRequest,
+    ) -> Result<GetPluginDeploymentResponse, Self::Error> {
+        let plugin_deployment_row = self
+            .db_client
+            .get_plugin_deployment(&request.plugin_id())
+            .await?;
+
+        Ok(GetPluginDeploymentResponse::new(PluginDeployment::new(
+            plugin_deployment_row.plugin_id,
+            plugin_deployment_row.timestamp.into(),
+            plugin_deployment_row.status.into(),
+            plugin_deployment_row.deployed,
+        )))
     }
 
     #[tracing::instrument(skip(self, request), err)]
     async fn deploy_plugin(
         &self,
         request: DeployPluginRequest,
-    ) -> Result<DeployPluginResponse, PluginRegistryServiceError> {
-        let plugin_id = request.plugin_id;
+    ) -> Result<DeployPluginResponse, Self::Error> {
+        let plugin_id = request.plugin_id();
         let plugin_row = self.db_client.get_plugin(&plugin_id).await?;
 
         // TODO: Given how many fields I'm forwarding here, it may just
@@ -232,54 +303,88 @@ impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
         Ok(DeployPluginResponse {})
     }
 
-    #[allow(dead_code)]
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn tear_down_plugin(
         &self,
-        _request: TearDownPluginRequest,
-    ) -> Result<TearDownPluginResponse, PluginRegistryServiceError> {
-        todo!()
+        request: TearDownPluginRequest,
+    ) -> Result<TearDownPluginResponse, Self::Error> {
+        let plugin_id = request.plugin_id();
+        let plugin_row = self.db_client.get_plugin(&plugin_id).await?;
+
+        deploy_plugin::teardown_plugin(
+            &self.nomad_client,
+            &self.db_client,
+            plugin_row,
+            &self.config,
+        )
+        .await
+        .map_err(PluginRegistryServiceError::from)?;
+
+        Ok(TearDownPluginResponse {})
     }
 
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn get_generators_for_event_source(
         &self,
-        _request: GetGeneratorsForEventSourceRequest,
-    ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceError> {
-        todo!()
+        request: GetGeneratorsForEventSourceRequest,
+    ) -> Result<GetGeneratorsForEventSourceResponse, Self::Error> {
+        let plugin_ids: Vec<Uuid> = self
+            .db_client
+            .get_generators_for_event_source(&request.event_source_id())
+            .await?
+            .iter()
+            .map(|row| row.plugin_id)
+            .collect();
+
+        if plugin_ids.is_empty() {
+            Err(PluginRegistryServiceError::NotFound)
+        } else {
+            Ok(GetGeneratorsForEventSourceResponse::new(plugin_ids))
+        }
     }
 
-    #[allow(dead_code)]
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn get_analyzers_for_tenant(
         &self,
-        _request: GetAnalyzersForTenantRequest,
-    ) -> Result<GetAnalyzersForTenantResponse, PluginRegistryServiceError> {
-        todo!()
+        request: GetAnalyzersForTenantRequest,
+    ) -> Result<GetAnalyzersForTenantResponse, Self::Error> {
+        let plugin_ids: Vec<Uuid> = self
+            .db_client
+            .get_analyzers_for_tenant(&request.tenant_id())
+            .await?
+            .iter()
+            .map(|row| row.plugin_id)
+            .collect();
+
+        if plugin_ids.is_empty() {
+            Err(PluginRegistryServiceError::NotFound)
+        } else {
+            Ok(GetAnalyzersForTenantResponse::new(plugin_ids))
+        }
+    }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn get_plugin_health(
+        &self,
+        request: GetPluginHealthRequest,
+    ) -> Result<GetPluginHealthResponse, Self::Error> {
+        let health_status = get_plugin_health::get_plugin_health(
+            &self.nomad_client,
+            &self.db_client,
+            request.plugin_id(),
+        )
+        .await?;
+        Ok(GetPluginHealthResponse::new(health_status))
     }
 }
 
 pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn std::error::Error>> {
     let db_config = config.db_config;
 
-    tracing::info!(
-        message="Connecting to plugin registry table",
-        plugin_registry_db_username=%db_config.plugin_registry_db_username,
-        plugin_registry_db_hostname=%db_config.plugin_registry_db_hostname,
-        plugin_registry_db_port=%db_config.plugin_registry_db_port,
-    );
-    let postgres_address = format!(
-        "postgresql://{}:{}@{}:{}",
-        db_config.plugin_registry_db_username,
-        db_config.plugin_registry_db_password,
-        db_config.plugin_registry_db_hostname,
-        db_config.plugin_registry_db_port,
-    );
-
     let addr = config.service_config.plugin_registry_bind_address;
 
     let plugin_registry = PluginRegistry {
-        db_client: PluginRegistryDbClient::new(&postgres_address).await?,
+        db_client: PluginRegistryDbClient::init_with_config(db_config).await?,
         nomad_client: NomadClient::from_env(),
         nomad_cli: NomadCli::default(),
         s3: S3Client::from_env(),
@@ -298,7 +403,7 @@ pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn st
         socket_address = %addr,
     );
 
-    server.serve().await
+    Ok(server.serve().await?)
 }
 
 fn generate_artifact_s3_key(
@@ -308,19 +413,15 @@ fn generate_artifact_s3_key(
 ) -> String {
     format!(
         "plugins/tenant_id_{}/plugin_type-{}/{}.bin",
-        tenant_id.to_hyphenated(),
+        tenant_id.as_hyphenated(),
         plugin_type.type_name(),
-        plugin_id.to_hyphenated(),
+        plugin_id.as_hyphenated(),
     )
 }
 
-fn generate_plugin_id(tenant_id: &uuid::Uuid, plugin_artifact: &[u8]) -> uuid::Uuid {
-    let mut hasher = blake3::Hasher::new();
-    hasher.update(&b"PLUGIN_ID_NAMESPACE"[..]);
-    hasher.update(tenant_id.as_bytes());
-    hasher.update(plugin_artifact);
-    let mut output = [0; 16];
-    hasher.finalize_xof().fill(&mut output);
-
-    uuid::Uuid::from_bytes(output)
+fn generate_plugin_id() -> uuid::Uuid {
+    // NOTE: Previously we generated plugin-id based off of the plugin binary, but
+    // since the binary is now streamed, + eventually 1 plugin can have different
+    // versions - we decided to make it a random UUID.
+    uuid::Uuid::new_v4()
 }

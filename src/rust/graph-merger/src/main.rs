@@ -1,94 +1,99 @@
-use grapl_config::{
-    env_helpers::{
-        s3_event_emitters_from_env,
-        FromEnv,
+use clap::Parser;
+use futures::{
+    FutureExt,
+    StreamExt,
+};
+use grapl_tracing::setup_tracing;
+use kafka::{
+    config::{
+        ConsumerConfig,
+        ProducerConfig,
     },
-    event_caches,
+    StreamProcessor,
 };
-use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{
-    decoder::ProtoDecoder,
-    serialization::MergedGraphSerializer,
+use rust_proto::{
+    graplinc::grapl::api::{
+        graph::v1beta1::IdentifiedGraph,
+        graph_mutation::v1beta1::client::GraphMutationClient,
+        plugin_sdk::analyzers::v1beta1::messages::Update,
+    },
+    protocol::service_client::ConnectWithConfig,
 };
-use rusoto_dynamodb::DynamoDbClient;
-use rusoto_sqs::SqsClient;
-use sqs_executor::{
-    make_ten,
-    s3_event_retriever::S3PayloadRetriever,
-};
-use tracing::info;
+use tracing::instrument::WithSubscriber;
 
 use crate::{
-    reverse_resolver::ReverseEdgeResolver,
+    config::GraphMergerConfig,
     service::{
-        time_based_key_fn,
         GraphMerger,
+        GraphMergerError,
     },
 };
 
-pub mod reverse_resolver;
+pub mod config;
 pub mod service;
-pub mod upsert_util;
-pub mod upserter;
 
-#[tracing::instrument]
-async fn handler() -> Result<(), Box<dyn std::error::Error>> {
-    let (env, _guard) = grapl_config::init_grapl_env!();
-    info!("Starting graph-merger");
-
-    let sqs_client = SqsClient::from_env();
-
-    let cache = &mut event_caches(&env).await;
-
-    let mg_alphas = grapl_config::mg_alphas();
-
-    let graph_merger = &mut make_ten(async {
-        let mg_alphas_copy = mg_alphas.clone();
-        tracing::debug!(
-            mg_alphas=?&mg_alphas_copy,
-            "Connecting to mg_alphas"
-        );
-        let dynamo = DynamoDbClient::from_env();
-        let reverse_edge_resolver =
-            ReverseEdgeResolver::new(dynamo, MetricReporter::new(&env.service_name), 1000);
-        GraphMerger::new(mg_alphas_copy, reverse_edge_resolver)
-    })
-    .await;
-
-    let serializer = &mut make_ten(async { MergedGraphSerializer::default() }).await;
-
-    let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
-
-    let s3_payload_retriever = &mut make_ten(async {
-        S3PayloadRetriever::new(
-            |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            ProtoDecoder::default(),
-            MetricReporter::new(&env.service_name),
-        )
-    })
-    .await;
-
-    info!("Starting process_loop");
-    sqs_executor::process_loop(
-        grapl_config::source_queue_url(),
-        grapl_config::dead_letter_queue_url(),
-        cache,
-        sqs_client.clone(),
-        graph_merger,
-        s3_payload_retriever,
-        s3_emitter,
-        serializer,
-        MetricReporter::new(&env.service_name),
-    )
-    .await;
-
-    info!("Exiting");
-
-    Ok(())
-}
+const SERVICE_NAME: &'static str = "graph-merger";
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    handler().await?;
+async fn main() -> eyre::Result<()> {
+    let _guard = setup_tracing(SERVICE_NAME)?;
+
+    let service_config = GraphMergerConfig::parse();
+    let graph_mutation_client =
+        GraphMutationClient::connect_with_config(service_config.graph_mutation_client_config)
+            .await?;
+    let graph_merger = GraphMerger::new(graph_mutation_client);
+
+    let consumer_config = ConsumerConfig::parse();
+    let producer_config = ProducerConfig::parse();
+
+    handler(graph_merger, consumer_config, producer_config).await
+}
+
+#[tracing::instrument(skip(graph_merger, consumer_config, producer_config))]
+async fn handler(
+    graph_merger: GraphMerger,
+    consumer_config: ConsumerConfig,
+    producer_config: ProducerConfig,
+) -> eyre::Result<()> {
+    tracing::info!(
+        message = "configuring kafka stream processor",
+        bootstrap_servers = %consumer_config.bootstrap_servers,
+        consumer_group_name = %consumer_config.consumer_group_name,
+        consumer_topic = %consumer_config.topic,
+        producer_topic = %producer_config.topic,
+    );
+
+    // TODO: also construct a stream processor for retries
+
+    let stream_processor: StreamProcessor<IdentifiedGraph, Update> =
+        StreamProcessor::new(consumer_config, producer_config)?;
+
+    tracing::info!(message = "kafka stream processor configured successfully",);
+
+    let stream = stream_processor.stream::<_, _, GraphMergerError>(move |event| {
+        graph_merger
+            .clone()
+            .handle_event(event)
+            .into_stream()
+            .flat_map(|results| futures::stream::iter(results))
+    });
+
+    stream
+        .for_each(|res| async move {
+            if let Err(e) = res {
+                // TODO: retry the message?
+                tracing::error!(
+                    message = "error processing kafka message",
+                    reason = %e,
+                );
+            } else {
+                // TODO: collect some metrics
+                tracing::debug!(message = "merged identified graph successfully");
+            }
+        })
+        .with_current_subscriber()
+        .await;
+
     Ok(())
 }

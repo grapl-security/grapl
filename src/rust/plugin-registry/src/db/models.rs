@@ -1,7 +1,13 @@
+use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1;
 use sqlx::types::chrono::{
     DateTime,
     Utc,
 };
+
+#[derive(sqlx::FromRow)]
+pub struct PluginIdRow {
+    pub plugin_id: uuid::Uuid,
+}
 
 #[derive(sqlx::FromRow)]
 pub struct PluginRow {
@@ -10,6 +16,7 @@ pub struct PluginRow {
     pub display_name: String,
     pub plugin_type: String,
     pub artifact_s3_key: String,
+    pub event_source_id: Option<uuid::Uuid>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, sqlx::Type)]
@@ -28,12 +35,22 @@ impl<T, E> From<&Result<T, E>> for PluginDeploymentStatus {
     }
 }
 
+impl From<PluginDeploymentStatus> for v1beta1::PluginDeploymentStatus {
+    fn from(plugin_deployment_status: PluginDeploymentStatus) -> Self {
+        match plugin_deployment_status {
+            PluginDeploymentStatus::Fail => v1beta1::PluginDeploymentStatus::Fail,
+            PluginDeploymentStatus::Success => v1beta1::PluginDeploymentStatus::Success,
+        }
+    }
+}
+
 /// The whole PluginDeployment table is currently just appended to, not
 /// consumed anywhere.
 #[derive(sqlx::FromRow)]
 pub struct PluginDeploymentRow {
-    pub id: i32,
+    pub id: i64,
     pub plugin_id: uuid::Uuid,
-    pub deploy_time: DateTime<Utc>,
+    pub timestamp: DateTime<Utc>,
     pub status: PluginDeploymentStatus,
+    pub deployed: bool,
 }

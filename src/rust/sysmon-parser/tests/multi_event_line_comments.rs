@@ -1,5 +1,5 @@
 #[test]
-fn comments() -> Result<(), Box<dyn std::error::Error>> {
+fn comments() -> eyre::Result<()> {
     // TODO(inickles): use data from the file under 'tests/data' directory after we move this
     // package to its own repo
     let xml = r#"

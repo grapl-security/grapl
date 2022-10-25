@@ -1,6 +1,6 @@
 # This job is separate from `grapl-core.nomad` because
-# we want to have this job depend on
-# the successful, complete startup of `dgraph` in grapl-core.
+# we want to have this job depend on the successful, complete startup of 
+# grapl-core.
 # There are more-robust ways to do this, that could bring
 # `grapl-provisioner` back  into the `grapl-core` fold, but
 # this will get the job done for the time being.
@@ -15,6 +15,14 @@ With local-grapl, we have to inject:
 With prod, these are all taken from the EC2 Instance Metadata in prod.
 We have to provide a default value in prod; otherwise you can end up with a 
 weird nomad state parse error.
+EOF
+}
+
+variable "observability_env_vars" {
+  type        = string
+  description = <<EOF
+With local-grapl, we have to inject env vars for Opentelemetry.
+In prod, this is currently disabled.
 EOF
 }
 
@@ -60,16 +68,14 @@ variable "py_log_level" {
   description = "Controls the logging behavior of Python-based services."
 }
 
-variable "tracing_endpoint" {
-  type = string
-  # if nothing is passed in we default to "${attr.unique.network.ip-address}" in locals.
-  # Using a variable isn't allowed here though :(
-  default = ""
-}
-
 locals {
-  tracing_endpoint        = (var.tracing_endpoint == "") ? "http://${attr.unique.network.ip-address}" : var.tracing_endpoint
-  tracing_zipkin_endpoint = "${local.tracing_endpoint}:9411/api/v2/spans"
+  # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
+  # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
+  # Examples of keys we may add in the future: language, instance_id/ip, team
+
+  # Currently we use the same version for all containers. As such we pick one container to get the version from
+  app_version                      = split(":", var.container_images["provisioner"])[1]
+  default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
 }
 
 job "grapl-provision" {
@@ -89,16 +95,7 @@ job "grapl-provision" {
       config {
         image      = var.container_images["provisioner"]
         entrypoint = ["/bin/bash", "-c", "-o", "errexit", "-o", "nounset", "-c"]
-        command = trimspace(<<EOF
-if [[ "${DGRAPH_DROP_ALL_DATA}" -ne 0 ]]; then
-  # Drop all existing data from dgraph
-  # from https://discuss.dgraph.io/t/drop-all-data-from-dgraph/5866 
-  curl -X POST "${DGRAPH_HTTP_ADDRESS}"/alter -d '{"drop_op": "ALL"}'
-fi
-
-./provisioner.pex
-EOF
-        )
+        command    = "./provisioner.pex"
       }
 
       lifecycle {
@@ -114,21 +111,23 @@ EOF
         env         = true
       }
 
-      env {
-        # This is a hack, because IDK how to share locals across files.
-        # It's fine if `provision` only hits one alpha.
-        MG_ALPHAS = "localhost:${NOMAD_UPSTREAM_PORT_dgraph-alpha-0-grpc-public}"
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
 
+      env {
         AWS_DEFAULT_REGION                 = var.aws_region
         DGRAPH_DROP_ALL_DATA               = 1
-        DGRAPH_HTTP_ADDRESS                = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-http}"
         GRAPL_SCHEMA_TABLE                 = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE              = var.user_auth_table
         GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
         GRAPL_LOG_LEVEL                    = var.py_log_level
-        OTEL_EXPORTER_ZIPKIN_ENDPOINT      = local.tracing_zipkin_endpoint
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
     }
 
@@ -136,23 +135,7 @@ EOF
       name = "provisioner"
       connect {
         sidecar_service {
-          proxy {
-            upstreams {
-              # This non-dynamic upstream is a hack, 
-              # because IDK how to share locals across files
-              destination_name = "dgraph-alpha-0-grpc-public"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1000
-            }
-
-            upstreams {
-              # This non-dynamic upstream is a hack, 
-              # because IDK how to share locals across files
-              destination_name = "dgraph-alpha-0-http"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1001
-            }
-          }
+          proxy {}
         }
       }
     }

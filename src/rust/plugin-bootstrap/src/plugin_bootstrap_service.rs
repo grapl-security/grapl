@@ -1,19 +1,39 @@
+use std::time::Duration;
+
+use clap::Parser;
+use grapl_tracing::setup_tracing;
 use plugin_bootstrap::{
-    server::PluginBootstrapper,
+    server::{
+        PluginBootstrap,
+        PluginBootstrapper,
+    },
     PluginBootstrapServiceConfig,
 };
-use structopt::StructOpt;
+use rust_proto::{
+    graplinc::grapl::api::plugin_bootstrap::v1beta1::server::PluginBootstrapServer,
+    protocol::healthcheck::HealthcheckStatus,
+};
+use tokio::net::TcpListener;
+
+const SERVICE_NAME: &'static str = "plugin-bootstrap";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (_env, _guard) = grapl_config::init_grapl_env!();
-    let config = PluginBootstrapServiceConfig::from_args();
+    let _guard = setup_tracing(SERVICE_NAME)?;
+    let config = PluginBootstrapServiceConfig::parse();
     tracing::info!(message="Starting Plugin Bootstrap Service", config=?config);
 
     let plugin_bootstrapper =
         PluginBootstrapper::load(&config.plugin_certificate_path, &config.plugin_binary_path)?;
 
-    plugin_bootstrapper.serve(config).await?;
+    let plugin_bootstrap = PluginBootstrap::new(plugin_bootstrapper);
 
-    Ok(())
+    let (server, _shutdown_tx) = PluginBootstrapServer::new(
+        plugin_bootstrap,
+        TcpListener::bind(config.plugin_registry_bind_address).await?,
+        || async { Ok(HealthcheckStatus::Serving) }, // FIXME; this is garbage
+        Duration::from_millis(config.plugin_registry_polling_interval_ms),
+    );
+
+    Ok(server.serve().await?)
 }

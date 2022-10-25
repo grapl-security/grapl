@@ -1,15 +1,17 @@
 import datetime
 import uuid
-from typing import Mapping, Sequence, Union
+from typing import Mapping, Sequence
 
 import hypothesis.strategies as st
-from python_proto import SerDe
-from python_proto.api import (
+from python_proto.api.graph.v1beta1.messages import (
     DecrementOnlyIntProp,
     DecrementOnlyUintProp,
     Edge,
     EdgeList,
+    ExecutionHit,
     GraphDescription,
+    IdentifiedEdge,
+    IdentifiedEdgeList,
     IdentifiedGraph,
     IdentifiedNode,
     IdStrategy,
@@ -18,16 +20,15 @@ from python_proto.api import (
     ImmutableUintProp,
     IncrementOnlyIntProp,
     IncrementOnlyUintProp,
-    MergedEdge,
-    MergedEdgeList,
-    MergedGraph,
-    MergedNode,
+    Lens,
     NodeDescription,
     NodeProperty,
     Session,
     Static,
 )
 from python_proto.common import Duration, Timestamp, Uuid
+from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
+from python_proto.grapl.common.v1beta1.messages import Uid
 from python_proto.metrics import (
     Counter,
     Gauge,
@@ -36,7 +37,8 @@ from python_proto.metrics import (
     Label,
     MetricWrapper,
 )
-from python_proto.pipeline import Envelope, Metadata, RawLog
+from python_proto.pipeline import Envelope, RawLog
+from python_proto.serde import SerDe
 
 #
 # constants
@@ -56,12 +58,16 @@ INT64_MAX = 2**63 - 1
 INT32_MIN = -(2**31) + 1
 INT32_MAX = 2**31 - 1
 
+UINT32_MIN = 0
+UINT32_MAX = 2**32 - 1
+
 DURATION_SECONDS_MIN = 0
 DURATION_SECONDS_MAX = UINT64_MAX
 DURATION_NANOS_MIN = 0
 DURATION_NANOS_MAX = 10**9 - 1
 
 MAX_LIST_SIZE = 5
+MAX_DICT_SIZE = 5
 
 MIN_LOG_EVENT_SIZE = 0
 MAX_LOG_EVENT_SIZE = 1024
@@ -71,14 +77,24 @@ MAX_LOG_EVENT_SIZE = 1024
 # common
 #
 
+uint64s = st.integers(min_value=UINT64_MIN, max_value=UINT64_MAX)
+int32s = st.integers(min_value=INT32_MIN, max_value=INT32_MAX)
+int64s = st.integers(min_value=INT64_MIN, max_value=INT64_MAX)
+uint32s = st.integers(min_value=UINT32_MIN, max_value=UINT32_MAX)
+
+# Very few of the tests in here really depend on the content of the text.
+small_text = st.text(max_size=4)
+
+
+def uids(
+    value: st.SearchStrategy[int] = uint64s,
+) -> st.SearchStrategy[grapl_common_messages.Uid]:
+    return st.builds(grapl_common_messages.Uid, value=value)
+
 
 def uuids(
-    lsbs: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
-    msbs: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    lsbs: st.SearchStrategy[int] = uint64s,
+    msbs: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[Uuid]:
     return st.builds(Uuid, lsb=lsbs, msb=msbs)
 
@@ -107,23 +123,6 @@ def timestamps(
 #
 
 
-def metadatas(
-    trace_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
-    tenant_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
-    event_source_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
-    created_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
-    last_updated_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
-) -> st.SearchStrategy[Metadata]:
-    return st.builds(
-        Metadata,
-        trace_id=trace_ids,
-        tenant_id=tenant_ids,
-        event_source_id=event_source_ids,
-        created_time=created_times,
-        last_updated_time=last_updated_times,
-    )
-
-
 def raw_logs(
     log_events: st.SearchStrategy[bytes] = st.binary(
         min_size=MIN_LOG_EVENT_SIZE, max_size=MAX_LOG_EVENT_SIZE
@@ -133,7 +132,12 @@ def raw_logs(
 
 
 def envelopes(
-    metadatas: st.SearchStrategy[Metadata] = metadatas(),
+    trace_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
+    tenant_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
+    event_source_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
+    retry_counts: st.SearchStrategy[int] = uint32s,
+    created_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
+    last_updated_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
     inner_messages: st.SearchStrategy[SerDe] = uuids()
     | timestamps()
     | durations()
@@ -141,7 +145,12 @@ def envelopes(
 ) -> st.SearchStrategy[Envelope]:
     return st.builds(
         Envelope,
-        metadata=metadatas,
+        trace_id=trace_ids,
+        tenant_id=tenant_ids,
+        event_source_id=event_source_ids,
+        retry_count=retry_counts,
+        created_time=created_times,
+        last_updated_time=last_updated_times,
         inner_message=inner_messages,
     )
 
@@ -156,15 +165,9 @@ def sessions(
         st.text(), max_size=MAX_LIST_SIZE
     ),
     primary_key_requires_asset_ids: st.SearchStrategy[bool] = st.booleans(),
-    create_times: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
-    last_seen_times: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
-    terminate_times: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    create_times: st.SearchStrategy[int] = uint64s,
+    last_seen_times: st.SearchStrategy[int] = uint64s,
+    terminate_times: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[Session]:
     return st.builds(
         Session,
@@ -190,9 +193,7 @@ def statics(
 
 
 def id_strategies(
-    strategies: st.SearchStrategy[Union[Session, Static]] = st.one_of(
-        sessions(), statics()
-    )
+    strategies: st.SearchStrategy[Session | Static] = st.one_of(sessions(), statics())
 ) -> st.SearchStrategy[IdStrategy]:
     return st.builds(
         IdStrategy,
@@ -201,25 +202,19 @@ def id_strategies(
 
 
 def increment_only_uint_props(
-    props: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    props: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[IncrementOnlyUintProp]:
     return st.builds(IncrementOnlyUintProp, prop=props)
 
 
 def immutable_uint_props(
-    props: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    props: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[ImmutableUintProp]:
     return st.builds(ImmutableUintProp, prop=props)
 
 
 def decrement_only_uint_props(
-    props: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    props: st.SearchStrategy[int] = uint64s,
 ) -> st.SearchStrategy[DecrementOnlyUintProp]:
     return st.builds(DecrementOnlyUintProp, prop=props)
 
@@ -256,15 +251,15 @@ def immutable_str_props(
 
 def node_properties(
     properties: st.SearchStrategy[
-        Union[
-            IncrementOnlyUintProp,
-            DecrementOnlyUintProp,
-            ImmutableUintProp,
-            IncrementOnlyIntProp,
-            DecrementOnlyIntProp,
-            ImmutableIntProp,
-            ImmutableStrProp,
-        ]
+        (
+            IncrementOnlyUintProp
+            | DecrementOnlyUintProp
+            | ImmutableUintProp
+            | IncrementOnlyIntProp
+            | DecrementOnlyIntProp
+            | ImmutableIntProp
+            | ImmutableStrProp
+        )
     ] = st.one_of(
         increment_only_uint_props(),
         decrement_only_uint_props(),
@@ -280,7 +275,7 @@ def node_properties(
 
 def node_descriptions(
     properties: st.SearchStrategy[Mapping[str, NodeProperty]] = st.dictionaries(
-        keys=st.text(), values=node_properties()
+        keys=st.text(), values=node_properties(), max_size=MAX_DICT_SIZE
     ),
     node_keys: st.SearchStrategy[str] = st.text(),
     node_types: st.SearchStrategy[str] = st.text(),
@@ -299,34 +294,15 @@ def node_descriptions(
 
 def identified_nodes(
     properties: st.SearchStrategy[Mapping[str, NodeProperty]] = st.dictionaries(
-        keys=st.text(), values=node_properties()
+        keys=st.text(), values=node_properties(), max_size=MAX_DICT_SIZE
     ),
-    node_keys: st.SearchStrategy[str] = st.text(),
+    uids: st.SearchStrategy[Uid] = uids(),
     node_types: st.SearchStrategy[str] = st.text(),
 ) -> st.SearchStrategy[IdentifiedNode]:
     return st.builds(
         IdentifiedNode,
         properties=properties,
-        node_key=node_keys,
-        node_type=node_types,
-    )
-
-
-def merged_nodes(
-    properties: st.SearchStrategy[Mapping[str, NodeProperty]] = st.dictionaries(
-        keys=st.text(), values=node_properties()
-    ),
-    uids: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
-    node_keys: st.SearchStrategy[str] = st.text(),
-    node_types: st.SearchStrategy[str] = st.text(),
-) -> st.SearchStrategy[MergedNode]:
-    return st.builds(
-        MergedNode,
-        properties=properties,
         uid=uids,
-        node_key=node_keys,
         node_type=node_types,
     )
 
@@ -355,40 +331,36 @@ def edge_lists(
     )
 
 
-def merged_edges(
-    from_uids: st.SearchStrategy[str] = st.text(),
-    from_node_keys: st.SearchStrategy[str] = st.text(),
-    to_uids: st.SearchStrategy[str] = st.text(),
-    to_node_keys: st.SearchStrategy[str] = st.text(),
+def identified_edges(
+    from_uids: st.SearchStrategy[Uid] = uids(),
+    to_uids: st.SearchStrategy[Uid] = uids(),
     edge_names: st.SearchStrategy[str] = st.text(),
-) -> st.SearchStrategy[MergedEdge]:
+) -> st.SearchStrategy[IdentifiedEdge]:
     return st.builds(
-        MergedEdge,
+        IdentifiedEdge,
         from_uid=from_uids,
-        from_node_key=from_node_keys,
         to_uid=to_uids,
-        to_node_key=to_node_keys,
         edge_name=edge_names,
     )
 
 
-def merged_edge_lists(
-    edges: st.SearchStrategy[Sequence[MergedEdge]] = st.lists(
-        merged_edges(), max_size=MAX_LIST_SIZE
+def identified_edge_lists(
+    edges: st.SearchStrategy[Sequence[IdentifiedEdge]] = st.lists(
+        identified_edges(), max_size=MAX_LIST_SIZE
     ),
-) -> st.SearchStrategy[MergedEdgeList]:
+) -> st.SearchStrategy[IdentifiedEdgeList]:
     return st.builds(
-        MergedEdgeList,
+        IdentifiedEdgeList,
         edges=edges,
     )
 
 
 def graph_descriptions(
     nodes: st.SearchStrategy[Mapping[str, NodeDescription]] = st.dictionaries(
-        keys=st.text(), values=node_descriptions()
+        keys=st.text(), values=node_descriptions(), max_size=MAX_DICT_SIZE
     ),
     edges: st.SearchStrategy[Mapping[str, EdgeList]] = st.dictionaries(
-        keys=st.text(), values=edge_lists()
+        keys=st.text(), values=edge_lists(), max_size=MAX_DICT_SIZE
     ),
 ) -> st.SearchStrategy[GraphDescription]:
     return st.builds(
@@ -399,11 +371,11 @@ def graph_descriptions(
 
 
 def identified_graphs(
-    nodes: st.SearchStrategy[Mapping[str, IdentifiedNode]] = st.dictionaries(
-        keys=st.text(), values=identified_nodes()
+    nodes: st.SearchStrategy[Mapping[Uid, IdentifiedNode]] = st.dictionaries(
+        keys=uids(), values=identified_nodes(), max_size=MAX_DICT_SIZE
     ),
-    edges: st.SearchStrategy[Mapping[str, EdgeList]] = st.dictionaries(
-        keys=st.text(), values=edge_lists()
+    edges: st.SearchStrategy[Mapping[Uid, IdentifiedEdgeList]] = st.dictionaries(
+        keys=uids(), values=identified_edge_lists(), max_size=MAX_DICT_SIZE
     ),
 ) -> st.SearchStrategy[IdentifiedGraph]:
     return st.builds(
@@ -413,18 +385,45 @@ def identified_graphs(
     )
 
 
-def merged_graphs(
-    nodes: st.SearchStrategy[Mapping[str, MergedNode]] = st.dictionaries(
-        keys=st.text(), values=merged_nodes()
-    ),
-    edges: st.SearchStrategy[Mapping[str, MergedEdgeList]] = st.dictionaries(
-        keys=st.text(), values=merged_edge_lists()
-    ),
-) -> st.SearchStrategy[MergedGraph]:
+def lenses(
+    lens_types: st.SearchStrategy[str] = st.text(),
+    lens_names: st.SearchStrategy[str] = st.text(),
+    uids: st.SearchStrategy[int] = uint64s,
+    scores: st.SearchStrategy[int] = uint64s,
+) -> st.SearchStrategy[Lens]:
     return st.builds(
-        MergedGraph,
+        Lens,
+        lens_type=lens_types,
+        lens_name=lens_names,
+        uid=uids,
+        score=scores,
+    )
+
+
+def execution_hits(
+    nodes: st.SearchStrategy[Mapping[Uid, IdentifiedNode]] = st.dictionaries(
+        keys=uids(), values=identified_nodes(), max_size=MAX_DICT_SIZE
+    ),
+    edges: st.SearchStrategy[Mapping[Uid, IdentifiedEdgeList]] = st.dictionaries(
+        keys=uids(), values=identified_edge_lists(), max_size=MAX_DICT_SIZE
+    ),
+    analyzer_names: st.SearchStrategy[str] = st.text(),
+    risk_scores: st.SearchStrategy[int] = uint64s,
+    lenses: st.SearchStrategy[Sequence[Lens]] = st.lists(
+        lenses(), max_size=MAX_LIST_SIZE
+    ),
+    risky_node_keys: st.SearchStrategy[Sequence[str]] = st.lists(
+        st.text(), max_size=MAX_LIST_SIZE
+    ),
+) -> st.SearchStrategy[ExecutionHit]:
+    return st.builds(
+        ExecutionHit,
         nodes=nodes,
         edges=edges,
+        analyzer_name=analyzer_names,
+        risk_score=risk_scores,
+        lenses=lenses,
+        risky_node_keys=risky_node_keys,
     )
 
 
@@ -442,9 +441,7 @@ def labels(
 
 def counters(
     names: st.SearchStrategy[str] = st.text(),
-    increments: st.SearchStrategy[int] = st.integers(
-        min_value=UINT64_MIN, max_value=UINT64_MAX
-    ),
+    increments: st.SearchStrategy[int] = uint64s,
     labels: st.SearchStrategy[Sequence[Label]] = st.lists(
         labels(), max_size=MAX_LIST_SIZE
     ),
@@ -480,7 +477,7 @@ def histograms(
 
 
 def metric_wrappers(
-    metrics: st.SearchStrategy[Union[Counter, Gauge, Histogram]] = st.one_of(
+    metrics: st.SearchStrategy[Counter | Gauge | Histogram] = st.one_of(
         counters(), gauges(), histograms()
     )
 ) -> st.SearchStrategy[MetricWrapper]:

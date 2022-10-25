@@ -1,20 +1,29 @@
 use std::os::unix::fs::PermissionsExt;
 
-use plugin_bootstrap::client::PluginBootstrapClient;
-use rust_proto::plugin_bootstrap::{
-    GetBootstrapRequest,
-    GetBootstrapResponse,
+use clap::Parser;
+use grapl_tracing::setup_tracing;
+use rust_proto::{
+    client_factory::services::PluginBootstrapClientConfig,
+    graplinc::grapl::api::plugin_bootstrap::v1beta1::{
+        client::PluginBootstrapClient,
+        GetBootstrapRequest,
+        GetBootstrapResponse,
+    },
+    protocol::service_client::ConnectWithConfig,
 };
 
 static PLUGIN_BINARY_PATH: &str = "/usr/local/bin/grapl-plugin";
 static CLIENT_CERTIFICATE_PATH: &str = "/etc/ssl/private/plugin-client-cert.pem";
 static PLUGIN_CONFIG_PATH: &str = "/etc/systemd/system/plugin.service.d/override.conf";
+const SERVICE_NAME: &'static str = "plugin-bootstrap-init";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (_env, _guard) = grapl_config::init_grapl_env!();
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
-    let mut bootstrap_client = PluginBootstrapClient::from_env().await?;
+    let client_config = PluginBootstrapClientConfig::parse();
+    let mut bootstrap_client = PluginBootstrapClient::connect_with_config(client_config).await?;
+
     let GetBootstrapResponse {
         plugin_payload,
         client_certificate,

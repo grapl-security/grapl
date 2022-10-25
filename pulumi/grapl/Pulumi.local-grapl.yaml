@@ -17,25 +17,25 @@ config:
       sns: http://host.docker.internal:4566
       sqs: http://host.docker.internal:4566
   aws:region: us-east-1
-  aws:s3ForcePathStyle: "true"
+  aws:s3UsePathStyle: "true"
   aws:secretKey: test
   aws:skipCredentialsValidation: "true"
   aws:skipRequestingAccountId: "true"
   consul:address: http://host.docker.internal:8500
   grapl:GRAPL_API_HOST: api.grapl.test
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: fake-ops-email@fake.domain
-  # Brought up in grapl-local-infra.nomad
-  grapl:REDIS_ENDPOINT: redis://host.docker.internal:6379
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:artifacts:
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-c595a79
     firecracker_rootfs.tar.gz: 20220405165304-c595a79
-  kafka:bootstrapServers:
-    # If this ever changes - i.e. to localhost - you'll need to change the
-    # `host.docker.internal` that occurs in grapl-local-infra.nomad::kafka
-    - "host.docker.internal:29092"
-  kafka:tlsEnabled: "false"
   grapl:confluent-environment-name: "local-grapl"
+  grapl:lightstep-endpoint: 'http://{{ env "attr.unique.network.ip-address" }}:8360'
+  grapl:lightstep-is-endpoint-insecure: True
+  grapl:scylla-username: "cassandra"
+  grapl:scylla-password: "cassandra" # In prod this is a secret!
+  grapl:scylla-addresses:
+    # note: this ${} is interpolated inside Nomad
+    - "${attr.unique.network.ip-address}:9042"
   # Host OS's Nomad instance
   nomad:address: http://host.docker.internal:4646
   postgresql:host: host.docker.internal

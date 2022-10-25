@@ -1,21 +1,45 @@
 use std::net::SocketAddr;
 
-use structopt::StructOpt;
+use kafka::config::ProducerConfig;
 
-pub mod client;
 pub mod psql_queue;
 pub mod server;
+#[cfg(feature = "test-utils")]
+pub mod test_utils;
 
-#[derive(StructOpt, Debug)]
+// Intentionally not clap::Parser, since ProducerConfigs are
+// manually constructed. Contains configs for all dependencies needed
+// to construct a PluginWorkQueue.
+pub struct ConfigUnion {
+    pub service_config: PluginWorkQueueServiceConfig,
+    pub db_config: PluginWorkQueueDbConfig,
+    pub generator_producer_config: ProducerConfig,
+}
+
+#[derive(clap::Parser, Clone, Debug)]
 pub struct PluginWorkQueueServiceConfig {
-    #[structopt(env)]
+    #[clap(long, env)]
     pub plugin_work_queue_bind_address: SocketAddr,
-    #[structopt(env)]
-    pub plugin_work_queue_db_hostname: String,
-    #[structopt(env)]
-    pub plugin_work_queue_db_port: u16,
-    #[structopt(env)]
+    #[clap(long, env)]
+    pub plugin_work_queue_healthcheck_polling_interval_ms: u64,
+}
+
+#[derive(clap::Parser, Clone, Debug)]
+pub struct PluginWorkQueueDbConfig {
+    #[clap(long, env)]
+    pub plugin_work_queue_db_address: String,
+    #[clap(long, env)]
     pub plugin_work_queue_db_username: String,
-    #[structopt(env)]
-    pub plugin_work_queue_db_password: String,
+    #[clap(long, env)]
+    pub plugin_work_queue_db_password: grapl_config::SecretString,
+}
+
+impl grapl_config::ToPostgresUrl for PluginWorkQueueDbConfig {
+    fn to_postgres_url(self) -> grapl_config::PostgresUrl {
+        grapl_config::PostgresUrl {
+            address: self.plugin_work_queue_db_address,
+            username: self.plugin_work_queue_db_username,
+            password: self.plugin_work_queue_db_password,
+        }
+    }
 }

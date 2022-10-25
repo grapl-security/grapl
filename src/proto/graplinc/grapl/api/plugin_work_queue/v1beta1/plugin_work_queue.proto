@@ -3,40 +3,53 @@ syntax = "proto3";
 package graplinc.grapl.api.plugin_work_queue.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
+import "graplinc/grapl/api/graph/v1beta1/types.proto";
 
 // A job for a given plugin, for a given tenant, to be executed against `data`
 message ExecutionJob {
-  // The tenant that this request is tied to
-  graplinc.common.v1beta1.Uuid tenant_id = 1;
-  // The plugin to be executed
-  graplinc.common.v1beta1.Uuid plugin_id = 2;
   // The data that the plugin will be executed against
-  bytes data = 3;
+  bytes data = 1;
+  // The tenant these data belong to
+  graplinc.common.v1beta1.Uuid tenant_id = 2;
+  // The logical operation these data are tied to
+  graplinc.common.v1beta1.Uuid trace_id = 3;
+  // The event source from which these data originated
+  graplinc.common.v1beta1.Uuid event_source_id = 4;
 }
 
 // A request to create a new ExecutionJob for a Generator
-message PutExecuteGeneratorRequest {
+message PushExecuteGeneratorRequest {
   // The job to be executed
   ExecutionJob execution_job = 1;
+  // The plugin id of a generator that should handle this job
+  graplinc.common.v1beta1.Uuid plugin_id = 2;
 }
 
-// The response to a PutExecuteGeneratorRequest, indicating success
-message PutExecuteGeneratorResponse {}
+// The response to a PushExecuteGeneratorRequest, indicating success
+message PushExecuteGeneratorResponse {}
 
 // A request to create a new ExecutionJob for an Analyzer
-message PutExecuteAnalyzerRequest {
+message PushExecuteAnalyzerRequest {
   // The job to be executed
   ExecutionJob execution_job = 1;
+  // The plugin id of an analyzer that should handle this job
+  graplinc.common.v1beta1.Uuid plugin_id = 2;
 }
 
-// The response to a PutExecuteAnalyzerRequest, indicating success
-message PutExecuteAnalyzerResponse {}
+// The response to a PushExecuteAnalyzerRequest, indicating success
+message PushExecuteAnalyzerResponse {}
 
 // A request to retrieve a new ExecutionJob for a Generator
-message GetExecuteGeneratorRequest {}
+message GetExecuteGeneratorRequest {
+  // The plugin id of the plugin making this request
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
 
 // A request to retrieve a new ExecutionJob for an Analyzer
-message GetExecuteAnalyzerRequest {}
+message GetExecuteAnalyzerRequest {
+  // The plugin id of the plugin making this request
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
 
 // When there are no jobs left in the queue. Primarily for transport as we
 // currently represent this as Option on the Rust side of things.
@@ -74,8 +87,16 @@ message GetExecuteAnalyzerResponse {
 message AcknowledgeGeneratorRequest {
   // The request_id of the job that has been completed
   int64 request_id = 1;
-  // 'true' if success, 'false' if failure
-  bool success = 2;
+  // Some(GraphDescription) if generator ran successfully, None if it failed.
+  optional graplinc.grapl.api.graph.v1beta1.GraphDescription graph_description = 2;
+  // The plugin id of the plugin that completed the request
+  graplinc.common.v1beta1.Uuid plugin_id = 3;
+  // The tenant the plugin belongs to
+  graplinc.common.v1beta1.Uuid tenant_id = 4;
+  // The logical operation this request is tied to
+  graplinc.common.v1beta1.Uuid trace_id = 5;
+  // The event source from which the data originated
+  graplinc.common.v1beta1.Uuid event_source_id = 6;
 }
 
 // A response to an AcknowledgeGeneratorResponse
@@ -86,7 +107,16 @@ message AcknowledgeAnalyzerRequest {
   // The request_id of the job that has been completed
   int64 request_id = 1;
   // 'true' if success, 'false' if failure
+  // TODO: This will likely become an `optional GeneratedMessage` field like AcknowledgeGeneratorRequest
   bool success = 2;
+  // The plugin id of the plugin that completed the request
+  graplinc.common.v1beta1.Uuid plugin_id = 3;
+  // The tenant the plugin belongs to
+  graplinc.common.v1beta1.Uuid tenant_id = 4;
+  // The logical operation this request is tied to
+  graplinc.common.v1beta1.Uuid trace_id = 5;
+  // The event source from which the data originated
+  graplinc.common.v1beta1.Uuid event_source_id = 6;
 }
 
 // A response to an AcknowledgeAnalyzerRequest
@@ -95,9 +125,9 @@ message AcknowledgeAnalyzerResponse {}
 // The PluginWorkQueueService manages ExecutionJobs for Generator and Analyzer plugins
 service PluginWorkQueueService {
   // Adds a new execution job for a generator
-  rpc PutExecuteGenerator(PutExecuteGeneratorRequest) returns (PutExecuteGeneratorResponse);
+  rpc PushExecuteGenerator(PushExecuteGeneratorRequest) returns (PushExecuteGeneratorResponse);
   // Adds a new execution job for an analyzer
-  rpc PutExecuteAnalyzer(PutExecuteAnalyzerRequest) returns (PutExecuteAnalyzerResponse);
+  rpc PushExecuteAnalyzer(PushExecuteAnalyzerRequest) returns (PushExecuteAnalyzerResponse);
   // Retrieves a new execution job for a generator
   rpc GetExecuteGenerator(GetExecuteGeneratorRequest) returns (GetExecuteGeneratorResponse);
   // Retrieves a new execution job for an analyzer

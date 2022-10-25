@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, Sequence, cast
+from typing import Any, Iterator, Sequence, cast
 from unittest.mock import MagicMock, Mock, patch
 
 from click.testing import CliRunner, Result
@@ -19,7 +19,7 @@ class BotoSessionMock:
     def __init__(self, session: Mock) -> None:
         self.session = session
         # We'll store `session.client("thing")` in a map for easy access
-        self.clients: Dict[str, Mock] = {}
+        self.clients: dict[str, Mock] = {}
 
         def _memoize_client(service_name: str, **kwargs: Any) -> Mock:
             # This is called when you call `session.client("thing")`

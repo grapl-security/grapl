@@ -64,11 +64,32 @@ variable "RELEASE_BUILD" {
 # our Rust projects. Otherwise, we'll stick with the standard debug
 # profile.
 variable "RUST_BUILD" {
-  default = RELEASE_BUILD ? "release" : "debug"
+  default = RELEASE_BUILD ? "release" : "dev-local-grapl"
+}
+
+# This will be incorporated into the base image identifier for our
+# Rust images. In general, it should correspond to the version in
+# `src/rust/rust-toolchain.toml`, which we'll extract in our Makefile
+# and pass in here. If something weird happens in the future where we
+# need to override that for some reason, we can.
+variable "RUST_VERSION" {
+}
+
+# This will be incorporated into the base image identifier for our
+# Python images. In general, it should correspond to the version in
+# `.python-version`, which we'll extract in our Makefile
+# and pass in here. If something weird happens in the future where we
+# need to override that for some reason, we can.
+variable "PYTHON_VERSION" {
 }
 
 # This is the directory that certain artifacts will be deposited into
 variable "DIST_DIR" {
+}
+
+# As of Tonic 0.8, we need to download/install our own `protoc` 
+# in the Rust base image.
+variable "PROTOC_VERSION" {
 }
 
 # When performing a release build, we will tag our images with our
@@ -78,29 +99,6 @@ variable "DIST_DIR" {
 # stage, where all artifacts are initially pushed to.
 variable "CONTAINER_REGISTRY" {
   default = "docker.cloudsmith.io/grapl/raw"
-}
-
-# Define a set of standard OCI labels to attach to all images.
-#
-# See https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
-#
-# TODO: Ideally, I would like to define a `_grapl_base` target, set the
-# labels there, and then have all our other "base" targets inherit
-# from that. Unfortunately, there is a bug^[1] where multiple layers
-# of inheritance are not properly resolved. Fortunately, this will be fixed
-# when buildx v0.8.0 is released.
-#
-# [1]: https://github.com/docker/buildx/issues/912
-
-variable "oci_labels" {
-  default = {
-    "org.opencontainers.image.authors" = "https://graplsecurity.com"
-    "org.opencontainers.image.source"  = "https://github.com/grapl-security/grapl",
-    # In particular, this `vendor` label is used by various filters in
-    # our top-level Makefile; if you change this, make sure to update
-    # things over there, too.
-    "org.opencontainers.image.vendor" = "Grapl, Inc."
-  }
 }
 
 # Functions
@@ -149,9 +147,9 @@ group "default" {
 group "grapl-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "javascript-services",
     "python-services",
     "rust-services",
+    "plugin-support",
   ]
 }
 
@@ -161,9 +159,15 @@ group "grapl-services" {
 group "cloudsmith-images" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "e2e-tests",
     "grapl-services",
-    "rust-integration-tests-new"
+    "rust-integration-tests"
+  ]
+}
+
+# These are images required to run Plugins inside Grapl.
+group "plugin-support" {
+  targets = [
+    "docker-plugin-runtime",
   ]
 }
 
@@ -171,33 +175,32 @@ group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "analyzer-dispatcher",
+    "analyzer-execution-sidecar",
+    "event-source",
+    "generator-dispatcher",
+    "generator-execution-sidecar",
     "graph-merger",
+    "graph-mutation",
+    "graph-query",
+    "graph-query-proxy",
+    "graph-schema-manager",
     "grapl-web-ui",
-    "model-plugin-deployer",
+    "kafka-retry",
     "node-identifier",
-    "node-identifier-retry",
     "organization-management",
-    "osquery-generator",
     "pipeline-ingress",
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
-    "sysmon-generator"
+    "scylla-provisioner",
+    "uid-allocator",
   ]
 }
 
 group "python-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "analyzer-executor",
-    "engagement-creator",
     "provisioner"
-  ]
-}
-
-group "javascript-services" {
-  targets = [
-    "graphql-endpoint"
   ]
 }
 
@@ -207,7 +210,6 @@ group "javascript-services" {
 group "local-only-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "localstack",
     "postgres",
     "pulumi",
     "scylladb"
@@ -224,7 +226,14 @@ group "local-infrastructure" {
   ]
 }
 
-group "integration-tests" {
+group "python-integration-tests" {
+  # NOTE: Please keep this list sorted in alphabetical order
+  targets = [
+    "python-integration-tests",
+  ]
+}
+
+group "all-tests" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "python-integration-tests",
@@ -232,22 +241,13 @@ group "integration-tests" {
   ]
 }
 
-group "all-tests" {
-  # NOTE: Please keep this list sorted in alphabetical order
-  targets = [
-    "e2e-tests",
-    "integration-tests",
-    "rust-integration-tests-new"
-  ]
-}
-
 group "all" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "all-tests",
-    "local-only-services",
+    "export-rust-build-artifacts-to-dist",
     "grapl-services",
-    "plugin-bootstrap-init",
+    "local-only-services",
   ]
 }
 
@@ -262,18 +262,52 @@ group "all" {
 # Such targets should only appear in `inherits` arrays, and never in
 # the `targets` list of any group.
 
+# All our container images should ultimately inherit from this target,
+# either directly or indirectly through another target.
+target "_grapl-base" {
+  # Define a set of standard OCI labels to attach to all images.
+  #
+  # See https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+  labels = {
+    "org.opencontainers.image.authors" = "https://graplsecurity.com"
+    "org.opencontainers.image.source"  = "https://github.com/grapl-security/grapl",
+    # In particular, this `vendor` label is used by various filters in
+    # our top-level Makefile; if you change this, make sure to update
+    # things over there, too.
+    "org.opencontainers.image.vendor" = "Grapl, Inc."
+  }
+}
+
 # Rust Services
 # ----------------------------------------------------------------------
 
 # All Rust services defined in src/rust/Dockerfile should inherit from
 # this target.
 target "_rust-base" {
-  context    = "src"
+  inherits = ["_grapl-base"]
+  context  = "src"
+
+  # Additional named contexts:
+  # https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
+  contexts = {
+    dist-ctx = "dist"
+    etc-ctx  = "etc"
+  }
   dockerfile = "rust/Dockerfile"
   args = {
-    RUST_BUILD = "${RUST_BUILD}"
+    RUST_BUILD     = "${RUST_BUILD}"
+    RUST_VERSION   = "${RUST_VERSION}"
+    PROTOC_VERSION = "${PROTOC_VERSION}"
   }
-  labels = oci_labels
+}
+
+
+target "scylla-provisioner" {
+  inherits = ["_rust-base"]
+  target   = "scylla-provisioner-deploy"
+  tags = [
+    upstream_aware_tag("scylla-provisioner")
+  ]
 }
 
 target "analyzer-dispatcher" {
@@ -281,6 +315,14 @@ target "analyzer-dispatcher" {
   target   = "analyzer-dispatcher-deploy"
   tags = [
     upstream_aware_tag("analyzer-dispatcher")
+  ]
+}
+
+target "generator-dispatcher" {
+  inherits = ["_rust-base"]
+  target   = "generator-dispatcher-deploy"
+  tags = [
+    upstream_aware_tag("generator-dispatcher")
   ]
 }
 
@@ -292,6 +334,30 @@ target "graph-merger" {
   ]
 }
 
+target "graph-mutation" {
+  inherits = ["_rust-base"]
+  target   = "graph-mutation-deploy"
+  tags = [
+    upstream_aware_tag("graph-mutation")
+  ]
+}
+
+target "graph-query" {
+  inherits = ["_rust-base"]
+  target   = "graph-query-deploy"
+  tags = [
+    upstream_aware_tag("graph-query")
+  ]
+}
+
+target "graph-query-proxy" {
+  inherits = ["_rust-base"]
+  target   = "graph-query-proxy-deploy"
+  tags = [
+    upstream_aware_tag("graph-query-proxy")
+  ]
+}
+
 target "grapl-web-ui" {
   inherits = ["_rust-base"]
   target   = "grapl-web-ui-deploy"
@@ -300,11 +366,35 @@ target "grapl-web-ui" {
   ]
 }
 
-target "model-plugin-deployer" {
+target "event-source" {
   inherits = ["_rust-base"]
-  target   = "model-plugin-deployer"
+  target   = "event-source-deploy"
   tags = [
-    upstream_aware_tag("model-plugin-deployer")
+    upstream_aware_tag("event-source")
+  ]
+}
+
+target "analyzer-execution-sidecar" {
+  inherits = ["_rust-base"]
+  target   = "analyzer-execution-sidecar-deploy"
+  tags = [
+    upstream_aware_tag("analyzer-execution-sidecar")
+  ]
+}
+
+target "generator-execution-sidecar" {
+  inherits = ["_rust-base"]
+  target   = "generator-execution-sidecar-deploy"
+  tags = [
+    upstream_aware_tag("generator-execution-sidecar")
+  ]
+}
+
+target "kafka-retry" {
+  inherits = ["_rust-base"]
+  target   = "kafka-retry-deploy"
+  tags = [
+    upstream_aware_tag("kafka-retry")
   ]
 }
 
@@ -316,28 +406,11 @@ target "node-identifier" {
   ]
 }
 
-target "node-identifier-retry" {
-  inherits = ["_rust-base"]
-  target   = "node-identifier-retry-deploy"
-  tags = [
-    upstream_aware_tag("node-identifier-retry")
-  ]
-}
-
-
 target "organization-management" {
   inherits = ["_rust-base"]
   target   = "organization-management-deploy"
   tags = [
     upstream_aware_tag("organization-management")
-  ]
-}
-
-target "osquery-generator" {
-  inherits = ["_rust-base"]
-  target   = "osquery-generator-deploy"
-  tags = [
-    upstream_aware_tag("osquery-generator")
   ]
 }
 
@@ -357,11 +430,13 @@ target "plugin-bootstrap" {
   ]
 }
 
-target "plugin-bootstrap-init" {
+# A somewhat special target among the Rust targets, as it
+# has an `output =` that dumps its contents into `dist/`.
+target "export-rust-build-artifacts-to-dist" {
   inherits = ["_rust-base"]
-  target   = "plugin-bootstrap-init-output"
+  target   = "export-rust-build-artifacts-to-dist"
   output = [
-    "type=local,dest=${DIST_DIR}/plugin-bootstrap-init"
+    "type=local,dest=${DIST_DIR}"
   ]
 }
 
@@ -381,11 +456,36 @@ target "plugin-work-queue" {
   ]
 }
 
-target "sysmon-generator" {
+target "graph-schema-manager" {
   inherits = ["_rust-base"]
-  target   = "sysmon-generator-deploy"
+  target   = "graph-schema-manager-deploy"
   tags = [
-    upstream_aware_tag("sysmon-generator")
+    upstream_aware_tag("graph-schema-manager")
+  ]
+}
+
+target "uid-allocator" {
+  inherits = ["_rust-base"]
+  target   = "uid-allocator-deploy"
+  tags = [
+    upstream_aware_tag("uid-allocator")
+  ]
+}
+
+
+# Plugin Runtime
+# ----------------------------------------------------------------------
+
+# This is the Docker image that will host our Generators and Analyzers
+# until we swap over to Firecracker.
+target "docker-plugin-runtime" {
+  inherits = ["_grapl-base"]
+  context  = "docker-plugin-runtime"
+  args = {
+    PYTHON_VERSION = "${PYTHON_VERSION}"
+  }
+  tags = [
+    upstream_aware_tag("docker-plugin-runtime")
   ]
 }
 
@@ -395,25 +495,15 @@ target "sysmon-generator" {
 # All Python services defined in src/python/Dockerfile should inherit
 # from this target.
 target "_python-base" {
-  context    = "."
+  inherits = ["_grapl-base"]
+  contexts = {
+    dist-ctx = "dist"
+    etc-ctx  = "etc"
+  }
   dockerfile = "src/python/Dockerfile"
-  labels     = oci_labels
-}
-
-target "analyzer-executor" {
-  inherits = ["_python-base"]
-  target   = "analyzer-executor-deploy"
-  tags = [
-    upstream_aware_tag("analyzer-executor")
-  ]
-}
-
-target "engagement-creator" {
-  inherits = ["_python-base"]
-  target   = "engagement-creator-deploy"
-  tags = [
-    upstream_aware_tag("engagement-creator")
-  ]
+  args = {
+    PYTHON_VERSION = "${PYTHON_VERSION}"
+  }
 }
 
 target "provisioner" {
@@ -424,31 +514,9 @@ target "provisioner" {
   ]
 }
 
-# JavaScript Services
-# ----------------------------------------------------------------------
-
-target "graphql-endpoint" {
-  context    = "src/js/graphql_endpoint"
-  dockerfile = "Dockerfile"
-  target     = "graphql-endpoint-deploy"
-  tags = [
-    upstream_aware_tag("graphql-endpoint")
-  ]
-  labels = oci_labels
-}
 
 # Testing Images
 # ----------------------------------------------------------------------
-
-target "e2e-tests" {
-  inherits = ["_python-base"]
-  target   = "e2e-tests"
-  tags = [
-    # Yes, we push this up to Cloudsmith to run tests against AWS
-    # infrastructure; that's why we use `upstream_aware_tag`.
-    upstream_aware_tag("e2e-tests")
-  ]
-}
 
 target "python-integration-tests" {
   inherits = ["_python-base"]
@@ -462,17 +530,9 @@ target "rust-integration-tests" {
   inherits = ["_rust-base"]
   target   = "integration-tests"
   tags = [
-    local_only_tag("rust-integration-tests")
-  ]
-}
-
-target "rust-integration-tests-new" {
-  inherits = ["_rust-base"]
-  target   = "integration-tests-new"
-  tags = [
     # Yes, we push this up to Cloudsmith to run tests against AWS
     # infrastructure; that's why we use `upstream_aware_tag`.
-    upstream_aware_tag("rust-integration-tests-new")
+    upstream_aware_tag("rust-integration-tests")
   ]
 }
 
@@ -481,37 +541,28 @@ target "rust-integration-tests-new" {
 # None of these are ever pushed to Cloudsmith.
 
 target "pulumi" {
+  inherits   = ["_grapl-base"]
   context    = "."
   dockerfile = "Dockerfile.pulumi"
   tags = [
     local_only_tag("local-pulumi")
   ]
-  labels = oci_labels
-}
-
-target "localstack" {
-  context    = "localstack"
-  dockerfile = "Dockerfile"
-  tags = [
-    local_only_tag("localstack-grapl-fork")
-  ]
-  labels = oci_labels
 }
 
 target "postgres" {
+  inherits   = ["_grapl-base"]
   context    = "postgres"
   dockerfile = "Dockerfile"
   tags = [
     local_only_tag("postgres-ext")
   ]
-  labels = oci_labels
 }
 
 target "scylladb" {
+  inherits   = ["_grapl-base"]
   context    = "scylladb"
   dockerfile = "Dockerfile"
   tags = [
     local_only_tag("scylladb-ext")
   ]
-  labels = oci_labels
 }

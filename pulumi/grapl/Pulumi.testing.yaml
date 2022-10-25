@@ -2,28 +2,21 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:cloudsmith-repository-name: grapl/testing
+  grapl:confluent-environment-name: testing
   grapl:env_vars:
-    analyzer-dispatcher:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
-    analyzer-executor:
-      GRAPL_LOG_LEVEL: DEBUG
-    engagement-creator:
-      GRAPL_LOG_LEVEL: DEBUG
-    graph-merger:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
-    model-plugin-deployer:
-      GRAPL_LOG_LEVEL: DEBUG
-    node-identifier:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
-    osquery-generator:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
-    sysmon-generator:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
+  grapl:lightstep-access-token:
+    secure: AAABAKxa4yxFSvciEOaqrBtoUWo6qQUGrDeba1ZGrxfW/yToz6ZjXXMrGCC+69aCZvTZhzWif6r+S2fEJJGbJz8WDuje825m0wxGI7hBOsrjPw/gIJ/huFVoTM7mOgRcPZwzkVaVN0ePtdkFQJOb/PD5dOgcEf+CCcYpRthO8T9YEzVowm9lzg==
+  grapl:lightstep-endpoint: "ingest.lightstep.com:443"
   grapl:postgres-instance-type: db.t4g.small
-  grapl:postgres-version: "13.4"
-  grapl:confluent-environment-name: "testing"
+  grapl:postgres-version: "13.7"
+  grapl:scylla-addresses:
+    # These 3 Scylla instances have the Nomad Agent whitelisted.
+    - 54.153.52.239:9042
+    - 54.193.175.245:9042
+    - 13.52.29.102:9042
+  grapl:scylla-password:
+    # This encrypted value uses the `pulumi config set --secret` mechanism,
+    # which can only be decrypted by a key held by Pulumi.
+    # https://www.pulumi.com/docs/intro/concepts/secrets/#secrets
+    secure: AAABAK2/I2aoHMbzoFCnPcJyolF1CEJGutj/3W95Y0ri11U7U03+AXymjxPc2eo=
+  grapl:scylla-username: scylla

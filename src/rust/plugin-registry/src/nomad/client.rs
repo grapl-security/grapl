@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 
+use clap::Parser;
 use nomad_client_gen::{
     apis::{
         configuration::Configuration as InternalConfig,
@@ -9,12 +10,11 @@ use nomad_client_gen::{
     },
     models,
 };
-use structopt::StructOpt;
 
 /// Represents the environment variables needed to construct a NomadClient
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct NomadClientConfig {
-    #[structopt(env)]
+    #[clap(long, env)]
     /// "${attr.unique.network.ip-address}:4646
     nomad_service_address: SocketAddr,
 }
@@ -33,15 +33,19 @@ pub enum NomadClientError {
     CreateJobError(#[from] Error<jobs_api::PostJobError>),
     #[error("PlanJobError {0:?}")]
     PlanJobError(#[from] Error<jobs_api::PostJobPlanError>),
-    #[error("PlanJobAllocationFail")]
-    PlanJobAllocationFail,
+    #[error("PlanJobAllocationFail: {0:?}")]
+    PlanJobAllocationFail(Vec<models::AllocationMetric>),
+    #[error("GetJobError {0:?}")]
+    GetJobError(#[from] Error<jobs_api::GetJobError>),
+    #[error("DeleteJobError {0:?}")]
+    DeleteJobError(#[from] Error<jobs_api::DeleteJobError>),
 }
 
 #[allow(dead_code)]
 impl NomadClient {
     /// Create a client from environment
     pub fn from_env() -> Self {
-        Self::from_client_config(NomadClientConfig::from_args())
+        Self::from_client_config(NomadClientConfig::parse())
     }
 
     pub fn from_client_config(nomad_client_config: NomadClientConfig) -> Self {
@@ -117,6 +121,42 @@ impl NomadClient {
         .await
         .map_err(NomadClientError::from)
     }
+
+    #[tracing::instrument(skip(self, job_name, namespace), err)]
+    pub async fn get_job(
+        &self,
+        job_name: String,
+        namespace: Option<String>,
+    ) -> Result<models::Job, NomadClientError> {
+        jobs_api::get_job(
+            &self.internal_config,
+            jobs_api::GetJobParams {
+                namespace: namespace.clone(),
+                job_name: job_name.to_owned(),
+                ..Default::default()
+            },
+        )
+        .await
+        .map_err(NomadClientError::from)
+    }
+
+    #[tracing::instrument(skip(self, job_name, namespace), err)]
+    pub async fn delete_job(
+        &self,
+        job_name: String,
+        namespace: Option<String>,
+    ) -> Result<models::JobDeregisterResponse, NomadClientError> {
+        jobs_api::delete_job(
+            &self.internal_config,
+            jobs_api::DeleteJobParams {
+                job_name,
+                namespace,
+                ..Default::default()
+            },
+        )
+        .await
+        .map_err(NomadClientError::from)
+    }
 }
 
 pub trait CanEnsureAllocation {
@@ -128,7 +168,8 @@ impl CanEnsureAllocation for models::JobPlanResponse {
         if let Some(failed_allocs) = &self.failed_tg_allocs {
             if !failed_allocs.is_empty() {
                 tracing::warn!(message="Job failed to allocate", failed_allocs=?failed_allocs);
-                return Err(NomadClientError::PlanJobAllocationFail);
+                let failures = failed_allocs.clone().into_values().collect();
+                return Err(NomadClientError::PlanJobAllocationFail(failures));
             }
         }
         Ok(())

@@ -13,7 +13,17 @@
 # required for our local usage of Nomad, because Nomad won't resolve a
 # `latest` tag from the host machine.)
 IMAGE_TAG ?= dev
-RUST_BUILD ?= debug
+# This is a build argument for our Python images, and is thus used in
+# docker-bake.hcl
+PYTHON_VERSION ?= $(shell build-support/python_version.sh)
+# This is a build argument for our Rust images, and is thus used in
+# docker-bake.hcl
+RUST_VERSION ?= $(shell build-support/rust_version.sh)
+# Also influences Rust image build via docker-bake.hcl
+RUST_BUILD ?= dev-local-grapl
+# Also influences Rust image build via docker-bake.hcl
+PROTOC_VERSION ?= $(shell build-support/protoc_version.sh)
+
 UID = $(shell id --user)
 GID = $(shell id --group)
 PWD = $(shell pwd)
@@ -22,28 +32,22 @@ DIST_DIR = $(GRAPL_ROOT)/dist
 COMPOSE_USER=${UID}:${GID}
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
-# Get a non-loopback private ip for the host. Order is not guaranteed, but that's ok
-CONSUL_DNS_IP = $(shell hostname --all-ip-addresses | awk '{ print $$1 }')
 
 export
 
-export EVERY_COMPOSE_FILE=--file docker-compose.yml \
-	--file ./test/docker-compose.unit-tests-js.yml \
+export EVERY_COMPOSE_FILE=--file docker-compose.yml
 
 # This is used to send docker traces to Jaeger. This is primarily useful for debugging build time performance
 ifdef WITH_TRACING
 buildx_builder_args := --builder=grapl-tracing-builder
 endif
 
-# Helper macro to make using the HCL file for builds less
-# verbose. Once we get rid of docker-compose.yml, we can just use
-# `docker buildx bake`, since it will pick up the HCL file
-# automatically.
-DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl $(buildx_builder_args)
+# Helper macro to invoke buildx with standard arguments. Prefer this
+# over invoking `docker buildx bake` directly.
+DOCKER_BUILDX_BAKE := docker buildx bake $(buildx_builder_args)
 
-COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
-COMPOSE_PROJECT_INTEGRATION_TESTS_NEW := grapl-integration_tests_new
-COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
+COMPOSE_PROJECT_PYTHON_INTEGRATION_TESTS := python-integration-tests
+COMPOSE_PROJECT_RUST_INTEGRATION_TESTS := rust-integration-tests
 
 # All the services defined in the docker-compose.check.yml file are
 # run with the same general arguments; just supply the service name to
@@ -52,7 +56,7 @@ COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 # While we would ultimately like to run all these containers as a
 # non-root user, some currently seem to require that; to accommodate
 # all such images, we provide two helpful macros.
-DOCKER_COMPOSE_CHECK := docker-compose --file=docker-compose.check.yml run --rm
+DOCKER_COMPOSE_CHECK := docker compose --file=docker-compose.check.yml run --rm
 NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 
 # Our images are labeled; we can use this to help filter various
@@ -60,11 +64,9 @@ NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 #
 # This is set in docker-bake.hcl
 DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
-# We pull some vendor containers directly
-DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
-# This filter should differentiate between data volumes, such as those used for
-# DGraph (grapl-data-dgraph), and those used for caching builds
-# (grapl-engagement-view-yarn).
+# This filter should differentiate between data volumes, such as those once used
+# for DGraph (grapl-data-dgraph), and those used for caching builds
+# (grapl-frontend-view-yarn).
 #
 # Multiple filter arguments can be supplied here.
 #
@@ -73,16 +75,18 @@ DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
 # to be a strict requirement.
 DOCKER_DATA_VOLUME_FILTERS := --filter=name=grapl-data
 
+# Run a Pants goal across all proto files
+PANTS_PROTO_FILTER := ./pants --filter-target-type=protobuf_source
 # Run a Pants goal across all Python files
-PANTS_PYTHON_FILTER := ./pants filter --target-type=python_sources,python_tests :: | xargs ./pants
+PANTS_PYTHON_FILTER := ./pants --filter-target-type=python_source,python_test
 # Run a Pants goal across all shell files
-PANTS_SHELL_FILTER := ./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants
+PANTS_SHELL_FILTER := ./pants --filter-target-type=shell_source,shunit2_test
 
 # Helper macro for invoking a target from src/rust/Makefile
 RUST_MAKE = $(MAKE) --directory=src/rust
 
-# Helper macro for invoking a target from src/js/engagement_view/Makefile
-ENGAGEMENT_VIEW_MAKE = $(MAKE) --directory=src/js/engagement_view
+# Helper macro for invoking a target from src/js/frontend/Makefile
+FRONTEND_MAKE = $(MAKE) --directory=src/js/frontend
 
 # Use a single shell for each of our targets, which allows us to use the 'trap'
 # built-in in our targets. We set the 'errexit' shell option to preserve
@@ -115,20 +119,20 @@ help: ## Print this help
 	@printf -- '             (≡)      /____/             /_/            \n'
 	@printf -- '\n'
 	@printf -- '${FMT_BOLD}Useful environment variables (with examples):${FMT_END}\n'
-	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-analyzer-executor typecheck-grapl-common" make typecheck\n'
+	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-grapl-common" make typecheck\n'
 	@printf -- '    to only run a subset of test targets.\n'
 	@printf -- '\n'
-	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration\n'
+	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration-rust\n'
 	@printf -- '    to keep the test environment around after a test suite.\n'
 	@printf -- '\n'
-	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
-	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
+	@printf -- '  ${FMT_PURPLE}WITH_PULUMI_TRACING=1${FMT_END} make up\n'
+	@printf -- '    to send pulumi traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}WITH_TRACING=1${FMT_END} make build-local-infrastructure \n'
 	@printf -- '    to send docker build traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_BOLD}FUN FACT${FMT_END}: You can also specify these as postfix, like:\n'
-	@printf -- '    make test-something KEEP_TEST_ENV=1\n'
+	@printf -- '    make test-integration-rust KEEP_TEST_ENV=1\n'
 	@printf '\n'
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make ${FMT_BLUE}<target>${FMT_END}\n"} \
 		 /^[a-zA-Z0-9_-]+:.*?##/ { printf "  ${FMT_BLUE}%-46s${FMT_END} %s\n", $$1, $$2 } \
@@ -138,10 +142,6 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build-test-unit-js
-build-test-unit-js:
-	docker buildx bake \
-		--file ./test/docker-compose.unit-tests-js.yml $(buildx_builder_args)
 
 # Build Service Images and their Prerequisites
 ########################################################################
@@ -152,29 +152,27 @@ build-test-unit-js:
 # Dockerfiles) are defined here. The image builds are defined in
 # docker-bake.hcl using groups. Similarly, the prerequisites that
 # Pants knows how to build are defined using tags. The grapl-web-ui
-# needs the compiled engagement-view assets in order for it to build.
+# needs the compiled frontend assets in order for it to build.
 
 .PHONY: build-service-pex-files
 build-service-pex-files: ## Build all PEX files needed by Grapl SaaS services
 	@echo "--- Building Grapl service PEX files"
 	./pants --tag="service-pex" package ::
 
-.PHONY: build-e2e-pex-files
-build-e2e-pex-files:
-# Any PEX tagged with `e2e-test-pex` is required for our image. This
-# seems like the most straightforward way of capturing these
-# dependencies at the moment.
-	@echo "--- Building e2e PEX files"
-	./pants --tag="e2e-test-pex" package ::
+# We copy built Analyzers from dist/ into our Rust integration tests so we can deploy them.
+.PHONY: build-test-fixture-pex-files
+build-test-fixture-pex-files: ## Build all PEX files needed by integration tests, e.g. analyzers
+	@echo "--- Building Python test fixture PEX files"
+	./pants --tag="test-fixture-pex" package ::
 
-.PHONY: build-engagement-view
-build-engagement-view: ## Build website assets to include in grapl-web-ui
-	@echo "--- Building the engagement view"
-	$(ENGAGEMENT_VIEW_MAKE) build-code
-	TARGET_FRONTEND_DIR="src/rust/grapl-web-ui/frontend"
+.PHONY: build-frontend
+build-frontend: ## Build website assets to include in grapl-web-ui
+	@echo "--- Building the frontend"
+	$(FRONTEND_MAKE) build-code
+	TARGET_FRONTEND_DIR="dist/frontend"
 	rm -rf "$${TARGET_FRONTEND_DIR}/*"  # Clear out old artifacts
 	cp -r \
-		"src/js/engagement_view/build/." \
+		"src/js/frontend/build/." \
 		"$${TARGET_FRONTEND_DIR}"
 
 
@@ -183,8 +181,8 @@ build-engagement-view: ## Build website assets to include in grapl-web-ui
 build-grapl-service-prerequisites: ## Build all assets needed for the creation of Grapl SaaS service container images
 # The Python services need the PEX files
 build-grapl-service-prerequisites: build-service-pex-files
-# The grapl-web-ui service needs website assets
-build-grapl-service-prerequisites: build-engagement-view
+# The grapl-web-ui service needs website assets from frontend
+build-grapl-service-prerequisites: build-frontend
 
 # This is used in our CI pipeline; see build_and_upload_images.sh
 #
@@ -193,33 +191,29 @@ build-grapl-service-prerequisites: build-engagement-view
 # target!
 .PHONY: build-image-prerequisites
 build-image-prerequisites: ## Build all dependencies that must be copied into our images that we push to our registry
-build-image-prerequisites: build-grapl-service-prerequisites build-e2e-pex-files
+build-image-prerequisites: build-grapl-service-prerequisites
+build-image-prerequisites: build-test-fixture-pex-files
 
 .PHONY: build-local-infrastructure
 build-local-infrastructure: build-grapl-service-prerequisites
 	@echo "--- Building the Grapl SaaS service images and local-only images"
-	$(DOCKER_BUILDX_BAKE_HCL) local-infrastructure
+	$(DOCKER_BUILDX_BAKE) local-infrastructure
 
-.PHONY: build-test-e2e
-build-test-e2e: build-e2e-pex-files
-	@echo "--- Building e2e testing image"
-	$(DOCKER_BUILDX_BAKE_HCL) e2e-tests
+.PHONY: build-test-integration-rust
+build-test-integration-rust: build-test-fixture-pex-files
+	@echo "--- Building rust integration test images"
+	$(DOCKER_BUILDX_BAKE) rust-integration-tests
 
-.PHONY: build-test-integration
-build-test-integration:
-	@echo "--- Building integration test images"
-	docker buildx bake integration-tests $(buildx_builder_args)
-
-.PHONY: build-test-integration-new
-build-test-integration-new:
-	@echo "--- Building \"new\" integration test images"
-	docker buildx bake rust-integration-tests-new $(buildx_builder_args)
+.PHONY: build-test-integration-python
+build-test-integration-python:
+	@echo "--- Building python integration test images"
+	$(DOCKER_BUILDX_BAKE) python-integration-tests
 
 ########################################################################
 
 .PHONY: build-prettier-image
 build-prettier-image:
-	docker buildx bake --file ./docker-compose.check.yml prettier $(buildx_builder_args)
+	$(DOCKER_BUILDX_BAKE) --file ./docker-compose.check.yml prettier
 
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to ./bin
@@ -229,7 +223,9 @@ graplctl: ## Build graplctl and install it to ./bin
 
 .PHONY: dump-artifacts-local
 dump-artifacts-local:  ## Run the script that dumps Nomad/Docker logs after test runs
-	./pants run ./etc/ci_scripts/dump_artifacts -- \
+	# Rarely needed, but you can temporarily append
+	# `--dump-connect-proxy-logs` to debug Consul Connect.
+	./pants dump-artifacts \
 		--compose-project="${COMPOSE_PROJECT_NAME}" \
 		--dump-agent-logs
 
@@ -247,29 +243,24 @@ test-unit: test-unit-shell
 test-unit: ## Build and run all unit tests
 
 .PHONY: test-unit-js
-test-unit-js: test-unit-engagement-view
-test-unit-js: test-unit-graphql-endpoint
+test-unit-js: test-unit-frontend
 test-unit-js: ## Build and run unit tests - JavaScript only
 
-.PHONY: test-unit-graphql-endpoint
-test-unit-graphql-endpoint: | dist
-test-unit-graphql-endpoint: build-test-unit-js
-test-unit-graphql-endpoint: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
-test-unit-graphql-endpoint: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
-test-unit-graphql-endpoint: ## Test Graphql Endpoint
-	test/docker-compose-with-error.sh
 
-.PHONY: test-unit-engagement-view
-test-unit-engagement-view: ## Test Engagement View
-	$(ENGAGEMENT_VIEW_MAKE) run-tests
+.PHONY: test-unit-frontend
+test-unit-frontend: ## Test Frontend
+	$(FRONTEND_MAKE) run-tests
+
 
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
 # tags, rather than pytest tags
 # If you need to `pdb` these tests, add a `--debug` after `./pants test`
 test-unit-python: ## Run Python unit tests under Pants
-	./pants filter --filter-target-type="python_tests" :: \
-	| xargs ./pants --tag="-needs_work" test --pytest-args="-m \"not integration_test\""
+	./pants --filter-target-type="python_test" \
+		--tag="-needs_work" \
+	test :: \
+	--pytest-args="-m \"not integration_test\""
 
 .PHONY: test-unit-rust
 test-unit-rust: ## Build and run unit tests - Rust only (not for CI)
@@ -304,31 +295,25 @@ test-unit-rust-coverage: ## Run Rust unit tests and gather coverage statistics (
 typecheck: ## Typecheck Python Code
 	./pants check ::
 
-.PHONY: test-integration
-test-integration: build-local-infrastructure
-test-integration: build-test-integration
-test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-test-integration: ## Build and run integration tests
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
+.PHONY: test-integration-python
+test-integration-python: build-local-infrastructure
+test-integration-python: build-test-integration-python
+test-integration-python: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_PYTHON_INTEGRATION_TESTS)
+test-integration-python: ## Build and run python integration tests
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh python-integration-tests 9"
 
-.PHONY: test-integration-new
-test-integration-new: build-local-infrastructure
-test-integration-new: build-test-integration-new
-test-integration-new: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS_NEW)
-test-integration-new: ## Build and run "new" integration tests
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests-new 9"
-
-.PHONY: test-e2e
-test-e2e: build-local-infrastructure
-test-e2e: build-test-e2e
-test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
-test-e2e: ## Build and run e2e tests
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh e2e-tests 6"
+.PHONY: test-integration-rust
+test-integration-rust: build-local-infrastructure
+test-integration-rust: build-test-integration-rust
+test-integration-rust: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_RUST_INTEGRATION_TESTS)
+test-integration-rust: ## Build and run rust integration tests
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh rust-integration-tests 9"
 
 # This target is not intended to be used directly from the command line.
 # Think of it as a Context Manager that:
 # - Before test-time, brings up a `make up`
 # - After test-time, tears it all down and dumps artifacts.
+.SILENT: test-with-env
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
@@ -361,7 +346,6 @@ lint: lint-hcl
 lint: lint-prettier
 lint: lint-proto
 lint: lint-proto-breaking
-lint: lint-proto-format
 lint: lint-python
 lint: lint-rust
 lint: lint-shell
@@ -369,7 +353,7 @@ lint: ## Run all lint checks
 
 .PHONY: lint-build
 lint-build: ## Lint Pants BUILD files
-	./pants update-build-files --check
+	./pants update-build-files --check ::
 
 .PHONY: lint-docker
 lint-docker: ## Lint Dockerfiles with Hadolint
@@ -387,19 +371,15 @@ lint-prettier: ## Run ts/js/yaml lint checks
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
-	${DOCKER_COMPOSE_CHECK} buf-lint
+	$(PANTS_PROTO_FILTER) lint ::
 
 .PHONY: lint-proto-breaking
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
 	${DOCKER_COMPOSE_CHECK} buf-breaking-change
 
-.PHONY: lint-proto-format
-lint-proto-format: ## Check that all protobuf files are properly formatted
-	${DOCKER_COMPOSE_CHECK} buf-lint-format
-
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
-	$(PANTS_PYTHON_FILTER) lint
+	$(PANTS_PYTHON_FILTER) lint ::
 
 .PHONY: lint-rust
 lint-rust: lint-rust-clippy
@@ -416,7 +396,7 @@ lint-rust-rustfmt: ## Check to see if Rust code is properly formatted
 
 .PHONY: lint-shell
 lint-shell: ## Run Shell lint checks
-	$(PANTS_SHELL_FILTER) lint
+	$(PANTS_SHELL_FILTER) lint ::
 
 ##@ Formatting 💅
 
@@ -432,7 +412,7 @@ format: ## Reformat all code
 
 .PHONY: format-build
 format-build: ## Reformat all Pants BUILD files
-	./pants update-build-files --no-update-build-files-fix-safe-deprecations
+	./pants update-build-files --no-update-build-files-fix-safe-deprecations ::
 
 .PHONY: format-hcl
 format-hcl: ## Reformat all HCL files
@@ -445,11 +425,11 @@ format-prettier: ## Reformat js/ts/yaml
 
 .PHONY: format-proto
 format-proto: ## Reformat all Protobuf definitions
-	$(NONROOT_DOCKER_COMPOSE_CHECK) buf-format
+	$(PANTS_PROTO_FILTER) fmt ::
 
 .PHONY: format-python
 format-python: ## Reformat all Python code
-	$(PANTS_PYTHON_FILTER) fmt
+	$(PANTS_PYTHON_FILTER) fmt ::
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
@@ -457,7 +437,7 @@ format-rust: ## Reformat all Rust code
 
 .PHONY: format-shell
 format-shell: ## Reformat all shell code
-	$(PANTS_SHELL_FILTER) fmt
+	$(PANTS_SHELL_FILTER) fmt ::
 
 ##@ Local Grapl 💻
 
@@ -467,6 +447,7 @@ up: build-local-infrastructure _up
 
 # NOTE: Internal target to decouple the building of images from the
 # running of them. Do not invoke this directly.
+.SILENT: _up
 .PHONY: _up
 _up:
 	# Primarily used for bringing up an environment for integration testing.
@@ -479,40 +460,41 @@ _up:
 	# explicitly unset that here to avoid potential surprises.
 	unset COMPOSE_FILE
 
-	# TODO: This could potentially be replaced with a docker-compose run, but
+	# TODO: This could potentially be replaced with a docker compose run, but
 	#  it doesn't have all these useful flags
 	@echo "--- Running Pulumi"
-	docker-compose \
+	docker compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
-		pulumi
+		pulumi && echo "✅ Pulumi deployed successfully ✅"
 
+.SILENT: down
 .PHONY: down
-down: ## docker-compose down - both stops and removes the containers
+down: ## docker compose down - both stops and removes the containers
 	# This is only for killing the lambda containers that Localstack
-	# spins up in our network, but that docker-compose doesn't know
+	# spins up in our network, but that docker compose doesn't know
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
-	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
-	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
-	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+	docker compose $(EVERY_COMPOSE_FILE) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_RUST_INTEGRATION_TESTS) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_PYTHON_INTEGRATION_TESTS) down --timeout=0
 
 .PHONY: stop
-stop: ## docker-compose stop - stops (but preserves) the containers
-	docker-compose $(EVERY_COMPOSE_FILE) stop
+stop: ## docker compose stop - stops (but preserves) the containers
+	docker compose $(EVERY_COMPOSE_FILE) stop
 
 # This is a convenience target for our frontend engineers, to make the dev loop
-# slightly less arduous for grapl-web-ui/engagement-view development.
+# slightly less arduous for grapl-web-ui/frontend development.
 # It will *rebuild* the JS/Rust grapl-web-ui dependences, and then
 # restart a currently-running `make up` web ui allocation, which will then
 # retrieve the latest, newly-rebuilt Docker container.
 #
 # Will only work as expected as long as tag is "dev".
 .PHONY: restart-web-ui
-restart-web-ui: build-engagement-view  ## Rebuild web-ui image, and restart web-ui task in Nomad
-	$(DOCKER_BUILDX_BAKE_HCL) grapl-web-ui
+restart-web-ui-frontend: build-frontend  ## Rebuild web-ui image, and restart web-ui task in Nomad
+	$(DOCKER_BUILDX_BAKE) grapl-web-ui
 	source ./nomad/lib/nomad_cli_tools.sh
 	nomad alloc restart "$$(nomad_get_alloc_id_for_task grapl-core web-ui)"
 
@@ -536,7 +518,8 @@ dist:
 .PHONY: clean
 clean: clean-dist
 clean: clean-artifacts
-clean: clean-engagement-view
+clean: clean-frontend
+
 clean: ## Clean all generated artifacts
 
 .PHONY: clean-all
@@ -553,7 +536,6 @@ clean-dist: ## Clean out the `dist` directory
 clean-docker: clean-docker-cache
 clean-docker: clean-docker-containers
 clean-docker: clean-docker-images
-clean-docker: clean-docker-dgraph
 clean-docker: clean-docker-data-volumes
 clean-docker: ## Clean all Docker-related resources
 
@@ -589,16 +571,10 @@ clean-docker-data-volumes: ## Remove all Grapl labeled volumes
 	docker volume ls ${DOCKER_DATA_VOLUME_FILTERS} --quiet |
 		xargs --no-run-if-empty docker volume rm --force
 
-clean-docker-dgraph: ## Remove dgraph images
-	docker images \
-		--filter=label=$(DOCKER_DGRAPH_FILTER_LABEL) \
-		--quiet \
-	| xargs --no-run-if-empty docker rmi --force
+.PHONY: clean-frontend
+clean-frontend:
+	$(FRONTEND_MAKE) clean
 
-
-.PHONY: clean-engagement-view
-clean-engagement-view:
-	$(ENGAGEMENT_VIEW_MAKE) clean
 
 clean-all-rust:
 	$(RUST_MAKE) clean-all
@@ -607,8 +583,8 @@ clean-all-rust:
 
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
-local-pulumi:  ## launch pulumi via docker-compose up
-	docker-compose -f docker-compose.yml run pulumi
+local-pulumi:  ## launch pulumi via docker compose up
+	docker compose -f docker-compose.yml run pulumi
 
 .PHONY: start-nomad-detach
 start-nomad-detach:  ## Start the Nomad environment, detached
@@ -623,10 +599,6 @@ docker-kill-all:  # Kill all currently running Docker containers except registry
 	# https://stackoverflow.com/a/46208493
 	TO_KILL=$$(docker ps --all --quiet | grep -v -E $$(docker ps -aq --filter='name=grapl_local_registry' | paste -sd "|" -))
 	docker kill $${TO_KILL}
-
-.PHONY: repl
-repl: ## Run an interactive ipython repl that can import from grapl-common etc
-	./pants --no-pantsd repl --shell=ipython src/python/repl
 
 .PHONY: build-docs
 build-docs: ## Build the Sphinx docs
@@ -662,8 +634,11 @@ dist/firecracker_kernel.tar.gz: firecracker/kernel/build.sh | dist
 # NOTE: While this target is PHONY, it *does* represent a real directory in
 # dist/
 .PHONY: dist/plugin-bootstrap-init
-dist/plugin-bootstrap-init: | dist  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/
-	$(DOCKER_BUILDX_BAKE_HCL) plugin-bootstrap-init
+dist/plugin-bootstrap-init: _export-rust-build-artifacts-to-dist  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/
+
+.PHONY: _export-rust-build-artifacts-to-dist
+_export-rust-build-artifacts-to-dist: | dist  ## Copy all specified Rust binary artifacts to dist/
+	$(DOCKER_BUILDX_BAKE) export-rust-build-artifacts-to-dist
 
 # TODO: Would be nice to be able to specify the input file prerequisites of
 # this target, once `dist/plugin-bootstrap-init` is non-PHONY

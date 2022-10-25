@@ -33,12 +33,8 @@ Each service's configuration should likely have a different path-mapping and a d
                     },
                     {
                         "localRoot": "${workspaceFolder}/src/python/grapl-tests-common/grapl_tests_common",
-                        "remoteRoot": "../venv/lib/python3.7/site-packages/grapl_tests_common"
+                        "remoteRoot": "../venv/lib/python3.10/site-packages/grapl_tests_common"
                     },
-                    {
-                        "localRoot": "${workspaceFolder}/src/python/grapl_analyzerlib/grapl_analyzerlib",
-                        "remoteRoot": "../venv/lib/python3.7/site-packages/grapl_analyzerlib"
-                    }
                 ]
             }
         ]

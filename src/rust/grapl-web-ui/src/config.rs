@@ -1,11 +1,17 @@
+use clap::Parser;
 use grapl_config::env_helpers::FromEnv;
 use rand::Rng;
 use rusoto_dynamodb::DynamoDbClient;
-use url::Url;
-
-use crate::services::{
-    graphql::GraphQlEndpointUrl,
-    model_plugin_deployer::ModelPluginDeployerEndpoint,
+use rust_proto::{
+    client_factory::services::{
+        PipelineIngressClientConfig,
+        PluginRegistryClientConfig,
+    },
+    graplinc::grapl::api::{
+        pipeline_ingress::v1beta1::client::PipelineIngressClient,
+        plugin_registry::v1beta1::PluginRegistryServiceClient,
+    },
+    protocol::service_client::ConnectWithConfig,
 };
 
 const KEY_SIZE: usize = 32;
@@ -13,73 +19,74 @@ pub(crate) const SESSION_TOKEN: &'static str = "SESSION_TOKEN";
 pub(crate) const SESSION_TOKEN_LENGTH: usize = 32;
 pub(crate) const SESSION_EXPIRATION_TIMEOUT_DAYS: i64 = 1;
 
-fn get_env_var(name: &'static str) -> Result<String, ConfigError> {
-    std::env::var(name).map_err(|source| ConfigError::MissingEnvironmentVariable {
-        variable_name: name,
-        source,
-    })
+#[derive(thiserror::Error, Debug)]
+#[non_exhaustive]
+pub enum ConfigError {
+    #[error(transparent)]
+    Clap(#[from] clap::Error),
+    #[error(transparent)]
+    BindAddress(#[from] std::io::Error),
+    #[error("failed to initialize Plugin Regsitry client: {0}")]
+    PluginRegistryClient(#[from] rust_proto::protocol::service_client::ConnectError),
 }
 
-fn parse_url(url: String) -> Result<Url, ConfigError> {
-    Url::parse(url.as_str()).map_err(|source| ConfigError::UrlParse { url, source })
-}
-
-#[derive(Clone)]
-pub(crate) struct Config {
+pub struct Config {
     pub dynamodb_client: DynamoDbClient,
-    pub bind_address: String,
+    pub listener: std::net::TcpListener,
     pub session_key: [u8; KEY_SIZE],
     pub user_auth_table_name: String,
     pub user_session_table_name: String,
-    pub graphql_endpoint: GraphQlEndpointUrl,
-    pub model_plugin_deployer_endpoint: ModelPluginDeployerEndpoint,
-}
-
-#[derive(thiserror::Error, Debug)]
-pub(crate) enum ConfigError {
-    #[error("unable to get required environment variable `{variable_name}`: {source}")]
-    MissingEnvironmentVariable {
-        variable_name: &'static str,
-        source: std::env::VarError,
-    },
-    #[error("unable to parse URL `{url}`: {source}")]
-    UrlParse {
-        url: String,
-        source: url::ParseError,
-    },
+    pub plugin_registry_client: PluginRegistryServiceClient,
+    pub pipeline_ingress_client: PipelineIngressClient,
+    pub google_client_id: String,
 }
 
 impl Config {
-    #[tracing::instrument(err)]
-    pub fn from_env() -> Result<Self, ConfigError> {
-        let bind_address = get_env_var("GRAPL_WEB_UI_BIND_ADDRESS")?;
+    pub async fn from_env() -> Result<Self, ConfigError> {
+        let builder = ConfigBuilder::try_parse()?;
 
-        let user_auth_table_name = get_env_var("GRAPL_USER_AUTH_TABLE")?;
-        let user_session_table_name = get_env_var("GRAPL_USER_SESSION_TABLE")?;
+        let listener = std::net::TcpListener::bind(builder.bind_address)?;
 
-        // generate a random key for encrypting user state.
-        let mut rng = rand::thread_rng();
-        let session_key = rng.gen::<[u8; KEY_SIZE]>();
+        let plugin_registry_client =
+            PluginRegistryServiceClient::connect_with_config(builder.plugin_registry_config)
+                .await?;
+
+        let pipeline_ingress_client =
+            PipelineIngressClient::connect_with_config(builder.pipeline_ingress_config).await?;
 
         let dynamodb_client = DynamoDbClient::from_env();
 
-        let graphql_endpoint = get_env_var("GRAPL_GRAPHQL_ENDPOINT")
-            .map(parse_url)?
-            .map(GraphQlEndpointUrl::from)?;
+        // generate a random key for encrypting user state.
+        let session_key = rand::thread_rng().gen::<[u8; KEY_SIZE]>();
 
-        // Model Plugin Deployer endpoint backend
-        let model_plugin_deployer_endpoint = get_env_var("GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT")
-            .map(parse_url)?
-            .map(ModelPluginDeployerEndpoint::from)?;
-
-        Ok(Config {
+        let config = Config {
             dynamodb_client,
-            bind_address,
+            listener,
             session_key,
-            user_auth_table_name,
-            user_session_table_name,
-            graphql_endpoint,
-            model_plugin_deployer_endpoint,
-        })
+            user_auth_table_name: builder.user_auth_table_name,
+            user_session_table_name: builder.user_session_table_name,
+            plugin_registry_client,
+            pipeline_ingress_client,
+            google_client_id: builder.google_client_id,
+        };
+
+        Ok(config)
     }
+}
+
+#[derive(clap::Parser, Debug)]
+#[clap(name = "grapl-web-ui", about = "Grapl web")]
+pub struct ConfigBuilder {
+    #[clap(env = "GRAPL_WEB_UI_BIND_ADDRESS")]
+    pub bind_address: String,
+    #[clap(env = "GRAPL_USER_AUTH_TABLE")]
+    pub user_auth_table_name: String,
+    #[clap(env = "GRAPL_USER_SESSION_TABLE")]
+    pub user_session_table_name: String,
+    #[clap(flatten)]
+    pub plugin_registry_config: PluginRegistryClientConfig,
+    #[clap(flatten)]
+    pub pipeline_ingress_config: PipelineIngressClientConfig,
+    #[clap(env = "GRAPL_GOOGLE_CLIENT_ID")]
+    pub google_client_id: String,
 }

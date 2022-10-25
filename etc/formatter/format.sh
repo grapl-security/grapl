@@ -61,9 +61,8 @@ echo "--- Prettier Typescript"
 prettier \
     --config prettierrc-typescript.toml \
     ${prettier_arg} \
-    ${repo_root}/src/js/graphql_endpoint/**/*.ts \
-    ${repo_root}/src/js/engagement_view/src/**/*.ts \
-    ${repo_root}/src/js/engagement_view/src/**/*.tsx
+    ${repo_root}/src/js/frontend/src/**/*.ts \
+    ${repo_root}/src/js/frontend/src/**/*.tsx
 
 # Slightly different config for yaml
 echo "--- Prettier YAML"

@@ -4,37 +4,30 @@ version = "1.0.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2021"
 
-[lib]
-name = "sysmon_generator_lib"
+[dependencies]
+async-trait = "0.1"
+chrono = { version = "0.4" }
+clap = { workspace = true }
+endpoint-plugin = { path = "../../endpoint-plugin", version = "*" }
+futures = "0.3"
+generator-sdk = { path = "../../plugin-sdk/generator-sdk" }
+grapl-tracing = { path = "../../grapl-tracing" }
+kafka = { path = "../../kafka", version = "*" }
+rust-proto = { path = "../../rust-proto", version = "*" }
+sysmon-parser = { path = "../../sysmon-parser/" }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["sync", "time", "fs"] }
+tracing = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
-criterion = { version = "0.3.5", features = ["async_tokio", "html_reports"] }
-
-[[bench]]
-name = "generator_bench"
-harness = false
-
-[dependencies]
-rust-proto = { path = "../../rust-proto", version = "*" }
-endpoint-plugin = { path = "../../endpoint-plugin", version = "*" }
-grapl-config = { path = "../../grapl-config", version = "*" }
-grapl-observe = { path = "../../grapl-observe", version = "*" }
-graph-generator-lib = { path = "../graph-generator-lib" }
-grapl-service = { path = "../../grapl-service/" }
-sqs-executor = { path = "../../sqs-executor/" }
-sysmon-parser = { path = "../../sysmon-parser/" }
-serde = { version = "1.0.130", features = ["derive"] }
-serde_json = "1.0.72"
-async-trait = "0.1.51"
-tokio = { version = "1.17", features = [
-  "sync",
-  "rt",
-  "macros",
-  "time",
-  "rt-multi-thread",
-  "fs"
+async-trait = "0.1"
+bytes = { workspace = true }
+eyre = { workspace = true }
+generator-sdk = { path = "../../plugin-sdk/generator-sdk", features = [
+  "test_utils"
 ] }
-thiserror = "1.0.30"
-tracing = "0.1.29"
-chrono = { version = "0.4", default-features = false }
-uuid = { version = "0.8", features = ["v4"] }
+test-context = { workspace = true }
+
+[features]
+integration_tests = []

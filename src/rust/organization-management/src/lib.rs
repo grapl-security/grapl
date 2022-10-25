@@ -1,20 +1,27 @@
 use std::net::SocketAddr;
 
-use structopt::StructOpt;
-
-pub mod client;
 pub mod server;
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct OrganizationManagementServiceConfig {
-    #[structopt(env)]
+    #[clap(long, env)]
     pub organization_management_bind_address: SocketAddr,
-    #[structopt(env)]
-    pub organization_management_db_hostname: String,
-    #[structopt(env)]
-    pub organization_management_db_port: u16,
-    #[structopt(env)]
+    #[clap(long, env)]
+    pub organization_management_healthcheck_polling_interval_ms: u64,
+    #[clap(long, env)]
+    pub organization_management_db_address: String,
+    #[clap(long, env)]
     pub organization_management_db_username: String,
-    #[structopt(env)]
-    pub organization_management_db_password: String,
+    #[clap(long, env)]
+    pub organization_management_db_password: grapl_config::SecretString,
+}
+
+impl grapl_config::ToPostgresUrl for OrganizationManagementServiceConfig {
+    fn to_postgres_url(self) -> grapl_config::PostgresUrl {
+        grapl_config::PostgresUrl {
+            address: self.organization_management_db_address,
+            username: self.organization_management_db_username,
+            password: self.organization_management_db_password,
+        }
+    }
 }

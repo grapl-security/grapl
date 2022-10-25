@@ -3,12 +3,11 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import uuid
-from typing import Type
 
 from graplinc.common.v1beta1.types_pb2 import Duration as _Duration
 from graplinc.common.v1beta1.types_pb2 import Timestamp as _Timestamp
 from graplinc.common.v1beta1.types_pb2 import Uuid as _Uuid
-from python_proto import SerDe
+from python_proto.serde import SerDe
 
 SECONDS_PER_DAY = 60 * 60 * 24
 EPOCH = datetime.datetime.fromisoformat("1970-01-01T00:00:00.000")
@@ -18,13 +17,7 @@ EPOCH = datetime.datetime.fromisoformat("1970-01-01T00:00:00.000")
 class Uuid(SerDe[_Uuid]):
     lsb: int
     msb: int
-    proto_cls: Type[_Uuid] = _Uuid
-
-    @staticmethod
-    def deserialize(bytes_: bytes) -> Uuid:
-        proto_uuid = _Uuid()
-        proto_uuid.ParseFromString(bytes_)
-        return Uuid.from_proto(proto_uuid=proto_uuid)
+    _proto_cls = _Uuid
 
     @staticmethod
     def from_uuid(uuid_: uuid.UUID) -> Uuid:
@@ -39,8 +32,8 @@ class Uuid(SerDe[_Uuid]):
         msb_bytes = int.to_bytes(self.msb, byteorder="little", length=8, signed=False)
         return uuid.UUID(bytes=lsb_bytes + msb_bytes)
 
-    @staticmethod
-    def from_proto(proto_uuid: _Uuid) -> Uuid:
+    @classmethod
+    def from_proto(cls, proto_uuid: _Uuid) -> Uuid:
         return Uuid(lsb=proto_uuid.lsb, msb=proto_uuid.msb)
 
     def into_proto(self) -> _Uuid:
@@ -54,19 +47,13 @@ class Uuid(SerDe[_Uuid]):
 class Duration(SerDe[_Duration]):
     seconds: int
     nanos: int
-    proto_cls: Type[_Duration] = _Duration
+    _proto_cls = _Duration
 
     def __post_init__(self) -> None:
         if self.seconds < 0 or self.nanos < 0:
             raise TypeError(
                 f"Duration cannot be negative. Received seconds: {self.seconds} nanos: {self.nanos}"
             )
-
-    @staticmethod
-    def deserialize(bytes_: bytes) -> SerDe[_Duration]:
-        proto_duration = _Duration()
-        proto_duration.ParseFromString(bytes_)
-        return Duration.from_proto(proto_duration=proto_duration)
 
     @staticmethod
     def from_timedelta(timedelta: datetime.timedelta) -> Duration:
@@ -83,8 +70,8 @@ class Duration(SerDe[_Duration]):
         """Note that python's timedelta only offers microsecond precision"""
         return datetime.timedelta(seconds=self.seconds, microseconds=self.nanos // 1000)
 
-    @staticmethod
-    def from_proto(proto_duration: _Duration) -> Duration:
+    @classmethod
+    def from_proto(cls, proto_duration: _Duration) -> Duration:
         return Duration(
             seconds=proto_duration.seconds,
             nanos=proto_duration.nanos,
@@ -101,13 +88,7 @@ class Duration(SerDe[_Duration]):
 class Timestamp(SerDe[_Timestamp]):
     duration: Duration
     before_epoch: bool
-    proto_cls: Type[_Timestamp] = _Timestamp
-
-    @staticmethod
-    def deserialize(bytes_: bytes) -> SerDe[_Timestamp]:
-        proto_timestamp = _Timestamp()
-        proto_timestamp.ParseFromString(bytes_)
-        return Timestamp.from_proto(proto_timestamp=proto_timestamp)
+    _proto_cls = _Timestamp
 
     @staticmethod
     def from_datetime(datetime_: datetime.datetime) -> Timestamp:
@@ -140,8 +121,8 @@ class Timestamp(SerDe[_Timestamp]):
         else:
             return EPOCH + duration
 
-    @staticmethod
-    def from_proto(proto_timestamp: _Timestamp) -> Timestamp:
+    @classmethod
+    def from_proto(cls, proto_timestamp: _Timestamp) -> Timestamp:
         field_name = proto_timestamp.WhichOneof("duration")
         assert field_name is not None
         if field_name == "since_epoch":

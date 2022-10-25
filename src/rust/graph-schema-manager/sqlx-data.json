@@ -1,0 +1,195 @@
+{
+  "db": "PostgreSQL",
+  "04634d1af580944768b89b33daa85d4e40b25ea01e91d05f74e6612db56e8dbe": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Int2",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "ToMany",
+                  "ToOne"
+                ]
+              },
+              "name": "edge_cardinality"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "ToMany",
+                  "ToOne"
+                ]
+              },
+              "name": "edge_cardinality"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO graph_schema_manager.edge_schemas (\n                tenant_id,\n                node_type,\n                schema_version,\n                forward_edge_name,\n                reverse_edge_name,\n                forward_edge_cardinality,\n                reverse_edge_cardinality\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7)\n            "
+  },
+  "36166f6637f8a3b78bfc828988d3f3b3c6bb29c62f27e4e566ea4815a0be1b74": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Int2",
+          "TextArray",
+          "TextArray",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO graph_schema_manager.session_identity_arguments (\n                tenant_id,\n                identity_algorithm,\n                node_type,\n                schema_version,\n                pseudo_key_properties,\n                negation_key_properties,\n                creation_timestamp_property,\n                last_seen_timestamp_property,\n                termination_timestamp_property\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n            "
+  },
+  "46baf7df745e5f441dbbb8b299d42be05502933568572031f5d49fe61bdf54bd": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Int2"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO graph_schema_manager.node_identity_algorithm (\n                tenant_id,\n                identity_algorithm,\n                node_type,\n                schema_version\n            )\n            VALUES ($1, $2, $3, $4)\n            "
+  },
+  "6d8871a6b420c6067895253c84678112cb3cf3ff8b435f3bc3ab802df04810f9": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Int2",
+          "Bytea",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO graph_schema_manager.node_schemas (\n                tenant_id,\n                identity_algorithm,\n                node_type,\n                schema_version,\n                raw_schema,\n                schema_type\n            )\n            VALUES ($1, $2, $3, $4, $5, $6)\n            "
+  },
+  "74cc188eb123bb4cc7fa00b02f196b45599fc9a68d7cac99c6f2ac8dc7908866": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Int2",
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "ImmutableString",
+                  "ImmutableI64",
+                  "MaxI64",
+                  "MinI64",
+                  "ImmutableU64",
+                  "MaxU64",
+                  "MinU64"
+                ]
+              },
+              "name": "property_type"
+            }
+          },
+          "Bool"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO graph_schema_manager.property_schemas (\n                tenant_id,\n                node_type,\n                schema_version,\n                property_name,\n                property_type,\n                identity_only\n            )\n            VALUES ($1, $2, $3, $4, $5, $6)\n            "
+  },
+  "98329cf1104e9c93090cadbb6f362be9d25912200b7c7924e679698a30104324": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Int2",
+          "TextArray"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO graph_schema_manager.static_identity_arguments (\n                tenant_id,\n                identity_algorithm,\n                node_type,\n                schema_version,\n                static_key_properties\n            )\n            VALUES ($1, $2, $3, $4, $5)\n            "
+  },
+  "ad32ded7e6c1b7be984a12a7f9ec96813913eb3075566fe4d9940df162b86637": {
+    "describe": {
+      "columns": [
+        {
+          "name": "reverse_edge_name",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "forward_edge_cardinality: StoredEdgeCardinality",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "ToMany",
+                  "ToOne"
+                ]
+              },
+              "name": "edge_cardinality"
+            }
+          }
+        },
+        {
+          "name": "reverse_edge_cardinality: StoredEdgeCardinality",
+          "ordinal": 2,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "ToMany",
+                  "ToOne"
+                ]
+              },
+              "name": "edge_cardinality"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "select\n                reverse_edge_name,\n                forward_edge_cardinality as \"forward_edge_cardinality: StoredEdgeCardinality\",\n                reverse_edge_cardinality as \"reverse_edge_cardinality: StoredEdgeCardinality\"\n             FROM graph_schema_manager.edge_schemas\n             WHERE\n                 tenant_id = $1 AND\n                 node_type = $2 AND\n                 forward_edge_name = $3\n             ORDER BY schema_version DESC\n             LIMIT 1;\n                 "
+  }
+}

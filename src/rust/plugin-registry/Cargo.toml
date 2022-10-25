@@ -11,40 +11,39 @@ path = "src/main.rs"
 name = "plugin_registry"
 
 [dependencies]
-async-trait = "0.1.51"
-grapl-config = { path = "../grapl-config" }
-grapl-utils = { path = "../grapl-utils" }
-rust-proto-new = { path = "../rust-proto-new" }
-nomad-client-gen = { path = "../nomad-client-gen" }
-serde_json = "1.0.72"
-sqlx = { version = "0.5", features = [
-  "chrono",
-  "migrate",
-  "offline",
-  "postgres",
-  "runtime-tokio-rustls",
-  "uuid",
-] }
-tempfile = "3.3.0"
-thiserror = "1.0.30"
-tokio = { version = "1.17", features = ["full"] }
-# TODO remove tonic after https://github.com/grapl-security/grapl/pull/1665
-tonic = { version = "0.7", features = ["default", "compression"] }
-tracing = "0.1.29"
-rusoto_core = { version = "0.47.0", default_features = false, features = [
-  "rustls"
-] }
-rusoto_s3 = { version = "0.47.0", default_features = false, features = [
-  "rustls"
-] }
-blake3 = "1.2.0"
-structopt = { version = "0.3", default-features = false }
-uuid = { version = "0.8", features = ["v4"] }
+async-trait = "0.1"
+bytes = { workspace = true }
+clap = { workspace = true }
 futures = "0.3"
+futures-retry = "0.6"
+grapl-config = { path = "../grapl-config" }
+grapl-tracing = { path = "../grapl-tracing" }
+grapl-utils = { path = "../grapl-utils" }
+nomad-client-gen = { path = "../nomad-client-gen" }
+rusoto_core = { version = "0.47", default_features = false, features = [
+  "rustls"
+] }
+rusoto_s3 = { version = "0.47", default_features = false, features = [
+  "rustls"
+] }
+rust-proto = { path = "../rust-proto" }
+serde_json = "1.0"
+sqlx = { workspace = true }
+tempfile = "3.3"
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
+e2e-tests = { path = "../e2e-tests" }
+env_logger = "0.9.0"
+eyre = { workspace = true }
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }
 
 [features]
-new_integration_tests = []
+integration_tests = []

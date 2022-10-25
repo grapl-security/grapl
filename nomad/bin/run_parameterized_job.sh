@@ -5,8 +5,8 @@
 # Works on localhost:4646 by default, but that can be overridden with NOMAD_ADDRESS=
 #
 # Example usage:
-#  nomad/bin/run_parameterized_job.sh e2e-tests 6
-#  NOMAD_ADDRESS=http://cool.domain:4646 nomad/bin/run_parameterized_job.sh integration-tests 7
+#  nomad/bin/run_parameterized_job.sh rust-integration-tests 6
+#  NOMAD_ADDRESS=http://cool.domain:4646 nomad/bin/run_parameterized_job.sh rust-integration-tests 7
 ##########
 
 set -euo pipefail
@@ -58,5 +58,5 @@ if [ "${dispatch_timed_out}" -ne "0" ]; then
     important_looking_banner "${job_to_dispatch} timed out."
     nomad_stop_job "${job_id}"
     sleep 5
-    exit 42
+    exit 50
 fi

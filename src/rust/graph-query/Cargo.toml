@@ -1,0 +1,40 @@
+[package]
+name = "graph-query"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+async-recursion = "1.0.0"
+async-trait = "0.1.56"
+bytes = { workspace = true }
+chrono = "0.4.19"
+clap = { workspace = true }
+env_logger = "0.9.0"
+futures = "0.3.21"
+grapl-tracing = { path = "../grapl-tracing" }
+itertools = "0.10.3"
+rand = "0.8.5"
+rust-proto = { path = "../rust-proto" }
+rustc-hash = "1.1.0"
+scylla = "0.6"
+secrecy = "0.8.0"
+serde = { version = "1.0.136", features = ["derive"] }
+test-log = { version = "0.2.8", features = ["trace"] }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }
+uuid = { workspace = true }
+
+[dev-dependencies]
+e2e-tests = { path = "../e2e-tests" }
+eyre = { workspace = true }
+test-context = { workspace = true }
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
+
+[features]
+integration_tests = []

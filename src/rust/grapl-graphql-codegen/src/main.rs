@@ -3,12 +3,12 @@ use std::{
     path::PathBuf,
 };
 
+use clap::Parser;
 use color_eyre::eyre::{
     Result,
     WrapErr,
 };
 use graphql_parser::schema::parse_schema;
-use structopt::StructOpt;
 
 pub mod as_static_python;
 pub mod conflict_resolution;
@@ -24,29 +24,39 @@ pub mod node_predicate;
 pub mod node_type;
 pub mod predicate_type;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "grapl-graphql-codegen", about = "Codegen for Grapl plugins")]
+#[derive(clap::Parser, Debug)]
+#[clap(name = "grapl-graphql-codegen", about = "Codegen for Grapl plugins")]
 struct Opt {
     /// Input file, stdin if not present
-    #[structopt(short = "i", long = "input", parse(from_os_str), env)]
+    #[clap(short = 'i', long = "input", parse(from_os_str), env)]
     input: Option<PathBuf>,
 
     /// Output file, stdout if not present
-    #[structopt(short = "o", long = "output", parse(from_os_str), env)]
+    #[clap(short = 'o', long = "output", parse(from_os_str), env)]
     output: Option<PathBuf>,
 
     /// Do not emit any generated code - useful with 'validate'
-    #[structopt(long = "no-emit", parse(from_flag))]
+    #[clap(long = "no-emit", parse(from_flag))]
     no_emit: bool,
 
     /// Build the code with line numbers
-    #[structopt(long = "line-num", parse(from_flag))]
+    #[clap(long = "line-num", parse(from_flag))]
     line_num: bool,
 
     /// Generated code will be passed to the system Python interpreter, and mypy will be executed
     /// against the code as well
-    #[structopt(long = "validate", parse(from_flag))]
+    #[clap(long, parse(from_flag))]
     validate: bool,
+
+    /// This entire binary was basically broken by the removal of the legacy
+    /// grapl-analyzerlib on Sep 12 2022, but the existing tests are useful in
+    /// that they model how we want this utility to eventually be tested.
+    /// So I've added this temporary "yes, I'm aware this binary is broken"
+    /// option so that this broken-ness has a traceable explanation
+    /// instead of just surprising the next unlucky soul who runs
+    /// grapl-graphql-codegen.
+    #[clap(long, parse(from_flag))]
+    acknowledge_this_tool_needs_to_be_updated_for_new_grapl_analyzerlib: bool,
 }
 
 fn read_in_schema(input: &Option<PathBuf>) -> Result<String> {
@@ -80,12 +90,23 @@ fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     color_eyre::install()?;
 
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
+
+    if !opt.acknowledge_this_tool_needs_to_be_updated_for_new_grapl_analyzerlib {
+        panic!(
+            r"#This tool is currently broken.
+Please read the documentation on 
+`acknowledge_this_tool_needs_to_be_updated_for_new_grapl_analyzerlib`
+#"
+        )
+    }
 
     tracing::debug!(message="Executing grapl-graphql-codegen", options=?opt);
     let raw_schema = read_in_schema(&opt.input)?;
     let document = parse_schema(&raw_schema)?;
-    let node_types = node_type::parse_into_node_types(&document).expect("Failed");
+    let document = document.into_static();
+
+    let node_types = node_type::parse_into_node_types(document).expect("Failed");
 
     let mut all_code = String::with_capacity(1024 * node_types.len());
     all_code.push_str(&standin_imports());
@@ -95,7 +116,7 @@ fn main() -> Result<()> {
     }
 
     if opt.validate {
-        grapl_graphql_codegen::external_helpers::validate_code(&all_code)?;
+        external_helpers::validate_code(&all_code)?;
     }
 
     // If `no_emit` is set, return early

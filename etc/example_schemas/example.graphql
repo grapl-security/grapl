@@ -1,0 +1,26 @@
+type Process @grapl(identity_algorithm: "session") {
+    process_name: String! @immutable,
+    process_id: UInt! @pseudo_key,
+    created_at: UInt! @create_time,
+    last_seen_at: UInt! @last_seen_time,
+    terminated_at: UInt! @terminate_time,
+    binary_file: File! @edge(reverse: "executed_as_processes", reverse_relationship: "ToMany"),
+    created_files: [File!] @edge(reverse: "created_by_process", reverse_relationship: "ToOne"),
+    process_asset: Asset! @edge(reverse: "asset_processes", reverse_relationship: "ToMany"),
+    children: [Process!] @edge(reverse: "parent", reverse_relationship: "ToOne"),
+}
+
+type File @grapl(identity_algorithm: "session") {
+    file_path: String! @pseudo_key,
+    created_at: UInt! @create_time,
+    last_seen_at: UInt! @last_seen_time,
+    terminated_at: UInt! @terminate_time,
+}
+
+type Asset @grapl(identity_algorithm: "static") {
+    asset_id: String! @static_id,
+    hostname: String! @immutable,
+    launch_time: UInt! @immutable,
+    last_seen_time: UInt! @increment_only,
+    files_on_asset: [File!] @edge(reverse: "file_asset", reverse_relationship: "ToOne")
+}

@@ -1,10 +1,12 @@
 [GLOBAL]
-pants_version = "2.10.0"
+pants_version = "2.13.0"
 backend_packages = [
-  "grapl_setup_py",
+  "pants.backend.codegen.protobuf.lint.buf",
   "pants.backend.codegen.protobuf.python",
   "pants.backend.docker",
   "pants.backend.docker.lint.hadolint",
+  "pants.backend.experimental.python.lint.autoflake",
+  "pants.backend.experimental.python.lint.pyupgrade",
   "pants.backend.plugin_development",
   "pants.backend.python",
   "pants.backend.python.lint.black",
@@ -16,22 +18,16 @@ backend_packages = [
   "pants.backend.shell.lint.shfmt"
 ]
 
-pythonpath = [
-  "%(buildroot)s/pants-plugins"
-]
-
-use_deprecated_python_macros = false
-
-build_file_prelude_globs = [
-  "pants-plugins/macros.py",
-]
+use_deprecated_directory_cli_args_semantics = false
+use_deprecated_pex_binary_run_semantics = false
 
 pants_ignore=[
-    "!.buildkite"
+    "!.buildkite",
+    "/src/proto/google"
 ]
 
 plugins = [
-  "toolchain.pants.plugin==0.17.0"
+  "toolchain.pants.plugin==0.24.0"
 ]
 
 remote_cache_read = true
@@ -65,41 +61,49 @@ root_patterns = [
   "/build-support",
   "/devbox",
   "/etc",  # Some of our tests use sample data from here
-  "/pants-plugins",
   "/pulumi",
   "/src/proto",
-  "/src/python/analyzer_executor/src",
-  "/src/python/analyzer_executor/tests",
-  "/src/python/e2e-test-runner",
-  "/src/python/engagement-creator",
-  "/src/python/graphql_endpoint_tests",
-  "/src/python/grapl_analyzerlib",
+  "/src/python/grapl-plugin-sdk",
   "/src/python/grapl-common",
   "/src/python/graplctl",
-  "/src/python/grapl_e2e_tests",
   "/src/python/grapl-tests-common",
   "/src/python/provisioner",
   "/src/python/python-proto",
   "/src/python/repl",
+  "src/python/suspicious_svchost",
 ]
 
 [python]
+lockfile_generator = "pex"
 # Use this as a lockfile; speeds up installation of dependencies
 # To update it, see build-support/manage_virtualenv.sh
 requirement_constraints = "3rdparty/python/constraints.txt"
-interpreter_constraints = ["CPython==3.7.*"]
+# If you update these constraints, also update the ones in the
+# `[black]` section below; see there for further background.
+interpreter_constraints = ["==3.10.*"]
+tailor_pex_binary_targets = false
 
-# We have at least one __init__.py file that has code in it.
-# See https://www.pantsbuild.org/docs/python-backend
-[python-infer]
-inits = true
+[python-bootstrap]
+search_path = ["<PYENV_LOCAL>", "<PYENV>", "<PATH>"]
 
 [python-protobuf]
 mypy_plugin = true
 
+[autoflake]
+lockfile = "3rdparty/python/autoflake.lockfile"
+# prelude is a file that has only imports. Other code then imports the imports from prelude.
+args = ["--exclude", "prelude.py"]
+
 [black]
 lockfile = "3rdparty/python/black.lockfile"
+# Version specified due to https://github.com/psf/black/issues/2964
+# Not entirely clear how we triggered this, given that we are on Click
+# < 8.1.0, but updating allows Black to run again.
+version = "black>=22.3.0"
 config = "pyproject.toml"
+# This should mirror the same global constraints above. This is a
+# work-around for https://github.com/pantsbuild/pants/issues/14912.
+interpreter_constraints = ["==3.10.*"]
 
 [isort]
 lockfile = "3rdparty/python/isort.lockfile"
@@ -129,6 +133,8 @@ extra_requirements = [
 args = [ "--suppress-no-test-exit-code" ]
 
 [mypy]
+version = "mypy==0.960"
+lockfile = "3rdparty/python/mypy.lockfile"
 config = "src/python/mypy.ini"
 # read this section of the mypy docs:
 #
@@ -139,6 +145,7 @@ config = "src/python/mypy.ini"
 args = [ "--show-error-codes", "--namespace-packages" ] #, "--verbose" ]
 
 extra_type_stubs = [
+  "grpc-stubs",
   "mypy_boto3_cloudwatch==1.20.35.post1",
   "mypy_boto3_dynamodb==1.20.35.post1",
   "mypy_boto3_ec2==1.20.35.post1",
@@ -159,9 +166,11 @@ extra_type_stubs = [
 ]
 
 [ipython]
+lockfile = "3rdparty/python/ipython.lockfile"
 version = "ipython==7.20.0"
 
 [flake8]
+lockfile = "3rdparty/python/flake8.lockfile"
 config = ".flake8"
 
 [shfmt]
@@ -175,21 +184,44 @@ output = "all"
 use_coverage = "true"
 
 [coverage-py]
+lockfile = "3rdparty/python/coveragepy.lockfile"
 report = ["xml"]
 # coverage.py only reports statistics based on the files it
 # encounters, not on all the files in the repository; this counteracts
 # that.
 global_report = "true"
+# This should mirror the same global constraints above.
+interpreter_constraints = ["==3.10.*"]
 
 [hadolint]
-version = "v2.8.0"
+version = "v2.10.0"
 known_versions = [
   # The real Hadolint known versions can be seen here, for comparison:
   # https://github.com/pantsbuild/pants/blob/39d0a77ec5c9a7b1e1864b70ba782d52dc33ebaa/src/python/pants/backend/docker/lint/hadolint/subsystem.py#L13
   # This version line was generated via the rules documented here
   # https://github.com/pantsbuild/pants/blob/1d828786c3c0f352e7811e29dd80f7877f5e170c/src/python/pants/core/util_rules/external_tool.py#L131
-  "v2.8.0|linux_x86_64|9dfc155139a1e1e9b3b28f3de9907736b9dfe7cead1c3a0ae7ff0158f3191674|5895708"
+  "v2.10.0|linux_x86_64|8ee6ff537341681f9e91bae2d5da451b15c575691e33980893732d866d3cefc4|2301804"
 ]
+
+[pyupgrade]
+lockfile = "3rdparty/python/pyupgrade.lockfile"
+# keep-runtime-typing is enabled because CallCredentials in grapl_client.py doesn't support CallCredentials | None syntax.
+# For keep-runtime-typing to work we also can't use py30-plus
+args = ["--py39-plus", "--keep-runtime-typing"]
+
+[protoc]
+# While this is the current default value for Pants (as of Pants
+# 2.13.0), we're going to explicitly list it. We programmatically read
+# this value in `build-support/protoc_version.sh` in order to use the
+# same version in our Rust build process. That script can find out
+# what version Pants would use even if we didn't explicitly list it
+# here, but being explicit here makes it very easy to find out what
+# version we're using, without having to run any script.
+#
+# As such, there's nothing magical or special about this value, and
+# you should feel no compunctions about updating it if you need to, or
+# when Pants updates its defaults.
+version = "3.20.1"
 
 [tailor]
 ignore_paths = [
@@ -208,5 +240,10 @@ ignore_adding_targets = [
   # `pex_binary` targets for our `__main__.py` files.
   "pulumi/grapl:__main__",
   "pulumi/integration_tests:__main__",
+  "pulumi/policies/grapl:__main__",
   "devbox/provision:__main__",
 ]
+
+[cli.alias]
+bk-run = "run build-support/bk-run.py --"
+dump-artifacts = "run etc/ci_scripts/dump_artifacts/cli.py --"

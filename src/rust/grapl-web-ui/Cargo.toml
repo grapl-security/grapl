@@ -3,34 +3,61 @@ name = "grapl-web-ui"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "grapl-web-ui"
+
+[features]
+integration_tests = []
+
 [dependencies]
-actix-web = { version = "4", default_features = false, features = [
+actix-files = "0.6"
+actix-multipart = "0.4"
+actix-session = "0.5"
+actix-web = { version = "4.1", default_features = false, features = [
   "macros",
   "compress-brotli"
 ] }
+argon2 = { version = "0.4", features = ["std"] }
 awc = { version = "3", default_features = false, features = [
   "compress-brotli"
 ] }
-actix-files = "0.6"
-actix-session = "0.5"
-actix-web-opentelemetry = { version = "0.12", features = ["awc"] }
-argon2 = { version = "0.4", features = ["std"] }
-chrono = { version = "0.4", default-features = false }
-hmap = "0.1.0"
-futures-util = "0.3"
-opentelemetry = { version = "0.17", features = ["rt-tokio"] }
-rand = "0.8"
-serde = "1"
-serde_dynamodb = "0.9"
-thiserror = "1.0"
-tracing = "0.1"
-tracing-opentelemetry = "0.17"
-tracing-subscriber = "0.3"
-url = "2.2"
+bytes = { workspace = true }
+chrono = { version = "0.4" }
+clap = { workspace = true }
+futures = "0.3"
 grapl-config = { path = "../grapl-config" }
-rusoto_core = { version = "0.47.0", default_features = false, features = [
+grapl-tracing = { path = "../grapl-tracing" }
+grapl-utils = { path = "../grapl-utils" }
+hmap = "0.1"
+jsonwebtoken-google = "0.1"
+rand = "0.8"
+rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
-rusoto_dynamodb = { version = "0.47.0", default_features = false, features = [
+rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
+] }
+rust-proto = { path = "../rust-proto" }
+secrecy = { version = "0.8", features = ["serde"] }
+serde = "1"
+serde_dynamodb = "0.9"
+serde_json = "1"
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = "0.3"
+url = "2.2"
+uuid = { workspace = true }
+
+[dev-dependencies]
+e2e-tests = { path = "../e2e-tests" }
+eyre = { workspace = true }
+reqwest = { version = "0.11", default-features = false, features = [
+  "json",
+  "cookies",
+  "multipart"
 ] }

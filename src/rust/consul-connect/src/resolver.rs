@@ -10,6 +10,8 @@ use trust_dns_resolver::{
     TokioAsyncResolver,
 };
 
+use crate::client_dns_config::ClientDnsConfig;
+
 #[derive(thiserror::Error, Debug)]
 pub enum ConsulConnectResolveError {
     #[error("Failed to resolve name {name}")]
@@ -29,6 +31,13 @@ pub struct ResolvedConsulConnectService {
 pub struct ConsulConnectResolver {
     /// An in-process DNS resolver used for plugin service discovery
     resolver: TokioAsyncResolver,
+}
+
+impl From<ClientDnsConfig> for ConsulConnectResolver {
+    fn from(config: ClientDnsConfig) -> Self {
+        let resolver: TokioAsyncResolver = config.into();
+        Self { resolver }
+    }
 }
 
 impl ConsulConnectResolver {

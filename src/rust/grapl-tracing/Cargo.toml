@@ -1,0 +1,13 @@
+[package]
+name = "grapl-tracing"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+opentelemetry = { workspace = true }
+opentelemetry-jaeger = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-appender = "0.2"
+tracing-opentelemetry = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }

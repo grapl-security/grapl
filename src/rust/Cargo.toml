@@ -1,36 +1,79 @@
 [workspace]
 members = [
   "./analyzer-dispatcher",
-  "./derive-dynamic-node",
+  "./async-cache",
+  "./client-executor",
   "./consul-connect",
+  "./derive-dynamic-node",
+  "./e2e-tests",
   "./endpoint-plugin",
-  "./generators/generic-subgraph-generator",
-  "./generators/graph-generator-lib",
+  "./event-source",
+  "./generator-dispatcher",
   "./generators/osquery-generator",
   "./generators/sysmon-generator",
   "./graph-merger",
-  "./grapl",
+  "./graph-mutation",
+  "./graph-query",
+  "./graph-query-proxy",
+  "./graph-schema-manager",
   "./grapl-config",
   "./grapl-graphql-codegen",
-  "./grapl-observe",
-  "./grapl-service",
-  "./grapl-web-ui",
+  "./grapl-tracing",
   "./grapl-utils",
+  "./grapl-web-ui",
   "./kafka",
-  "./model-plugin-deployer",
+  "./kafka-retry/",
   "./node-identifier",
   "./nomad-client-gen",
   "./organization-management",
   "./pipeline-ingress",
   "./plugin-bootstrap",
+  "./plugin-execution-sidecar",
   "./plugin-registry",
   "./plugin-sdk/generator-sdk/",
   "./plugin-work-queue",
   "./rust-proto",
-  "./rust-proto-new",
-  "./sqs-executor",
+  "./scylla-provisioner",
   "./sysmon-parser",
+  "./uid-allocator",
 ]
+
+[workspace.dependencies]
+blake2 = "0.10"
+bytes = "1.1"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
+eyre = "0.6"
+opentelemetry = { version = "0.18", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.17", features = [
+  "collector_client",
+  "rt-tokio"
+] }
+sqlx = { version = "0.6", features = [
+  "chrono",
+  "migrate",
+  "offline",
+  "postgres",
+  "runtime-tokio-rustls",
+  "time",
+  "uuid",
+] }
+test-context = "0.1"
+thiserror = "1.0"
+tokio = { version = "1.21", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1"
+tracing-opentelemetry = "0.18"
+uuid = { version = "1.0", features = ["v4"] }
 
 [profile.dev]
 opt-level = 1
+
+[profile.dev-local-grapl]
+inherits = "dev"
+# Remove this if you're trying to debug with gdb.
+# Results in a ~20x binary size reduction, for example
+# sysmon-generator: 279M -> 16M
+strip = "debuginfo"

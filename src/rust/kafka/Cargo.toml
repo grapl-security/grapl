@@ -8,7 +8,9 @@ license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-bytes = "1.1"
+bytes = { workspace = true }
+chrono = "0.4"
+clap = { workspace = true }
 futures = "0.3"
 rdkafka = { version = "0.28", features = [
   "cmake-build",
@@ -17,6 +19,13 @@ rdkafka = { version = "0.28", features = [
   "tokio",
   "zstd"
 ] }
-rust-proto-new = { path = "../rust-proto-new", version = "*" }
-thiserror = "1.0"
-tracing = "0.1"
+rust-proto = { path = "../rust-proto", version = "*" }
+secrecy = "0.8.0"
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true, optional = true }
+
+[features]
+default = []
+test-utils = ["uuid"]

@@ -1,116 +1,43 @@
-use rust_proto::plugin_sdk::generators::{
-    generator_service_server::{
-        GeneratorService,
-        GeneratorServiceServer,
+use std::time::Duration;
+
+use clap::Parser;
+use rust_proto::{
+    graplinc::grapl::api::plugin_sdk::generators::v1beta1::server::{
+        GeneratorApi,
+        GeneratorServer,
     },
-    GeneratedGraphProto,
-    GeneratorsDeserializationError,
-    RunGeneratorRequestProto,
-    RunGeneratorResponseProto,
+    protocol::healthcheck::HealthcheckStatus,
 };
-pub use rust_proto::{
-    graph_descriptions::GraphDescription,
-    plugin_sdk::generators::RunGeneratorRequest,
-};
-use tonic::transport::{
-    Identity,
-    ServerTlsConfig,
-};
+use tokio::net::TcpListener;
 
-/// This trait is the main interface for Grapl Generator Plugins.
-/// Generators should be very straightforward - essentially they should just be parsers.
-/// Implementations of this trait should be passed into `exec_service`, which will
-/// serve the generator via gRPC.
-pub trait GraphGenerator {
-    type Error: std::error::Error;
-
-    fn run_generator(&self, data: RunGeneratorRequest) -> Result<GraphDescription, Self::Error>;
+#[derive(clap::Parser, Debug)]
+pub struct GeneratorServiceConfig {
+    #[clap(long, env = "PLUGIN_BIND_ADDRESS")]
+    pub bind_address: std::net::SocketAddr,
 }
-
-// This is only public so that it can show up in an `impl Into<GraphGeneratorImpl>` used in
-// a public interface
-pub struct GraphGeneratorImpl<T>(T)
-where
-    T: GraphGenerator + Send + Sync + 'static;
-
-impl<T> From<T> for GraphGeneratorImpl<T>
-where
-    T: GraphGenerator + Send + Sync + 'static,
-{
-    fn from(value: T) -> Self {
-        Self(value)
+impl GeneratorServiceConfig {
+    /// An alias for clap::parse, so that consumers don't need to
+    /// declare a dependency on clap
+    pub fn from_env_vars() -> Self {
+        Self::parse()
     }
 }
 
-#[tonic::async_trait]
-impl<T> GeneratorService for GraphGeneratorImpl<T>
-where
-    T: GraphGenerator + Send + Sync + 'static,
-{
-    async fn run_generator(
-        &self,
-        request: tonic::Request<RunGeneratorRequestProto>,
-    ) -> Result<tonic::Response<RunGeneratorResponseProto>, tonic::Status> {
-        let request = request.into_inner();
-        let request: RunGeneratorRequest =
-            request
-                .try_into()
-                .map_err(|e: GeneratorsDeserializationError| {
-                    tracing::error!(message="Invalid RunGeneratorRequest", e=?e);
-                    tonic::Status::invalid_argument(e.to_string())
-                })?;
+pub async fn exec_service(
+    graph_generator: impl GeneratorApi + Send + Sync + 'static,
+    config: GeneratorServiceConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let healthcheck_polling_interval_ms = 5000; // TODO: un-hardcode
+    let (server, _shutdown_tx) = GeneratorServer::new(
+        graph_generator,
+        TcpListener::bind(config.bind_address.clone()).await?,
+        || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
+        Duration::from_millis(healthcheck_polling_interval_ms),
+    );
+    tracing::info!(
+        message = "starting gRPC server",
+        socket_address = %config.bind_address,
+    );
 
-        let graph_description = self
-            .0
-            .run_generator(request)
-            // In the future we can ask implementations to give more information about their error
-            .map_err(|e| {
-                tracing::error!(message="Generator failed", e=?e);
-                tonic::Status::unknown(e.to_string())
-            })?;
-
-        Ok(tonic::Response::new(RunGeneratorResponseProto {
-            generated_graph: Some(GeneratedGraphProto {
-                graph_description: Some(graph_description),
-            }),
-        }))
-    }
-}
-
-pub async fn exec_service<T>(
-    graph_generator: impl Into<GraphGeneratorImpl<T>>,
-) -> Result<(), Box<dyn std::error::Error>>
-where
-    T: GraphGenerator + Send + Sync + 'static,
-{
-    let graph_generator = graph_generator.into();
-    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
-    health_reporter
-        .set_serving::<GeneratorServiceServer<GraphGeneratorImpl<T>>>()
-        .await;
-
-    // todo: When bootstrapping and this service are more mature we should determine
-    //       the right way to get these configuration values passed around
-    let cert = tokio::fs::read("/etc/ssl/private/plugin-client-cert.pem").await?;
-    let key = tokio::fs::read("/etc/ssl/private/plugin-client-cert.key").await?;
-
-    let identity = Identity::from_pem(cert, key);
-
-    tonic::transport::Server::builder()
-        .tls_config(ServerTlsConfig::new().identity(identity))?
-        .trace_fn(|request| {
-            tracing::info_span!(
-                "exec_service",
-                headers = ?request.headers(),
-                method = ?request.method(),
-                uri = %request.uri(),
-                extensions = ?request.extensions(),
-            )
-        })
-        .add_service(health_service)
-        .add_service(GeneratorServiceServer::new(graph_generator))
-        .serve("0.0.0.0:5555".parse()?)
-        .await?;
-
-    Ok(())
+    Ok(server.serve().await?)
 }

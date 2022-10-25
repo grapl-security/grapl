@@ -15,9 +15,9 @@ enum PluginType {
 }
 
 // A basic representation of a plugin
-message Plugin {
-  // unique identifier for this plugin
-  graplinc.common.v1beta1.Uuid plugin_id = 1;
+message PluginMetadata {
+  // The platform tenant this plugin belongs to
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
 
   // The string value to display to a user, non-empty
   string display_name = 2;
@@ -25,23 +25,25 @@ message Plugin {
   // The type of the plugin
   PluginType plugin_type = 3;
 
-  // The executable binary for this plugin
-  bytes plugin_binary = 4;
+  // Optional event source id to associate with this plugin. The semantics of
+  // this field are that it is:
+  //
+  // - present for a plugin of type PLUGIN_TYPE_GENERATOR
+  // - absent otherwise
+  //
+  // Attempting to create a plugin of type PLUGIN_TYPE_GENERATOR without
+  // specifying an event_source_id will result in an error.
+  graplinc.common.v1beta1.Uuid event_source_id = 4;
 }
 
-// A request to create a plugin entry
 message CreatePluginRequest {
-  // the actual plugin code
-  bytes plugin_artifact = 1;
-
-  // Tenant that is deploying this plugin
-  graplinc.common.v1beta1.Uuid tenant_id = 2;
-
-  // The string value to display to a user, non-empty
-  string display_name = 3;
-
-  // The type of the plugin
-  PluginType plugin_type = 4;
+  oneof inner {
+    // Preamble containing important information about the plugin.
+    PluginMetadata metadata = 1;
+    // Chunks of the plugin binary--these are streamed in-order after the
+    // PluginMetadata preamble.
+    bytes chunk = 2;
+  }
 }
 
 // A Response to a plugin entry being created
@@ -54,14 +56,31 @@ message CreatePluginResponse {
 message GetPluginRequest {
   // The identity of the plugin
   graplinc.common.v1beta1.Uuid plugin_id = 1;
-  // The tenant for which the plugin belongs to
+  // The platform tenant this plugin belongs to
   graplinc.common.v1beta1.Uuid tenant_id = 2;
 }
 
 // A response containing the request plugin
 message GetPluginResponse {
-  // The requested plugin
-  Plugin plugin = 1;
+  // unique identifier for this plugin
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+
+  // The requested plugin's metadata
+  PluginMetadata plugin_metadata = 2;
+}
+
+// Grab a listing of all plugins for a given platform tenant
+message ListPluginsRequest {
+  // The platform tenant to list plugins for
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // Optionally filter on plugin_type
+  optional PluginType plugin_type = 2;
+}
+
+// All the plugins matching some ListPluginsRequest query
+message ListPluginsResponse {
+  // A list of plugins
+  repeated GetPluginResponse plugins = 1;
 }
 
 // A request to deploy an existing plugin
@@ -72,6 +91,24 @@ message DeployPluginRequest {
 
 // A response indicating that a plugin has been deployed
 message DeployPluginResponse {}
+
+message GetPluginHealthRequest {
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
+
+// All the health states a plugin can be in
+enum PluginHealthStatus {
+  PLUGIN_HEALTH_STATUS_UNSPECIFIED = 0;
+  PLUGIN_HEALTH_STATUS_NOT_DEPLOYED = 1;
+  // These map to https://www.nomadproject.io/api-docs/jobs#status
+  PLUGIN_HEALTH_STATUS_PENDING = 2;
+  PLUGIN_HEALTH_STATUS_RUNNING = 3;
+  PLUGIN_HEALTH_STATUS_DEAD = 4;
+}
+
+message GetPluginHealthResponse {
+  PluginHealthStatus health_status = 1;
+}
 
 // A request to disable a deployed plugin
 message TearDownPluginRequest {
@@ -106,16 +143,57 @@ message GetAnalyzersForTenantResponse {
   repeated graplinc.common.v1beta1.Uuid plugin_ids = 1;
 }
 
+// Whether the deployment has succeeded or not
+enum PluginDeploymentStatus {
+  PLUGIN_DEPLOYMENT_STATUS_UNSPECIFIED = 0;
+  PLUGIN_DEPLOYMENT_STATUS_SUCCESS = 1;
+  PLUGIN_DEPLOYMENT_STATUS_FAIL = 2;
+}
+
+// A PluginDeployment represents a distinct "we (possibly unsuccessfully)
+// deployed (or tore down) your plugin" event. For example if status is SUCCESS
+// and deployed is false, this event represents a successful plugin teardown.
+message PluginDeployment {
+  // The plugin's unique identifier
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+  // When this PluginDeployment event took place
+  graplinc.common.v1beta1.Timestamp timestamp = 2;
+  // Whether the operation was successful
+  PluginDeploymentStatus status = 3;
+  // Whether the plugin is currently actively deployed
+  bool deployed = 4;
+}
+
+// Get the most recent plugin deployment
+message GetPluginDeploymentRequest {
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
+
+// The most recent plugin deployment
+message GetPluginDeploymentResponse {
+  PluginDeployment plugin_deployment = 1;
+}
+
 // A service that manages the state of plugins
 service PluginRegistryService {
   // create a new plugin
-  rpc CreatePlugin(CreatePluginRequest) returns (CreatePluginResponse);
+  rpc CreatePlugin(stream CreatePluginRequest) returns (CreatePluginResponse);
 
   // retrieve the plugin corresponding to the given plugin_id
   rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse);
 
+  // retrieve a listing of plugins corresponding to some filters specified in
+  // the request
+  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse);
+
+  // retrieve the latest plugin deployment corresponding to the given plugin_id
+  rpc GetPluginDeployment(GetPluginDeploymentRequest) returns (GetPluginDeploymentResponse);
+
   // turn on a particular plugin's code
   rpc DeployPlugin(DeployPluginRequest) returns (DeployPluginResponse);
+
+  // Get the health of a given deployed plugin ID
+  rpc GetPluginHealth(GetPluginHealthRequest) returns (GetPluginHealthResponse);
 
   // turn off a particular plugin's code
   rpc TearDownPlugin(TearDownPluginRequest) returns (TearDownPluginResponse);

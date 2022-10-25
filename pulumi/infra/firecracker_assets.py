@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import Optional
 
 import pulumi_aws as aws
 from infra import config
 from infra.artifacts import ArtifactGetter
 from infra.bucket import Bucket
-from infra.path import path_from_root
+from infra.config import repository_path
 from infra.s3_url import get_s3_url
+from typing_extensions import Protocol
 
 import pulumi
 
@@ -26,28 +26,41 @@ class FirecrackerAssets(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        repository_name: Optional[str],
+        repository_name: str | None,
         artifacts: ArtifactGetter,
         opts: pulumi.ResourceOptions = None,
     ) -> None:
         super().__init__("grapl:FirecrackerAssets", name, None, opts)
 
         self.kernel_asset = local_or_remote_asset(
-            local_path=path_from_root("dist/firecracker_kernel.tar.gz"),
+            local_path=repository_path("dist/firecracker_kernel.tar.gz"),
             artifacts=artifacts,
             artifact_key=FIRECRACKER_KERNEL_FILENAME,
             repository_name=repository_name,
         )
 
         self.rootfs_asset = local_or_remote_asset(
-            local_path=path_from_root("dist/firecracker_rootfs.tar.gz"),
+            local_path=repository_path("dist/firecracker_rootfs.tar.gz"),
             artifacts=artifacts,
             artifact_key=FIRECRACKER_ROOTFS_FILENAME,
             repository_name=repository_name,
         )
 
 
-class FirecrackerS3BucketObjects(pulumi.ComponentResource):
+class FirecrackerS3BucketObjectsProtocol(Protocol):
+    kernel_s3obj_url: pulumi.Output[str]
+    rootfs_s3obj_url: pulumi.Output[str]
+
+
+class MockFirecrackerS3BucketObjects(FirecrackerS3BucketObjectsProtocol):
+    def __init__(self) -> None:
+        self.kernel_s3obj_url = pulumi.Output.from_input("mock kernel s3obj url")
+        self.rootfs_s3obj_url = pulumi.Output.from_input("mock rootfs s3obj url")
+
+
+class FirecrackerS3BucketObjects(
+    pulumi.ComponentResource, FirecrackerS3BucketObjectsProtocol
+):
     def __init__(
         self,
         name: str,
@@ -109,7 +122,7 @@ def local_or_remote_asset(
     local_path: Path,
     artifacts: ArtifactGetter,
     artifact_key: str,
-    repository_name: Optional[str],
+    repository_name: str | None,
 ) -> pulumi.asset.Asset:
     # Check Pulumi.stackname.yaml for a Cloudsmith-hosted asset
     version = artifacts.get(artifact_key)

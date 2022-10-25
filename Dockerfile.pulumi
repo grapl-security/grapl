@@ -1,10 +1,11 @@
-FROM python:3.7-slim-bullseye as grapl-local-pulumi
+ARG PYTHON_VERSION
+FROM python:${PYTHON_VERSION}-slim-bullseye as grapl-local-pulumi
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
        build-essential=12.9 \
-       curl=7.74.0-1.3+deb11u1 \
-       unzip=6.0-26 \
+       curl=7.74.0-1.3+deb11u3 \
+       unzip=6.0-26+deb11u1 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \
         --disabled-password \
@@ -17,7 +18,7 @@ USER grapl
 ENV USER=grapl
 WORKDIR /home/grapl
 
-RUN curl -O https://get.pulumi.com/releases/sdk/pulumi-v3.30.0-linux-x64.tar.gz && \
+RUN curl -O https://get.pulumi.com/releases/sdk/pulumi-v3.40.2-linux-x64.tar.gz && \
     tar -xzvf pulumi-*.tar.gz && \
     mv pulumi pulumi-bin
 ENV PATH=/home/grapl/pulumi-bin:${PATH}
@@ -40,14 +41,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install --no-cache-dir --requirement constraints.txt
 
 COPY --chown=grapl pulumi pulumi
-
-# Create a directory *as the grapl user*, at which we will mount an
-# external volume to share Pulumi run outputs with other
-# containers. Because of Docker magic, this has to be present first,
-# and with the correct permissions, in order for us to be able to
-# write to it.
-RUN mkdir /home/grapl/pulumi-outputs
-
 # Make nomad files available to Pulumi
 COPY --chown=grapl nomad nomad
+
 WORKDIR /home/grapl/pulumi

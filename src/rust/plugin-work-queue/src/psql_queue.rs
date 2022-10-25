@@ -1,9 +1,13 @@
+use bytes::Bytes;
+use grapl_config::PostgresClient;
 use sqlx::{
     Pool,
     Postgres,
 };
 use tracing::instrument;
 use uuid::Uuid;
+
+use crate::PluginWorkQueueDbConfig;
 
 #[derive(Clone, Debug, Eq, PartialEq, sqlx::Type)]
 #[sqlx(type_name = "status", rename_all = "lowercase")]
@@ -29,12 +33,14 @@ impl From<ExecutionId> for i64 {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, sqlx::Type)]
 pub struct NextExecutionRequest {
     pub execution_key: ExecutionId,
-    pub plugin_id: uuid::Uuid,
-    pub tenant_id: uuid::Uuid,
+    pub plugin_id: Uuid,
     pub pipeline_message: Vec<u8>,
+    pub tenant_id: Uuid,
+    pub trace_id: Uuid,
+    pub event_source_id: Uuid,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -53,17 +59,32 @@ pub struct PsqlQueue {
     pub pool: Pool<Postgres>,
 }
 
-impl PsqlQueue {
-    pub fn new(pool: Pool<Postgres>) -> Self {
+#[async_trait::async_trait]
+impl PostgresClient for PsqlQueue {
+    type Config = PluginWorkQueueDbConfig;
+    type Error = grapl_config::PostgresDbInitError;
+
+    fn new(pool: sqlx::Pool<sqlx::Postgres>) -> Self {
         Self { pool }
     }
 
-    #[instrument(skip(pipeline_message), err)]
+    #[tracing::instrument]
+    async fn migrate(pool: &sqlx::Pool<sqlx::Postgres>) -> Result<(), sqlx::migrate::MigrateError> {
+        tracing::info!(message = "Performing database migration");
+
+        sqlx::migrate!().run(pool).await
+    }
+}
+
+impl PsqlQueue {
+    #[instrument(skip(self, pipeline_message), err)]
     pub async fn put_generator_message(
         &self,
         plugin_id: Uuid,
-        pipeline_message: Vec<u8>,
         tenant_id: Uuid,
+        trace_id: Uuid,
+        event_source_id: Uuid,
+        pipeline_message: Bytes,
     ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
             r"
@@ -71,26 +92,32 @@ impl PsqlQueue {
                 plugin_id,
                 pipeline_message,
                 tenant_id,
+                trace_id,
+                event_source_id,
                 current_status,
                 try_count
             )
-            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )
+            VALUES( $1::UUID, $2, $3::UUID, $4::UUID, $5::UUID, 'enqueued', -1 )
         ",
             plugin_id,
-            pipeline_message,
-            &tenant_id,
+            pipeline_message.as_ref(),
+            tenant_id,
+            trace_id,
+            event_source_id
         )
         .execute(&self.pool)
         .await?;
         Ok(())
     }
 
-    #[instrument(skip(pipeline_message), err)]
+    #[instrument(skip(self, pipeline_message), err)]
     pub async fn put_analyzer_message(
         &self,
         plugin_id: Uuid,
-        pipeline_message: Vec<u8>,
         tenant_id: Uuid,
+        trace_id: Uuid,
+        event_source_id: Uuid,
+        pipeline_message: Bytes,
     ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
             r"
@@ -98,22 +125,29 @@ impl PsqlQueue {
                 plugin_id,
                 pipeline_message,
                 tenant_id,
+                trace_id,
+                event_source_id,
                 current_status,
                 try_count
             )
-            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )
+            VALUES( $1::UUID, $2, $3::UUID, $4::UUID, $5::UUID, 'enqueued', -1 )
         ",
             plugin_id,
-            pipeline_message,
-            &tenant_id,
+            pipeline_message.as_ref(),
+            tenant_id,
+            trace_id,
+            event_source_id
         )
         .execute(&self.pool)
         .await?;
         Ok(())
     }
 
-    #[instrument(err)]
-    pub async fn get_generator_message(&self) -> Result<Option<Message>, PsqlQueueError> {
+    #[instrument(skip(self), err)]
+    pub async fn get_generator_message(
+        &self,
+        plugin_id: Uuid,
+    ) -> Result<Option<Message>, PsqlQueueError> {
         // This function does a few things
         // 1. It attempts to get a message from the queue
         //      -> Where that message isn't over a day old
@@ -134,16 +168,27 @@ impl PsqlQueue {
         // In the future we can leverage a maximum retry limit as well as a batch version of this query
         // A more dynamic visibility strategy would also be reasonable
         let request: Option<NextExecutionRequest> = sqlx::query_as!(
-            NextExecutionRequest, r#"
+            NextExecutionRequest,
+            r#"
             UPDATE plugin_work_queue.generator_plugin_executions
             SET
                 try_count  = try_count + 1,
                 last_updated = CURRENT_TIMESTAMP,
                 visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'
             FROM (
-                 SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after, tenant_id
+                 SELECT
+                     execution_key,
+                     plugin_id,
+                     pipeline_message,
+                     tenant_id,
+                     trace_id,
+                     event_source_id,
+                     current_status,
+                     creation_time,
+                     visible_after
                  FROM plugin_work_queue.generator_plugin_executions
-                 WHERE current_status = 'enqueued'
+                 WHERE plugin_id = $1
+                   AND current_status = 'enqueued'
                    AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
                    AND visible_after <= CURRENT_TIMESTAMP
                  ORDER BY creation_time ASC
@@ -155,15 +200,23 @@ impl PsqlQueue {
                  next_execution.execution_key AS "execution_key!: ExecutionId",
                  next_execution.plugin_id,
                  next_execution.pipeline_message,
-                 next_execution.tenant_id
-        "#).fetch_optional(&self.pool)
+                 next_execution.tenant_id,
+                 next_execution.trace_id,
+                 next_execution.event_source_id
+        "#,
+            plugin_id
+        )
+            .fetch_optional(&self.pool)
             .await?;
 
         Ok(request.map(|request| Message { request }))
     }
 
-    #[instrument(err)]
-    pub async fn get_analyzer_message(&self) -> Result<Option<Message>, PsqlQueueError> {
+    #[instrument(skip(self), err)]
+    pub async fn get_analyzer_message(
+        &self,
+        plugin_id: Uuid,
+    ) -> Result<Option<Message>, PsqlQueueError> {
         // `get_message` does a few things
         // 1. It attempts to get a message from the queue
         //      -> Where that message isn't over a day old
@@ -184,16 +237,27 @@ impl PsqlQueue {
         // In the future we can leverage a maximum retry limit as well as a batch version of this query
         // A more dynamic visibility strategy would also be reasonable
         let request: Option<NextExecutionRequest> = sqlx::query_as!(
-            NextExecutionRequest, r#"
+            NextExecutionRequest,
+            r#"
             UPDATE plugin_work_queue.analyzer_plugin_executions
             SET
                 try_count  = plugin_work_queue.analyzer_plugin_executions.try_count + 1,
                 last_updated = CURRENT_TIMESTAMP,
                 visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'
             FROM (
-                 SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after, tenant_id
+                 SELECT
+                     execution_key,
+                     plugin_id,
+                     pipeline_message,
+                     tenant_id,
+                     trace_id,
+                     event_source_id,
+                     current_status,
+                     creation_time,
+                     visible_after
                  FROM plugin_work_queue.analyzer_plugin_executions
-                 WHERE current_status = 'enqueued'
+                 WHERE plugin_id = $1
+                   AND current_status = 'enqueued'
                    AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
                    AND visible_after <= CURRENT_TIMESTAMP
                  ORDER BY creation_time ASC
@@ -205,14 +269,19 @@ impl PsqlQueue {
                  next_execution.execution_key AS "execution_key!: ExecutionId",
                  next_execution.plugin_id,
                  next_execution.pipeline_message,
-                 next_execution.tenant_id
-        "#).fetch_optional(&self.pool)
+                 next_execution.tenant_id,
+                 next_execution.trace_id,
+                 next_execution.event_source_id
+        "#,
+            plugin_id,
+        )
+            .fetch_optional(&self.pool)
             .await?;
 
         Ok(request.map(|request| Message { request }))
     }
 
-    #[instrument(err)]
+    #[instrument(skip(self), err)]
     pub async fn ack_generator(
         &self,
         execution_key: ExecutionId,
@@ -237,7 +306,7 @@ impl PsqlQueue {
         Ok(())
     }
 
-    #[instrument(err)]
+    #[instrument(skip(self), err)]
     pub async fn ack_analyzer(
         &self,
         execution_key: ExecutionId,
@@ -261,39 +330,4 @@ impl PsqlQueue {
         .await?;
         Ok(())
     }
-}
-
-// Pub for testing - otherwise sqlx can't see the query
-pub async fn get_generator_status(
-    pool: &sqlx::Pool<Postgres>,
-    execution_key: &ExecutionId,
-) -> Result<Status, sqlx::Error> {
-    // The request should be marked as failed
-    let row = sqlx::query!(
-        r#"SELECT current_status AS "current_status: Status"
-            FROM plugin_work_queue.generator_plugin_executions
-            WHERE execution_key = $1"#,
-        execution_key.0
-    )
-    .fetch_one(pool)
-    .await?;
-    Ok(row.current_status)
-}
-
-// Pub for testing - otherwise sqlx can't see the query
-pub async fn get_generator_status_by_plugin_id(
-    pool: &sqlx::Pool<Postgres>,
-    plugin_id: &uuid::Uuid,
-) -> Result<Status, sqlx::Error> {
-    // The request should be marked as failed
-    let row = sqlx::query!(
-        r#"SELECT current_status AS "current_status: Status"
-            FROM plugin_work_queue.generator_plugin_executions
-            WHERE plugin_id = $1
-            LIMIT 1;"#,
-        plugin_id as _
-    )
-    .fetch_one(pool)
-    .await?;
-    Ok(row.current_status)
 }

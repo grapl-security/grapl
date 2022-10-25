@@ -1,0 +1,25 @@
+[package]
+name = "graph-mutation"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+async-trait = "0.1.53"
+blake2 = { workspace = true }
+clap = { workspace = true }
+grapl-tracing = { path = "../grapl-tracing" }
+grapl-utils = { path = "../grapl-utils" }
+hash_hasher = "2.0.3"
+lazy_static = "1.4.0"
+moka = { version = "0.9", features = ["future"] }
+rust-proto = { path = "../rust-proto" }
+scylla = "0.6"
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uid-allocator = { path = "../uid-allocator" }
+uuid = { workspace = true }
+
+[dev-dependencies]
+eyre = { workspace = true }

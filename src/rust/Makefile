@@ -24,8 +24,8 @@ export empty_target_message
 
 # Pull the version from our rust-toolchain.toml file; automatic
 # synchronization FTW!
-# TODO: Consider pulling this logic into a script for other uses
-rust_version := $(shell grep channel rust-toolchain.toml | sed -E 's/channel = "(.*)"/\1/g')
+rust_version := $(shell ../../build-support/rust_version.sh)
+protoc_version := $(shell ../../build-support/protoc_version.sh)
 
 .ONESHELL:
 SHELL := bash
@@ -91,6 +91,7 @@ image: rust-toolchain.toml
 image: ## Build the build environment image
 	docker buildx build \
 		--build-arg=RUST_VERSION="${rust_version}" \
+		--build-arg=PROTOC_VERSION="${protoc_version}" \
 		--file=build-env.Dockerfile \
 		--tag="${build_image_tag}" \
 		.

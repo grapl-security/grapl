@@ -1,47 +1,43 @@
 use std::{
     env::VarError,
     num::ParseIntError,
-    time::{
-        Duration,
-        SystemTime,
-    },
+    time::Duration,
 };
 
+use clap::Parser;
+use grapl_tracing::{
+    setup_tracing,
+    SetupTracingError,
+};
 use kafka::{
+    config::ProducerConfig,
     ConfigurationError as KafkaConfigurationError,
     Producer,
     ProducerError,
 };
-use opentelemetry::{
-    global,
-    sdk::propagation::TraceContextPropagator,
-    trace::TraceError,
-};
-use rust_proto_new::graplinc::grapl::{
-    api::pipeline_ingress::v1beta1::{
-        server::{
-            ConfigurationError as ServerConfigurationError,
-            PipelineIngressApi,
-            PipelineIngressServer,
+use rust_proto::{
+    graplinc::grapl::{
+        api::pipeline_ingress::v1beta1::{
+            server::{
+                PipelineIngressApi,
+                PipelineIngressServer,
+            },
+            PublishRawLogRequest,
+            PublishRawLogResponse,
         },
-        HealthcheckStatus,
-        PublishRawLogRequest,
-        PublishRawLogResponse,
-    },
-    pipeline::{
-        v1beta1::{
-            Metadata,
+        pipeline::v1beta1::{
+            Envelope,
             RawLog,
         },
-        v1beta2::Envelope,
+    },
+    protocol::{
+        error::ServeError,
+        healthcheck::HealthcheckStatus,
+        status::Status,
     },
 };
 use thiserror::Error;
 use tokio::net::TcpListener;
-use tracing_subscriber::{
-    prelude::*,
-    EnvFilter,
-};
 use uuid::Uuid;
 
 #[non_exhaustive]
@@ -51,43 +47,52 @@ enum IngressApiError {
     ProducerError(#[from] ProducerError),
 }
 
+impl From<IngressApiError> for Status {
+    fn from(e: IngressApiError) -> Self {
+        Status::unknown(e.to_string())
+    }
+}
+
 struct IngressApi {
-    producer: Producer<Envelope<RawLog>>,
+    producer: Producer<RawLog>,
 }
 
 impl IngressApi {
-    fn new(producer: Producer<Envelope<RawLog>>) -> Self {
+    fn new(producer: Producer<RawLog>) -> Self {
         IngressApi { producer }
     }
 }
 
 #[async_trait::async_trait]
-impl PipelineIngressApi<IngressApiError> for IngressApi {
+impl PipelineIngressApi for IngressApi {
+    type Error = IngressApiError;
+
     #[tracing::instrument(skip(self))]
     async fn publish_raw_log(
         &self,
         request: PublishRawLogRequest,
-    ) -> Result<PublishRawLogResponse, IngressApiError> {
-        let created_time = SystemTime::now();
-        let last_updated_time = created_time;
-        let tenant_id = request.tenant_id;
-        let event_source_id = request.event_source_id;
+    ) -> Result<PublishRawLogResponse, Self::Error> {
+        let tenant_id = request.tenant_id();
+        let event_source_id = request.event_source_id();
         // TODO: trace_id should be generated at the edge. This service is
         // currently "the edge" but that won't be true forever. When there is an
         // actual edge service, that service should be responsible for
         // generating the trace_id.
         let trace_id = Uuid::new_v4();
+
+        tracing::debug!(
+            message = "publishing raw log",
+            tenant_id =% tenant_id,
+            event_source_id =% event_source_id,
+            trace_id =% trace_id,
+        );
+
         self.producer
             .send(Envelope::new(
-                Metadata::new(
-                    tenant_id,
-                    trace_id,
-                    0,
-                    created_time,
-                    last_updated_time,
-                    event_source_id,
-                ),
-                RawLog::new(request.log_event),
+                tenant_id,
+                trace_id,
+                event_source_id,
+                RawLog::new(request.log_event()),
             ))
             .await?;
 
@@ -101,8 +106,8 @@ enum ConfigurationError {
     #[error("failed to configure kafka client {0}")]
     Kafka(#[from] KafkaConfigurationError),
 
-    #[error("failed to configure gRPC server {0}")]
-    Server(#[from] ServerConfigurationError),
+    #[error("ServeError {0}")]
+    ServeError(#[from] ServeError),
 
     #[error("missing environment variable {0}")]
     EnvironmentVariable(#[from] VarError),
@@ -114,7 +119,7 @@ enum ConfigurationError {
     ParseInt(#[from] ParseIntError),
 
     #[error("failed to configure tracing {0}")]
-    Tracing(#[from] TraceError),
+    SetupTracingError(#[from] SetupTracingError),
 }
 
 #[tracing::instrument(err)]
@@ -124,28 +129,14 @@ async fn handler() -> Result<(), ConfigurationError> {
     let healthcheck_polling_interval_ms =
         std::env::var("PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS")?.parse()?;
 
-    let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")?;
-    let sasl_username = std::env::var("KAFKA_SASL_USERNAME")?;
-    let sasl_password = std::env::var("KAFKA_SASL_PASSWORD")?;
-
-    let raw_logs_topic = "raw-logs".to_string();
+    let producer_config = ProducerConfig::parse();
 
     tracing::info!(
         message = "configuring kafka producer",
-        bootstrap_servers = %bootstrap_servers,
-        topic = %raw_logs_topic,
+        producer_config = ?producer_config,
     );
-    let producer: Producer<Envelope<RawLog>> = Producer::new(
-        bootstrap_servers.clone(),
-        sasl_username,
-        sasl_password,
-        raw_logs_topic.clone(),
-    )?;
-    tracing::info!(
-        message = "kafka producer configured successfully",
-        bootstrap_servers = %bootstrap_servers,
-        topic = %raw_logs_topic,
-    );
+    let producer: Producer<RawLog> = Producer::new(producer_config)?;
+    tracing::info!(message = "kafka producer configured successfully",);
 
     tracing::info!(
         message = "configuring gRPC server",
@@ -170,30 +161,12 @@ async fn handler() -> Result<(), ConfigurationError> {
     Ok(server.serve().await?)
 }
 
+const SERVICE_NAME: &'static str = "pipeline-ingress";
+
 #[tokio::main]
 async fn main() -> Result<(), ConfigurationError> {
-    let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
+    let _guard = setup_tracing(SERVICE_NAME)?;
 
-    // initialize json logging layer
-    let log_layer = tracing_subscriber::fmt::layer()
-        .json()
-        .with_writer(non_blocking);
-
-    // initialize tracing layer
-    global::set_text_map_propagator(TraceContextPropagator::new());
-    let tracer = opentelemetry_jaeger::new_pipeline()
-        .with_service_name("pipeline-ingress")
-        .install_batch(opentelemetry::runtime::Tokio)?;
-
-    // register a subscriber
-    let filter = EnvFilter::from_default_env();
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(log_layer)
-        .with(tracing_opentelemetry::layer().with_tracer(tracer))
-        .init();
-
-    tracing::info!("logger configured successfully");
     tracing::info!("starting up!");
 
     match handler().await {

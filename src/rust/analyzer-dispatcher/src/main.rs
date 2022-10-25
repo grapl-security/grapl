@@ -1,230 +1,378 @@
-use std::{
-    sync::Arc,
-    time::Duration,
-};
+use std::time::Duration;
 
-use async_trait::async_trait;
-use failure::{
-    bail,
-    Error,
+use async_cache::{
+    AsyncCache,
+    AsyncCacheError,
 };
-use grapl_config::env_helpers::{
-    s3_event_emitters_from_env,
-    FromEnv,
+use clap::Parser;
+use futures::{
+    pin_mut,
+    StreamExt,
+    TryStreamExt,
 };
-use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::decoder::ProtoDecoder;
-use log::{
-    debug,
-    error,
-    info,
-    warn,
-};
-use rusoto_s3::{
-    ListObjectsRequest,
-    S3Client,
-    S3,
-};
-use rusoto_sqs::SqsClient;
-use rust_proto::graph_descriptions::*;
-use sqs_executor::{
-    cache::NopCache,
-    errors::{
-        CheckedError,
-        Recoverable,
+use kafka::{
+    config::{
+        ConsumerConfig,
+        RetryProducerConfig,
     },
-    event_handler::{
-        CompletedEvents,
-        EventHandler,
+    CommitError,
+    ConfigurationError as KafkaConfigurationError,
+    Consumer,
+    ConsumerError,
+    ProducerError,
+    RetryProducer,
+};
+use rust_proto::{
+    client_factory::services::{
+        PluginRegistryClientConfig,
+        PluginWorkQueueClientConfig,
     },
-    make_ten,
-    s3_event_retriever::S3PayloadRetriever,
-    time_based_key_fn,
+    graplinc::grapl::{
+        api::{
+            plugin_registry::v1beta1::{
+                GetAnalyzersForTenantRequest,
+                PluginRegistryServiceClient,
+            },
+            plugin_sdk::analyzers::v1beta1::messages::Update,
+            plugin_work_queue::v1beta1::{
+                ExecutionJob,
+                PluginWorkQueueServiceClient,
+                PluginWorkQueueServiceClientError,
+                PushExecuteAnalyzerRequest,
+            },
+        },
+        pipeline::v1beta1::Envelope,
+    },
+    protocol::{
+        error::GrpcClientError,
+        service_client::{
+            ConnectError,
+            ConnectWithConfig,
+        },
+        status::{
+            Code,
+            Status,
+        },
+    },
+    SerDe,
+    SerDeError,
 };
+use thiserror::Error;
+use tracing::Instrument;
+use uuid::Uuid;
 
-use crate::dispatch_event::{
-    AnalyzerDispatchEvent,
-    AnalyzerDispatchEvents,
-    AnalyzerDispatchSerializer,
-};
+#[derive(clap::Parser, Clone, Debug)]
+struct AnalyzerDispatcherConfigParams {
+    #[clap(long, env = "WORKER_POOL_SIZE")]
+    pub worker_pool_size: usize,
 
-pub mod dispatch_event;
+    #[clap(long, env = "ANALYZER_IDS_CACHE_CAPACITY")]
+    pub analyzer_ids_cache_capacity: u64,
 
-#[derive(Debug)]
-pub struct AnalyzerDispatcher<S>
-where
-    S: S3 + Send + Sync + 'static,
-{
-    s3_client: Arc<S>,
+    #[clap(long, env = "ANALYZER_IDS_CACHE_TTL_MS")]
+    pub analyzer_ids_cache_ttl_ms: u64,
+
+    #[clap(long, env = "ANALYZER_IDS_CACHE_UPDATER_POOL_SIZE")]
+    pub analyzer_ids_cache_updater_pool_size: usize,
+
+    #[clap(long, env = "ANALYZER_IDS_CACHE_UPDATER_QUEUE_DEPTH")]
+    pub analyzer_ids_cache_updater_queue_depth: usize,
 }
 
-impl<S> Clone for AnalyzerDispatcher<S>
-where
-    S: S3 + Send + Sync + 'static,
-{
-    fn clone(&self) -> Self {
+#[derive(Clone, Debug)]
+struct AnalyzerDispatcherConfig {
+    pub kafka_config: ConsumerConfig,
+    pub kafka_retry_producer_config: RetryProducerConfig,
+    pub params: AnalyzerDispatcherConfigParams,
+}
+
+impl AnalyzerDispatcherConfig {
+    pub fn parse() -> Self {
         Self {
-            s3_client: self.s3_client.clone(),
+            kafka_config: ConsumerConfig::parse(),
+            kafka_retry_producer_config: RetryProducerConfig::parse(),
+            params: AnalyzerDispatcherConfigParams::parse(),
         }
     }
 }
 
-async fn get_s3_keys(
-    s3_client: &impl S3,
-    bucket: impl Into<String>,
-) -> Result<impl IntoIterator<Item = Result<String, Error>>, Error> {
-    let bucket = bucket.into();
+#[derive(Debug, Error)]
+enum ConfigurationError {
+    #[error("error configuring kafka client")]
+    KafkaConfiguration(#[from] KafkaConfigurationError),
 
-    let list_res = tokio::time::timeout(
-        Duration::from_secs(2),
-        s3_client.list_objects(ListObjectsRequest {
-            bucket,
-            ..Default::default()
-        }),
-    )
-    .await??;
-
-    let contents = match list_res.contents {
-        Some(contents) => contents,
-        None => {
-            warn!("List response returned nothing");
-            Vec::new()
-        }
-    };
-
-    Ok(contents.into_iter().map(|object| match object.key {
-        Some(key) => Ok(key),
-        None => bail!("S3Object is missing key"),
-    }))
+    #[error("error configuring analyzer IDs cache")]
+    AnalyzerIdsCacheConfiguration(#[from] ConnectError),
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum AnalyzerDispatcherError {
-    #[error("Unexpected")]
-    Unexpected(String),
+#[derive(Debug, Error)]
+enum AnalyzerDispatcherError {
+    #[error("analyzer IDs cache error {0}")]
+    AnalyzerIdsCache(#[from] AsyncCacheError),
+
+    // FIXME: don't crash the service when this happens
+    #[error("error sending data to plugin-work-queue {0}")]
+    PluginWorkQueueClient(#[from] PluginWorkQueueServiceClientError),
+
+    // FIXME: also don't crash the service when this happens
+    #[error("error trying to send message to kafka {0}")]
+    Producer(#[from] ProducerError),
+
+    #[error("error committing kafka consumer offsets {0}")]
+    Commit(#[from] CommitError),
+
+    #[error("error serializing or deserializing protobuf data {0}")]
+    SerDe(#[from] SerDeError),
 }
 
-impl CheckedError for AnalyzerDispatcherError {
-    fn error_type(&self) -> Recoverable {
-        Recoverable::Transient
-    }
+struct AnalyzerDispatcher {
+    plugin_work_queue_client: PluginWorkQueueServiceClient,
+    graph_update_consumer: Consumer<Update>,
+    graph_update_retry_producer: RetryProducer<Update>,
+    analyzer_ids_cache: AsyncCache<Uuid, Vec<Uuid>>,
 }
 
-#[async_trait]
-impl<S> EventHandler for AnalyzerDispatcher<S>
-where
-    S: S3 + Send + Sync + 'static,
-{
-    type InputEvent = MergedGraph;
-    type OutputEvent = AnalyzerDispatchEvents;
-    type Error = AnalyzerDispatcherError;
+impl AnalyzerDispatcher {
+    pub async fn new(
+        config: AnalyzerDispatcherConfig,
+        plugin_work_queue_client: PluginWorkQueueServiceClient,
+    ) -> Result<Self, ConfigurationError> {
+        let graph_update_consumer: Consumer<Update> = Consumer::new(config.kafka_config)?;
+        let graph_update_retry_producer: RetryProducer<Update> =
+            RetryProducer::new(config.kafka_retry_producer_config)?;
+        let client_config = PluginRegistryClientConfig::parse();
 
-    async fn handle_event(
-        &mut self,
-        subgraph: Self::InputEvent,
-        _completed: &mut CompletedEvents,
-    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
-        let bucket = std::env::var("GRAPL_ANALYZERS_BUCKET").expect("GRAPL_ANALYZERS_BUCKET");
+        let plugin_registry_client =
+            PluginRegistryServiceClient::connect_with_config(client_config).await?;
 
-        if subgraph.is_empty() {
-            warn!("Attempted to handle empty subgraph");
-            return Ok(AnalyzerDispatchEvents::new());
-        }
+        let analyzer_ids_cache = AsyncCache::new(
+            config.params.analyzer_ids_cache_capacity,
+            Duration::from_millis(config.params.analyzer_ids_cache_ttl_ms),
+            config.params.analyzer_ids_cache_updater_pool_size,
+            config.params.analyzer_ids_cache_updater_queue_depth,
+            move |tenant_id| {
+                let mut plugin_registry_client = plugin_registry_client.clone();
 
-        info!("Retrieving S3 keys");
-        let keys = match get_s3_keys(self.s3_client.as_ref(), &bucket).await {
-            Ok(keys) => keys,
-            Err(e) => {
-                return Err(Err(AnalyzerDispatcherError::Unexpected(format!(
-                    "Failed to list bucket: {} with {:?}",
-                    bucket, e
-                ))));
-            }
-        };
+                async move {
+                    match plugin_registry_client
+                        .get_analyzers_for_tenant(GetAnalyzersForTenantRequest::new(tenant_id))
+                        .await
+                    {
+                        Ok(response) => Some(response.plugin_ids().to_vec()),
+                        Err(GrpcClientError::ErrorStatus(Status {
+                            code: Code::NotFound,
+                            ..
+                        })) => {
+                            tracing::warn!(
+                                message = "found no analyzers for tenant",
+                                tenant_id =% tenant_id,
+                            );
+                            Some(vec![])
+                        }
+                        Err(e) => {
+                            // failed to update the cache, but the message will
+                            // be retried via the kafka retry topic
+                            tracing::error!(
+                                message = "error retrieving analyzers for tenant",
+                                tenant_id =% tenant_id,
+                                reason =% e,
+                            );
 
-        let mut dispatch_events = Vec::new();
-
-        let mut failed = None;
-        for key in keys {
-            let key = match key {
-                Ok(key) => key,
-                Err(e) => {
-                    warn!("Failed to retrieve key with {:?}", e);
-                    failed = Some(e);
-                    continue;
+                            None
+                        }
+                    }
                 }
-            };
+            },
+        )
+        .await;
 
-            dispatch_events.push(AnalyzerDispatchEvent::new(key, subgraph.clone()));
-        }
+        Ok(Self {
+            plugin_work_queue_client,
+            graph_update_consumer,
+            graph_update_retry_producer,
+            analyzer_ids_cache,
+        })
+    }
 
-        if let Some(e) = failed {
-            Err(Ok((
-                AnalyzerDispatchEvents::from(dispatch_events),
-                AnalyzerDispatcherError::Unexpected(e.to_string()),
-            )))
-        } else {
-            Ok(AnalyzerDispatchEvents::from(dispatch_events))
+    pub async fn run(&mut self, pool_size: usize) -> Result<(), AnalyzerDispatcherError> {
+        let analyzer_ids_cache = self.analyzer_ids_cache.clone();
+        let plugin_work_queue_client = self.plugin_work_queue_client.clone();
+        let graph_update_retry_producer = self.graph_update_retry_producer.clone();
+
+        loop {
+            let analyzer_ids_cache = analyzer_ids_cache.clone();
+            let plugin_work_queue_client = plugin_work_queue_client.clone();
+            let graph_update_retry_producer = graph_update_retry_producer.clone();
+
+            let stream = self.graph_update_consumer
+                .stream()
+                .take(pool_size)
+                .then(move |graph_update_result: Result<(tracing::Span, Envelope<Update>), ConsumerError>| {
+                    let analyzer_ids_cache = analyzer_ids_cache.clone();
+                    let plugin_work_queue_client = plugin_work_queue_client.clone();
+                    let graph_update_retry_producer = graph_update_retry_producer.clone();
+
+                    async move {
+                        match graph_update_result {
+                            Ok((span, envelope)) => {
+                                match analyzer_ids_cache
+                                    .clone()
+                                    .get(envelope.tenant_id())
+                                    .instrument(span.clone())
+                                    .await
+                                {
+                                    Ok(Some(analyzer_ids)) => {
+                                        if analyzer_ids.is_empty() {
+                                            let _guard = span.enter();
+                                            tracing::warn!(
+                                                message = "no analyzers for tenant",
+                                            );
+                                        } else {
+                                            enqueue_plugin_work(
+                                                plugin_work_queue_client.clone(),
+                                                analyzer_ids,
+                                                envelope,
+                                            )
+                                                .instrument(span)
+                                                .await?;
+                                        }
+
+                                        Ok(())
+                                    },
+                                    Ok(None) => {
+                                        // cache miss, but an update was
+                                        // successfully enqueued so we'll retry
+                                        // the message
+                                        let _guard = span.enter();
+                                        tracing::debug!(
+                                            message = "analyzer IDs cache miss, retrying message",
+                                        );
+                                        drop(_guard);
+
+                                        retry_message(
+                                            &graph_update_retry_producer,
+                                            envelope,
+                                        )
+                                            .instrument(span)
+                                            .await?;
+
+                                        Ok(())
+                                    },
+                                    Err(AsyncCacheError::Retryable(reason)) => {
+                                        // retryable cache error, so we'll retry
+                                        // the message
+                                        let _guard = span.enter();
+                                        tracing::warn!(
+                                            message = "analyzer IDs cache error, retrying message",
+                                            reason =% reason,
+                                        );
+                                        drop(_guard);
+
+                                        retry_message(
+                                            &graph_update_retry_producer,
+                                            envelope,
+                                        )
+                                            .instrument(span)
+                                            .await?;
+
+                                        Ok(())
+                                    },
+                                    Err(cache_err) => {
+                                        // fatal error, bailing out
+                                        Err(AnalyzerDispatcherError::from(cache_err))
+                                    }
+                                }
+                            },
+                            Err(e) => {
+                                tracing::error!(
+                                    message = "error processing kafka message",
+                                    reason =% e,
+                                );
+
+                                Ok(())
+                            },
+                        }
+                    }
+                })
+                .then(|result| async {
+                    self.graph_update_consumer.commit()?;
+                    result
+                });
+
+            pin_mut!(stream);
+
+            while let Some(result) = stream.next().await {
+                if let Err(e) = result {
+                    tracing::error!(
+                        message = "fatal error",
+                        reason =% e,
+                    );
+                    return Err(e);
+                }
+            }
         }
     }
 }
 
-async fn handler() -> Result<(), Box<dyn std::error::Error>> {
-    let (env, _guard) = grapl_config::init_grapl_env!();
+async fn retry_message(
+    graph_update_retry_producer: &RetryProducer<Update>,
+    envelope: Envelope<Update>,
+) -> Result<(), ProducerError> {
+    // TODO: be a little smarter about handling ProducerError here
+    graph_update_retry_producer.send(envelope).await
+}
 
-    info!("Handling event");
+#[tracing::instrument(skip(plugin_work_queue_client, analyzer_ids, envelope), err)]
+async fn enqueue_plugin_work(
+    plugin_work_queue_client: PluginWorkQueueServiceClient,
+    analyzer_ids: Vec<Uuid>,
+    envelope: Envelope<Update>,
+) -> Result<(), AnalyzerDispatcherError> {
+    let pool_size = analyzer_ids.len();
+    let tenant_id = envelope.tenant_id();
+    let trace_id = envelope.trace_id();
+    let event_source_id = envelope.event_source_id();
+    let payload = envelope.inner_message().serialize()?;
+    futures::stream::iter(analyzer_ids)
+        .map(|analyzer_id| Ok(analyzer_id))
+        .try_for_each_concurrent(pool_size, move |analyzer_id| {
+            let payload = payload.clone();
+            let mut plugin_work_queue_client = plugin_work_queue_client.clone();
 
-    let sqs_client = SqsClient::from_env();
-    let _s3_client = S3Client::from_env();
-    let source_queue_url = grapl_config::source_queue_url();
-    let dead_letter_queue_url = grapl_config::dead_letter_queue_url();
-    debug!("Queue Url: {}", source_queue_url);
-    debug!("Dead-Letter Queue Url: {}", dead_letter_queue_url);
+            async move {
+                let execution_job =
+                    ExecutionJob::new(payload.clone(), tenant_id, trace_id, event_source_id);
 
-    let cache = &mut make_ten(async {
-        NopCache {} // the AnalyzerDispatcher is not idempotent :(
-    })
-    .await;
+                tracing::debug!(
+                    message = "enqueueing analyzer execution job",
+                    analyzer_id =% analyzer_id,
+                );
 
-    let serializer = &mut make_ten(async { AnalyzerDispatchSerializer::default() }).await;
-
-    let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
-
-    let s3_payload_retriever = &mut make_ten(async {
-        S3PayloadRetriever::new(
-            |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            ProtoDecoder::default(),
-            MetricReporter::new(&env.service_name),
-        )
-    })
-    .await;
-    let analyzer_dispatcher = &mut make_ten(async {
-        AnalyzerDispatcher {
-            s3_client: Arc::new(S3Client::from_env()),
-        }
-    })
-    .await;
-
-    info!("Starting process_loop");
-    sqs_executor::process_loop(
-        source_queue_url,
-        dead_letter_queue_url,
-        cache,
-        sqs_client.clone(),
-        analyzer_dispatcher,
-        s3_payload_retriever,
-        s3_emitter,
-        serializer,
-        MetricReporter::new(&env.service_name),
-    )
-    .await;
-
-    info!("Exiting");
-    Ok(())
+                // TODO: retries, backpressure signalling, etc.
+                plugin_work_queue_client
+                    .push_execute_analyzer(PushExecuteAnalyzerRequest::new(
+                        execution_job,
+                        analyzer_id,
+                    ))
+                    .await
+                    .map(|_| ())
+                    .map_err(|e| AnalyzerDispatcherError::from(e))
+            }
+        })
+        .await
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    handler().await?;
+    let _guard = grapl_tracing::setup_tracing("analyzer-dispatcher");
+    let config = AnalyzerDispatcherConfig::parse();
+    let plugin_work_queue_client_config = PluginWorkQueueClientConfig::parse();
+    let plugin_work_queue_client =
+        PluginWorkQueueServiceClient::connect_with_config(plugin_work_queue_client_config).await?;
+    let worker_pool_size = config.params.worker_pool_size;
+    let mut analyzer_dispatcher = AnalyzerDispatcher::new(config, plugin_work_queue_client).await?;
+
+    analyzer_dispatcher.run(worker_pool_size).await?;
+
     Ok(())
 }

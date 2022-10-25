@@ -6,7 +6,7 @@ use derive_into_owned::IntoOwned;
 ///
 /// <https://docs.microsoft.com/en-us/windows/win32/wes/eventschema-security-systempropertiestype-element>
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, IntoOwned)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Security<'a> {
     /// The security identifier (SID) of the user in string form.

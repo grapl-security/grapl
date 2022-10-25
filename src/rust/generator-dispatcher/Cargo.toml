@@ -1,0 +1,32 @@
+[package]
+name = "generator-dispatcher"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+name = "generator_dispatcher"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+async-cache = { path = "../async-cache" }
+async-trait = "0.1"
+clap = { workspace = true }
+futures = "0.3"
+grapl-tracing = { path = "../grapl-tracing" }
+kafka = { path = "../kafka", version = "*" }
+rust-proto = { path = "../rust-proto" }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+async-trait = "0.1"
+bytes = { workspace = true }
+e2e-tests = { path = "../e2e-tests" }
+eyre = { workspace = true }
+plugin-work-queue = { path = "../plugin-work-queue", features = ["test-utils"] }
+test-context = { workspace = true }
+
+[features]
+integration_tests = []

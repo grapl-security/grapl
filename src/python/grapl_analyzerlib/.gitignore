@@ -1,5 +1,0 @@
-*.ipynb
-.ipynb_checkpoints/
-.coverage*
-.hypothesis/
-mut_grapl_analyzerlib/

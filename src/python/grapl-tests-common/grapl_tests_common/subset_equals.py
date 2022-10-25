@@ -1,5 +1,5 @@
 from pprint import pformat
-from typing import Any, List, Mapping
+from typing import Any, Mapping
 
 
 def _dict_subset_equals(larger: Mapping, smaller: Mapping, path: str) -> None:
@@ -13,7 +13,7 @@ def _dict_subset_equals(larger: Mapping, smaller: Mapping, path: str) -> None:
         _subset_equals(larger=larger[k], smaller=smaller[k], path=new_path)
 
 
-def _list_subset_equals(larger: List, smaller: List, path: str) -> None:
+def _list_subset_equals(larger: list, smaller: list, path: str) -> None:
     """
     Example: [1, 2], [2] => true, the smaller is a subset of the larger.
     We do not care about order.
@@ -48,7 +48,7 @@ def _list_subset_equals(larger: List, smaller: List, path: str) -> None:
 def _primitive_equals(larger: object, smaller: object, path: str) -> None:
     __tracebackhide__ = True  # hide this helper function's traceback from pytest
     primitives = (int, str, bool, float)
-    if any((isinstance(larger, p) and isinstance(smaller, p) for p in primitives)):
+    if any(isinstance(larger, p) and isinstance(smaller, p) for p in primitives):
         if larger != smaller:
             raise SubsetEqualsException("Not equal:", larger, smaller, path)
     else:
@@ -59,7 +59,7 @@ def _primitive_equals(larger: object, smaller: object, path: str) -> None:
 
 class SubsetEqualsException(AssertionError):
     def __init__(self, message: str, larger: Any, smaller: Any, path: str) -> None:
-        super(SubsetEqualsException, self).__init__(
+        super().__init__(
             f"{message}\n\n{path}\n\n==Larger==\n{pformat(larger)}\n\n==Smaller==\n{pformat(smaller)}"
         )
 
@@ -68,7 +68,7 @@ def _subset_equals(larger: object, smaller: object, path: str = "") -> None:
     __tracebackhide__ = True  # hide this helper function's traceback from pytest
     if larger is smaller:
         pass  # we good
-    elif isinstance(larger, List) and isinstance(smaller, List):
+    elif isinstance(larger, list) and isinstance(smaller, list):
         _list_subset_equals(larger, smaller, path)
     elif isinstance(larger, Mapping) and isinstance(smaller, Mapping):
         _dict_subset_equals(larger, smaller, path)

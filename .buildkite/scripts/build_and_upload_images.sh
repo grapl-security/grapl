@@ -11,6 +11,13 @@ set -euo pipefail
 source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/version.sh
 
+RUST_VERSION="$(./build-support/rust_version.sh)"
+export RUST_VERSION
+PYTHON_VERSION="$(./build-support/python_version.sh)"
+export PYTHON_VERSION
+PROTOC_VERSION="$(./build-support/protoc_version.sh)"
+export PROTOC_VERSION
+
 # While we have Docker Compose files present, we have to explicitly
 # declare we're using an HCL file (compose YAML files are used
 # preferentially, in the absence of explicit overrides).
@@ -28,33 +35,46 @@ readonly BUILDX_TARGET="cloudsmith-images"
 IMAGE_TAG="$(timestamp_and_sha_version)"
 export IMAGE_TAG
 
-echo "--- Building all ${IMAGE_TAG} images"
-
 # NOTE: We could theoretically collapse these two commands into a
 # single Makefile target, but I have opted to structure them like this
 # while we have to do the "check if the image is new" logic to keep
 # all the buildx file introspection (and thus build-target awareness)
 # localised here.
 make build-image-prerequisites
-docker buildx bake --file="${BUILDX_BAKE_FILE}" --push "${BUILDX_TARGET}"
 
-readonly sleep_seconds=60
-echo "--- :sleeping::sob: Sleeping for ${sleep_seconds} seconds to give CDNs time to update"
-# Lately, we've seen failures where images aren't showing up when we
-# run `docker manifest inspect` (see below), but rerunning the job
-# succeeds. For the time being, we'll add a sleep to account for that.
-#
-# Yes, I hate it, too.
-sleep "${sleep_seconds}"
+# https://github.com/grapl-security/issue-tracker/issues/931
+# Try the `buildx --push` first; if retried on Buildkite, do the slower
+# manual approach.
+
+if [[ "${BUILDKITE_RETRY_COUNT}" -eq 0 ]]; then
+    echo "--- Build & Pushing all ${IMAGE_TAG} images"
+    if ! docker buildx bake --file="${BUILDX_BAKE_FILE}" \
+        --progress "plain" --push "${BUILDX_TARGET}"; then
+        echo "buildx bake --push failed; Buildkite should auto-retry"
+        # Special status for "buildx --push failed"
+        exit 42
+    fi
+else
+    echo "--- Building all ${IMAGE_TAG} images"
+    # Build targets
+    docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TARGET}"
+
+    echo "--- Pushing all ${IMAGE_TAG} images"
+    # Upload each image in serial, not parallel
+    mapfile -t fully_qualified_images < <(
+        docker buildx bake \
+            --file="${BUILDX_BAKE_FILE}" \
+            --print "${BUILDX_TARGET}" |
+            jq --raw-output '.target | to_entries | .[] | .value.tags[0]'
+    )
+    for fq_image in "${fully_qualified_images[@]}"; do
+        echo "--- Pushing ${fq_image}"
+        docker push "${fq_image}"
+    done
+fi
 
 ########################################################################
-# Determine whether or not this image is "new"
-#
-# Cloudsmith apparently has a bug that affects promotions when an
-# artifact already exists in the destination repository. It seems to
-# detect that the artifact is present and doesn't overwrite it, but it
-# also doesn't carry tags / labels over. Thus, when we have services
-# that don't change, we end up losing them in Cloudsmith.
+# Determine whether or not each image is "new"
 #
 # Until we can inspect the source of our Rust services to determine if
 # they need a new image, we will build the images, but then query the
@@ -67,12 +87,21 @@ sleep "${sleep_seconds}"
 # (there doesn't appear to be a way to do this purely locally,
 # amazingly enough!). It also requires this script to be aware that
 # we'll ultimately be promoting to our `testing` repository. These are
-# all unfortunate, but it does allow us to sidestep this Cloudsmith
-# bug. More importantly, it should make deployments quicker and more
+# all unfortunate. However, it will make deployments quicker and more
 # responsive, since services should churn less (they'll only restart
 # when a new image is available, rather than for every single
-# deployment). As such, we should keep this general logic even after
-# the Cloudsmith bug is fixed.
+# deployment).
+
+readonly sleep_seconds=80
+echo "--- :sleeping::sob: Sleeping for ${sleep_seconds} seconds to give CDNs time to update"
+# Lately, we've seen failures where images aren't showing up when we
+# run `docker manifest inspect` (see below), but rerunning the job
+# succeeds. For the time being, we'll add a sleep to account for that.
+#
+# Yes, I hate it, too.
+#
+# As of 8/31/2022 this is still needed and in fact the sleep seconds needs to be increased :sob:
+sleep "${sleep_seconds}"
 
 # This is the list of services that actually have different images.
 new_services=()
@@ -86,7 +115,7 @@ readonly UPSTREAM_REGISTRY="docker.cloudsmith.io/grapl/testing"
 # it to a registry. Fun.
 #
 # Returns a string like `sha256:deadbeef....`
-sha256_of_image() {
+function sha256_of_image() {
     docker manifest inspect --verbose "${1}" | jq --raw-output '.Descriptor.digest'
 }
 
@@ -94,7 +123,7 @@ sha256_of_image() {
 #
 # We'll go ahead and allow the output to go to our logs; that will
 # help debugging.
-image_present_upstream() {
+function image_present_upstream() {
     docker manifest inspect "${1}"
 }
 

@@ -1,5 +1,5 @@
 import os
-from typing import NewType, Optional
+from typing import NewType
 
 from infra.artifacts import ArtifactGetter
 
@@ -32,7 +32,7 @@ def _docker_version_tag_from_env() -> str:
 
 class DockerImageIdBuilder:
     def __init__(
-        self, container_repository: Optional[str], artifacts: ArtifactGetter
+        self, container_repository: str | None, artifacts: ArtifactGetter
     ) -> None:
         self.container_repository = (
             f"{container_repository}/" if container_repository else ""

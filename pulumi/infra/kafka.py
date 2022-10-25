@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Mapping, Optional, Sequence, TypeVar, cast
+from typing import Any, Mapping, TypeVar, cast
 
 from infra import config
 from pulumi.stack_reference import StackReference
 from pulumi_kafka import Provider
 from pulumi_kafka import Topic as KafkaTopic
+from typing_extensions import TypedDict
 
 import pulumi
+
+
+class NomadServiceKafkaCredentials(TypedDict):
+    sasl_username: str
+    sasl_password: str
 
 
 @dataclasses.dataclass
@@ -25,32 +31,21 @@ class Credential:
             api_secret=data["api_secret"],
         )
 
-
-@dataclasses.dataclass
-class Topic:
-    partitions: int
-    config: Mapping[str, Any]
-
-    @staticmethod
-    def from_json(data: Mapping[str, Any]) -> Topic:
-        return Topic(
-            partitions=data["partitions"],
-            config=data["config"],
+    def to_nomad_service_creds(self) -> NomadServiceKafkaCredentials:
+        return NomadServiceKafkaCredentials(
+            sasl_username=self.api_key,
+            sasl_password=self.api_secret,
         )
 
 
 @dataclasses.dataclass
 class Service:
-    ingress_topics: Sequence[str]
-    egress_topics: Sequence[str]
     service_account: Credential
-    consumer_group_name: Optional[str] = None
+    consumer_group_name: str | None = None
 
     @staticmethod
     def from_json(data: Mapping[str, Any]) -> Service:
         return Service(
-            ingress_topics=data["ingress_topics"],
-            egress_topics=data["egress_topics"],
             service_account=Credential.from_json(data["service_account"]),
             consumer_group_name=data.get("consumer_group_name"),
         )
@@ -62,7 +57,6 @@ class Environment:
     bootstrap_servers: str
     environment_credentials: Credential
     services: Mapping[str, Service]
-    topics: Mapping[str, Topic]
 
     def get_service_credentials(self, service_name: str) -> Credential:
         if service_name in self.services:
@@ -79,7 +73,6 @@ class Environment:
                 data["environment_credentials"]
             ),
             services={k: Service.from_json(v) for k, v in data["services"].items()},
-            topics={k: Topic.from_json(v) for k, v in data["topics"].items()},
         )
 
 
@@ -99,7 +92,7 @@ class Confluent:
         # other from_json implementations in this file take just a bare
         # Mapping[str, Any]. The reason for this is that this class represents
         # the outermost layer of a nested object which is the stack output of
-        # the "ccloud-bootstrap" stack. All the other from_json methods are
+        # a "grapl/confluent-cloud/${STACK}" stack. All the other from_json methods are
         # called recursively in the apply(..) call below.
         return data.apply(
             lambda j: Confluent(
@@ -109,13 +102,13 @@ class Confluent:
 
 
 class Kafka(pulumi.ComponentResource):
-    confluent_environment: Optional[pulumi.Output[Environment]]
+    confluent_environment: pulumi.Output[Environment] | None
 
     def __init__(
         self,
         name: str,
         confluent_environment_name: str,
-        opts: Optional[pulumi.ResourceOptions] = None,
+        opts: pulumi.ResourceOptions | None = None,
         create_local_topics: bool = True,
     ):
         super().__init__("grapl:Kafka", name=name, props=None, opts=opts)
@@ -123,30 +116,24 @@ class Kafka(pulumi.ComponentResource):
         if confluent_environment_name == "local-grapl":
             self.confluent_environment = None
             # This list must match the set of all topics specified in
-            # confluent-cloud-infrastructure/pulumi/ccloud_bootstrap/index.ts
+            # grapl-infrastructure/pulumi/confluent_cloud/index.ts
             topics = [
-                "logs",
-                "metrics",
                 "raw-logs",
+                "raw-logs-retry",
                 "generated-graphs",
-                "generated-graphs-retry",
-                "generated-graphs-failed",
                 "identified-graphs",
-                "identified-graphs-retry",
-                "identified-graphs-failed",
                 "merged-graphs",
                 "merged-graphs-retry",
-                "merged-graphs-failed",
                 "analyzer-executions",
-                "analyzer-executions-retry",
-                "analyzer-executions-failed",
                 "engagements",
-                "engagements-retry",
-                "engagements-failed",
             ]
             provider = Provider(
                 "grapl:kafka:Provider",
-                bootstrap_servers=["host.docker.internal:29092"],
+                bootstrap_servers=[
+                    "host.docker.internal:29092",
+                    "host.docker.internal:29093",
+                    "host.docker.internal:29094",
+                ],
                 tls_enabled=False,
             )
             if create_local_topics:
@@ -154,14 +141,17 @@ class Kafka(pulumi.ComponentResource):
                     KafkaTopic(
                         f"grapl:kafka:Topic:{topic}",
                         name=topic,
-                        partitions=1,
-                        replication_factor=1,
-                        config={"compression.type": "zstd"},
+                        partitions=2,
+                        replication_factor=3,
+                        config={
+                            "compression.type": "producer",
+                            "min.insync.replicas": 2,
+                        },
                         opts=pulumi.ResourceOptions(provider=provider),
                     )
         else:
             confluent_stack_output = StackReference(
-                "grapl/ccloud-bootstrap/ccloud-bootstrap"
+                f"grapl/confluent-cloud/{config.STACK_NAME}"
             ).require_output("confluent")
             self.confluent_environment = Confluent.from_json(
                 cast(pulumi.Output[Mapping[str, Any]], confluent_stack_output)
@@ -169,7 +159,9 @@ class Kafka(pulumi.ComponentResource):
 
     def bootstrap_servers(self) -> pulumi.Output[str]:
         if self.confluent_environment is None:  # local-grapl
-            return pulumi.Output.from_input(f"{config.HOST_IP_IN_NOMAD}:19092")
+            return pulumi.Output.from_input(
+                f"{config.HOST_IP_IN_NOMAD}:19092,{config.HOST_IP_IN_NOMAD}:19093,{config.HOST_IP_IN_NOMAD}:19094"
+            )
         else:
             return self.confluent_environment.apply(lambda e: e.bootstrap_servers)
 
@@ -199,7 +191,7 @@ class Kafka(pulumi.ComponentResource):
 T = TypeVar("T")
 
 
-def _expect(val: Optional[T]) -> T:
+def _expect(val: T | None) -> T:
     if val is None:
         raise Exception("expected value to be present")
     else:

@@ -65,11 +65,16 @@ fi
 #
 # async_yields_async is needed here until this bug in tracing is closed:
 # https://github.55860.com/tokio-rs/tracing/issues/1450
+#
+# derive-partial-eq-without-eq is here because it was being triggered
+# by Prost-generated code, and I've not been successful in having
+# Prost add `derive(Eq)` calls for some reason :/
 if ! cargo clippy \
     --all-targets \
     --message-format="${format}" \
     --all-features \
     -- \
+    --allow clippy::derive-partial-eq-without-eq \
     --allow clippy::async_yields_async \
     --allow clippy::clone_double_ref \
     --allow clippy::clone_on_copy \

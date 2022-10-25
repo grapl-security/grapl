@@ -3,11 +3,7 @@ import pytest
 pytest.register_assert_rewrite("python_proto.tests.helpers")
 
 from python_proto.tests.helpers import check_encode_decode_invariant
-from python_proto.tests.strategies import envelopes, metadatas, raw_logs
-
-
-def test_metadata_encode_decode() -> None:
-    check_encode_decode_invariant(metadatas())
+from python_proto.tests.strategies import envelopes, raw_logs
 
 
 def test_envelope_encode_decode() -> None:

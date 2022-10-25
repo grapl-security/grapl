@@ -146,6 +146,8 @@ build {
       "PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR=${local.init_artifacts_dir_remote}",
       "SIZE_MB=${local.image_size_mb}",
     ]
+    # The `debootstrap` in this script is unfortunately pretty flaky.
+    max_retries = 2
   }
 
   # Grab the output from EC2 and copy it over into the Packer Host OS's `dist/`

@@ -1,0 +1,31 @@
+[package]
+name = "event-source"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1"
+clap = { workspace = true }
+grapl-config = { path = "../grapl-config" }
+grapl-tracing = { path = "../grapl-tracing" }
+grapl-utils = { path = "../grapl-utils" }
+rust-proto = { path = "../rust-proto" }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }
+uuid = { workspace = true }
+
+[build-dependencies]
+
+[dev-dependencies]
+env_logger = "0.9.0"
+eyre = { workspace = true }
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
+
+[features]
+integration_tests = []

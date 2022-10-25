@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 
 import pulumi_aws as aws
 import pulumi_random as random
@@ -11,7 +10,7 @@ import pulumi
 class JWTSecret(pulumi.ComponentResource):
     """Represents the frontend's JWT secret stored in Secretsmanager."""
 
-    def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
+    def __init__(self, opts: pulumi.ResourceOptions | None = None) -> None:
         super().__init__(
             "grapl:JWTSecret",
             "jwt-secret",
@@ -80,7 +79,7 @@ class JWTSecret(pulumi.ComponentResource):
 class TestUserPassword(pulumi.ComponentResource):
     """Grapl password for the test user."""
 
-    def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
+    def __init__(self, opts: pulumi.ResourceOptions | None = None) -> None:
         super().__init__(
             "grapl:TestUserPassword",
             "test-user-password",
@@ -114,32 +113,3 @@ class TestUserPassword(pulumi.ComponentResource):
         self.register_outputs({})
 
         self.secret_id = self.secret.id
-
-    def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
-        """
-        Grants permission to the given `Role` to read this secret.
-
-        The name of the resource is formed from the Pulumi name of the `Role`.
-        """
-        aws.iam.RolePolicy(
-            f"{role._name}-reads-test-user-password",
-            role=role.name,
-            policy=self.secret.arn.apply(
-                lambda secret_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": [
-                                    "secretsmanager:GetSecretValue",
-                                    "secretsmanager:DescribeSecret",
-                                ],
-                                "Resource": secret_arn,
-                            },
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )
