@@ -363,7 +363,7 @@ pub(crate) mod serde_impl {
     /// implementing the simpler trait ProtobufSerializable.
     ///
     /// Example usage:
-    ///
+    ///```
     /// use crate::{
     ///     protobufs::graplinc::v1beta1 as proto,
     ///     serde_impl,
@@ -380,6 +380,7 @@ pub(crate) mod serde_impl {
     /// impl serde_impl::ProtobufSerializable for YourType {
     ///    type ProtobufMessage = proto::YourType;
     /// }
+    /// ```
     pub(crate) trait ProtobufSerializable: Sized {
         type ProtobufMessage: TryFrom<Self> + TryInto<Self> + Message + Default;
     }

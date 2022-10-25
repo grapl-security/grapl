@@ -9,16 +9,13 @@ license = "MIT"
 [dependencies]
 async-trait = "0.1"
 bytes = "1.1"
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-], optional = true }
 client-executor = { path = "../client-executor" }
+figment = "0.10"
 futures = "0.3"
 prost = "0.10"
 rand = "0.8.5"
 rustc-hash = "1.1.0"
+serde = "1.0"
 thiserror = "1.0"
 tokio = { version = "1.17", features = ["rt", "time"] }
 tokio-stream = { version = "0.1", features = ["net"] }

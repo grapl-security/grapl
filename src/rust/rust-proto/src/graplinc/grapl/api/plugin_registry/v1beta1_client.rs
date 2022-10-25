@@ -1,7 +1,4 @@
-use std::time::Duration;
-
 use bytes::Bytes;
-use client_executor::strategy::FibonacciBackoff;
 use futures::{
     Stream,
     StreamExt,
@@ -12,67 +9,41 @@ use tracing::instrument;
 
 use crate::{
     graplinc::grapl::api::{
-        plugin_registry::v1beta1 as native,
         client::{
-            Connectable,
+            client_impl,
             Client,
             ClientError,
-            Configuration
+            Connectable,
         },
+        plugin_registry::v1beta1 as native,
     },
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
 };
 
 #[async_trait::async_trait]
-impl Connectable
-    for PluginRegistryServiceClient<tonic::transport::Channel>
-{
+impl Connectable for PluginRegistryServiceClient<tonic::transport::Channel> {
     async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
         Ok(Self::connect(endpoint).await?)
     }
 }
 
 #[derive(Clone)]
-pub struct PluginRegistryClient<B>
-where
-    B: IntoIterator<Item = Duration> + Clone,
-{
-    client: Client<B, PluginRegistryServiceClient<tonic::transport::Channel>>,
+pub struct PluginRegistryClient {
+    client: Client<PluginRegistryServiceClient<tonic::transport::Channel>>,
 }
 
-impl <B> PluginRegistryClient<B>
-where
-    B: IntoIterator<Item = Duration> + Clone,
+impl client_impl::WithClient<PluginRegistryServiceClient<tonic::transport::Channel>>
+    for PluginRegistryClient
 {
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.plugin_registry.v1beta1.PluginRegistryService";
 
-    pub fn new<A>(
-        address: A,
-        request_timeout: Duration,
-        executor_timeout: Duration,
-        concurrency_limit: usize,
-        initial_backoff_delay: Duration,
-        maximum_backoff_delay: Duration,
-    ) -> Result<Self, ClientError>
-    where
-        A: TryInto<Endpoint>,
-    {
-        let configuration = Configuration::new(
-            Self::SERVICE_NAME,
-            address,
-            request_timeout,
-            executor_timeout,
-            concurrency_limit,
-            FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
-                .max_delay(maximum_backoff_delay)
-                .map(client_executor::strategy::jitter),
-        )?;
-        let client = Client::new(configuration)?;
-
-        Ok(Self { client })
+    fn with_client(client: Client<PluginRegistryServiceClient<tonic::transport::Channel>>) -> Self {
+        Self { client }
     }
+}
 
+impl PluginRegistryClient {
     /// Create a new plugin
     #[instrument(skip(self, metadata, plugin_artifact), err)]
     pub async fn create_plugin<S>(
@@ -83,20 +54,17 @@ where
     where
         S: Stream<Item = Bytes> + Send + 'static,
     {
-        // Send the metadata first followed by N chunks
-        let request = futures::stream::iter(std::iter::once(
+        let proto_stream = futures::stream::iter(std::iter::once(
             native::CreatePluginRequest::Metadata(metadata),
         ))
-        .chain(plugin_artifact.map(
-            native::CreatePluginRequest::Chunk
-        ));
+        .chain(plugin_artifact.map(native::CreatePluginRequest::Chunk))
+        .map(proto::CreatePluginRequest::from);
 
-        self.client.execute_streaming(
-            request,
-            |status| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.create_plugin(request),
-        ).await?
+        self.client
+            .execute_streaming(proto_stream, |mut client, request| async move {
+                client.create_plugin(request).await
+            })
+            .await
     }
 
     /// retrieve the plugin corresponding to the given plugin_id
@@ -105,12 +73,14 @@ where
         &mut self,
         request: native::GetPluginRequest,
     ) -> Result<native::GetPluginResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.get_plugin(request)
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_plugin(request).await },
+            )
+            .await
     }
 
     #[instrument(skip(self, request), err)]
@@ -118,12 +88,14 @@ where
         &mut self,
         request: native::ListPluginsRequest,
     ) -> Result<native::ListPluginsResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status, request| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.list_plugins(request)
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.list_plugins(request).await },
+            )
+            .await
     }
 
     #[instrument(skip(self, request), err)]
@@ -131,12 +103,14 @@ where
         &mut self,
         request: native::GetPluginDeploymentRequest,
     ) -> Result<native::GetPluginDeploymentResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.get_plugin_deployment(request)
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_plugin_deployment(request).await },
+            )
+            .await
     }
 
     /// turn on a particular plugin's code
@@ -145,12 +119,14 @@ where
         &mut self,
         request: native::DeployPluginRequest,
     ) -> Result<native::DeployPluginResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status| status.code() = tonic::Code::Unavailable,
-            10,
-            |client, request| client.deploy_plugin(request)
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.deploy_plugin(request).await },
+            )
+            .await
     }
 
     /// turn off a particular plugin's code
@@ -159,12 +135,14 @@ where
         &mut self,
         request: native::TearDownPluginRequest,
     ) -> Result<native::TearDownPluginResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.tear_down_plugin(request)
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.tear_down_plugin(request).await },
+            )
+            .await
     }
 
     #[instrument(skip(self, request), err)]
@@ -172,12 +150,14 @@ where
         &mut self,
         request: native::GetPluginHealthRequest,
     ) -> Result<native::GetPluginHealthResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.get_plugin_health(request)
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_plugin_health(request).await },
+            )
+            .await
     }
 
     /// Given information about an event source, return all generators that handle that event source
@@ -186,12 +166,16 @@ where
         &mut self,
         request: native::GetGeneratorsForEventSourceRequest,
     ) -> Result<native::GetGeneratorsForEventSourceResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.get_generators_for_event_source(request)
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move {
+                    client.get_generators_for_event_source(request).await
+                },
+            )
+            .await
     }
 
     /// Given information about a tenant, return all analyzers for that tenant
@@ -200,11 +184,13 @@ where
         &mut self,
         request: native::GetAnalyzersForTenantRequest,
     ) -> Result<native::GetAnalyzersForTenantResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.get_analyzers_for_tenant(request)
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_analyzers_for_tenant(request).await },
+            )
+            .await
     }
 }

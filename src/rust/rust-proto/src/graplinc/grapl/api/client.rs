@@ -1,22 +1,36 @@
-use std::{
-    convert::TryInto,
-    time::Duration,
-};
+use std::time::Duration;
 
 use client_executor::{
+    strategy::FibonacciBackoff,
     Executor,
     ExecutorConfig,
 };
-use futures::{Future, Stream, StreamExt};
+use figment::{
+    Figment,
+    Provider,
+};
+use futures::{
+    Future,
+    Stream,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use thiserror::Error;
 use tonic::transport::Endpoint;
 use tracing::Instrument;
 
-use crate::SerDe;
-
 use super::protocol::{
-    healthcheck::client::HealthcheckClient,
-    status::Status
+    healthcheck::{
+        client::HealthcheckClient,
+        HealthcheckError,
+    },
+    status::Status,
+};
+use crate::{
+    serde_impl::ProtobufSerializable,
+    SerDeError,
 };
 
 #[non_exhaustive]
@@ -24,65 +38,92 @@ use super::protocol::{
 pub enum ConfigurationError {
     #[error("endpoint is not properly formatted {0}")]
     BadEndpoint(#[from] tonic::transport::Error),
+
+    #[error("failed to extract configuration from provider {0}")]
+    ConfigurationFailed(#[from] figment::Error),
 }
 
-#[derive(Clone)]
-pub struct Configuration<B>
-where
-    B: IntoIterator<Item = Duration> + Clone
-{
-    endpoint: Endpoint,
-    service_name: &'static str,
-    backoff_strategy: B,
-    executor_timeout: Duration,
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ClientConfiguration {
+    address: String,
     request_timeout: Duration,
+    executor_timeout: Duration,
+    concurrency_limit: usize,
+    initial_backoff_delay: Duration,
+    maximum_backoff_delay: Duration,
+    connect_timeout: Duration,
+    connect_retries: usize,
+    connect_initial_backoff_delay: Duration,
+    connect_maximum_backoff_delay: Duration,
 }
 
-impl <B> Configuration<B>
-where
-    B: IntoIterator<Item = Duration> + Clone
-{
-    pub fn new<A>(
-        service_name: &'static str,
-        address: A,
+impl ClientConfiguration {
+    pub fn new(
+        address: String,
         request_timeout: Duration,
         executor_timeout: Duration,
         concurrency_limit: usize,
-        backoff_strategy: B,
-    ) -> Result<Self, ConfigurationError>
-    where
-        A: TryInto<Endpoint>,
-        ConfigurationError: From<<A as TryInto<Endpoint>>::Error>,
-    {
-        let endpoint: Endpoint = address.try_into()?
-            .concurrency_limit(concurrency_limit)
-            .timeout(request_timeout);
-
-        Ok(Self {
-            endpoint,
-            service_name,
-            backoff_strategy,
-            executor_timeout,
+        initial_backoff_delay: Duration,
+        maximum_backoff_delay: Duration,
+        connect_timeout: Duration,
+        connect_retries: usize,
+        connect_initial_backoff_delay: Duration,
+        connect_maximum_backoff_delay: Duration,
+    ) -> Self {
+        Self {
+            address,
             request_timeout,
-        })
+            executor_timeout,
+            concurrency_limit,
+            initial_backoff_delay,
+            maximum_backoff_delay,
+            connect_timeout,
+            connect_retries,
+            connect_initial_backoff_delay,
+            connect_maximum_backoff_delay,
+        }
     }
 
-    pub fn backoff_strategy(&self) -> impl Iterator<Item = Duration> {
-        self.backoff_strategy.clone().into_iter()
+    pub fn from<T>(provider: T) -> Result<Self, ConfigurationError>
+    where
+        T: Provider,
+    {
+        Ok(Figment::from(provider).extract()?)
+    }
+
+    pub(crate) fn endpoint(&self) -> Result<Endpoint, ConfigurationError> {
+        Ok(Endpoint::try_from(self.address.clone())?
+            .concurrency_limit(self.concurrency_limit)
+            .timeout(self.request_timeout))
+    }
+
+    pub(crate) fn backoff_strategy(&self) -> impl Iterator<Item = Duration> + Clone {
+        FibonacciBackoff::from_millis(
+            1000 * self.initial_backoff_delay.as_secs()
+                + self.initial_backoff_delay.subsec_millis() as u64,
+        )
+        .max_delay(self.maximum_backoff_delay)
+        .map(client_executor::strategy::jitter)
+    }
+
+    pub(crate) fn connect_backoff_strategy(&self) -> impl Iterator<Item = Duration> + Clone {
+        FibonacciBackoff::from_millis(
+            1000 * self.connect_initial_backoff_delay.as_secs()
+                + self.connect_initial_backoff_delay.subsec_millis() as u64,
+        )
+        .max_delay(self.connect_maximum_backoff_delay)
+        .map(client_executor::strategy::jitter)
     }
 }
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum ClientError {
+    #[error("bad configuration {0}")]
+    BadConfiguration(#[from] ConfigurationError),
+
     #[error("failed to connect {0}")]
-    ConnectError(#[from] tonic::transport::Error),
-
-    #[error("attempted to connect a client which was already connected")]
-    AlreadyConnected,
-
-    #[error("attempted to use a client which has not yet been connected")]
-    NotYetConnected,
+    ConnectionFailed(#[from] tonic::transport::Error),
 
     #[error("circuit breaker is open")]
     CircuitBreakerOpen,
@@ -91,10 +132,13 @@ pub enum ClientError {
     TimeoutElapsed,
 
     #[error("healthcheck client failed to connect {0}")]
-    HealthCheckConnectFailed(#[from] super::protocol::healthcheck::HealthcheckError),
+    HealthCheckConnectFailed(#[from] HealthcheckError),
 
     #[error("rpc call failed with status {0}")]
-    Status(#[from] Status)
+    Status(#[from] Status),
+
+    #[error("serialization or deserialization failed {0}")]
+    SerDe(#[from] SerDeError),
 }
 
 impl From<std::convert::Infallible> for ClientError {
@@ -124,94 +168,128 @@ impl From<client_executor::Error<tonic::Status>> for ClientError {
 }
 
 #[async_trait::async_trait]
-pub(crate) trait Connectable
-{
+pub trait Connectable: Sized {
     async fn connect(endpoint: Endpoint) -> Result<Self, ClientError>;
 }
 
-pub struct Client<B, C>
+#[async_trait::async_trait]
+pub trait Connect<C>: Sized
 where
-    B: IntoIterator<Item = Duration> + Clone,
     C: Connectable + Clone,
 {
-    configuration: Configuration<B>,
-    proto_client: Option<C>,
+    async fn connect(configuration: ClientConfiguration) -> Result<Self, ClientError>;
+
+    async fn connect_with_healthcheck(
+        configuration: ClientConfiguration,
+        healthcheck_timeout: Duration,
+        healthcheck_polling_interval: Duration,
+    ) -> Result<Self, ClientError>;
+}
+
+pub(crate) mod client_impl {
+    use std::time::Duration;
+
+    use crate::graplinc::grapl::api::client::{
+        Client,
+        ClientConfiguration,
+        ClientError,
+        Connect,
+        Connectable,
+    };
+
+    pub(crate) trait WithClient<C>
+    where
+        C: Connectable + Clone,
+        Self: Sized,
+    {
+        const SERVICE_NAME: &'static str;
+
+        fn with_client(client: Client<C>) -> Self;
+    }
+
+    #[async_trait::async_trait]
+    impl<T, C> Connect<C> for T
+    where
+        T: WithClient<C> + Send,
+        C: Connectable + Clone,
+    {
+        async fn connect(configuration: ClientConfiguration) -> Result<Self, ClientError> {
+            let client = Client::connect(configuration).await?;
+            Ok(Self::with_client(client))
+        }
+
+        async fn connect_with_healthcheck(
+            configuration: ClientConfiguration,
+            healthcheck_timeout: Duration,
+            healthcheck_polling_interval: Duration,
+        ) -> Result<Self, ClientError> {
+            let client = Client::connect_with_healthcheck(
+                configuration,
+                Self::SERVICE_NAME,
+                healthcheck_timeout,
+                healthcheck_polling_interval,
+            )
+            .await?;
+
+            Ok(Self::with_client(client))
+        }
+    }
+}
+
+#[derive(Clone)]
+pub(crate) struct Client<C>
+where
+    C: Connectable + Clone,
+{
+    configuration: ClientConfiguration,
+    proto_client: C,
     client_executor: Executor,
 }
 
-impl <B, C> Client<B, C>
+impl<C> Client<C>
 where
-    B: IntoIterator<Item = Duration> + Clone,
     C: Connectable + Clone,
 {
-    pub fn new(configuration: Configuration<B>) -> Self {
-        let executor_timeout = configuration.executor_timeout;
-        Self {
-            configuration,
-            proto_client: None,
-            client_executor: Executor::new(ExecutorConfig::new(executor_timeout)),
-        }
-    }
-
-    pub async fn connect<S>(
-        self,
-        connect_timeout: Duration,
-        connect_retries: usize,
-        connect_backoff_strategy: S
-    ) -> Result<Self, ClientError>
-    where
-        S: Iterator<Item = Duration>,
-    {
-        if self.proto_client.is_some() {
-            return Err(ClientError::AlreadyConnected)
-        }
-
-        let executor = Executor::new(ExecutorConfig::new(connect_timeout));
-        let proto_client = executor
+    pub(crate) async fn connect(configuration: ClientConfiguration) -> Result<Self, ClientError> {
+        let connect_executor = Executor::new(ExecutorConfig::new(configuration.connect_timeout));
+        let endpoint = configuration.endpoint()?;
+        let proto_client = connect_executor
             .spawn(
-                connect_backoff_strategy.take(connect_retries),
+                configuration
+                    .connect_backoff_strategy()
+                    .take(configuration.connect_retries),
                 || {
-                    let endpoint = self.configuration.endpoint.clone();
-                    async move {
-                        C::connect(endpoint)
-                            .await
-                            .map_err(ClientError::from)
-                    }
-                })
+                    let endpoint = endpoint.clone();
+                    async move { C::connect(endpoint).await.map_err(ClientError::from) }
+                },
+            )
             .await?;
 
+        let client_executor = Executor::new(ExecutorConfig::new(configuration.executor_timeout));
+
         Ok(Self {
-            configuration: self.configuration,
-            proto_client: Some(proto_client),
-            client_executor: self.client_executor,
+            configuration,
+            proto_client,
+            client_executor,
         })
     }
 
-    pub async fn connect_with_healthcheck<S>(
-        self,
+    pub(crate) async fn connect_with_healthcheck(
+        configuration: ClientConfiguration,
+        service_name: &'static str,
         healthcheck_timeout: Duration,
         healthcheck_polling_interval: Duration,
-        connect_timeout: Duration,
-        connect_retries: usize,
-        connect_backoff_strategy: S,
-    ) -> Result<Self, ClientError>
-    where
-        S: Iterator<Item = Duration>,
-    {
+    ) -> Result<Self, ClientError> {
+        let endpoint = configuration.endpoint()?;
         HealthcheckClient::wait_until_healthy(
-            self.configuration.endpoint.clone(),
-            self.configuration.service_name,
+            endpoint,
+            service_name,
             healthcheck_timeout,
             healthcheck_polling_interval,
         )
-            .await?;
+        .await?;
 
-        self.connect(
-            connect_timeout,
-            connect_retries,
-            connect_backoff_strategy,
-        )
-        .await
+        Self::connect(configuration).await
     }
 
     pub(crate) async fn execute<PT, NT, PU, NU, P, F, R>(
@@ -222,26 +300,25 @@ where
         grpc_call: F,
     ) -> Result<NU, ClientError>
     where
-        PT: prost::Message,
-        NT: SerDe + From<PT>,
+        PT: prost::Message + From<NT> + Clone,
+        NT: ProtobufSerializable<ProtobufMessage = PT> + TryFrom<PT>,
         PU: prost::Message,
-        NU: SerDe + From<PU>,
+        NU: ProtobufSerializable<ProtobufMessage = PU> + TryFrom<PU>,
         P: Fn(&tonic::Status) -> bool,
         F: FnMut(C, tonic::Request<PT>) -> R + Clone,
-        R: Future<Output = Result<tonic::Response<PU>, tonic::Status>>
+        R: Future<Output = Result<tonic::Response<PU>, tonic::Status>>,
+        ClientError: From<<NU as TryFrom<PU>>::Error>,
     {
-        if let Some(proto_client) = &self.proto_client {
-            let proto_request = PT::try_from(request)?;
-            let request_timeout = self.configuration.request_timeout;
-            let client_executor = self.client_executor.clone();
-            let backoff_strategy = self.configuration
-                .backoff_strategy()
-                .take(max_retries);
+        let proto_request = PT::try_from(request)?;
+        let request_timeout = self.configuration.request_timeout;
+        let client_executor = self.client_executor.clone();
+        let backoff_strategy = self.configuration.backoff_strategy().take(max_retries);
 
-            let result = client_executor.spawn_conditional(
+        let result = client_executor
+            .spawn_conditional(
                 backoff_strategy,
                 || {
-                    let proto_client = proto_client.clone();
+                    let proto_client = self.proto_client.clone();
                     let proto_request = proto_request.clone();
                     let mut grpc_call = grpc_call.clone();
 
@@ -250,81 +327,49 @@ where
                         tonic_request.set_timeout(request_timeout);
 
                         grpc_call(proto_client, tonic_request).await
-                    }.in_current_span()
+                    }
+                    .in_current_span()
                 },
                 retry_predicate,
-            ).await;
+            )
+            .await;
 
-            match result {
-                Ok(response) => {
-                    let response_proto = response.into_inner();
-                    Ok(NU::try_from(response_proto)?)
-                },
-                Err(e) => {
-                    let client_error = e.into();
-                    Err(client_error)
-                },
+        match result {
+            Ok(response) => {
+                let response_proto = response.into_inner();
+                Ok(NU::try_from(response_proto)?)
             }
-        } else {
-            Err(ClientError::NotYetConnected)
+            Err(e) => {
+                let client_error = e.into();
+                Err(client_error)
+            }
         }
     }
 
-    pub(crate) async fn execute_streaming<PS, NS, PT, NT, PU, NU, P, F, R>(
-        &self,
-        request: NS,
-        retry_predicate: P,
-        max_retries: usize,
-        grpc_call: F,
+    pub(crate) async fn execute_streaming<'a, S, PT, PU, NU, F, R>(
+        &'a self,
+        proto_stream: S,
+        mut grpc_call: F,
     ) -> Result<NU, ClientError>
     where
-        PS: Stream<Item = PT> + Send + 'static,
-        NS: Stream<Item = NT> + Send + 'static,
-        PT: prost::Message,
-        NT: SerDe + From<PT>,
+        S: Stream<Item = PT> + 'static,
+        PT: prost::Message + Clone + 'a,
         PU: prost::Message,
-        NU: SerDe + From<PU>,
-        P: Fn(&tonic::Status) -> bool,
-        F: FnMut(C, tonic::Request<PS>) -> R + Clone,
-        R: Future<Output = Result<tonic::Response<PU>, tonic::Status>>
+        NU: ProtobufSerializable<ProtobufMessage = PU> + TryFrom<PU>,
+        F: FnMut(C, tonic::Request<S>) -> R + Clone,
+        R: Future<Output = Result<tonic::Response<PU>, tonic::Status>>,
+        ClientError: From<<NU as TryFrom<PU>>::Error>,
     {
-        if let Some(proto_client) = &self.proto_client {
-            let proto_stream: PS = request.map(|req| PT::from(req));
-            let request_timeout = self.configuration.request_timeout;
-            let client_executor = self.client_executor.clone();
-            let backoff_strategy = self.configuration
-                .backoff_strategy()
-                .take(max_retries);
+        let request_timeout = self.configuration.request_timeout;
+        let mut request = tonic::Request::new(proto_stream);
+        request.set_timeout(request_timeout);
 
-            let result = client_executor.spawn_conditional(
-                backoff_strategy,
-                || {
-                    let proto_client = proto_client.clone();
-                    let proto_stream = proto_stream.clone();
-                    let mut grpc_call = grpc_call.clone();
+        let response_proto = grpc_call(self.proto_client.clone(), request)
+            .in_current_span()
+            .await
+            .map_err(Status::from)?
+            .into_inner();
 
-                    async move {
-                        let mut tonic_request = tonic::Request::new(proto_stream);
-                        tonic_request.set_timeout(request_timeout);
-
-                        grpc_call(proto_client, tonic_request).await
-                    }.in_current_span()
-                },
-                retry_predicate,
-            ).await;
-
-            match result {
-                Ok(response) => {
-                    let response_proto = response.into_inner();
-                    Ok(NU::try_from(response_proto)?)
-                },
-                Err(e) => {
-                    let client_error = e.into();
-                    Err(client_error)
-                },
-            }
-        } else {
-            Err(ClientError::NotYetConnected)
-        }
+        Ok(NU::try_from(response_proto)?)
     }
 }

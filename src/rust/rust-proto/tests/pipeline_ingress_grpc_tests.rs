@@ -5,6 +5,10 @@ use rust_proto::graplinc::{
         Uuid,
     },
     grapl::api::{
+        client::{
+            ClientConfiguration,
+            Connect,
+        },
         pipeline_ingress::v1beta1::{
             client::PipelineIngressClient,
             server::{
@@ -15,13 +19,8 @@ use rust_proto::graplinc::{
             PublishRawLogResponse,
         },
         protocol::{
-            endpoint::Endpoint,
             error::ServeError,
-            healthcheck::{
-                client::HealthcheckClient,
-                HealthcheckStatus,
-            },
-            service_client::Connectable,
+            healthcheck::HealthcheckStatus,
             status::Status,
         },
     },
@@ -126,8 +125,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
 
         // construct an http URI clients can use to connect to server bound to
         // the port.
-        let endpoint = format!("http://{}:{}", socket_address.ip(), socket_address.port());
-        let endpoint = Endpoint::from_shared(endpoint).expect("endpoint");
+        let address = format!("http://{}:{}", socket_address.ip(), socket_address.port());
 
         let (server, shutdown_tx) = PipelineIngressServer::new(
             MockPipelineIngressApi {},
@@ -136,22 +134,27 @@ impl AsyncTestContext for PipelineIngressTestContext {
             Duration::from_millis(50),
         );
 
-        let service_name = server.service_name();
-
         let server_handle = tokio::task::spawn(server.serve());
 
-        HealthcheckClient::wait_until_healthy(
-            endpoint.clone(),
-            service_name,
-            Duration::from_millis(250),
-            Duration::from_millis(10),
+        let client_config = ClientConfiguration::new(
+            address,
+            Duration::from_secs(5),
+            Duration::from_secs(5),
+            1,
+            Duration::from_millis(1),
+            Duration::from_millis(500),
+            Duration::from_secs(5),
+            10,
+            Duration::from_secs(5),
+            Duration::from_secs(60),
+        );
+        let client = PipelineIngressClient::connect_with_healthcheck(
+            client_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
         )
         .await
-        .expect("pipeline-ingress never reported healthy");
-
-        let client = PipelineIngressClient::connect_with_endpoint(endpoint)
-            .await
-            .expect("could not configure client");
+        .expect("could not configure client");
 
         PipelineIngressTestContext {
             client,

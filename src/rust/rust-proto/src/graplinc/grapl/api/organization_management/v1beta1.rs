@@ -192,9 +192,6 @@ impl serde_impl::ProtobufSerializable for CreateUserResponse {
 //
 
 pub mod client {
-    use std::time::Duration;
-
-    use client_executor::strategy::FibonacciBackoff;
     use tonic::transport::Endpoint;
 
     use crate::{
@@ -203,72 +200,51 @@ pub mod client {
             client::{
                 Client,
                 Connectable,
-                ClientError, Configuration
+                ClientError,
+                client_impl
             },
         },
         protobufs::graplinc::grapl::api::organization_management::v1beta1::organization_management_service_client::OrganizationManagementServiceClient,
     };
 
     #[async_trait::async_trait]
-    impl Connectable
-        for OrganizationManagementServiceClient<tonic::transport::Channel>
-    {
+    impl Connectable for OrganizationManagementServiceClient<tonic::transport::Channel> {
         async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
             Ok(Self::connect(endpoint).await?)
         }
     }
 
-    pub struct OrganizationManagementClient<B>
-    where
-        B: IntoIterator<Item = Duration> + Clone,
-    {
-        client: Client<B, OrganizationManagementServiceClient<tonic::transport::Channel>>,
+    pub struct OrganizationManagementClient {
+        client: Client<OrganizationManagementServiceClient<tonic::transport::Channel>>,
     }
 
-    impl <B> OrganizationManagementClient<B>
-    where
-        B: IntoIterator<Item = Duration> + Clone,
+    impl client_impl::WithClient<OrganizationManagementServiceClient<tonic::transport::Channel>>
+        for OrganizationManagementClient
     {
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.organization_management.v1beta1.OrganizationManagementService";
 
-        pub fn new<A>(
-            address: A,
-            request_timeout: Duration,
-            executor_timeout: Duration,
-            concurrency_limit: usize,
-            initial_backoff_delay: Duration,
-            maximum_backoff_delay: Duration,
-        ) -> Result<Self, ClientError>
-        where
-            A: TryInto<Endpoint>,
-        {
-            let configuration = Configuration::new(
-                Self::SERVICE_NAME,
-                address,
-                request_timeout,
-                executor_timeout,
-                concurrency_limit,
-                FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
-                    .max_delay(maximum_backoff_delay)
-                    .map(client_executor::strategy::jitter),
-            )?;
-            let client = Client::new(configuration)?;
-
-            Ok(Self { client })
+        fn with_client(
+            client: Client<OrganizationManagementServiceClient<tonic::transport::Channel>>,
+        ) -> Self {
+            Self { client }
         }
+    }
 
+    impl OrganizationManagementClient {
         #[tracing::instrument(skip(self, request), err)]
         pub async fn create_organization(
             &mut self,
             request: native::CreateOrganizationRequest,
         ) -> Result<native::CreateOrganizationResponse, ClientError> {
-            Ok(self.client.execute(
-                request,
-                |status| status.code() == tonic::Code::Unavailable,
-                10,
-                |client, request| client.create_organization(request)
-            ).await?)
+            self.client
+                .execute(
+                    request,
+                    |status| status.code() == tonic::Code::Unavailable,
+                    10,
+                    |mut client, request| async move { client.create_organization(request).await },
+                )
+                .await
         }
 
         #[tracing::instrument(skip(self, request), err)]
@@ -276,12 +252,14 @@ pub mod client {
             &mut self,
             request: native::CreateUserRequest,
         ) -> Result<native::CreateUserResponse, ClientError> {
-            Ok(self.client.execute(
-                request,
-                |status| status.code() == tonic::Code::Unavailable,
-                10,
-                |client, request| client.create_user(request)
-            ).await?)
+            self.client
+                .execute(
+                    request,
+                    |status| status.code() == tonic::Code::Unavailable,
+                    10,
+                    |mut client, request| async move { client.create_user(request).await },
+                )
+                .await
         }
     }
 }

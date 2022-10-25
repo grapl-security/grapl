@@ -16,7 +16,7 @@ use crate::{
 // ClientCertificate
 //
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ClientCertificate {
     pub client_certificate: Bytes,
 }
@@ -50,6 +50,7 @@ impl serde_impl::ProtobufSerializable for ClientCertificate {
 // GetBootstrapRequest
 //
 
+#[derive(Debug)]
 pub struct GetBootstrapRequest {
     // empty
 }
@@ -79,6 +80,7 @@ impl serde_impl::ProtobufSerializable for GetBootstrapRequest {
 // GetBootstrapResponse
 //
 
+#[derive(Debug)]
 pub struct GetBootstrapResponse {
     pub plugin_payload: PluginPayload,
     pub client_certificate: ClientCertificate,
@@ -126,7 +128,7 @@ impl serde_impl::ProtobufSerializable for GetBootstrapResponse {
 // PluginPayload
 //
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PluginPayload {
     pub plugin_binary: Bytes,
 }
@@ -161,13 +163,16 @@ impl serde_impl::ProtobufSerializable for PluginPayload {
 //
 
 pub mod client {
-    use std::time::Duration;
-
-    use client_executor::strategy::FibonacciBackoff;
     use tonic::transport::Endpoint;
 
     use crate::{
-        protobufs::graplinc::grapl::api::plugin_bootstrap::v1beta1::plugin_bootstrap_service_client::PluginBootstrapServiceClient, graplinc::grapl::api::client::{Connectable, ClientError, Configuration, Client},
+        protobufs::graplinc::grapl::api::plugin_bootstrap::v1beta1::plugin_bootstrap_service_client::PluginBootstrapServiceClient,
+        graplinc::grapl::api::client::{
+            Connectable,
+            ClientError,
+            Client,
+            client_impl
+        },
     };
 
     use super::{
@@ -182,56 +187,36 @@ pub mod client {
         }
     }
 
-    pub struct PluginBootstrapClient<B>
-    where
-        B: IntoIterator<Item = Duration> + Clone,
-    {
-        client: Client<B, tonic::transport::Channel>,
+    pub struct PluginBootstrapClient {
+        client: Client<PluginBootstrapServiceClient<tonic::transport::Channel>>,
     }
 
-    impl <B> PluginBootstrapClient<B>
-    where
-        B: IntoIterator<Item = Duration> + Clone,
+    impl client_impl::WithClient<PluginBootstrapServiceClient<tonic::transport::Channel>>
+        for PluginBootstrapClient
     {
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.plugin_bootstrap.v1beta1.PluginBootstrapService";
 
-        pub fn new<A>(
-            address: A,
-            request_timeout: Duration,
-            executor_timeout: Duration,
-            concurrency_limit: usize,
-            initial_backoff_delay: Duration,
-            maximum_backoff_delay: Duration,
-        ) -> Result<Self, ClientError>
-        where
-            A: TryInto<Endpoint>,
-        {
-            let configuration = Configuration::new(
-                Self::SERVICE_NAME,
-                address,
-                request_timeout,
-                executor_timeout,
-                concurrency_limit,
-                FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
-                    .max_delay(maximum_backoff_delay)
-                    .map(client_executor::strategy::jitter),
-            )?;
-            let client = Client::new(configuration);
-
-            Ok(Self { client })
+        fn with_client(
+            client: Client<PluginBootstrapServiceClient<tonic::transport::Channel>>,
+        ) -> Self {
+            Self { client }
         }
+    }
 
+    impl PluginBootstrapClient {
         pub async fn get_bootstrap(
             &mut self,
             request: GetBootstrapRequest,
         ) -> Result<GetBootstrapResponse, ClientError> {
-            Ok(self.client.execute(
-                request,
-                |status, request| status.code() == tonic::Code::Unavailable,
-                10,
-                |client, request| client.get_bootstrap(request),
-            ).await?)
+            self.client
+                .execute(
+                    request,
+                    |status| status.code() == tonic::Code::Unavailable,
+                    10,
+                    |mut client, request| async move { client.get_bootstrap(request).await },
+                )
+                .await
         }
     }
 }

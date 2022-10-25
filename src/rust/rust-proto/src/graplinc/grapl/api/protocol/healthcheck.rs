@@ -1,4 +1,3 @@
-use futures::TryFutureExt;
 use tonic_health::proto::{
     health_check_response::ServingStatus as ServingStatusProto,
     health_client::HealthClient as HealthClientProto,
@@ -13,6 +12,12 @@ pub enum HealthcheckError {
 
     #[error("healthcheck failed {0}")]
     HealthcheckFailed(String),
+
+    #[error("failed to connect {0}")]
+    ConnectionFailed(#[from] tonic::transport::Error),
+
+    #[error("healthcheck timed out {0}")]
+    TimeoutElapsed(#[from] tokio::time::error::Elapsed),
 }
 
 #[non_exhaustive]
@@ -27,7 +32,6 @@ pub mod client {
     use std::time::Duration;
 
     use super::*;
-    use crate::graplinc::grapl::api::protocol::service_client::ConnectError;
 
     pub struct HealthcheckClient {
         proto_client: HealthClientProto<tonic::transport::Channel>,
@@ -39,7 +43,7 @@ pub mod client {
         pub async fn connect<T>(
             endpoint: T,
             service_name: &'static str,
-        ) -> Result<Self, ConnectError>
+        ) -> Result<Self, HealthcheckError>
         where
             T: std::convert::TryInto<tonic::transport::Endpoint> + std::fmt::Debug,
             T::Error: std::error::Error + Send + Sync + 'static,
@@ -80,7 +84,7 @@ pub mod client {
             service_name: &'static str,
             timeout: Duration,
             polling_interval: Duration,
-        ) -> Result<Self, ConnectError>
+        ) -> Result<Self, HealthcheckError>
         where
             T: std::convert::TryInto<tonic::transport::Endpoint> + Clone + std::fmt::Debug,
             T::Error: std::error::Error + Send + Sync + 'static,
@@ -119,6 +123,10 @@ pub mod client {
                             }
                         },
                         Err(e) => match e {
+                            // blow up if we get a ConnectionFailed here,
+                            // because we previously connected successfully and
+                            // we're in some unknown state
+                            HealthcheckError::ConnectionFailed(_) => break Err(e),
                             HealthcheckError::HealthcheckFailed(_) => break Err(e),
                             HealthcheckError::NotFound(reason) => {
                                 tracing::warn!(
@@ -129,16 +137,13 @@ pub mod client {
                                 );
                                 tokio::time::sleep(polling_interval).await;
                             }
+                            HealthcheckError::TimeoutElapsed(_) => break Err(e),
                         },
                     }
                 }
             };
 
-            tokio::time::timeout(
-                timeout,
-                client_fut.map_err(|e| ConnectError::HealthcheckFailed(service_name.to_owned(), e)),
-            )
-            .await?
+            tokio::time::timeout(timeout, client_fut).await?
         }
     }
 }

@@ -185,20 +185,17 @@ pub mod server {
 }
 
 pub mod client {
-    use std::time::Duration;
-
-    use client_executor::strategy::FibonacciBackoff;
     use tonic::transport::Endpoint;
 
     use crate::{
         graplinc::grapl::api::{
-            uid_allocator::v1beta1::messages as native,
             client::{
+                client_impl,
                 Client,
-                Configuration,
-                Connectable,
                 ClientError,
+                Connectable,
             },
+            uid_allocator::v1beta1::messages as native,
         },
         protobufs::graplinc::grapl::api::uid_allocator::v1beta1::uid_allocator_service_client::UidAllocatorServiceClient,
     };
@@ -213,68 +210,51 @@ pub mod client {
     #[derive(Clone)]
     /// This allocator should rarely be used. Instead, use the CachingUidAllocatorServiceClient
     /// from the uid-allocator crate.
-    pub struct UidAllocatorClient<B>
-    where
-        B: IntoIterator<Item = Duration> + Clone,
-    {
-        client: Client<B, UidAllocatorServiceClient<tonic::transport::Channel>>,
+    pub struct UidAllocatorClient {
+        client: Client<UidAllocatorServiceClient<tonic::transport::Channel>>,
     }
 
-    impl <B> UidAllocatorClient<B>
-    where
-        B: IntoIterator<Item = Duration> + Clone,
+    impl client_impl::WithClient<UidAllocatorServiceClient<tonic::transport::Channel>>
+        for UidAllocatorClient
     {
         const SERVICE_NAME: &'static str =
             "graplinc.grapl.api.uid_allocator.v1beta1.UidAllocatorService";
 
-        pub fn new<A>(
-            address: A,
-            request_timeout: Duration,
-            executor_timeout: Duration,
-            concurrency_limit: usize,
-            initial_backoff_delay: Duration,
-            maximum_backoff_delay: Duration,
-        ) -> Result<Self, ClientError>
-        where
-            A: TryInto<Endpoint>,
-        {
-            let configuration = Configuration::new(
-                Self::SERVICE_NAME,
-                address,
-                request_timeout,
-                executor_timeout,
-                concurrency_limit,
-                FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
-                    .max_delay(maximum_backoff_delay)
-                    .map(client_executor::strategy::jitter),
-            )?;
-            let client = Client::new(configuration);
-
-            Ok(Self { client })
+        fn with_client(
+            client: Client<UidAllocatorServiceClient<tonic::transport::Channel>>,
+        ) -> Self {
+            Self { client }
         }
+    }
 
+    impl UidAllocatorClient {
         pub async fn allocate_ids(
             &mut self,
             request: native::AllocateIdsRequest,
         ) -> Result<native::AllocateIdsResponse, ClientError> {
-            Ok(self.client.execute(
-                request,
-                |status, request| status.code() == tonic::Code::Unavailable,
-                10,
-                |client, request| client.allocate_ids(request),
-            ).await?)
+            self.client
+                .execute(
+                    request,
+                    |status| status.code() == tonic::Code::Unavailable,
+                    10,
+                    |mut client, request| async move { client.allocate_ids(request).await },
+                )
+                .await
         }
 
         pub async fn create_tenant_keyspace(
             &mut self,
             request: native::CreateTenantKeyspaceRequest,
         ) -> Result<native::CreateTenantKeyspaceResponse, ClientError> {
-            Ok(self.client.execute(
-                request,
-                |status, request| status.code() == tonic::Code::Unavailable,
-                10,
-                |client, request| client.create_tenant_keyspace(request),
-            ).await?)
+            self
+                .client
+                .execute(
+                    request,
+                    |status| status.code() == tonic::Code::Unavailable,
+                    10,
+                    |mut client, request| async move { client.create_tenant_keyspace(request).await },
+                )
+                .await
         }
     }
 }
@@ -430,6 +410,14 @@ pub mod messages {
         }
     }
 
+    impl serde_impl::ProtobufSerializable for CreateTenantKeyspaceRequest {
+        type ProtobufMessage = CreateTenantKeyspaceRequestProto;
+    }
+
+    impl serde_impl::ProtobufSerializable for CreateTenantKeyspaceResponse {
+        type ProtobufMessage = CreateTenantKeyspaceResponseProto;
+    }
+
     impl serde_impl::ProtobufSerializable for Allocation {
         type ProtobufMessage = AllocationProto;
     }
@@ -440,6 +428,16 @@ pub mod messages {
 
     impl serde_impl::ProtobufSerializable for AllocateIdsResponse {
         type ProtobufMessage = AllocateIdsResponseProto;
+    }
+
+    impl type_url::TypeUrl for CreateTenantKeyspaceRequest {
+        const TYPE_URL: &'static str =
+            "graplinc.grapl.api.uid_allocator.v1beta1.CreateTenantKeyspaceRequest";
+    }
+
+    impl type_url::TypeUrl for CreateTenantKeyspaceResponse {
+        const TYPE_URL: &'static str =
+            "graplinc.grapl.api.uid_allocator.v1beta1.CreateTenantKeyspaceResponse";
     }
 
     impl type_url::TypeUrl for Allocation {

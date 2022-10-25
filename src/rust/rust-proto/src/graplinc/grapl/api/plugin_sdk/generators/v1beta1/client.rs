@@ -1,16 +1,14 @@
-use std::time::Duration;
-
-use client_executor::strategy::FibonacciBackoff;
 use tonic::transport::Endpoint;
 
 use crate::{
     graplinc::grapl::api::{
-        plugin_sdk::generators::v1beta1 as native,
         client::{
+            client_impl,
             Client,
             ClientError,
-            Configuration, Connectable
+            Connectable,
         },
+        plugin_sdk::generators::v1beta1 as native,
     },
     protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1::generator_service_client::GeneratorServiceClient,
 };
@@ -23,56 +21,34 @@ impl Connectable for GeneratorServiceClient<tonic::transport::Channel> {
 }
 
 #[derive(Clone)]
-pub struct GeneratorClient<B>
-where
-    B: IntoIterator<Item = Duration> + Clone,
-{
-    client: Client<B, GeneratorServiceClient<tonic::transport::Channel>>,
+pub struct GeneratorClient {
+    client: Client<GeneratorServiceClient<tonic::transport::Channel>>,
 }
 
-impl <B> GeneratorClient<B>
-where
-    B: IntoIterator<Item = Duration> + Clone,
+impl client_impl::WithClient<GeneratorServiceClient<tonic::transport::Channel>>
+    for GeneratorClient
 {
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorService";
 
-    pub fn new<A>(
-        address: A,
-        request_timeout: Duration,
-        executor_timeout: Duration,
-        concurrency_limit: usize,
-        initial_backoff_delay: Duration,
-        maximum_backoff_delay: Duration,
-    ) -> Result<Self, ClientError>
-    where
-        A: TryInto<Endpoint>,
-    {
-        let configuration = Configuration::new(
-            Self::SERVICE_NAME,
-            address,
-            request_timeout,
-            executor_timeout,
-            concurrency_limit,
-            FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
-                .max_delay(maximum_backoff_delay)
-                .map(client_executor::strategy::jitter),
-        )?;
-        let client = Client::new(configuration);
-
-        Ok(Self { client })
+    fn with_client(client: Client<GeneratorServiceClient<tonic::transport::Channel>>) -> Self {
+        Self { client }
     }
+}
 
+impl GeneratorClient {
     #[tracing::instrument(skip(self, request), err)]
     pub async fn run_generator(
         &mut self,
         request: native::RunGeneratorRequest,
     ) -> Result<native::RunGeneratorResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status, request| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.run_generator(request),
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.run_generator(request).await },
+            )
+            .await
     }
 }

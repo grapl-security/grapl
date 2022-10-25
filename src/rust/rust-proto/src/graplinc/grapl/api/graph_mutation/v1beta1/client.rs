@@ -1,17 +1,14 @@
-use std::time::Duration;
-
-use client_executor::strategy::FibonacciBackoff;
 use tonic::transport::Endpoint;
 
 use crate::{
     graplinc::grapl::api::{
-        graph_mutation::v1beta1::messages as native,
         client::{
-            Connectable,
+            client_impl,
             Client,
             ClientError,
-            Configuration
+            Connectable,
         },
+        graph_mutation::v1beta1::messages as native,
     },
     protobufs::graplinc::grapl::api::graph_mutation::v1beta1::graph_mutation_service_client::GraphMutationServiceClient,
 };
@@ -24,79 +21,61 @@ impl Connectable for GraphMutationServiceClient<tonic::transport::Channel> {
 }
 
 #[derive(Clone)]
-pub struct GraphMutationClient<B>
-where
-    B: IntoIterator<Item = Duration> + Clone,
-{
-    client: Client<B, GraphMutationServiceClient<tonic::transport::Channel>>,
+pub struct GraphMutationClient {
+    client: Client<GraphMutationServiceClient<tonic::transport::Channel>>,
 }
 
-impl <B> GraphMutationClient<B>
-where
-    B: IntoIterator<Item = Duration> + Clone,
+impl client_impl::WithClient<GraphMutationServiceClient<tonic::transport::Channel>>
+    for GraphMutationClient
 {
     const SERVICE_NAME: &'static str =
         "graplinc.grapl.api.graph_mutation.v1beta1.GraphMutationService";
 
-    pub fn new<A>(
-        address: A,
-        request_timeout: Duration,
-        executor_timeout: Duration,
-        concurrency_limit: usize,
-        initial_backoff_delay: Duration,
-        maximum_backoff_delay: Duration,
-    ) -> Result<Self, ClientError>
-    where
-        A: TryInto<Endpoint>,
-    {
-        let configuration = Configuration::new(
-            Self::SERVICE_NAME,
-            address,
-            request_timeout,
-            executor_timeout,
-            concurrency_limit,
-            FibonacciBackoff::from_millis(initial_backoff_delay.as_millis())
-                .max_delay(maximum_backoff_delay)
-                .map(client_executor::strategy::jitter),
-        )?;
-        let client = Client::new(configuration)?;
-
-        Ok(Self { client })
+    fn with_client(client: Client<GraphMutationServiceClient<tonic::transport::Channel>>) -> Self {
+        Self { client }
     }
+}
 
+impl GraphMutationClient {
     pub async fn create_node(
         &mut self,
         request: native::CreateNodeRequest,
     ) -> Result<native::CreateNodeResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status, request| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.create_node(request),
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.create_node(request).await },
+            )
+            .await
     }
 
     pub async fn set_node_property(
         &mut self,
         request: native::SetNodePropertyRequest,
     ) -> Result<native::SetNodePropertyResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status, request| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.set_node_property(request),
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.set_node_property(request).await },
+            )
+            .await
     }
 
     pub async fn create_edge(
         &mut self,
         request: native::CreateEdgeRequest,
     ) -> Result<native::CreateEdgeResponse, ClientError> {
-        Ok(self.client.execute(
-            request,
-            |status, request| status.code() == tonic::Code::Unavailable,
-            10,
-            |client, request| client.create_edge(request),
-        ).await?)
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.create_edge(request).await },
+            )
+            .await
     }
 }
