@@ -30,6 +30,8 @@ describe("Login Component", () => {
 
     let getCreds = await getSecrets;
 
+    console.log("getCreds", getCreds);
+
     await waitFor(() => {
       fireEvent.change(username, {
         target: {
@@ -54,7 +56,7 @@ describe("Login Component", () => {
       expect(username).not.toBeNull();
       expect(getCreds).not.toBeNull();
       expect(getCreds).toBeDefined();
-      expect(getCreds).toContain("SecretString")
+      expect(getCreds).toHaveProperty("SecretString");
     });
 
     screen.debug();
