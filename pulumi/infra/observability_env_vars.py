@@ -29,6 +29,7 @@ def get_observability_env_vars() -> str:
 def otel_config(
     lightstep_token: pulumi.Output,
     consul_agent_endpoint: str,
+    consul_l7_metric_endpoint: str,
     nomad_agent_endpoint: str,
     lightstep_endpoint: str,
     # This is optional because pulumi.config.get_bool returns Optional[bool]
@@ -40,10 +41,11 @@ def otel_config(
         lightstep_token=lightstep_token,
         lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
         consul_agent_endpoint=consul_agent_endpoint,
+        consul_l7_metric_endpoint=consul_l7_metric_endpoint,
         nomad_agent_endpoint=nomad_agent_endpoint,
         trace_sampling_percentage=trace_sampling_percentage,
     ).apply(
-        lambda args: f"""
+        lambda args: rf"""
 receivers:
   zipkin:
   jaeger:
@@ -58,22 +60,47 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-        - job_name: 'consul-agent'
+        # - job_name: 'consul-agent'
+        #   scrape_interval: 20s
+        #   scrape_timeout: 10s
+        #   metrics_path: '/v1/agent/metrics'
+        #   params:
+        #     format: ['prometheus']
+        #   static_configs:
+        #     - targets: [{args["consul_agent_endpoint"]}]
+        - job_name: 'consul-envoy'
           scrape_interval: 20s
           scrape_timeout: 10s
-          metrics_path: '/v1/agent/metrics'
-          params:
-            format: ['prometheus']
+          consul_sd_configs:
+            - server: {args["consul_agent_endpoint"]}
+          relabel_configs:
+            # Don't scrape the extra -sidecar-proxy services that Consul Connect
+            # sets up, otherwise we'll have duplicates.
+            - source_labels: [__meta_consul_service]
+              action: drop
+              regex: (.+)-sidecar-proxy
+            # Only scrape services that have a metrics_port meta field.
+            # This is optional, you can use other criteria to decide what
+            # to scrape.
+            - source_labels: [__meta_consul_service_metadata_metrics_port_envoy]
+              action: keep
+              regex: (.+)
+            # Replace the port in the address with the one from the metrics_port
+            # meta field.
+            - source_labels: [__address__, __meta_consul_service_metadata_metrics_port_envoy]
+              regex: ([^:]+)(?::\d+)?;(\d+)
+              replacement: ${1}:${2}
+              target_label: __address__
           static_configs:
-            - targets: [{args["consul_agent_endpoint"]}]
-        - job_name: 'nomad-agent'
-          scrape_interval: 20s
-          scrape_timeout: 10s
-          metrics_path: '/v1/metrics'
-          params:
-            format: ['prometheus']
-          static_configs:
-            - targets: [{args["nomad_agent_endpoint"]}]
+            - targets: [{args["consul_l7_metric_endpoint"]}]
+        # - job_name: 'nomad-agent'
+        #   scrape_interval: 20s
+        #   scrape_timeout: 10s
+        #   metrics_path: '/v1/metrics'
+        #   params:
+        #     format: ['prometheus']
+        #   static_configs:
+        #     - targets: [{args["nomad_agent_endpoint"]}]
 processors:
   batch:
     timeout: 10s
@@ -108,7 +135,7 @@ service:
       receivers: [prometheus]
       processors: [batch]
       # To enable debug logging, add logging to exporters
-      exporters: [otlp/ls]
+      exporters: [logging, otlp/ls]
     traces:
       receivers: [jaeger, otlp, zipkin]
       processors: [batch, memory_limiter, probabilistic_sampler]

@@ -88,6 +88,7 @@ job "grapl-graph-db" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
       port "scylla-provisioner-port" {
       }
     }
@@ -119,6 +120,10 @@ job "grapl-graph-db" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "scylla-provisioner"
       port = "scylla-provisioner-port"
       connect {
@@ -140,6 +145,7 @@ job "grapl-graph-db" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
       port "graph-query-port" {
       }
     }
@@ -171,6 +177,10 @@ job "grapl-graph-db" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "graph-query"
       port = "graph-query-port"
       connect {
@@ -192,6 +202,7 @@ job "grapl-graph-db" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
       port "graph-mutation-port" {
       }
     }
@@ -228,6 +239,10 @@ job "grapl-graph-db" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "graph-mutation"
       port = "graph-mutation-port"
       connect {
@@ -267,6 +282,7 @@ job "grapl-graph-db" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
 
       port "uid-allocator-port" {
       }
@@ -304,6 +320,10 @@ job "grapl-graph-db" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "uid-allocator"
       port = "uid-allocator-port"
       connect {
@@ -328,6 +348,7 @@ job "grapl-graph-db" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
       port "graph-schema-manager-port" {
       }
     }
@@ -362,6 +383,10 @@ job "grapl-graph-db" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "graph-schema-manager"
       port = "graph-schema-manager-port"
       connect {

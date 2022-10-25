@@ -219,6 +219,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
     }
 
     task "analyzer-dispatcher" {
@@ -267,6 +268,10 @@ job "grapl-core" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "analyzer-dispatcher"
       connect {
         sidecar_service {
@@ -293,6 +298,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
     }
 
     task "generator-dispatcher" {
@@ -341,6 +347,10 @@ job "grapl-core" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "generator-dispatcher"
       connect {
         sidecar_service {
@@ -367,6 +377,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
     }
 
     task "graph-merger" {
@@ -414,6 +425,10 @@ job "grapl-core" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "graph-merger"
 
       connect {
@@ -437,6 +452,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
     }
 
     task "node-identifier" {
@@ -485,6 +501,10 @@ job "grapl-core" {
       }
     }
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "node-identifier"
 
       connect {
@@ -508,6 +528,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
     }
 
     task "analyzer-dispatcher-retry" {
@@ -544,6 +565,10 @@ job "grapl-core" {
       }
 
       service {
+        meta {
+          # Tag for prometheus scrape-targeting via consul (envoy)
+          metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        }
         name = "analyzer-dispatcher-retry"
       }
     }
@@ -582,6 +607,10 @@ job "grapl-core" {
       }
 
       service {
+        meta {
+          # Tag for prometheus scrape-targeting via consul (envoy)
+          metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        }
         name = "generator-dispatcher-retry"
       }
     }
@@ -595,6 +624,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
 
       port "web-ui-port" {
       }
@@ -647,6 +677,10 @@ job "grapl-core" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "web-ui"
       port = "web-ui-port"
       connect {
@@ -684,6 +718,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
       port "organization-management-port" {
       }
     }
@@ -729,6 +764,10 @@ job "grapl-core" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "organization-management"
       port = "organization-management-port"
       connect {
@@ -746,6 +785,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
       port "pipeline-ingress-port" {
       }
     }
@@ -791,6 +831,10 @@ job "grapl-core" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "pipeline-ingress"
       port = "pipeline-ingress-port"
       connect {
@@ -815,6 +859,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
 
       port "plugin-registry-port" {
       }
@@ -872,6 +917,10 @@ job "grapl-core" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "plugin-registry"
       port = "plugin-registry-port"
       connect {
@@ -896,6 +945,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
 
       port "plugin-work-queue-port" {
       }
@@ -949,6 +999,10 @@ job "grapl-core" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "plugin-work-queue"
       port = "plugin-work-queue-port"
       connect {
@@ -973,6 +1027,7 @@ job "grapl-core" {
       dns {
         servers = local.dns_servers
       }
+      port "metrics_envoy" { to = 9102 }
 
       port "event-source-port" {
       }
@@ -1019,6 +1074,10 @@ job "grapl-core" {
     }
 
     service {
+      meta {
+        # Tag for prometheus scrape-targeting via consul (envoy)
+        metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+      }
       name = "event-source"
       port = "event-source-port"
       connect {

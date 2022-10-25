@@ -66,7 +66,8 @@ class ConsulConfig(pulumi.ComponentResource):
                             }
                         }
                     ),
-                    "prometheus_bind_addr": "0.0.0.0:9102",
+                    # Layer 7 observability
+                    "envoy_prometheus_bind_addr": "0.0.0.0:9102",
                     "protocol": "grpc",
                 }
             ]
