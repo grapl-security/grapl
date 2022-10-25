@@ -29,9 +29,9 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
 uuid = { workspace = true }
 
 [dev-dependencies]
-env_logger = "0.9.0"
+env_logger = { workspace = true }
 eyre = { workspace = true }
-test-log = { version = "0.2", default-features = false, features = ["trace"] }
+test-log = { workspace = true }
 
 [features]
 integration_tests = []
