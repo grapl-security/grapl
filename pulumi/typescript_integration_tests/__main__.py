@@ -5,7 +5,7 @@ sys.path.insert(0, "..")
 from typing import Mapping
 
 import pulumi_aws as aws
-from infra import config, log_levels
+from infra import config
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.config import repository_path
