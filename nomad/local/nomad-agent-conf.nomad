@@ -8,10 +8,9 @@ ui {
     ui_url = "http://localhost:8500/ui"
   }
 
-  # TODO enable once vault is used for local grapl
-  #  vault {
-  #    ui_url = "https://vault.example.com:8200/ui"
-  #  }
+    vault {
+      ui_url = "http://localhost:8200/ui"
+    }
 }
 
 ####################
