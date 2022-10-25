@@ -18,6 +18,7 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
+figment = { version = "0.10", features = ["env"] }
 futures = "0.3"
 futures-retry = "0.6"
 grapl-config = { path = "../grapl-config" }

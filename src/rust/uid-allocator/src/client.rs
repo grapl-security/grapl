@@ -1,13 +1,14 @@
+use std::time::Duration;
+
 use dashmap::DashMap;
-pub use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::client::UidAllocatorServiceClient;
 use rust_proto::graplinc::grapl::api::{
-    client_factory::services::UidAllocatorClientConfig,
-    protocol::service_client::{
-        ConnectError,
-        ConnectWithConfig,
+    client::{
+        ClientConfiguration,
+        ClientError,
+        Connect,
     },
     uid_allocator::v1beta1::{
-        client::UidAllocatorServiceClientError,
+        client::UidAllocatorClient,
         messages::{
             AllocateIdsRequest,
             Allocation,
@@ -17,15 +18,15 @@ use rust_proto::graplinc::grapl::api::{
 };
 
 #[derive(Clone)]
-pub struct CachingUidAllocatorServiceClient {
-    pub allocator: UidAllocatorServiceClient,
+pub struct CachingUidAllocatorClient {
+    pub allocator: UidAllocatorClient,
     pub allocation_map: DashMap<uuid::Uuid, Allocation>,
     /// The number of ids to request
     pub count: u32,
 }
 
-impl CachingUidAllocatorServiceClient {
-    pub fn new(allocator: UidAllocatorServiceClient, count: u32) -> Self {
+impl CachingUidAllocatorClient {
+    pub fn new(allocator: UidAllocatorClient, count: u32) -> Self {
         Self {
             allocator,
             allocation_map: DashMap::with_capacity(1),
@@ -34,17 +35,19 @@ impl CachingUidAllocatorServiceClient {
     }
 
     pub async fn from_client_config(
-        client_config: UidAllocatorClientConfig,
+        client_config: ClientConfiguration,
         count: u32,
-    ) -> Result<Self, ConnectError> {
-        let allocator = UidAllocatorServiceClient::connect_with_config(client_config).await?;
+    ) -> Result<Self, ClientError> {
+        let allocator = UidAllocatorClient::connect_with_healthcheck(
+            client_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await?;
         Ok(Self::new(allocator, count))
     }
 
-    pub async fn allocate_id(
-        &self,
-        tenant_id: uuid::Uuid,
-    ) -> Result<u64, UidAllocatorServiceClientError> {
+    pub async fn allocate_id(&self, tenant_id: uuid::Uuid) -> Result<u64, ClientError> {
         match self.get_from_allocation_map(tenant_id) {
             Some(allocation) => Ok(allocation),
             None => {
@@ -66,7 +69,7 @@ impl CachingUidAllocatorServiceClient {
     pub async fn create_tenant_keyspace(
         &mut self,
         request: CreateTenantKeyspaceRequest,
-    ) -> Result<(), UidAllocatorServiceClientError> {
+    ) -> Result<(), ClientError> {
         self.allocator.create_tenant_keyspace(request).await?;
         Ok(())
     }
@@ -80,9 +83,9 @@ impl CachingUidAllocatorServiceClient {
     }
 }
 
-impl std::fmt::Debug for CachingUidAllocatorServiceClient {
+impl std::fmt::Debug for CachingUidAllocatorClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut d = f.debug_struct("CachingUidAllocatorServiceClient");
+        let mut d = f.debug_struct("CachingUidAllocatorClient");
         for entry in self.allocation_map.iter() {
             d.field("tenant_id", entry.key());
         }

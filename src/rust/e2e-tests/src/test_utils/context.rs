@@ -1,5 +1,11 @@
+use std::time::Duration;
+
 use bytes::Bytes;
 use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use grapl_config::PostgresClient;
 use grapl_tracing::{
     setup_tracing,
@@ -10,23 +16,18 @@ use plugin_work_queue::{
     PluginWorkQueueDbConfig,
 };
 use rust_proto::graplinc::grapl::api::{
-    client_factory::services::{
-        EventSourceClientConfig,
-        PipelineIngressClientConfig,
-        PluginRegistryClientConfig,
-    },
+    client::Connect,
     event_source::v1beta1::{
-        client::EventSourceServiceClient,
+        client::EventSourceClient,
         CreateEventSourceRequest,
     },
     pipeline_ingress::v1beta1::client::PipelineIngressClient,
     plugin_registry::v1beta1::{
         DeployPluginRequest,
         PluginMetadata,
-        PluginRegistryServiceClient,
+        PluginRegistryClient,
         PluginType,
     },
-    protocol::service_client::ConnectWithConfig,
 };
 use test_context::AsyncTestContext;
 use uuid::Uuid;
@@ -34,8 +35,8 @@ use uuid::Uuid;
 use crate::test_fixtures;
 
 pub struct E2eTestContext {
-    pub event_source_client: EventSourceServiceClient,
-    pub plugin_registry_client: PluginRegistryServiceClient,
+    pub event_source_client: EventSourceClient,
+    pub plugin_registry_client: PluginRegistryClient,
     pub pipeline_ingress_client: PipelineIngressClient,
     pub plugin_work_queue_psql_client: PsqlQueue,
     pub _guard: WorkerGuard,
@@ -48,20 +49,41 @@ impl AsyncTestContext for E2eTestContext {
     async fn setup() -> Self {
         let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
-        let event_source_client =
-            EventSourceServiceClient::connect_with_config(EventSourceClientConfig::parse())
-                .await
-                .expect("event_source_client");
+        let event_source_client_config = Figment::new()
+            .merge(Env::prefixed("EVENT_SOURCE_CLIENT_"))
+            .extract()
+            .expect("failed to configure event-source client");
+        let event_source_client = EventSourceClient::connect_with_healthcheck(
+            event_source_client_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await
+        .expect("failed to connect to event-source");
 
-        let plugin_registry_client =
-            PluginRegistryServiceClient::connect_with_config(PluginRegistryClientConfig::parse())
-                .await
-                .expect("plugin_registry_client");
+        let plugin_registry_client_config = Figment::new()
+            .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
+            .extract()
+            .expect("failed to configure plugin-registry client");
+        let plugin_registry_client = PluginRegistryClient::connect_with_healthcheck(
+            plugin_registry_client_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await
+        .expect("plugin_registry_client");
 
-        let pipeline_ingress_client =
-            PipelineIngressClient::connect_with_config(PipelineIngressClientConfig::parse())
-                .await
-                .expect("pipeline_ingress_client");
+        let pipeline_ingress_client_config = Figment::new()
+            .merge(Env::prefixed("PIPELINE_INGRESS_CLIENT_"))
+            .extract()
+            .expect("failed to configure pipeline-ingress client");
+        let pipeline_ingress_client = PipelineIngressClient::connect_with_healthcheck(
+            pipeline_ingress_client_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await
+        .expect("pipeline_ingress_client");
 
         let plugin_work_queue_psql_client =
             PsqlQueue::init_with_config(PluginWorkQueueDbConfig::parse())

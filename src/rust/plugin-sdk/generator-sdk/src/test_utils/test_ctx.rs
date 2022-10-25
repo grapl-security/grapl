@@ -1,9 +1,16 @@
+use figment::{
+    providers::Env,
+    Figment,
+};
 use rust_proto::graplinc::{
     common::v1beta1::Duration,
     grapl::api::{
-        client_factory::services::GeneratorClientConfig,
+        client::{
+            ClientConfiguration,
+            Connect,
+        },
         plugin_sdk::generators::v1beta1::{
-            client::GeneratorServiceClient,
+            client::GeneratorClient,
             server::{
                 GeneratorApi,
                 GeneratorServer,
@@ -15,7 +22,6 @@ use rust_proto::graplinc::{
                 client::HealthcheckClient,
                 HealthcheckStatus,
             },
-            service_client::ConnectWithConfig,
         },
     },
 };
@@ -43,10 +49,11 @@ After experimenting a bit, this seemed the most ergonomic solution.
 */
 
 struct GeneratorTestContextInternals {
-    client: GeneratorServiceClient,
+    client: GeneratorClient,
     server_handle: JoinHandle<Result<(), ServeError>>,
     shutdown_tx: Sender<()>,
 }
+
 impl GeneratorTestContextInternals {
     async fn new(generator_api: impl GeneratorApi + Send + Sync + 'static) -> Self {
         // binding the tcp listener on port 0 tells the operating system to
@@ -84,12 +91,18 @@ impl GeneratorTestContextInternals {
         .await
         .expect("Generator never reported healthy");
 
-        let client_config = GeneratorClientConfig {
-            generator_client_address: endpoint,
-        };
-        let client = GeneratorServiceClient::connect_with_config(client_config)
-            .await
-            .unwrap();
+        let client_config: ClientConfiguration = Figment::new()
+            .merge(Env::prefixed("GENERATOR_"))
+            .extract()
+            .expect("failed to extract client configuration");
+
+        let client = GeneratorClient::connect_with_healthcheck(
+            client_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await
+        .unwrap();
 
         GeneratorTestContextInternals {
             client,
@@ -118,17 +131,19 @@ impl AsyncTestContext for GeneratorTestContext {
     async fn setup() -> Self {
         Self { internals: None }
     }
+
     async fn teardown(self) {
         if let Some(i) = self.internals {
             i.teardown().await;
         }
     }
 }
+
 impl GeneratorTestContext {
     pub async fn get_client(
         &mut self,
         generator_api: impl GeneratorApi + Send + Sync + 'static,
-    ) -> GeneratorServiceClient {
+    ) -> GeneratorClient {
         if let None = self.internals {
             self.internals = Some(GeneratorTestContextInternals::new(generator_api).await)
         }

@@ -1,22 +1,33 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use bytes::Bytes;
-use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use rust_proto::graplinc::grapl::api::{
-    client_factory::services::PluginRegistryClientConfig,
+    client::Connect,
     plugin_registry::v1beta1::{
         ListPluginsRequest,
         PluginMetadata,
-        PluginRegistryServiceClient,
+        PluginRegistryClient,
         PluginType,
     },
-    protocol::service_client::ConnectWithConfig,
 };
 
 #[test_log::test(tokio::test)]
 async fn test_list_plugins() -> eyre::Result<()> {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_1_id = uuid::Uuid::new_v4();
@@ -104,8 +115,15 @@ async fn test_list_plugins() -> eyre::Result<()> {
 
 #[test_log::test(tokio::test)]
 async fn test_list_plugins_not_found() -> eyre::Result<()> {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

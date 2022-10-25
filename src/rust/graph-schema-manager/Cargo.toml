@@ -11,6 +11,7 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
+figment = { version = "0.10", features = ["env"] }
 grapl-config = { path = "../grapl-config" }
 grapl-graphql-codegen = { path = "../grapl-graphql-codegen" }
 grapl-tracing = { path = "../grapl-tracing" }

@@ -7,7 +7,7 @@ use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     GetPluginDeploymentRequest,
     PluginDeploymentStatus,
-    PluginRegistryServiceClient,
+    PluginRegistryClient,
 };
 
 use super::PluginError;
@@ -29,7 +29,7 @@ pub struct PluginDeploymentResponse {
 
 #[tracing::instrument(skip(plugin_registry_client, data))]
 pub(super) async fn get_deployment(
-    plugin_registry_client: web::Data<PluginRegistryServiceClient>,
+    plugin_registry_client: web::Data<PluginRegistryClient>,
     user: crate::authn::AuthenticatedUser,
     data: web::Query<GetDeploymentParameters>,
 ) -> Result<impl Responder, PluginError> {

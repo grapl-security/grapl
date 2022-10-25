@@ -1,7 +1,17 @@
+use std::time::Duration;
+
+use figment::{
+    providers::Env,
+    Figment,
+};
 use rust_proto::graplinc::grapl::api::{
+    client::{
+        ClientConfiguration,
+        Connect,
+    },
     graph::v1beta1::GraphDescription,
     plugin_sdk::generators::v1beta1::{
-        client::GeneratorServiceClient,
+        client::GeneratorClient,
         RunGeneratorRequest,
     },
     plugin_work_queue::v1beta1::{
@@ -9,7 +19,7 @@ use rust_proto::graplinc::grapl::api::{
         ExecutionJob,
         GetExecuteGeneratorRequest,
         GetExecuteGeneratorResponse,
-        PluginWorkQueueServiceClient,
+        PluginWorkQueueClient,
     },
 };
 use uuid::Uuid;
@@ -21,10 +31,6 @@ use super::{
         Workload,
     },
     PluginWorkProcessor,
-};
-use crate::{
-    config::PluginExecutorConfig,
-    sidecar_client::generator_client::get_generator_client,
 };
 
 impl Workload for GetExecuteGeneratorResponse {
@@ -38,15 +44,23 @@ impl Workload for GetExecuteGeneratorResponse {
 }
 
 pub struct GeneratorWorkProcessor {
-    generator_service_client: GeneratorServiceClient,
+    generator_client: GeneratorClient,
 }
 
 impl GeneratorWorkProcessor {
-    pub async fn new(config: &PluginExecutorConfig) -> Result<Self, Box<dyn std::error::Error>> {
-        let generator_service_client = get_generator_client(config.plugin_id).await?;
-        Ok(GeneratorWorkProcessor {
-            generator_service_client,
-        })
+    pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        let client_config: ClientConfiguration = Figment::new()
+            .merge(Env::prefixed("GENERATOR_"))
+            .extract()?;
+
+        let generator_client = GeneratorClient::connect_with_healthcheck(
+            client_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await?;
+
+        Ok(GeneratorWorkProcessor { generator_client })
     }
 }
 
@@ -57,10 +71,9 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
 
     async fn get_work(
         &self,
-        config: &PluginExecutorConfig,
-        pwq_client: &mut PluginWorkQueueServiceClient,
+        plugin_id: Uuid,
+        pwq_client: &mut PluginWorkQueueClient,
     ) -> Result<Self::Work, PluginWorkProcessorError> {
-        let plugin_id = config.plugin_id;
         let response = pwq_client
             .get_execute_generator(GetExecuteGeneratorRequest::new(plugin_id))
             .await?;
@@ -93,16 +106,14 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
 
     async fn ack_work(
         &self,
-        config: &PluginExecutorConfig,
-        pwq_client: &mut PluginWorkQueueServiceClient,
+        plugin_id: Uuid,
+        pwq_client: &mut PluginWorkQueueClient,
         process_result: Result<Self::ProducedMessage, PluginWorkProcessorError>,
         request_id: RequestId,
         tenant_id: Uuid,
         trace_id: Uuid,
         event_source_id: Uuid,
     ) -> Result<(), PluginWorkProcessorError> {
-        let plugin_id = config.plugin_id;
-
         tracing::debug!(
             message = "acknowledging generator work",
             tenant_id =% tenant_id,
@@ -127,11 +138,11 @@ impl PluginWorkProcessor for GeneratorWorkProcessor {
 
     async fn process_job(
         &mut self,
-        _config: &PluginExecutorConfig,
+        _plugin_id: Uuid,
         job: ExecutionJob,
     ) -> Result<Self::ProducedMessage, PluginWorkProcessorError> {
         let run_generator_response = self
-            .generator_service_client
+            .generator_client
             .run_generator(RunGeneratorRequest {
                 data: job.data().clone(),
             })

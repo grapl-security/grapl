@@ -5,6 +5,10 @@ use async_cache::{
     AsyncCacheError,
 };
 use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use futures::{
     pin_mut,
     StreamExt,
@@ -25,31 +29,23 @@ use kafka::{
 use rust_proto::{
     graplinc::grapl::{
         api::{
-            client_factory::services::{
-                PluginRegistryClientConfig,
-                PluginWorkQueueClientConfig,
+            client::{
+                ClientError,
+                Connect,
             },
             graph::v1beta1::MergedGraph,
             plugin_registry::v1beta1::{
                 GetAnalyzersForTenantRequest,
-                PluginRegistryServiceClient,
+                PluginRegistryClient,
             },
             plugin_work_queue::v1beta1::{
                 ExecutionJob,
-                PluginWorkQueueServiceClient,
-                PluginWorkQueueServiceClientError,
+                PluginWorkQueueClient,
                 PushExecuteAnalyzerRequest,
             },
-            protocol::{
-                error::GrpcClientError,
-                service_client::{
-                    ConnectError,
-                    ConnectWithConfig,
-                },
-                status::{
-                    Code,
-                    Status,
-                },
+            protocol::status::{
+                Code,
+                Status,
             },
         },
         pipeline::v1beta1::Envelope,
@@ -98,11 +94,14 @@ impl AnalyzerDispatcherConfig {
 
 #[derive(Debug, Error)]
 enum ConfigurationError {
-    #[error("error configuring kafka client")]
+    #[error("error configuring kafka client {0}")]
     KafkaConfiguration(#[from] KafkaConfigurationError),
 
-    #[error("error configuring analyzer IDs cache")]
-    AnalyzerIdsCacheConfiguration(#[from] ConnectError),
+    #[error("error configuring gRPC client {0}")]
+    ClientError(#[from] ClientError),
+
+    #[error("figment error {0}")]
+    FigmentError(#[from] figment::Error),
 }
 
 #[derive(Debug, Error)]
@@ -112,7 +111,7 @@ enum AnalyzerDispatcherError {
 
     // FIXME: don't crash the service when this happens
     #[error("error sending data to plugin-work-queue {0}")]
-    PluginWorkQueueClient(#[from] PluginWorkQueueServiceClientError),
+    ClientError(#[from] ClientError),
 
     // FIXME: also don't crash the service when this happens
     #[error("error trying to send message to kafka {0}")]
@@ -126,7 +125,7 @@ enum AnalyzerDispatcherError {
 }
 
 struct AnalyzerDispatcher {
-    plugin_work_queue_client: PluginWorkQueueServiceClient,
+    plugin_work_queue_client: PluginWorkQueueClient,
     merged_graphs_consumer: Consumer<MergedGraph>,
     merged_graphs_retry_producer: RetryProducer<MergedGraph>,
     analyzer_ids_cache: AsyncCache<Uuid, Vec<Uuid>>,
@@ -135,15 +134,21 @@ struct AnalyzerDispatcher {
 impl AnalyzerDispatcher {
     pub async fn new(
         config: AnalyzerDispatcherConfig,
-        plugin_work_queue_client: PluginWorkQueueServiceClient,
+        plugin_work_queue_client: PluginWorkQueueClient,
     ) -> Result<Self, ConfigurationError> {
         let merged_graphs_consumer: Consumer<MergedGraph> = Consumer::new(config.kafka_config)?;
         let merged_graphs_retry_producer: RetryProducer<MergedGraph> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
-        let client_config = PluginRegistryClientConfig::parse();
 
-        let plugin_registry_client =
-            PluginRegistryServiceClient::connect_with_config(client_config).await?;
+        let client_config = Figment::new()
+            .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
+            .extract()?;
+        let plugin_registry_client = PluginRegistryClient::connect_with_healthcheck(
+            client_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await?;
 
         let analyzer_ids_cache = AsyncCache::new(
             config.params.analyzer_ids_cache_capacity,
@@ -159,7 +164,7 @@ impl AnalyzerDispatcher {
                         .await
                     {
                         Ok(response) => Some(response.plugin_ids().to_vec()),
-                        Err(GrpcClientError::ErrorStatus(Status {
+                        Err(ClientError::Status(Status {
                             code: Code::NotFound,
                             ..
                         })) => {
@@ -324,7 +329,7 @@ async fn retry_message(
 
 #[tracing::instrument(skip(plugin_work_queue_client, analyzer_ids, envelope), err)]
 async fn enqueue_plugin_work(
-    plugin_work_queue_client: PluginWorkQueueServiceClient,
+    plugin_work_queue_client: PluginWorkQueueClient,
     analyzer_ids: Vec<Uuid>,
     envelope: Envelope<MergedGraph>,
 ) -> Result<(), AnalyzerDispatcherError> {
@@ -366,9 +371,15 @@ async fn enqueue_plugin_work(
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = grapl_tracing::setup_tracing("analyzer-dispatcher");
     let config = AnalyzerDispatcherConfig::parse();
-    let plugin_work_queue_client_config = PluginWorkQueueClientConfig::parse();
-    let plugin_work_queue_client =
-        PluginWorkQueueServiceClient::connect_with_config(plugin_work_queue_client_config).await?;
+    let plugin_work_queue_client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
+        .extract()?;
+    let plugin_work_queue_client = PluginWorkQueueClient::connect_with_healthcheck(
+        plugin_work_queue_client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
     let worker_pool_size = config.params.worker_pool_size;
     let mut analyzer_dispatcher = AnalyzerDispatcher::new(config, plugin_work_queue_client).await?;
 

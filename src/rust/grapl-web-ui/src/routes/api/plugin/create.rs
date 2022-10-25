@@ -7,7 +7,7 @@ use futures::{
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginMetadata,
-    PluginRegistryServiceClient,
+    PluginRegistryClient,
     PluginType,
 };
 
@@ -46,7 +46,7 @@ pub struct CreateResponse {
 /// // <bytes>
 #[tracing::instrument(skip(plugin_registry_client, payload))]
 pub(super) async fn create(
-    plugin_registry_client: web::Data<PluginRegistryServiceClient>,
+    plugin_registry_client: web::Data<PluginRegistryClient>,
     user: crate::authn::AuthenticatedUser,
     mut payload: Multipart,
 ) -> Result<impl actix_web::Responder, PluginError> {

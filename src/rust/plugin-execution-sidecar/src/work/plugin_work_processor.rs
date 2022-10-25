@@ -1,23 +1,21 @@
 use rust_proto::{
     graplinc::grapl::api::{
+        client::ClientError,
         plugin_work_queue::v1beta1::{
             ExecutionJob,
-            PluginWorkQueueServiceClient,
+            PluginWorkQueueClient,
         },
-        protocol::error::GrpcClientError,
     },
     SerDe,
 };
 use uuid::Uuid;
 
-use crate::config::PluginExecutorConfig;
-
 pub type RequestId = i64;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PluginWorkProcessorError {
-    #[error("GrpcClientError {0}")]
-    GrpcClientError(#[from] GrpcClientError),
+    #[error("ClientError {0}")]
+    ClientError(#[from] ClientError),
     #[error("Processing job failed, marking failed: {0}")]
     ProcessingJobFailed(String),
     #[error("Processing job failed, PWQ will retry: {0}")]
@@ -27,7 +25,7 @@ pub enum PluginWorkProcessorError {
 impl PluginWorkProcessorError {
     pub fn is_retriable(&self) -> bool {
         match self {
-            PluginWorkProcessorError::GrpcClientError(_) => true,
+            PluginWorkProcessorError::ClientError(_) => true,
             PluginWorkProcessorError::ProcessingJobFailedRetriable(_) => true,
             PluginWorkProcessorError::ProcessingJobFailed(_) => false,
         }
@@ -47,20 +45,20 @@ pub trait PluginWorkProcessor {
 
     async fn get_work(
         &self,
-        config: &PluginExecutorConfig,
-        pwq_client: &mut PluginWorkQueueServiceClient,
+        plugin_id: Uuid,
+        pwq_client: &mut PluginWorkQueueClient,
     ) -> Result<Self::Work, PluginWorkProcessorError>;
 
     async fn process_job(
         &mut self,
-        config: &PluginExecutorConfig,
+        plugin_id: Uuid,
         work: ExecutionJob,
     ) -> Result<Self::ProducedMessage, PluginWorkProcessorError>;
 
     async fn ack_work(
         &self,
-        config: &PluginExecutorConfig,
-        pwq_client: &mut PluginWorkQueueServiceClient,
+        plugin_id: Uuid,
+        pwq_client: &mut PluginWorkQueueClient,
         process_result: Result<Self::ProducedMessage, PluginWorkProcessorError>,
         request_id: RequestId,
         tenant_id: Uuid,

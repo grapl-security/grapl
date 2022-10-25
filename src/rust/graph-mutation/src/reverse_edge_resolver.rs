@@ -1,12 +1,12 @@
 use rust_proto::graplinc::grapl::{
-    api::graph_schema_manager::v1beta1::{
-        client::{
-            GraphSchemaManagerClient,
-            GraphSchemaManagerClientError,
-        },
-        messages::{
-            GetEdgeSchemaRequest,
-            GetEdgeSchemaResponse,
+    api::{
+        client::ClientError,
+        graph_schema_manager::v1beta1::{
+            client::GraphSchemaManagerClient,
+            messages::{
+                GetEdgeSchemaRequest,
+                GetEdgeSchemaResponse,
+            },
         },
     },
     common::v1beta1::types::{
@@ -17,8 +17,8 @@ use rust_proto::graplinc::grapl::{
 
 #[derive(thiserror::Error, Debug)]
 pub enum ReverseEdgeResolverError {
-    #[error("couldn't resolve reverse edge from Graph Schema Manager: {0}")]
-    GraphSchemaManagerClientError(#[from] GraphSchemaManagerClientError),
+    #[error("gRPC client error: {0}")]
+    ClientError(#[from] ClientError),
 }
 
 #[derive(Clone)]

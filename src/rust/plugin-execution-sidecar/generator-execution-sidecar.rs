@@ -1,25 +1,43 @@
-use clap::Parser;
+use std::time::Duration;
+
+use figment::{
+    providers::Env,
+    Figment,
+};
 use grapl_tracing::setup_tracing;
 use plugin_execution_sidecar::{
-    config::PluginExecutorConfig,
     plugin_executor::PluginExecutor,
     work::GeneratorWorkProcessor,
 };
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use uuid::Uuid;
+
 const SERVICE_NAME: &'static str = "generator-execution-sidecar";
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct SidecarConfig {
+    plugin_id: Uuid,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = setup_tracing(SERVICE_NAME)?;
-    let plugin_executor_config = PluginExecutorConfig::parse();
-
     tracing::info!("logging configured successfully");
 
     // Give the plugin a little time to become available.
-    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+    tokio::time::sleep(Duration::from_secs(5)).await;
 
-    let generator_work_processor = GeneratorWorkProcessor::new(&plugin_executor_config).await?;
+    let generator_work_processor = GeneratorWorkProcessor::new().await?;
+
+    let sidecar_config: SidecarConfig = Figment::new()
+        .merge(Env::prefixed("GENERATOR_EXECUTION_SIDECAR_"))
+        .extract()?;
+
     let mut plugin_executor =
-        PluginExecutor::new(plugin_executor_config, generator_work_processor).await?;
+        PluginExecutor::new(sidecar_config.plugin_id, generator_work_processor).await?;
 
     tracing::info!("starting generator executor");
 

@@ -1,11 +1,20 @@
+use std::time::Duration;
+
 use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use grapl_config::env_helpers::FromEnv;
 use rand::Rng;
 use rusoto_dynamodb::DynamoDbClient;
 use rust_proto::graplinc::grapl::api::{
-    client_factory::services::PluginRegistryClientConfig,
-    plugin_registry::v1beta1::PluginRegistryServiceClient,
-    protocol::service_client::ConnectWithConfig,
+    client::{
+        ClientConfiguration,
+        ClientError,
+        Connect,
+    },
+    plugin_registry::v1beta1::PluginRegistryClient,
 };
 
 use crate::upstream::GraphQlEndpointUrl;
@@ -23,9 +32,9 @@ pub enum ConfigError {
     #[error(transparent)]
     BindAddress(#[from] std::io::Error),
     #[error("failed to initialize Plugin Regsitry client: {0}")]
-    PluginRegistryClient(
-        #[from] rust_proto::graplinc::grapl::api::protocol::service_client::ConnectError,
-    ),
+    ClientError(#[from] ClientError),
+    #[error("failed to do the configuring: {0}")]
+    FigmentError(#[from] figment::Error),
 }
 
 pub struct Config {
@@ -35,7 +44,7 @@ pub struct Config {
     pub user_auth_table_name: String,
     pub user_session_table_name: String,
     pub graphql_endpoint: GraphQlEndpointUrl,
-    pub plugin_registry_client: PluginRegistryServiceClient,
+    pub plugin_registry_client: PluginRegistryClient,
     pub google_client_id: String,
 }
 
@@ -45,9 +54,16 @@ impl Config {
 
         let listener = std::net::TcpListener::bind(builder.bind_address)?;
 
-        let plugin_registry_client =
-            PluginRegistryServiceClient::connect_with_config(builder.plugin_registry_config)
-                .await?;
+        let plugin_registry_config: ClientConfiguration = Figment::new()
+            .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+            .extract()?;
+
+        let plugin_registry_client = PluginRegistryClient::connect_with_healthcheck(
+            plugin_registry_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await?;
 
         let dynamodb_client = DynamoDbClient::from_env();
 
@@ -80,8 +96,6 @@ pub struct ConfigBuilder {
     pub user_session_table_name: String,
     #[clap(env = "GRAPL_GRAPHQL_ENDPOINT")]
     pub graphql_endpoint: GraphQlEndpointUrl,
-    #[clap(flatten)]
-    pub plugin_registry_config: PluginRegistryClientConfig,
     #[clap(env = "GRAPL_GOOGLE_CLIENT_ID")]
     pub google_client_id: String,
 }

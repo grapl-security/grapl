@@ -3,10 +3,16 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::{
-    client_factory::services::PluginRegistryClientConfig,
+    client::{
+        ClientError,
+        Connect,
+    },
     plugin_registry::v1beta1::{
         DeployPluginRequest,
         GetPluginDeploymentRequest,
@@ -15,15 +21,11 @@ use rust_proto::graplinc::grapl::api::{
         PluginDeploymentStatus,
         PluginHealthStatus,
         PluginMetadata,
-        PluginRegistryServiceClient,
+        PluginRegistryClient,
         PluginType,
         TearDownPluginRequest,
     },
-    protocol::{
-        error::GrpcClientError,
-        service_client::ConnectWithConfig,
-        status::Code,
-    },
+    protocol::status::Code,
 };
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");
@@ -38,8 +40,15 @@ fn get_sysmon_generator() -> Result<Bytes, std::io::Error> {
 
 #[test_log::test(tokio::test)]
 async fn test_deploy_example_generator() -> eyre::Result<()> {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -86,8 +95,15 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
 
 #[test_log::test(tokio::test)]
 async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -143,7 +159,7 @@ fn assert_contains(input: &str, expected_substr: &str) {
 }
 
 async fn assert_health(
-    client: &mut PluginRegistryServiceClient,
+    client: &mut PluginRegistryClient,
     plugin_id: uuid::Uuid,
     expected: PluginHealthStatus,
 ) -> eyre::Result<()> {
@@ -164,8 +180,15 @@ async fn assert_health(
 /// So we *expect* this call to fail since it's an arbitrary PluginID that
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 
@@ -177,7 +200,7 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
         .await?;
 
     match response {
-        Err(GrpcClientError::ErrorStatus(s)) => {
+        Err(ClientError::Status(s)) => {
             assert_eq!(s.code(), Code::NotFound);
             assert_contains(s.message(), &sqlx::Error::RowNotFound.to_string());
         }
@@ -188,10 +211,17 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
 
 #[test_log::test(tokio::test)]
 async fn test_teardown_plugin() {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config)
-        .await
-        .expect("failed to build grpc client");
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .extract()
+        .expect("failed to configure plugin-registry client");
+    let mut client = PluginRegistryClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await
+    .expect("failed to connect to plugin-registry");
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();

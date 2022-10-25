@@ -21,6 +21,7 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
+figment = { version = "0.10", features = ["env"] }
 futures = "0.3"
 grapl-tracing = { path = "../grapl-tracing" }
 rust-proto = { path = "../rust-proto" }

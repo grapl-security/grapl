@@ -12,6 +12,7 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
+figment = { version = "0.10", features = ["env"] }
 serde = { version = "1.0.136", features = ["derive"] }
 tokio = { version = "1.17.0", features = ["full"] }
 uuid = { version = "1.0.0", features = ["v4"] }

@@ -1,21 +1,33 @@
 #![cfg(feature = "integration_tests")]
 
-use std::time::SystemTime;
+use std::time::{
+    Duration,
+    SystemTime,
+};
 
-use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use rust_proto::graplinc::grapl::api::{
-    client_factory::services::EventSourceClientConfig,
+    client::Connect,
     event_source::v1beta1::{
         self as es_api,
-        client::EventSourceServiceClient,
+        client::EventSourceClient,
     },
-    protocol::service_client::ConnectWithConfig,
 };
 
 #[test_log::test(tokio::test)]
 async fn test_create_update_get() -> eyre::Result<()> {
-    let client_config = EventSourceClientConfig::parse();
-    let mut client = EventSourceServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("EVENT_SOURCE_CLIENT_"))
+        .extract()?;
+    let mut client = EventSourceClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

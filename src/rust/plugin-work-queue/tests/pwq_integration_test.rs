@@ -2,23 +2,31 @@
 
 use std::time::Duration;
 
-use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use rust_proto::graplinc::grapl::api::{
-    client_factory::services::PluginWorkQueueClientConfig,
+    client::Connect,
     plugin_work_queue::v1beta1::{
         ExecutionJob,
         GetExecuteGeneratorRequest,
-        PluginWorkQueueServiceClient,
+        PluginWorkQueueClient,
         PushExecuteGeneratorRequest,
     },
-    protocol::service_client::ConnectWithConfig,
 };
 
 #[tokio::test]
 async fn test_push_and_get_execute_generator() -> eyre::Result<()> {
-    let mut pwq_client =
-        PluginWorkQueueServiceClient::connect_with_config(PluginWorkQueueClientConfig::parse())
-            .await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
+        .extract()?;
+    let mut pwq_client = PluginWorkQueueClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
 
     // Send 2 jobs to Plugin Work Queue
     let tenant_id = uuid::Uuid::new_v4();
@@ -106,9 +114,15 @@ async fn test_push_and_get_execute_generator() -> eyre::Result<()> {
 
 #[tokio::test]
 async fn test_message_available_after_failure() -> eyre::Result<()> {
-    let mut pwq_client =
-        PluginWorkQueueServiceClient::connect_with_config(PluginWorkQueueClientConfig::parse())
-            .await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
+        .extract()?;
+    let mut pwq_client = PluginWorkQueueClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
 
     // Send a job to Plugin Work Queue
     let tenant_id = uuid::Uuid::new_v4();

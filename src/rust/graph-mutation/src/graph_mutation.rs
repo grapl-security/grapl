@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use rust_proto::graplinc::grapl::{
     api::{
+        client::ClientError,
         graph::v1beta1::Property,
         graph_mutation::v1beta1::{
             messages::{
@@ -16,7 +17,6 @@ use rust_proto::graplinc::grapl::{
             server::GraphMutationApi,
         },
         protocol::status::Status,
-        uid_allocator::v1beta1::client::UidAllocatorServiceClientError,
     },
     common::v1beta1::types::{
         EdgeName,
@@ -29,7 +29,7 @@ use scylla::{
     query::Query,
     CachingSession,
 };
-use uid_allocator::client::CachingUidAllocatorServiceClient as UidAllocatorClient;
+use uid_allocator::client::CachingUidAllocatorClient as UidAllocatorClient;
 
 use crate::{
     reverse_edge_resolver::{
@@ -51,12 +51,15 @@ use crate::{
 
 #[derive(thiserror::Error, Debug)]
 pub enum GraphMutationManagerError {
-    #[error("UidAllocatorServiceClientError {0}")]
-    UidAllocatorServiceClientError(#[from] UidAllocatorServiceClientError),
+    #[error("gRPC client error {0}")]
+    ClientError(#[from] ClientError),
+
     #[error("Allocated Zero Uid")]
     ZeroUid,
+
     #[error("Scylla Error: {0}")]
     ScyllaError(#[from] scylla::transport::errors::QueryError),
+
     #[error("ReverseEdgeResolverError: {0}")]
     ReverseEdgeResolverError(#[from] ReverseEdgeResolverError),
 }
@@ -64,16 +67,11 @@ pub enum GraphMutationManagerError {
 impl From<GraphMutationManagerError> for Status {
     fn from(e: GraphMutationManagerError) -> Self {
         match e {
-            GraphMutationManagerError::UidAllocatorServiceClientError(
-                UidAllocatorServiceClientError::SerDeError(e),
-            ) => Status::internal(format!(
-                "Failed to deserialize response from UidAllocator {:?}",
-                e
-            )),
-            GraphMutationManagerError::UidAllocatorServiceClientError(
-                UidAllocatorServiceClientError::ErrorStatus(e),
-            ) => e,
-            GraphMutationManagerError::UidAllocatorServiceClientError(_) => {
+            GraphMutationManagerError::ClientError(ClientError::SerDe(e)) => Status::internal(
+                format!("Failed to deserialize response from UidAllocator {:?}", e),
+            ),
+            GraphMutationManagerError::ClientError(ClientError::Status(e)) => e,
+            GraphMutationManagerError::ClientError(_) => {
                 Status::internal(format!("UidAllocatorClient error: {e:?}"))
             }
             GraphMutationManagerError::ZeroUid => Status::failed_precondition("Allocated Zero Uid"),

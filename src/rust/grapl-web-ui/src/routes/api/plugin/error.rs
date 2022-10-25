@@ -1,10 +1,10 @@
-use rust_proto::graplinc::grapl::api::protocol::error::GrpcClientError;
+use rust_proto::graplinc::grapl::api::client::ClientError;
 
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
 pub enum PluginError {
     #[error(transparent)]
-    PluginRegistryClient(#[from] GrpcClientError),
+    GrpcClient(#[from] ClientError),
     #[error(transparent)]
     Multipart(#[from] actix_multipart::MultipartError),
     #[error("{message}")]

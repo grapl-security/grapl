@@ -1,21 +1,25 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use bytes::Bytes;
-use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::{
-    client_factory::services::PluginRegistryClientConfig,
+    client::{
+        ClientError,
+        Connect,
+    },
     plugin_registry::v1beta1::{
         GetGeneratorsForEventSourceRequest,
         PluginMetadata,
-        PluginRegistryServiceClient,
+        PluginRegistryClient,
         PluginType,
     },
-    protocol::{
-        error::GrpcClientError,
-        service_client::ConnectWithConfig,
-        status::Code,
-    },
+    protocol::status::Code,
 };
 
 #[test_log::test(tokio::test)]
@@ -24,8 +28,15 @@ async fn test_get_generators_for_event_source() -> eyre::Result<()> {
         env=?std::env::args(),
     );
 
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let generator1_display_name = "my first generator".to_string();
@@ -111,8 +122,15 @@ async fn test_get_generators_for_event_source_not_found() -> eyre::Result<()> {
         env=?std::env::args(),
     );
 
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect_with_healthcheck(
+        client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 
@@ -122,7 +140,7 @@ async fn test_get_generators_for_event_source_not_found() -> eyre::Result<()> {
         .await?
     {
         match e {
-            GrpcClientError::ErrorStatus(s) => {
+            ClientError::Status(s) => {
                 if let Code::NotFound = s.code() {
                     Ok(()) // 👍 great success 👍
                 } else {

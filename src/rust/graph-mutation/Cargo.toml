@@ -13,6 +13,7 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 dashmap = "5.2.0"
+figment = { version = "0.10", features=["env"] }
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 hash_hasher = "2.0.3"

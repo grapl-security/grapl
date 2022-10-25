@@ -365,6 +365,7 @@ dependencies = [
  "clap 3.2.13",
  "e2e-tests",
  "eyre",
+ "figment",
  "futures",
  "grapl-tracing",
  "kafka",
@@ -510,6 +511,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7c57d12312ff59c811c0643f4d80830505833c9ffaebd193d819392b265be8e"
 dependencies = [
  "num-traits",
+]
+
+[[package]]
+name = "atomic"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b88d82667eca772c4aa12f0f1348b3ae643424c8876448f3f7bd5787032e234c"
+dependencies = [
+ "autocfg 1.1.0",
 ]
 
 [[package]]
@@ -1505,6 +1515,7 @@ dependencies = [
  "bytes",
  "clap 3.2.13",
  "eyre",
+ "figment",
  "futures",
  "grapl-config",
  "grapl-tracing",
@@ -1605,6 +1616,7 @@ dependencies = [
  "clap 3.2.13",
  "env_logger 0.9.0",
  "eyre",
+ "figment",
  "grapl-config",
  "grapl-tracing",
  "grapl-utils",
@@ -1657,6 +1669,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3fcf0cee53519c866c09b5de1f6c56ff9d647101f81c1964fa632e148896cdf"
 dependencies = [
  "instant",
+]
+
+[[package]]
+name = "figment"
+version = "0.10.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e56602b469b2201400dec66a66aec5a9b8761ee97cd1b8c96ab2483fcc16cc9"
+dependencies = [
+ "atomic",
+ "pear",
+ "serde",
+ "uncased",
+ "version_check",
 ]
 
 [[package]]
@@ -1833,6 +1858,7 @@ dependencies = [
  "clap 3.2.13",
  "e2e-tests",
  "eyre",
+ "figment",
  "futures",
  "grapl-tracing",
  "kafka",
@@ -1852,6 +1878,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "clap 3.2.13",
+ "figment",
  "grapl-tracing",
  "rust-proto",
  "serde",
@@ -1955,6 +1982,7 @@ dependencies = [
  "blake2",
  "clap 3.2.13",
  "dashmap",
+ "figment",
  "grapl-tracing",
  "grapl-utils",
  "hash_hasher",
@@ -1979,6 +2007,7 @@ dependencies = [
  "clap 3.2.13",
  "env_logger 0.9.0",
  "eyre",
+ "figment",
  "futures",
  "grapl-tracing",
  "itertools 0.10.3",
@@ -2007,6 +2036,7 @@ dependencies = [
  "bytes",
  "clap 3.2.13",
  "eyre",
+ "figment",
  "grapl-config",
  "grapl-graphql-codegen",
  "grapl-tracing",
@@ -2096,6 +2126,7 @@ dependencies = [
  "clap 3.2.13",
  "e2e-tests",
  "eyre",
+ "figment",
  "futures",
  "grapl-config",
  "grapl-tracing",
@@ -2435,6 +2466,12 @@ dependencies = [
  "autocfg 1.1.0",
  "hashbrown 0.12.3",
 ]
+
+[[package]]
+name = "inlinable_string"
+version = "0.1.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8fae54786f62fb2918dcfae3d568594e50eb9b5c25bf04371af6fe7516452fb"
 
 [[package]]
 name = "instant"
@@ -3204,6 +3241,7 @@ dependencies = [
  "clap 3.2.13",
  "env_logger 0.9.0",
  "eyre",
+ "figment",
  "grapl-config",
  "grapl-tracing",
  "grapl-utils",
@@ -3328,6 +3366,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c520e05135d6e763148b6426a837e239041653ba7becd2e538c076c738025fc"
 
 [[package]]
+name = "pear"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15e44241c5e4c868e3eaa78b7c1848cadd6344ed4f54d029832d32b415a58702"
+dependencies = [
+ "inlinable_string",
+ "pear_codegen",
+ "yansi",
+]
+
+[[package]]
+name = "pear_codegen"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82a5ca643c2303ecb740d506539deba189e16f2754040a42901cd8105d0282d0"
+dependencies = [
+ "proc-macro2",
+ "proc-macro2-diagnostics",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "pem"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3401,6 +3462,7 @@ dependencies = [
  "bytes",
  "clap 3.2.13",
  "eyre",
+ "figment",
  "futures",
  "grapl-tracing",
  "kafka",
@@ -3476,6 +3538,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "clap 3.2.13",
+ "figment",
  "futures",
  "grapl-tracing",
  "rust-proto",
@@ -3491,8 +3554,10 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "clap 3.2.13",
+ "figment",
  "grapl-tracing",
  "rust-proto",
+ "serde",
  "thiserror",
  "tokio",
  "tracing",
@@ -3508,6 +3573,7 @@ dependencies = [
  "clap 3.2.13",
  "env_logger 0.9.0",
  "eyre",
+ "figment",
  "futures",
  "futures-retry",
  "grapl-config",
@@ -3537,6 +3603,7 @@ dependencies = [
  "chrono",
  "clap 3.2.13",
  "eyre",
+ "figment",
  "futures",
  "grapl-config",
  "grapl-tracing",
@@ -3639,6 +3706,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd96a1e8ed2596c337f8eae5f24924ec83f5ad5ab21ea8e455d3566c69fbcaf7"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "proc-macro2-diagnostics"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4bf29726d67464d49fa6224a1d07936a8c08bb3fba727c7493f6cf1616fdaada"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "version_check",
+ "yansi",
 ]
 
 [[package]]
@@ -4258,8 +4338,8 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.13",
  "client-executor",
+ "figment",
  "futures",
  "proptest",
  "prost 0.10.4",
@@ -4268,6 +4348,7 @@ dependencies = [
  "quickcheck_macros",
  "rand 0.8.5",
  "rustc-hash",
+ "serde",
  "test-context",
  "thiserror",
  "tokio",
@@ -5692,6 +5773,7 @@ dependencies = [
  "dashmap",
  "env_logger 0.9.0",
  "eyre",
+ "figment",
  "futures",
  "grapl-config",
  "grapl-tracing",
@@ -5710,6 +5792,15 @@ dependencies = [
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "uncased"
+version = "0.9.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09b01702b0fd0b3fadcf98e098780badda8742d4f4a7676615cad90e8ac73622"
+dependencies = [
+ "version_check",
 ]
 
 [[package]]
@@ -6141,6 +6232,12 @@ name = "xmlparser"
 version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "114ba2b24d2167ef6d67d7d04c8cc86522b87f490025f39f0303b7db5bf5e3d8"
+
+[[package]]
+name = "yansi"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09041cd90cf85f7f8b2df60c646f853b7f535ce68f85244eb6731cf89fa498ec"
 
 [[package]]
 name = "zeroize"

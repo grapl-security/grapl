@@ -6,7 +6,7 @@ use actix_web::{
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     GetAnalyzersForTenantRequest,
-    PluginRegistryServiceClient,
+    PluginRegistryClient,
 };
 use uuid::Uuid;
 
@@ -19,7 +19,7 @@ pub struct GetAnalyzersResponse {
 
 #[tracing::instrument(skip(plugin_registry_client))]
 pub(super) async fn get_analyzers(
-    plugin_registry_client: web::Data<PluginRegistryServiceClient>,
+    plugin_registry_client: web::Data<PluginRegistryClient>,
     user: crate::authn::AuthenticatedUser,
 ) -> Result<impl Responder, PluginError> {
     let authenticated_tenant_id = user.get_organization_id();

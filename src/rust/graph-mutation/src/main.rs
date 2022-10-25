@@ -5,22 +5,24 @@ use std::{
 };
 
 use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use graph_mutation::{
     config::GraphMutationServiceConfig,
     graph_mutation::GraphMutationManager,
     reverse_edge_resolver::ReverseEdgeResolver,
 };
 use rust_proto::graplinc::grapl::api::{
+    client::Connect,
     graph_mutation::v1beta1::server::GraphMutationServer,
     graph_schema_manager::v1beta1::client::GraphSchemaManagerClient,
-    protocol::{
-        healthcheck::HealthcheckStatus,
-        service_client::ConnectWithConfig,
-    },
+    protocol::healthcheck::HealthcheckStatus,
 };
 use scylla::CachingSession;
 use tokio::net::TcpListener;
-use uid_allocator::client::CachingUidAllocatorServiceClient as CachingUidAllocatorClient;
+use uid_allocator::client::CachingUidAllocatorClient;
 
 const SERVICE_NAME: &'static str = "graph-mutation";
 
@@ -38,12 +40,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         scylla::Session::connect(scylla_config).await?,
         10_000,
     ));
-    let graph_schema_manager_client =
-        GraphSchemaManagerClient::connect_with_config(config.graph_schema_manager_client_config)
-            .await?;
+
+    let graph_schema_manager_client_config = Figment::new()
+        .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_CLIENT_"))
+        .extract()?;
+    let graph_schema_manager_client = GraphSchemaManagerClient::connect_with_healthcheck(
+        graph_schema_manager_client_config,
+        Duration::from_secs(60),
+        Duration::from_secs(1),
+    )
+    .await?;
+
+    let uid_allocator_client_config = Figment::new()
+        .merge(Env::prefixed("UID_ALLOCATOR_CLIENT_"))
+        .extract()?;
     let uid_allocator_client =
-        CachingUidAllocatorClient::from_client_config(config.uid_allocator_client_config, 100)
-            .await?;
+        CachingUidAllocatorClient::from_client_config(uid_allocator_client_config, 100).await?;
+
     let graph_mutation_service = GraphMutationManager::new(
         scylla_client,
         uid_allocator_client,
