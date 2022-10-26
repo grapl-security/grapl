@@ -101,7 +101,6 @@ variable "plugin_work_queue_db" {
 locals {
   dns_servers = [attr.unique.network.ip-address]
 
-  # Currently we use the same version for all containers. As such we pick one container to get the version from
   app_version                      = split(":", var.container_images["rust-integration-tests"])[1]
   default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
 }
