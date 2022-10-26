@@ -20,6 +20,7 @@ class ConsulConfig(pulumi.ComponentResource):
 
         # Instead of using a reading a hcl file or a template, we're just going to define it here as a plain python dict
         # so it's easy to pass in an url.
+        # https://developer.hashicorp.com/consul/docs/connect/config-entries/proxy-defaults
         config = {
             "Config": [
                 {
