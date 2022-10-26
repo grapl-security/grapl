@@ -14,6 +14,7 @@ from infra.grapl_stack import GraplStack
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Credential, Kafka
 from infra.nomad_job import NomadJob, NomadVars
+from infra.observability_env_vars import get_observability_env_vars
 
 import pulumi
 
@@ -74,6 +75,7 @@ def main() -> None:
         "kafka_consumer_group": kafka.consumer_group("integration-tests"),
         "kafka_credentials": kafka_credentials,
         "rust_log": log_levels.RUST_LOG_LEVELS,
+        "observability_env_vars": get_observability_env_vars(),
         "organization_management_db": grapl_stack.organization_management_db,
         "plugin_work_queue_db": grapl_stack.plugin_work_queue_db,
         "user_auth_table": grapl_stack.user_auth_table,
