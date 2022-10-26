@@ -1,6 +1,10 @@
+# Learn about the different Linguist overrides here:
+# https://github.com/github/linguist/blob/master/docs/overrides.md#summary
+
 # Hide generated files during diff
 3rdparty/python/constraints.txt linguist-generated=true
 3rdparty/python/*.lockfile linguist-generated=true
+src/js/**/yarn.lock linguist-generated=true
+src/rust/Cargo.lock linguist-generated=true
 src/rust/nomad-client-gen/** linguist-generated=true
 src/rust/**/sqlx-data.json linguist-generated=true
-src/js/**/yarn.lock linguist-generated=true
