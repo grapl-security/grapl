@@ -15,31 +15,26 @@ integration_tests = []
 
 [dependencies]
 actix-files = "0.6"
+actix-multipart = "0.4"
 actix-session = "0.5"
 actix-web = { version = "4.1", default_features = false, features = [
   "macros",
   "compress-brotli"
 ] }
-actix-multipart = "0.4"
-actix-web-opentelemetry = { version = "0.12", features = ["awc"] }
 argon2 = { version = "0.4", features = ["std"] }
 awc = { version = "3", default_features = false, features = [
   "compress-brotli"
 ] }
+bytes = { workspace = true }
 chrono = { version = "0.4" }
-clap = { version = "3", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
-figment = { version = "0.10", features = ["env"] }
+clap = { workspace = true }
+figment = { workspace= true }
 futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 hmap = "0.1"
 jsonwebtoken-google = "0.1"
-opentelemetry = { version = "0.17", features = ["rt-tokio"] }
 rand = "0.8"
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
@@ -51,20 +46,19 @@ rust-proto = { path = "../rust-proto" }
 secrecy = { version = "0.8", features = ["serde"] }
 serde = "1"
 serde_dynamodb = "0.9"
-thiserror = "1.0"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-tracing = "0.1"
-tracing-opentelemetry = "0.17"
+serde_json = "1"
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
 tracing-subscriber = "0.3"
 url = "2.2"
-serde_json = "1"
-uuid = { version = "1.0", features = ["v4"] }
+uuid = { workspace = true }
 
 [dev-dependencies]
-eyre = "0.6"
+e2e-tests = { path = "../e2e-tests" }
+eyre = { workspace = true }
 reqwest = { version = "0.11", default-features = false, features = [
   "json",
   "cookies",
   "multipart"
 ] }
-e2e-tests = { path = "../e2e-tests" }

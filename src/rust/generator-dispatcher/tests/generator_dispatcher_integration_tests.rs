@@ -4,9 +4,9 @@ use bytes::Bytes;
 use e2e_tests::test_utils::context::{
     E2eTestContext,
     SetupGeneratorOptions,
-    SetupResult,
+    SetupGeneratorResult,
 };
-use plugin_work_queue::test_utils::scan_for_plugin_message_in_pwq;
+use plugin_work_queue::test_utils::scan_for_generator_plugin_message_in_pwq;
 use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::PublishRawLogRequest;
 use test_context::test_context;
 
@@ -15,14 +15,18 @@ use test_context::test_context;
 async fn test_dispatcher_inserts_job_into_plugin_work_queue(
     ctx: &mut E2eTestContext,
 ) -> eyre::Result<()> {
+    let _span = tracing::info_span!("test_dispatcher_inserts_job_into_plugin_work_queue").entered();
     let test_name = "test_dispatcher_inserts_job_into_plugin_work_queue";
     let generator_artifact = Bytes::from("arbitrary binary");
-    let SetupResult {
+
+    let tenant_id = ctx.create_tenant().await?;
+    let SetupGeneratorResult {
         tenant_id,
-        plugin_id,
+        generator_plugin_id,
         event_source_id,
     } = ctx
         .setup_generator(SetupGeneratorOptions {
+            tenant_id,
             test_name: test_name.to_owned(),
             generator_artifact,
             should_deploy_generator: false,
@@ -84,8 +88,11 @@ async fn test_dispatcher_inserts_job_into_plugin_work_queue(
         ))
         .await?;
 
-    let matching_job =
-        scan_for_plugin_message_in_pwq(ctx.plugin_work_queue_psql_client.clone(), plugin_id).await;
+    let matching_job = scan_for_generator_plugin_message_in_pwq(
+        ctx.plugin_work_queue_psql_client.clone(),
+        generator_plugin_id,
+    )
+    .await;
     assert!(matching_job.is_some());
     Ok(())
 }

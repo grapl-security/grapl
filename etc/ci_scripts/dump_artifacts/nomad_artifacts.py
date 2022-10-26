@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import sys
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, cast
 
@@ -126,7 +127,7 @@ class NomadAllocation:
         return self.allocation_id.split("-")[0]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=False)
 class NomadTask:
     parent: NomadAllocation = dataclasses.field(repr=False)
     name: str
@@ -168,6 +169,7 @@ def _get_allocations(
         job_name: [
             NomadAllocation(a, parent=parent, opts=opts)
             for a in nomad_client.job.get_allocations(job_name)
+            if a["ClientStatus"] != "lost"
         ]
         for job_name in job_names
     }
@@ -211,12 +213,25 @@ def _write_nomad_logs(
     os.makedirs(write_to_dir, exist_ok=True)
 
     _write_allocation_task_statuses(job_dir=write_to_dir, allocs=allocs)
+
+    # Memoize which allocs a Task occurs in.
+    # tasks[task_name] => {task_one, task_two}
+    task_allocs: dict[str, set[NomadTask]] = defaultdict(set)
+
     for alloc in allocs:
         for task in alloc.tasks:
+            task_allocs[task.name].add(task)
+
+    for (task_name, task_alloc_set) in task_allocs.items():
+        # Skip the `.short_alloc` stuff if there's just one.
+        is_singular = len(task_alloc_set) == 1
+
+        for task in task_alloc_set:
+            suffix = "" if is_singular else f".{task.parent.short_alloc_id}"
             # publish task events
             events = task.get_events()
             if events:
-                filename = f"{task.name}.events.{alloc.short_alloc_id}.log"
+                filename = f"{task_name}.events{suffix}.log"
                 with (write_to_dir / filename).open("w") as file:
                     file.write(events)
 
@@ -225,7 +240,7 @@ def _write_nomad_logs(
                 logs = task.get_logs(nomad_client, output_type)
                 if not logs:
                     continue
-                filename = f"{task.name}.{output_type}.{alloc.short_alloc_id}.log"
+                filename = f"{task.name}.{output_type}{suffix}.log"
                 with (write_to_dir / filename).open("w") as file:
                     file.write(logs)
 

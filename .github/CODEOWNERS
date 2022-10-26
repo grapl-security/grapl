@@ -6,6 +6,7 @@ BUILD @christophermaier
 /BUILDING.md @christophermaier
 /.buildkite/ @christophermaier
 /build-support/ @christophermaier
+/build-support/protoc_version.sh @wimax-grapl
 /CHORES.md @christophermaier
 /CODE_OF_CONDUCT.md @christophermaier
 /codecov.yml @christophermaier
@@ -15,6 +16,7 @@ BUILD @christophermaier
 /docker-bake.hcl @christophermaier
 /docker-compose*.yml @christophermaier
 *Dockerfile* @christophermaier @inickles-grapl
+/docker-plugin-runtime @wimax-grapl
 /Dockerfile.pulumi @christophermaier
 .dockerignore @christophermaier @inickles-grapl
 /docs/ @wimax-grapl
@@ -41,9 +43,8 @@ BUILD @christophermaier
 /.rustfmt.toml @christophermaier
 /scylladb/ @twunderlich-grapl
 /src/js/frontend/ @andrea-grapl
-/src/js/graphql_endpoint/ @andrea-grapl
 /src/proto/ @grapl-security/wg-data-infra
-/src/python/graphql_endpoint_tests/ @wimax-grapl
+/src/python/grapl-plugin-sdk/ @colin-grapl @wimax-grapl
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
 /src/python/grapl-tests-common/ @wimax-grapl
@@ -67,7 +68,8 @@ BUILD @christophermaier
 /src/rust/generators/ @inickles-grapl
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
 /src/rust/graph-mutation/ @colin-grapl
-/src/rust/graph-query-service/ @colin-grapl
+/src/rust/graph-query-proxy/ @colin-grapl
+/src/rust/graph-query/ @colin-grapl
 /src/rust/graph-schema-manager @colin-grapl @wimax-grapl
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl

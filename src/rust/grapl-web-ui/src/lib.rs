@@ -1,7 +1,6 @@
 mod authn;
 mod config;
 pub mod routes;
-mod upstream;
 
 use actix_session::CookieSession;
 use actix_web::{
@@ -25,12 +24,11 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
             ),
             jsonwebtoken_google::Parser::new(&config.google_client_id),
         ));
-        let graphql_endpoint = Data::new(config.graphql_endpoint.clone());
         let plugin_registry_client = Data::new(config.plugin_registry_client.clone());
+        let pipeline_ingress_client = Data::new(config.pipeline_ingress_client.clone());
 
         App::new()
             .wrap(actix_web::middleware::Logger::default())
-            .wrap(actix_web_opentelemetry::RequestTracing::new())
             .wrap(actix_web::middleware::Compress::default())
             .wrap(
                 CookieSession::private(&config.session_key)
@@ -50,7 +48,7 @@ pub fn run(config: config::Config) -> Result<Server, std::io::Error> {
             )))
             .app_data(web_client)
             .app_data(plugin_registry_client)
-            .app_data(graphql_endpoint)
+            .app_data(pipeline_ingress_client)
             .app_data(web_authenticator)
             .configure(routes::config)
     })

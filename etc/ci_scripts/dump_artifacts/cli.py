@@ -10,6 +10,7 @@ from pathlib import Path
 
 # Odd path is due to the `/etc` root pattern in pants.toml, fyi
 from ci_scripts.dump_artifacts import docker_artifacts, nomad_artifacts
+from ci_scripts.dump_artifacts.colorize import Colorize
 
 # need minimum 3.7 for capture_output=True
 assert sys.version_info >= (
@@ -75,11 +76,6 @@ def main() -> None:
         docker_artifacts.dump_all_docker_logs(
             compose_project=compose_project, artifacts_dir=artifacts_dir
         )
-        docker_artifacts.dump_volume(
-            compose_project=compose_project,
-            volume_name="grapl-data-dgraph",
-            artifacts_dir=artifacts_dir,
-        )
 
     # dynamodb dump is done in the e2e binary, which is outside compose - hence, no compose project.
     docker_artifacts.dump_volume(
@@ -101,7 +97,15 @@ def main() -> None:
     shutil.make_archive(base_name=zip_filename, format="zip", root_dir=artifacts_dir)
     shutil.move(src="/tmp/ALL_ARTIFACTS.zip", dst=artifacts_dir)
 
-    LOGGER.info(f"--- Artifacts dumped to {artifacts_dir}")
+    LOGGER.info(
+        "\n".join(
+            [
+                "---",
+                f"--- Artifacts dumped to {Colorize.green(str(artifacts_dir))}",
+                "---",
+            ]
+        )
+    )
 
 
 if __name__ == "__main__":

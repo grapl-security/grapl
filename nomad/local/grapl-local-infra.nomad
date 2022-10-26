@@ -31,9 +31,8 @@ locals {
       port = 5432,
     },
     {
-      name       = "plugin-work-queue-db",
-      port       = 5433,
-      memory_max = 1024,
+      name = "plugin-work-queue-db",
+      port = 5433,
     },
     {
       name = "organization-management-db",
@@ -413,7 +412,11 @@ job "grapl-local-infra" {
         image = "scylladb-ext:${var.image_tag}"
         args = [
           # Set up scylla in single-node mode instead of in overprovisioned mode, ie DON'T use all available cpu/memory
-          "--smp", "1"
+          "--smp", "1",
+          # Since we only have a single node, we can skip some costly startup
+          # stuff. https://github.com/scylladb/scylladb/issues/10007
+          # Anecdotally, for some users it goes from 17s to 5s startup.
+          "--skip-wait-for-gossip-to-settle", "0",
         ]
         ports = ["internal_node_rpc_1", "internal_node_rpc_2", "cql", "thrift", "rest"]
 

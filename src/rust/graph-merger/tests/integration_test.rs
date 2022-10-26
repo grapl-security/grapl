@@ -5,7 +5,7 @@ use std::time::Duration;
 use bytes::Bytes;
 use e2e_tests::test_utils::context::{
     E2eTestContext,
-    SetupResult,
+    SetupGeneratorResult,
 };
 use kafka::{
     config::ConsumerConfig,
@@ -13,30 +13,21 @@ use kafka::{
 };
 use rust_proto::graplinc::grapl::{
     api::{
-        graph::v1beta1::{
-            ImmutableUintProp,
-            MergedGraph,
-            MergedNode,
-            Property,
-        },
         pipeline_ingress::v1beta1::PublishRawLogRequest,
+        plugin_sdk::analyzers::v1beta1::messages::{
+            StringPropertyUpdate,
+            UInt64PropertyUpdate,
+            Update,
+        },
+    },
+    common::v1beta1::types::{
+        PropertyName,
+        Uid,
     },
     pipeline::v1beta1::Envelope,
 };
 use test_context::test_context;
 use uuid::Uuid;
-
-fn find_node<'a>(
-    graph: &'a MergedGraph,
-    o_p_name: &str,
-    o_p_value: Property,
-) -> Option<&'a MergedNode> {
-    graph.nodes.values().find(|n| {
-        n.properties.iter().any(|(p_name, p_value)| {
-            p_name.as_str() == o_p_name && p_value.property.clone() == o_p_value
-        })
-    })
-}
 
 const CONSUMER_TOPIC: &'static str = "merged-graphs";
 
@@ -44,12 +35,17 @@ const CONSUMER_TOPIC: &'static str = "merged-graphs";
 #[tokio::test]
 async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let test_name = "test_sysmon_event_produces_merged_graph";
-    let SetupResult {
+    let tenant_id = ctx.create_tenant().await?;
+    let SetupGeneratorResult {
         tenant_id,
-        plugin_id: _,
+        generator_plugin_id: _,
         event_source_id,
-    } = ctx.setup_sysmon_generator(test_name).await?;
+    } = ctx.setup_sysmon_generator(tenant_id, test_name).await?;
 
+    let priming_message = StringPropertyUpdate {
+        uid: Uid::from_u64(1).unwrap(),
+        property_name: PropertyName::new_unchecked("arbitrary value".to_string()),
+    };
     let kafka_scanner = KafkaTopicScanner::new(
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
         Duration::from_secs(60),
@@ -57,12 +53,13 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
-            MergedGraph::new(),
+            Update::StringProperty(priming_message),
         ),
     );
 
+    let expected_num_messages = 22;
     let handle = kafka_scanner
-        .scan_for_tenant(tenant_id, 1, |_: MergedGraph| true)
+        .scan_for_tenant(tenant_id, expected_num_messages, |_: Update| true)
         .await;
 
     let log_event: Bytes = r#"
@@ -128,43 +125,39 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
     tracing::info!("waiting for kafka_scanner to complete");
 
     let envelopes = handle.await?;
-    assert_eq!(envelopes.len(), 1);
+    assert_eq!(envelopes.len(), expected_num_messages);
 
-    let envelope = envelopes[0].clone();
-    assert_eq!(envelope.tenant_id(), tenant_id);
-    assert_eq!(envelope.event_source_id(), event_source_id);
+    let updates: Vec<Update> = envelopes
+        .into_iter()
+        .map(|envelope| {
+            assert_eq!(envelope.tenant_id(), tenant_id);
+            assert_eq!(envelope.event_source_id(), event_source_id);
 
-    let merged_graph = envelope.inner_message();
+            envelope.inner_message()
+        })
+        .collect();
 
-    let parent_process = find_node(
-        &merged_graph,
-        "process_id",
-        ImmutableUintProp { prop: 6132 }.into(),
-    )
-    .expect("parent process missing");
+    tracing::info!(message="updates", updates=?updates);
 
-    let child_process = find_node(
-        &merged_graph,
-        "process_id",
-        ImmutableUintProp { prop: 5752 }.into(),
-    )
-    .expect("child process missing");
+    let process_id_update = updates.iter().find(|update| {
+        matches!(update.clone(), Update::Uint64Property(UInt64PropertyUpdate {property_name, ..}) if {
+            property_name.value == "process_id"
+        })
+    });
+    assert!(
+        process_id_update.is_some(),
+        "Expected process_id update: {process_id_update:?}"
+    );
 
-    // NOTE: here, unlike node-identifier, we expect the edge connecting the
-    // parent and child proceses to be *absent* in the message emitted to the
-    // merged-graphs topic. The reason for this is that downstream services
-    // (analyzers) don't operate on edges, just nodes. So the view of the graph
-    // diverges at the graph-merger--we now tell one story in our Kafka messages
-    // and a totally different story in Dgraph. This is confusing and we should
-    // fix it:
-    //
-    // https://app.zenhub.com/workspaces/grapl-6036cbd36bacff000ef314f2/issues/grapl-security/issue-tracker/950
-    assert!(!merged_graph
-        .edges
-        .get(parent_process.get_node_key())
-        .iter()
-        .flat_map(|edge_list| edge_list.edges.iter())
-        .any(|edge| edge.to_node_key == child_process.get_node_key()));
+    let process_name_update = updates.iter().find(|update| {
+        matches!(update.clone(), Update::StringProperty(StringPropertyUpdate {property_name, ..}) if {
+            property_name.value == "process_name"
+        })
+    });
+    assert!(
+        process_name_update.is_some(),
+        "Expected process_name update: {process_name_update:?}"
+    );
 
     Ok(())
 }

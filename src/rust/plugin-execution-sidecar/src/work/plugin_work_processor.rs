@@ -7,6 +7,7 @@ use rust_proto::{
         },
     },
     SerDe,
+    SerDeError,
 };
 use uuid::Uuid;
 
@@ -16,10 +17,15 @@ pub type RequestId = i64;
 pub enum PluginWorkProcessorError {
     #[error("ClientError {0}")]
     ClientError(#[from] ClientError),
+
     #[error("Processing job failed, marking failed: {0}")]
     ProcessingJobFailed(String),
+
     #[error("Processing job failed, PWQ will retry: {0}")]
     ProcessingJobFailedRetriable(String),
+
+    #[error("Error serializing/deserializing protocol buffer: {0}")]
+    SerDeError(#[from] SerDeError),
 }
 
 impl PluginWorkProcessorError {
@@ -28,6 +34,7 @@ impl PluginWorkProcessorError {
             PluginWorkProcessorError::ClientError(_) => true,
             PluginWorkProcessorError::ProcessingJobFailedRetriable(_) => true,
             PluginWorkProcessorError::ProcessingJobFailed(_) => false,
+            PluginWorkProcessorError::SerDeError(_) => false,
         }
     }
 }

@@ -13,6 +13,8 @@ else
     ssm_arch_alias="arm64"
 fi
 
+GIT_ROOT=$(git rev-parse --show-toplevel)
+
 ## helper functions
 source_profile() {
     # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
@@ -214,7 +216,7 @@ install_nvm() {
     # shellcheck disable=SC1091
     [ -s "${NVM_DIR}/bash_completion" ] && \. "${NVM_DIR}/bash_completion" # This loads nvm bash_completion
 
-    # Install latest node 18.x. This matches up with frontend, although graphql_endpoint is on 17 :(
+    # Install latest node 18.x.
     nvm install 18
     # Opt in to corepack. With this on, we'll use the version of yarn set by the packageManager property in package.json
     # Yes, with this on we'll have one source of truth for yarn versions!
@@ -266,7 +268,7 @@ install_utilities() {
 install_hashicorp_tools() {
     echo_banner "Installing hashicorp tools: consul nomad packer"
 
-    CONSUL_VERSION="1.12.3-1"
+    CONSUL_VERSION="1.12.5-1"
     NOMAD_VERSION="1.3.5-1"
     PACKER_VERSION="1.8.2-1"
     VAULT_VERSION="1.10.4-1"
@@ -402,13 +404,31 @@ install_nomad_chromeos_workaround() {
 
 install_git_hooks() {
     echo_banner "Installing git hooks"
-    GIT_ROOT=$(git rev-parse --show-toplevel)
     ln --symbolic --relative --force "$GIT_ROOT/etc/hooks/pre-commit.sh" "$GIT_ROOT/.git/hooks/pre-commit"
 }
 
 install_sqlx_prepare_deps() {
     _cargo_install sqlx-cli --no-default-features --features postgres,rustls
     sudo apt install --yes netcat # used for `nc`
+}
+
+install_protoc() {
+    PROTOC_VERSION="$("${GIT_ROOT}"/build-support/protoc_version.sh)"
+    PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+    ZIP_PATH="/tmp/protoc.zip"
+
+    # Download the zip
+    curl \
+        --proto '=https' --tlsv1.2 -sSf \
+        --location \
+        --output "${ZIP_PATH}" \
+        "${PB_REL}/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+
+    mkdir --parents ~/.local
+    # -o: overwrite preexisting ones
+    # -d: Unzip it into ~/.local - which drops `protoc` in ~/.local/bin.
+    unzip -o -d ~/.local "${ZIP_PATH}"
+    rm "${ZIP_PATH}"
 }
 
 install_bk() {

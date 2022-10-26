@@ -87,6 +87,11 @@ variable "PYTHON_VERSION" {
 variable "DIST_DIR" {
 }
 
+# As of Tonic 0.8, we need to download/install our own `protoc` 
+# in the Rust base image.
+variable "PROTOC_VERSION" {
+}
+
 # When performing a release build, we will tag our images with our
 # "raw" Cloudsmith repository Docker registry address. We have a
 # series of repositories that we promote containers through as they
@@ -142,9 +147,9 @@ group "default" {
 group "grapl-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "javascript-services",
     "python-services",
     "rust-services",
+    "plugin-support",
   ]
 }
 
@@ -159,16 +164,25 @@ group "cloudsmith-images" {
   ]
 }
 
+# These are images required to run Plugins inside Grapl.
+group "plugin-support" {
+  targets = [
+    "docker-plugin-runtime",
+  ]
+}
+
 group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "analyzer-dispatcher",
+    "analyzer-execution-sidecar",
     "event-source",
     "generator-dispatcher",
     "generator-execution-sidecar",
     "graph-merger",
     "graph-mutation",
     "graph-query",
+    "graph-query-proxy",
     "graph-schema-manager",
     "grapl-web-ui",
     "kafka-retry",
@@ -187,12 +201,6 @@ group "python-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "provisioner"
-  ]
-}
-
-group "javascript-services" {
-  targets = [
-    "graphql-endpoint"
   ]
 }
 
@@ -237,9 +245,9 @@ group "all" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "all-tests",
-    "local-only-services",
-    "grapl-services",
     "export-rust-build-artifacts-to-dist",
+    "grapl-services",
+    "local-only-services",
   ]
 }
 
@@ -287,8 +295,9 @@ target "_rust-base" {
   }
   dockerfile = "rust/Dockerfile"
   args = {
-    RUST_BUILD   = "${RUST_BUILD}"
-    RUST_VERSION = "${RUST_VERSION}"
+    RUST_BUILD     = "${RUST_BUILD}"
+    RUST_VERSION   = "${RUST_VERSION}"
+    PROTOC_VERSION = "${PROTOC_VERSION}"
   }
 }
 
@@ -341,6 +350,14 @@ target "graph-query" {
   ]
 }
 
+target "graph-query-proxy" {
+  inherits = ["_rust-base"]
+  target   = "graph-query-proxy-deploy"
+  tags = [
+    upstream_aware_tag("graph-query-proxy")
+  ]
+}
+
 target "grapl-web-ui" {
   inherits = ["_rust-base"]
   target   = "grapl-web-ui-deploy"
@@ -354,6 +371,14 @@ target "event-source" {
   target   = "event-source-deploy"
   tags = [
     upstream_aware_tag("event-source")
+  ]
+}
+
+target "analyzer-execution-sidecar" {
+  inherits = ["_rust-base"]
+  target   = "analyzer-execution-sidecar-deploy"
+  tags = [
+    upstream_aware_tag("analyzer-execution-sidecar")
   ]
 }
 
@@ -448,6 +473,22 @@ target "uid-allocator" {
 }
 
 
+# Plugin Runtime
+# ----------------------------------------------------------------------
+
+# This is the Docker image that will host our Generators and Analyzers
+# until we swap over to Firecracker.
+target "docker-plugin-runtime" {
+  inherits = ["_grapl-base"]
+  context  = "docker-plugin-runtime"
+  args = {
+    PYTHON_VERSION = "${PYTHON_VERSION}"
+  }
+  tags = [
+    upstream_aware_tag("docker-plugin-runtime")
+  ]
+}
+
 # Python Services
 # ----------------------------------------------------------------------
 
@@ -473,18 +514,6 @@ target "provisioner" {
   ]
 }
 
-# JavaScript Services
-# ----------------------------------------------------------------------
-
-target "graphql-endpoint" {
-  inherits   = ["_grapl-base"]
-  context    = "src/js/graphql_endpoint"
-  dockerfile = "Dockerfile"
-  target     = "graphql-endpoint-deploy"
-  tags = [
-    upstream_aware_tag("graphql-endpoint")
-  ]
-}
 
 # Testing Images
 # ----------------------------------------------------------------------

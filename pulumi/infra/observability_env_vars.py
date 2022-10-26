@@ -1,14 +1,9 @@
-from infra import config
-
 import pulumi
 
 
-def observability_env_vars_for_local() -> str:
+def get_observability_env_vars() -> str:
     # We currently use both the zipkin v2 endpoint for consul, python and typescript instrumentation and the jaeger udp
     # agent endpoint for rust instrumentation. These will be consolidated in the future
-
-    if not config.LOCAL_GRAPL:
-        return "DUMMY_VAR_FOR_PROD = TRUE"
 
     # These use the weird Mustache {{}} tags because this interpolation eventually
     # gets passed in to a template{} stanza.
@@ -33,13 +28,18 @@ def observability_env_vars_for_local() -> str:
 # typechecking
 def otel_config(
     lightstep_token: pulumi.Output,
-    lightstep_endpoint: str = "ingest.lightstep.com:443",
-    lightstep_is_endpoint_secure: str = "true",
+    nomad_agent_endpoint: str,
+    lightstep_endpoint: str,
+    # This is optional because pulumi.config.get_bool returns Optional[bool]
+    lightstep_is_endpoint_insecure: bool | None,
+    trace_sampling_percentage: float | None,
 ) -> pulumi.Output[str]:
     return pulumi.Output.all(
         lightstep_endpoint=lightstep_endpoint,
         lightstep_token=lightstep_token,
-        lightstep_is_endpoint_secure=lightstep_is_endpoint_secure,
+        lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
+        nomad_agent_endpoint=nomad_agent_endpoint,
+        trace_sampling_percentage=trace_sampling_percentage,
     ).apply(
         lambda args: f"""
 receivers:
@@ -57,13 +57,13 @@ receivers:
     config:
       scrape_configs:
         - job_name: 'nomad-server'
-          scrape_interval: 10s
-          scrape_timeout: 20s
-          metrics_path: '/v1/metrics?format=prometheus'
+          scrape_interval: 20s
+          scrape_timeout: 10s
+          metrics_path: '/v1/metrics'
           params:
             format: ['prometheus']
           static_configs:
-            - targets: ['localhost:4646']
+            - targets: [{args["nomad_agent_endpoint"]}]
 processors:
   batch:
     timeout: 10s
@@ -73,22 +73,36 @@ processors:
     # 25% of limit up to 2G
     spike_limit_mib: 512
     check_interval: 5s
+  # This sets up head-based sampling as the simplest way to add sampling. Ideally, we'd use tail-based sampling which 
+  # allows for rule-based sampling. Unfortunately tail-based sampling doesn't work well with multiple collector 
+  # instances. For it to work, you need agents doing load-balancer exporting to a dedicated processing cluster/service,
+  # which is overkill for our current scale.
+  # TODO create a dedicated processing cluster and switch over to tail-based sampling.
+  probabilistic_sampler:
+    sampling_percentage: {args["trace_sampling_percentage"]}
 exporters:
   logging:
     logLevel: debug
   otlp/ls:
     endpoint: {args['lightstep_endpoint']}
     tls:
-      insecure: {args['lightstep_is_endpoint_secure']}
-    headers:
-      "lightstep-access-token": {args['lightstep_token']}
+      insecure: {args['lightstep_is_endpoint_insecure']}
+    headers: 
+      "lightstep-access-token": "{args['lightstep_token']}"
 service:
   telemetry:
     logs:
       level: "debug"
   pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: [batch]
+      # To enable debug logging, add logging to exporters
+      exporters: [otlp/ls]
     traces:
-      receivers: [jaeger, otlp, prometheus, zipkin]
-      exporters: [logging, otlp/ls]
+      receivers: [jaeger, otlp, zipkin]
+      processors: [batch, memory_limiter, probabilistic_sampler]
+      # To enable debug logging, add logging to exporters
+      exporters: [otlp/ls]
 """
     )

@@ -16,12 +16,11 @@ path = "src/main.rs"
 integration_tests = []
 
 [dependencies]
-anyhow = "1.0"
 async-trait = "0.1"
-bytes = "1.1"
-clap = { version = "3.0", default_features = false, features = ["std", "env"] }
-dgraph-tonic = { version = "0.10", features = ["dgraph-1-1"] }
-dgraph_query_lib = "0.1"
+bytes = { workspace = true }
+clap = { workspace = true }
+eyre = { workspace = true }
+figment = { workspace = true }
 futures = "0.3"
 futures-retry = "0.6"
 grapl-config = { path = "../grapl-config", version = "*" }
@@ -39,19 +38,12 @@ rusoto_dynamodb = { version = "0.47", default_features = false, features = [
 ] }
 rust-proto = { path = "../rust-proto", version = "*" }
 serde_json = "1.0"
-thiserror = "1.0"
-tokio = { version = "1.17", features = [
-  "macros",
-  "rt",
-  "rt-multi-thread",
-  "sync",
-  "time",
-] }
-tracing = "0.1"
-uuid = { version = "1.0", features = ["v4"] }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["sync", "time"] }
+tracing = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
 e2e-tests = { path = "../e2e-tests" }
-eyre = "0.6"
 kafka = { path = "../kafka", features = ["test-utils"] }
-test-context = "0.1"
+test-context = { workspace = true }

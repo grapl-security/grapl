@@ -30,7 +30,7 @@ from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
-from infra.observability_env_vars import observability_env_vars_for_local, otel_config
+from infra.observability_env_vars import get_observability_env_vars, otel_config
 from infra.postgres import Postgres
 from infra.scylla import ScyllaInstance
 
@@ -39,7 +39,6 @@ from infra.scylla import ScyllaInstance
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
 from infra.upstream_stacks import UpstreamStacks
-from pulumi.resource import CustomTimeouts
 from typing_extensions import Final
 
 import pulumi
@@ -66,8 +65,9 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
 
     return {
         "analyzer-dispatcher": builder.build_with_tag("analyzer-dispatcher"),
-        "analyzer-execution-sidecar": DockerImageId("TODO implement analzyer executor"),
-        "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
+        "analyzer-execution-sidecar": builder.build_with_tag(
+            "analyzer-execution-sidecar"
+        ),
         "event-source": builder.build_with_tag("event-source"),
         "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
         "generator-execution-sidecar": builder.build_with_tag(
@@ -76,9 +76,9 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graph-mutation": builder.build_with_tag("graph-mutation"),
         "graph-query": builder.build_with_tag("graph-query"),
+        "graph-query-proxy": builder.build_with_tag("graph-query-proxy"),
         "graph-schema-manager": builder.build_with_tag("graph-schema-manager"),
-        "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
-        "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
+        "hax-docker-plugin-runtime": builder.build_with_tag("docker-plugin-runtime"),
         "kafka-retry": builder.build_with_tag("kafka-retry"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "organization-management": builder.build_with_tag("organization-management"),
@@ -133,9 +133,11 @@ def main() -> None:
     upstream_stacks: UpstreamStacks | None = None
     nomad_provider: pulumi.ProviderResource | None = None
     consul_provider: pulumi.ProviderResource | None = None
+
     if not config.LOCAL_GRAPL:
         upstream_stacks = UpstreamStacks()
         nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server)
+
         # Using get_output instead of require_output so that preview passes.
         # NOTE wimax Feb 2022: Not sure the above is still the case
         consul_master_token_secret_id = upstream_stacks.consul.get_output(
@@ -216,7 +218,7 @@ def main() -> None:
         service: kafka.consumer_group(service) for service in kafka_consumer_services
     }
 
-    observability_env_vars = observability_env_vars_for_local()
+    observability_env_vars = get_observability_env_vars()
 
     # This Google client ID is used by grapl-web-ui for authenticating users via Sign In With Google.
     # TODO: This should be moved to Pulumi config somehwo, but I'm not sure the best way to do that atm.
@@ -244,6 +246,7 @@ def main() -> None:
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
+        static_mapping_table_name=dynamodb_tables.static_mapping_table.name,
         test_user_name=config.GRAPL_TEST_USER_NAME,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
@@ -268,8 +271,6 @@ def main() -> None:
         ),
     }
 
-    nomad_grapl_core_timeout = "5m"
-
     ConsulIntentions(
         "consul-intentions",
         # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
@@ -282,13 +283,6 @@ def main() -> None:
     consul_web_ui_defaults = ConsulServiceDefault(
         "web-ui",
         service_name="web-ui",
-        protocol="http",
-        opts=pulumi.ResourceOptions(provider=consul_provider),
-    )
-
-    ConsulServiceDefault(
-        "graphql-endpoint",
-        service_name="graphql-endpoint",
         protocol="http",
         opts=pulumi.ResourceOptions(provider=consul_provider),
     )
@@ -329,11 +323,21 @@ def main() -> None:
         pulumi_config.get(key="lightstep-access-token") or ""
     )
     lightstep_endpoint = pulumi_config.require(key="lightstep-endpoint")
-    lightstep_is_endpoint_secure = (
-        pulumi_config.get(key="lightstep-is-endpoint-secure") or "true"
+    lightstep_is_endpoint_insecure = pulumi_config.get_bool(
+        key="lightstep-is-endpoint-insecure", default=False
     )
+    trace_sampling_percentage = pulumi_config.get_float(
+        key="trace-sampling-percentage", default=100.0
+    )
+    # Apparently nomad templates use a different templating syntax than anywhere else
+    nomad_agent_endpoint: str = '{{ env "attr.unique.network.ip-address" }}:4646'
+
     otel_configuration = otel_config(
-        lightstep_access_token, lightstep_endpoint, lightstep_is_endpoint_secure
+        lightstep_token=lightstep_access_token,
+        nomad_agent_endpoint=nomad_agent_endpoint,
+        lightstep_endpoint=lightstep_endpoint,
+        lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
+        trace_sampling_percentage=trace_sampling_percentage,
     )
     NomadJob(
         "otel-collector",
@@ -341,10 +345,13 @@ def main() -> None:
         vars=dict(otel_config=otel_configuration),
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
-            custom_timeouts=CustomTimeouts(
-                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-            ),
         ),
+    )
+
+    ConsulConfig(
+        "grapl-core",
+        tracing_endpoint="otel-collector-zipkin.service.consul",
+        opts=pulumi.ResourceOptions(provider=consul_provider),
     )
 
     if config.LOCAL_GRAPL:
@@ -389,14 +396,6 @@ def main() -> None:
 
         graph_schema_manager_db = LocalPostgresInstance(
             name="graph-schema-manager-db", port=5437
-        )
-
-        # Since we're using an IP for Jaeger, this should only be created for local grapl.
-        # Once we're using dns addresses we can create it for everything
-        ConsulConfig(
-            "grapl-core",
-            tracing_endpoint="otel-collector-zipkin.service.consul",
-            opts=pulumi.ResourceOptions(provider=consul_provider),
         )
     else:
         ###################################
@@ -493,9 +492,6 @@ def main() -> None:
         vars=graph_db_args,
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
-            custom_timeouts=CustomTimeouts(
-                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-            ),
         ),
     )
 
@@ -513,9 +509,6 @@ def main() -> None:
         vars=grapl_core_vars,
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
-            custom_timeouts=CustomTimeouts(
-                create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
-            ),
         ),
     )
 
@@ -527,6 +520,7 @@ def main() -> None:
             provider=nomad_provider,
             depends_on=[
                 nomad_grapl_core.job,
+                nomad_graph_db.job,
             ],
         ),
     )

@@ -1,4 +1,3 @@
-#![allow(warnings)]
 use std::time::Duration;
 
 use futures::{
@@ -9,8 +8,6 @@ use futures::{
     },
     Future,
     FutureExt,
-    SinkExt,
-    StreamExt,
 };
 use proto::scylla_provisioner_service_server::ScyllaProvisionerService;
 use tokio::net::TcpListener;
@@ -43,7 +40,6 @@ use crate::{
         self as proto,
         scylla_provisioner_service_server::ScyllaProvisionerServiceServer as ScyllaProvisionerServiceProto,
     },
-    SerDeError,
 };
 
 /// Implement this trait to define the API business logic

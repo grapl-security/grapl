@@ -6,6 +6,7 @@ ARG RUST_VERSION
 
 FROM rust:${RUST_VERSION}-slim-bullseye AS base
 
+ARG PROTOC_VERSION
 ARG RUST_BUILD=dev-local-grapl
 
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
@@ -35,12 +36,31 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
 # - in plugin-registry image
 WORKDIR /nomad
 RUN <<EOF
-NOMAD_VERSION="1.2.4"
+NOMAD_VERSION="1.2.4"  # TODO: ARG-ify this like PROTOC_VERSION
 ZIP_NAME="nomad_${NOMAD_VERSION}_linux_amd64.zip"
 curl --remote-name --proto '=https' --tlsv1.2 -sSf \
   "https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/${ZIP_NAME}"
 unzip "${ZIP_NAME}"
 rm "${ZIP_NAME}"
+EOF
+
+WORKDIR /tmp
+RUN <<EOF
+    echo "${PROTOC_VERSION}"
+    PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+    ZIP_PATH="/tmp/protoc.zip"
+
+    # Download the zip
+    curl \
+        --proto '=https' --tlsv1.2 -sSf \
+        --location \
+        --output "${ZIP_PATH}" \
+        "${PB_REL}/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+
+    mkdir --parents ~/.local
+    # -d: Unzip it into / - which drops `protoc` in /bin.
+    unzip -d / "${ZIP_PATH}"
+    rm "${ZIP_PATH}"
 EOF
 
 # Install rust toolchain before copying sources to avoid unecessarily
@@ -229,6 +249,11 @@ COPY --from=etc-ctx example_schemas /test-fixtures/example_schemas
 # hadolint ignore=DL3022
 COPY --from=etc-ctx sample_data/36_eventlog.xml /test-fixtures
 
+# Copy in an example Analyzer, suspicious_svchost, for integration testing.
+# hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=dist-ctx suspicious_svchost_analyzer.pex /test-fixtures
+
 # Copy in the example generator so we can deploy it in test_deploy_plugin
 COPY --from=build /outputs/example-generator /test-fixtures
 COPY --from=build /outputs/sysmon-generator /test-fixtures
@@ -293,6 +318,12 @@ COPY --from=build /outputs/example-generator /
 COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /plugin-bootstrap-init/
 COPY rust/plugin-bootstrap/grapl-plugin.service /plugin-bootstrap-init/
 
+##### analyzer-execution-sidecar
+FROM rust-dist AS analyzer-execution-sidecar-deploy
+
+COPY --from=build /outputs/analyzer-execution-sidecar /
+ENTRYPOINT ["/analyzer-execution-sidecar"]
+
 ##### graph-merger
 FROM rust-dist AS graph-merger-deploy
 
@@ -310,6 +341,12 @@ FROM rust-dist AS graph-mutation-deploy
 
 COPY --from=build /outputs/graph-mutation /
 ENTRYPOINT ["/graph-mutation"]
+
+##### graph-query-proxy
+FROM rust-dist as graph-query-proxy-deploy
+
+COPY --from=build /outputs/graph-query-proxy /
+ENTRYPOINT ["/graph-query-proxy"]
 
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy

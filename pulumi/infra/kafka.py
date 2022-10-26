@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Mapping, Sequence, TypeVar, cast
+from typing import Any, Mapping, TypeVar, cast
 
 from infra import config
 from pulumi.stack_reference import StackReference
@@ -39,30 +39,13 @@ class Credential:
 
 
 @dataclasses.dataclass
-class Topic:
-    partitions: int
-    config: Mapping[str, Any]
-
-    @staticmethod
-    def from_json(data: Mapping[str, Any]) -> Topic:
-        return Topic(
-            partitions=data["partitions"],
-            config=data["config"],
-        )
-
-
-@dataclasses.dataclass
 class Service:
-    ingress_topics: Sequence[str]
-    egress_topics: Sequence[str]
     service_account: Credential
     consumer_group_name: str | None = None
 
     @staticmethod
     def from_json(data: Mapping[str, Any]) -> Service:
         return Service(
-            ingress_topics=data["ingress_topics"],
-            egress_topics=data["egress_topics"],
             service_account=Credential.from_json(data["service_account"]),
             consumer_group_name=data.get("consumer_group_name"),
         )
@@ -74,7 +57,6 @@ class Environment:
     bootstrap_servers: str
     environment_credentials: Credential
     services: Mapping[str, Service]
-    topics: Mapping[str, Topic]
 
     def get_service_credentials(self, service_name: str) -> Credential:
         if service_name in self.services:
@@ -91,7 +73,6 @@ class Environment:
                 data["environment_credentials"]
             ),
             services={k: Service.from_json(v) for k, v in data["services"].items()},
-            topics={k: Topic.from_json(v) for k, v in data["topics"].items()},
         )
 
 
@@ -111,7 +92,7 @@ class Confluent:
         # other from_json implementations in this file take just a bare
         # Mapping[str, Any]. The reason for this is that this class represents
         # the outermost layer of a nested object which is the stack output of
-        # the "grapl/confluent-cloud/production" stack. All the other from_json methods are
+        # a "grapl/confluent-cloud/${STACK}" stack. All the other from_json methods are
         # called recursively in the apply(..) call below.
         return data.apply(
             lambda j: Confluent(
@@ -163,14 +144,14 @@ class Kafka(pulumi.ComponentResource):
                         partitions=2,
                         replication_factor=3,
                         config={
-                            "compression.type": "zstd",
+                            "compression.type": "producer",
                             "min.insync.replicas": 2,
                         },
                         opts=pulumi.ResourceOptions(provider=provider),
                     )
         else:
             confluent_stack_output = StackReference(
-                "grapl/confluent-cloud/production"
+                f"grapl/confluent-cloud/{config.STACK_NAME}"
             ).require_output("confluent")
             self.confluent_environment = Confluent.from_json(
                 cast(pulumi.Output[Mapping[str, Any]], confluent_stack_output)

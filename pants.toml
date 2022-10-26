@@ -17,7 +17,9 @@ backend_packages = [
   "pants.backend.shell.lint.shellcheck",
   "pants.backend.shell.lint.shfmt"
 ]
+
 use_deprecated_directory_cli_args_semantics = false
+use_deprecated_pex_binary_run_semantics = false
 
 pants_ignore=[
     "!.buildkite",
@@ -25,7 +27,7 @@ pants_ignore=[
 ]
 
 plugins = [
-  "toolchain.pants.plugin==0.22.0"
+  "toolchain.pants.plugin==0.24.0"
 ]
 
 remote_cache_read = true
@@ -46,12 +48,6 @@ enabled = true
 # Randomly generated with `uuidgen --random`
 repo_id = "f416be7b-e109-4915-8eba-940bcfa310c1"
 
-[protoc]
-version = "3.15.8"
-known_versions = [
-    "3.15.8|linux_x86_64|b9ff821d2a4f9e9943dc2a13e6a76d99c7472dac46ddd3718a3a4c3b877c044a|1639343"
-]
-
 # Given how our code is currently structured, with package and test
 # code for every project in their own directory, I believe we have to
 # list each of those top-level containing directories here in order
@@ -67,7 +63,7 @@ root_patterns = [
   "/etc",  # Some of our tests use sample data from here
   "/pulumi",
   "/src/proto",
-  "/src/python/graphql_endpoint_tests",
+  "/src/python/grapl-plugin-sdk",
   "/src/python/grapl-common",
   "/src/python/graplctl",
   "/src/python/grapl-tests-common",
@@ -213,6 +209,20 @@ lockfile = "3rdparty/python/pyupgrade.lockfile"
 # For keep-runtime-typing to work we also can't use py30-plus
 args = ["--py39-plus", "--keep-runtime-typing"]
 
+[protoc]
+# While this is the current default value for Pants (as of Pants
+# 2.13.0), we're going to explicitly list it. We programmatically read
+# this value in `build-support/protoc_version.sh` in order to use the
+# same version in our Rust build process. That script can find out
+# what version Pants would use even if we didn't explicitly list it
+# here, but being explicit here makes it very easy to find out what
+# version we're using, without having to run any script.
+#
+# As such, there's nothing magical or special about this value, and
+# you should feel no compunctions about updating it if you need to, or
+# when Pants updates its defaults.
+version = "3.20.1"
+
 [tailor]
 ignore_paths = [
   # TODO: We need to find a better way to manage our docs
@@ -235,5 +245,5 @@ ignore_adding_targets = [
 ]
 
 [cli.alias]
-bk-run = "run build-support:bk-run --"
-dump-artifacts = "run etc/ci_scripts/dump_artifacts:dump_artifacts --"
+bk-run = "run build-support/bk-run.py --"
+dump-artifacts = "run etc/ci_scripts/dump_artifacts/cli.py --"

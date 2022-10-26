@@ -44,6 +44,51 @@ impl TestApp {
         })
     }
 
+    /// Send a reqwest::RequestBuilder and return immediately unless a 500 error was returned.
+    /// In that case, retry the request up to ten times before returning the last error response.
+    ///
+    /// This is a (hopefully temporary) mitigation around intermittent errors we're getting from
+    /// the Consul sidecar in Nomad.
+    /// See: https://github.com/grapl-security/issue-tracker/issues/1008
+    pub async fn send_with_retries(
+        &self,
+        request: reqwest::RequestBuilder,
+    ) -> eyre::Result<reqwest::Response> {
+        let num_retries = 10;
+        let mut response = request
+            .try_clone()
+            .ok_or_else(|| eyre::eyre!("Unable to clone request - perhaps it is a stream?"))?
+            .send()
+            .await?;
+
+        for _ in 1..num_retries {
+            let status_code = response.status().as_u16();
+
+            if status_code >= 500 && status_code <= 599 {
+                // We recevied a 500 error, wait a moment before trying the request again
+                println!("Error: {:?}", response);
+
+                let one_sec = std::time::Duration::from_secs(1);
+                std::thread::sleep(one_sec);
+
+                response = request
+                    .try_clone()
+                    .ok_or_else(|| {
+                        eyre::eyre!("Unable to clone request - perhaps it is a stream?")
+                    })?
+                    .send()
+                    .await?;
+
+                continue;
+            } else {
+                // Non-500 error, break the retry loop to return it
+                break;
+            }
+        }
+
+        Ok(response)
+    }
+
     pub fn post(&self, path: &str) -> reqwest::RequestBuilder {
         let endpoint_url = self.endpoint_url.as_str();
         self.client.post(format!("{endpoint_url}{path}"))

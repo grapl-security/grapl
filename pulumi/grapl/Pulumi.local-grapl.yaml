@@ -17,7 +17,7 @@ config:
       sns: http://host.docker.internal:4566
       sqs: http://host.docker.internal:4566
   aws:region: us-east-1
-  aws:s3ForcePathStyle: "true"
+  aws:s3UsePathStyle: "true"
   aws:secretKey: test
   aws:skipCredentialsValidation: "true"
   aws:skipRequestingAccountId: "true"
@@ -30,7 +30,7 @@ config:
     firecracker_rootfs.tar.gz: 20220405165304-c595a79
   grapl:confluent-environment-name: "local-grapl"
   grapl:lightstep-endpoint: 'http://{{ env "attr.unique.network.ip-address" }}:8360'
-  grapl:lightstep-is-endpoint-secure: "false"
+  grapl:lightstep-is-endpoint-insecure: True
   grapl:scylla-username: "cassandra"
   grapl:scylla-password: "cassandra" # In prod this is a secret!
   grapl:scylla-addresses:

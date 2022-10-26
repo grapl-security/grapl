@@ -16,19 +16,15 @@ name = "plugin_bootstrap"
 
 [dependencies]
 async-trait = "0.1"
-clap = { version = "3.0", default_features = false, features = [
-  "std",
-  "env",
-  "derive"
-] }
-figment = { version = "0.10", features = ["env"] }
+clap = { workspace = true }
+figment = { workspace= true }
 futures = "0.3"
 grapl-tracing = { path = "../grapl-tracing" }
 rust-proto = { path = "../rust-proto" }
-thiserror = "1.0"
-tokio = { version = "1.14.0", features = ["full"] }
-tracing = "0.1"
-uuid = { version = "1.0", features = ["v4"] }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
 
 [features]
 integration = []

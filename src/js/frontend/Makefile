@@ -149,5 +149,4 @@ clean-files: ## Remove all additional generated files and directories
 	rm -Rf coverage
 	rm -Rf .node
 	rm -Rf node_modules
-	rm -Rf .npm
 	rm -Rf .yarn

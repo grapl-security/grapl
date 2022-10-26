@@ -20,7 +20,7 @@ class PostgresConfigValues:
     def __post_init__(self) -> None:
         # postgres uses 2-part semver
         assert version_parse(self.postgres_version) >= version_parse(
-            "13.4"
+            "13.7"
         ), "Version must be >= 13.4"
 
     @staticmethod

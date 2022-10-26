@@ -86,11 +86,6 @@ job "python-integration-tests" {
         sidecar_service {
           proxy {
             upstreams {
-              # This is a hack, because IDK how to share locals across files
-              destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 9080
-            }
-            upstreams {
               destination_name = "web-ui"
               local_bind_port  = 1234
             }
@@ -156,7 +151,6 @@ job "python-integration-tests" {
         IS_RETRY = "False"
 
         GRAPL_LOG_LEVEL = local.log_level
-        MG_ALPHAS       = "localhost:9080"
 
       }
 

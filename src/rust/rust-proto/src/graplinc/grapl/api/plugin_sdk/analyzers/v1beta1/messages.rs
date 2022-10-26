@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use crate::{
     graplinc::grapl::{
-        api::graph_query_service::v1beta1::messages::GraphView,
+        api::graph_query::v1beta1::messages::GraphView,
         common::v1beta1::types::{
             EdgeName,
             PropertyName,
@@ -212,6 +212,15 @@ impl From<Update> for UpdateProto {
     }
 }
 
+impl type_url::TypeUrl for Update {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.Update";
+}
+
+impl ProtobufSerializable for Update {
+    type ProtobufMessage = UpdateProto;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LensRef {
     pub lens_namespace: String,
@@ -364,20 +373,34 @@ impl From<ExecutionResult> for ExecutionResultProto {
     }
 }
 
+impl type_url::TypeUrl for ExecutionResult {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.ExecutionResult";
+}
+
+impl ProtobufSerializable for ExecutionResult {
+    type ProtobufMessage = ExecutionResultProto;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RunAnalyzerRequest {
-    pub tenant_id: uuid::Uuid,
-    pub update: Update,
+    update: Update,
+}
+
+impl RunAnalyzerRequest {
+    pub fn new(update: Update) -> Self {
+        Self { update }
+    }
+
+    pub fn update(self) -> Update {
+        self.update
+    }
 }
 
 impl TryFrom<RunAnalyzerRequestProto> for RunAnalyzerRequest {
     type Error = SerDeError;
     fn try_from(value: RunAnalyzerRequestProto) -> Result<Self, Self::Error> {
         Ok(Self {
-            tenant_id: value
-                .tenant_id
-                .ok_or(SerDeError::MissingField("RunAnalyzerRequest.tenant_id"))?
-                .try_into()?,
             update: value
                 .update
                 .ok_or(SerDeError::MissingField("RunAnalyzerRequest.update"))?
@@ -389,7 +412,6 @@ impl TryFrom<RunAnalyzerRequestProto> for RunAnalyzerRequest {
 impl From<RunAnalyzerRequest> for RunAnalyzerRequestProto {
     fn from(value: RunAnalyzerRequest) -> Self {
         Self {
-            tenant_id: Some(value.tenant_id.into()),
             update: Some(value.update.into()),
         }
     }

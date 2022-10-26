@@ -142,11 +142,6 @@ job "rust-integration-tests" {
             }
 
             upstreams {
-              destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 1003
-            }
-
-            upstreams {
               destination_name = "organization-management"
               local_bind_port  = 1004
             }
@@ -209,8 +204,6 @@ job "rust-integration-tests" {
 
         RUST_BACKTRACE = 1
         RUST_LOG       = var.rust_log
-
-        MG_ALPHAS = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-grpc-public}"
 
         # web-ui
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table

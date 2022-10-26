@@ -187,13 +187,13 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         &self,
         request: v1beta1::GetExecuteAnalyzerRequest,
     ) -> Result<v1beta1::GetExecuteAnalyzerResponse, PluginWorkQueueError> {
-        let message = self.queue.get_analyzer_message(request.plugin_id).await?;
+        let message = self.queue.get_analyzer_message(request.plugin_id()).await?;
         let message = match message {
             Some(message) => message,
             None => {
                 tracing::warn!(
                     message = "found no analyzer executions",
-                    plugin_id =% request.plugin_id,
+                    plugin_id =% request.plugin_id(),
                 );
                 return Ok(v1beta1::GetExecuteAnalyzerResponse::new(None, 0));
             }
@@ -208,7 +208,7 @@ impl PluginWorkQueueApi for PluginWorkQueue {
             tenant_id =% tenant_id,
             trace_id =% trace_id,
             event_source_id =% event_source_id,
-            plugin_id =% request.plugin_id,
+            plugin_id =% request.plugin_id(),
         );
 
         let execution_job = v1beta1::ExecutionJob::new(

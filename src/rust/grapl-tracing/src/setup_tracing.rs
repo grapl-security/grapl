@@ -24,12 +24,14 @@ pub fn setup_tracing(service_name: &str) -> Result<WorkerGuard, SetupTracingErro
 
     // initialize json logging layer
     let log_layer = tracing_subscriber::fmt::layer()
+        .with_file(true)
+        .with_line_number(true)
         .json()
         .with_writer(non_blocking);
 
     // initialize tracing layer
     global::set_text_map_propagator(TraceContextPropagator::new());
-    let jaeger_tracer = opentelemetry_jaeger::new_pipeline()
+    let jaeger_tracer = opentelemetry_jaeger::new_agent_pipeline()
         .with_service_name(service_name)
         .install_batch(opentelemetry::runtime::Tokio)?;
 

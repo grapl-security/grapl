@@ -68,11 +68,20 @@ pub(crate) mod protobufs {
                     }
                 }
 
-                pub(crate) mod graph_query_service {
+                pub(crate) mod graph_query {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
                             env!("OUT_DIR"),
-                            "/graplinc.grapl.api.graph_query_service.v1beta1.rs"
+                            "/graplinc.grapl.api.graph_query.v1beta1.rs"
+                        ));
+                    }
+                }
+
+                pub(crate) mod graph_query_proxy {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.graph_query_proxy.v1beta1.rs"
                         ));
                     }
                 }
@@ -202,10 +211,6 @@ pub mod graplinc {
 
             pub mod protocol;
 
-            pub mod scylla_provisioner {
-                pub mod v1beta1;
-            }
-
             pub mod event_source {
                 pub mod v1beta1;
             }
@@ -214,11 +219,19 @@ pub mod graplinc {
                 pub mod v1beta1;
             }
 
-            pub mod graph_query_service {
+            pub mod graph_mutation {
                 pub mod v1beta1;
             }
 
-            pub mod graph_mutation {
+            pub mod graph_query {
+                pub mod v1beta1;
+            }
+
+            pub mod graph_query_proxy {
+                pub mod v1beta1;
+            }
+
+            pub mod graph_schema_manager {
                 pub mod v1beta1;
             }
 
@@ -260,7 +273,7 @@ pub mod graplinc {
                 mod v1beta1_server;
             }
 
-            pub mod graph_schema_manager {
+            pub mod scylla_provisioner {
                 pub mod v1beta1;
             }
 

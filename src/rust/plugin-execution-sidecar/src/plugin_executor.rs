@@ -11,12 +11,27 @@ use rust_proto::graplinc::grapl::api::{
     },
     plugin_work_queue::v1beta1::PluginWorkQueueClient,
 };
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use uuid::Uuid;
 
 use crate::work::{
     PluginWorkProcessor,
     Workload,
 };
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct SidecarConfig {
+    plugin_id: Uuid,
+}
+
+impl SidecarConfig {
+    pub fn plugin_id(&self) -> Uuid {
+        self.plugin_id
+    }
+}
 
 pub struct PluginExecutor<P: PluginWorkProcessor> {
     plugin_work_processor: P,

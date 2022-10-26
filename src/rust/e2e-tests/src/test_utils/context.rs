@@ -21,12 +21,23 @@ use rust_proto::graplinc::grapl::api::{
         client::EventSourceClient,
         CreateEventSourceRequest,
     },
+    graph_schema_manager::v1beta1::{
+        client::GraphSchemaManagerClient,
+        messages::{
+            DeploySchemaRequest,
+            SchemaType,
+        },
+    },
     pipeline_ingress::v1beta1::client::PipelineIngressClient,
     plugin_registry::v1beta1::{
         DeployPluginRequest,
         PluginMetadata,
         PluginRegistryClient,
         PluginType,
+    },
+    uid_allocator::v1beta1::{
+        client::UidAllocatorClient,
+        messages::CreateTenantKeyspaceRequest,
     },
 };
 use test_context::AsyncTestContext;
@@ -36,9 +47,11 @@ use crate::test_fixtures;
 
 pub struct E2eTestContext {
     pub event_source_client: EventSourceClient,
+    pub graph_schema_manager_client: GraphSchemaManagerClient,
     pub plugin_registry_client: PluginRegistryClient,
     pub pipeline_ingress_client: PipelineIngressClient,
     pub plugin_work_queue_psql_client: PsqlQueue,
+    pub uid_allocator_client: UidAllocatorClient,
     pub _guard: WorkerGuard,
 }
 
@@ -71,7 +84,19 @@ impl AsyncTestContext for E2eTestContext {
             Duration::from_secs(1),
         )
         .await
-        .expect("plugin_registry_client");
+        .expect("failed to connect to plugin-registry");
+
+        let graph_schema_manager_client_config = Figment::new()
+            .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_CLIENT_"))
+            .extract()
+            .expect("failed to configure graph-schema-manager client");
+        let graph_schema_manager_client = GraphSchemaManagerClient::connect_with_healthcheck(
+            graph_schema_manager_client_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await
+        .expect("failed to connect to graph-schema-manager");
 
         let pipeline_ingress_client_config = Figment::new()
             .merge(Env::prefixed("PIPELINE_INGRESS_CLIENT_"))
@@ -83,7 +108,19 @@ impl AsyncTestContext for E2eTestContext {
             Duration::from_secs(1),
         )
         .await
-        .expect("pipeline_ingress_client");
+        .expect("failed to connect to pipeline-ingress");
+
+        let uid_allocator_client_config = Figment::new()
+            .merge(Env::prefixed("UID_ALLOCATOR_CLIENT_"))
+            .extract()
+            .expect("failed to configure uid-allocator client");
+        let uid_allocator_client = UidAllocatorClient::connect_with_healthcheck(
+            uid_allocator_client_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await
+        .expect("failed to connect to uid-allocator");
 
         let plugin_work_queue_psql_client =
             PsqlQueue::init_with_config(PluginWorkQueueDbConfig::parse())
@@ -92,32 +129,59 @@ impl AsyncTestContext for E2eTestContext {
 
         Self {
             event_source_client,
+            graph_schema_manager_client,
             plugin_registry_client,
             pipeline_ingress_client,
             plugin_work_queue_psql_client,
+            uid_allocator_client,
             _guard,
         }
     }
 }
 
 #[derive(Debug)]
-pub struct SetupResult {
+pub struct SetupGeneratorResult {
     pub tenant_id: Uuid,
-    pub plugin_id: Uuid,
+    pub generator_plugin_id: Uuid,
     pub event_source_id: Uuid,
 }
 
 pub struct SetupGeneratorOptions {
     pub test_name: String,
+    pub tenant_id: Uuid,
     pub generator_artifact: Bytes,
     pub should_deploy_generator: bool,
 }
 
 impl E2eTestContext {
+    #[tracing::instrument(skip(self), err)]
     pub async fn create_tenant(&mut self) -> eyre::Result<Uuid> {
         tracing::info!("creating tenant");
-        // TODO: actually create a real tenant
-        Ok(Uuid::new_v4())
+        let tenant_id = Uuid::new_v4();
+        self.uid_allocator_client
+            .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
+            .await?;
+        Ok(tenant_id)
+    }
+
+    async fn provision_example_graph_schema(&mut self, tenant_id: uuid::Uuid) -> eyre::Result<()> {
+        let mut graph_schema_manager_client = self.graph_schema_manager_client.clone();
+
+        fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
+            // This path is created in rust/Dockerfile
+            let path = "/test-fixtures/example_schemas/example.graphql";
+            std::fs::read(path).map(Bytes::from)
+        }
+
+        graph_schema_manager_client
+            .deploy_schema(DeploySchemaRequest {
+                tenant_id,
+                schema: get_example_graphql_schema().unwrap(),
+                schema_type: SchemaType::GraphqlV0,
+                schema_version: 0,
+            })
+            .await?;
+        Ok(())
     }
 
     pub async fn create_event_source(
@@ -157,6 +221,8 @@ impl E2eTestContext {
                 futures::stream::once(async move { generator_artifact }),
             )
             .await?;
+
+        self.provision_example_graph_schema(tenant_id).await?;
 
         Ok(generator.plugin_id())
     }
@@ -204,9 +270,27 @@ impl E2eTestContext {
         Ok(())
     }
 
-    pub async fn setup_sysmon_generator(&mut self, test_name: &str) -> eyre::Result<SetupResult> {
+    pub async fn setup_suspicious_svchost_analyzer(
+        &mut self,
+        tenant_id: uuid::Uuid,
+        test_name: &str,
+    ) -> eyre::Result<uuid::Uuid> {
+        let analyzer_artifact = test_fixtures::get_suspicious_svchost_analyzer()?;
+        let analyzer_plugin_id = self
+            .create_analyzer(tenant_id, test_name.to_owned(), analyzer_artifact)
+            .await?;
+        self.deploy_analyzer(analyzer_plugin_id).await?;
+        Ok(analyzer_plugin_id)
+    }
+
+    pub async fn setup_sysmon_generator(
+        &mut self,
+        tenant_id: uuid::Uuid,
+        test_name: &str,
+    ) -> eyre::Result<SetupGeneratorResult> {
         let generator_artifact = test_fixtures::get_sysmon_generator()?;
         self.setup_generator(SetupGeneratorOptions {
+            tenant_id,
             test_name: test_name.to_owned(),
             generator_artifact,
             should_deploy_generator: true,
@@ -217,10 +301,10 @@ impl E2eTestContext {
     pub async fn setup_generator(
         &mut self,
         options: SetupGeneratorOptions,
-    ) -> eyre::Result<SetupResult> {
+    ) -> eyre::Result<SetupGeneratorResult> {
         tracing::info!(">> Generator Setup for {}", options.test_name);
 
-        let tenant_id = self.create_tenant().await?;
+        let tenant_id = options.tenant_id;
 
         // Register an Event Source
         let event_source_id = self
@@ -249,9 +333,9 @@ impl E2eTestContext {
             generator_id
         };
 
-        let setup_result = SetupResult {
+        let setup_result = SetupGeneratorResult {
             tenant_id,
-            plugin_id: generator_id,
+            generator_plugin_id: generator_id,
             event_source_id,
         };
 

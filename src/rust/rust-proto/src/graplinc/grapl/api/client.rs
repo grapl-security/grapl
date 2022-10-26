@@ -1,4 +1,7 @@
-use std::time::Duration;
+use std::{
+    fmt::Debug,
+    time::Duration,
+};
 
 use client_executor::{
     strategy::FibonacciBackoff,
@@ -187,7 +190,10 @@ where
 }
 
 pub(crate) mod client_impl {
-    use std::time::Duration;
+    use std::{
+        fmt::Debug,
+        time::Duration,
+    };
 
     use crate::graplinc::grapl::api::client::{
         Client,
@@ -199,7 +205,7 @@ pub(crate) mod client_impl {
 
     pub(crate) trait WithClient<C>
     where
-        C: Connectable + Clone,
+        C: Connectable + Clone + Debug,
         Self: Sized,
     {
         const SERVICE_NAME: &'static str;
@@ -211,7 +217,7 @@ pub(crate) mod client_impl {
     impl<T, C> Connect<C> for T
     where
         T: WithClient<C> + Send,
-        C: Connectable + Clone,
+        C: Connectable + Clone + Debug,
     {
         async fn connect(configuration: ClientConfiguration) -> Result<Self, ClientError> {
             let client = Client::connect(configuration).await?;
@@ -236,10 +242,10 @@ pub(crate) mod client_impl {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct Client<C>
 where
-    C: Connectable + Clone,
+    C: Connectable + Clone + Debug,
 {
     configuration: ClientConfiguration,
     proto_client: C,
@@ -248,7 +254,7 @@ where
 
 impl<C> Client<C>
 where
-    C: Connectable + Clone,
+    C: Connectable + Clone + Debug,
 {
     pub(crate) async fn connect(configuration: ClientConfiguration) -> Result<Self, ClientError> {
         let connect_executor = Executor::new(ExecutorConfig::new(configuration.connect_timeout));

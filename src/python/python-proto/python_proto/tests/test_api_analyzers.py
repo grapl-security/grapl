@@ -4,11 +4,13 @@ pytest.register_assert_rewrite("python_proto.tests.helpers")
 
 import hypothesis.strategies as st
 from python_proto import common as proto_common_msgs
+from python_proto.api.graph_query_proxy.v1beta1 import messages as graph_query_msgs
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_msgs
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_msgs
 from python_proto.tests import strategies
 from python_proto.tests.helpers import check_encode_decode_invariant
-from python_proto.tests.test_grapl_common import edge_names, property_names, uids
+from python_proto.tests.test_api_graph_query import graph_views
+from python_proto.tests.test_grapl_common import edge_names, property_names
 
 ################################################################################
 # Strategies
@@ -16,7 +18,7 @@ from python_proto.tests.test_grapl_common import edge_names, property_names, uid
 
 
 def string_property_updates(
-    uid: st.SearchStrategy[grapl_common_msgs.Uid] = uids(),
+    uid: st.SearchStrategy[grapl_common_msgs.Uid] = strategies.uids(),
     property_name: st.SearchStrategy[grapl_common_msgs.PropertyName] = property_names(),
 ) -> st.SearchStrategy[analyzer_msgs.StringPropertyUpdate]:
     return st.builds(
@@ -25,7 +27,7 @@ def string_property_updates(
 
 
 def uint64_property_updates(
-    uid: st.SearchStrategy[grapl_common_msgs.Uid] = uids(),
+    uid: st.SearchStrategy[grapl_common_msgs.Uid] = strategies.uids(),
     property_name: st.SearchStrategy[grapl_common_msgs.PropertyName] = property_names(),
 ) -> st.SearchStrategy[analyzer_msgs.UInt64PropertyUpdate]:
     return st.builds(
@@ -34,7 +36,7 @@ def uint64_property_updates(
 
 
 def int64_property_updates(
-    uid: st.SearchStrategy[grapl_common_msgs.Uid] = uids(),
+    uid: st.SearchStrategy[grapl_common_msgs.Uid] = strategies.uids(),
     property_name: st.SearchStrategy[grapl_common_msgs.PropertyName] = property_names(),
 ) -> st.SearchStrategy[analyzer_msgs.Int64PropertyUpdate]:
     return st.builds(
@@ -43,8 +45,8 @@ def int64_property_updates(
 
 
 def edge_updates(
-    src_uid: st.SearchStrategy[grapl_common_msgs.Uid] = uids(),
-    dst_uid: st.SearchStrategy[grapl_common_msgs.Uid] = uids(),
+    src_uid: st.SearchStrategy[grapl_common_msgs.Uid] = strategies.uids(),
+    dst_uid: st.SearchStrategy[grapl_common_msgs.Uid] = strategies.uids(),
     forward_edge_name: st.SearchStrategy[grapl_common_msgs.EdgeName] = edge_names(),
     reverse_edge_name: st.SearchStrategy[grapl_common_msgs.EdgeName] = edge_names(),
 ) -> st.SearchStrategy[analyzer_msgs.EdgeUpdate]:
@@ -69,12 +71,9 @@ def updates(
 
 
 def run_analyzer_requests(
-    tenant_id: st.SearchStrategy[proto_common_msgs.Uuid] = strategies.uuids(),
     update: st.SearchStrategy[analyzer_msgs.Update] = updates(),
 ) -> st.SearchStrategy[analyzer_msgs.RunAnalyzerRequest]:
-    return st.builds(
-        analyzer_msgs.RunAnalyzerRequest, tenant_id=tenant_id, update=update
-    )
+    return st.builds(analyzer_msgs.RunAnalyzerRequest, update=update)
 
 
 def analyzer_names(
@@ -93,6 +92,7 @@ def lens_refs(
 
 
 def execution_hits(
+    graph_view: st.SearchStrategy[graph_query_msgs.GraphView] = graph_views(),
     lens_refs: st.SearchStrategy[list[analyzer_msgs.LensRef]] = st.lists(lens_refs()),
     analyzer_name: st.SearchStrategy[analyzer_msgs.AnalyzerName] = analyzer_names(),
     time_of_match: st.SearchStrategy[
@@ -103,6 +103,7 @@ def execution_hits(
 ) -> st.SearchStrategy[analyzer_msgs.ExecutionHit]:
     return st.builds(
         analyzer_msgs.ExecutionHit,
+        graph_view=graph_view,
         lens_refs=lens_refs,
         analyzer_name=analyzer_name,
         time_of_match=time_of_match,

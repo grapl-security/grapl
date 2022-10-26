@@ -5,7 +5,7 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginType;
 
 use super::{
     plugin_nomad_job,
-    s3_url::get_s3_url,
+    s3_uri::get_s3_uri,
     service::PluginRegistryServiceConfig,
 };
 use crate::{
@@ -54,7 +54,7 @@ pub fn get_job(
     let plugin_artifact_url = {
         let key = &plugin.artifact_s3_key;
         let bucket = &service_config.bucket_name;
-        get_s3_url(bucket, key)
+        get_s3_uri(bucket, key)
     };
     let passthru = service_config.passthrough_vars;
     let plugin_type = PluginType::try_from(plugin.plugin_type.as_str())
@@ -65,8 +65,11 @@ pub fn get_job(
     };
     match plugin_runtime {
         PluginRuntime::HaxDocker => {
-            let job_file_hcl = static_files::HAX_DOCKER_PLUGIN_JOB;
-            let job_file_vars: NomadVars = HashMap::from([
+            let hax_docker_nomad_job = match plugin_type {
+                PluginType::Generator => static_files::HAX_DOCKER_GENERATOR_JOB,
+                PluginType::Analyzer => static_files::HAX_DOCKER_ANALYZER_JOB,
+            };
+            let mut job_file_vars: NomadVars = HashMap::from([
                 ("aws_account_id", service_config.bucket_aws_account_id),
                 ("plugin_artifact_url", plugin_artifact_url),
                 (
@@ -81,9 +84,11 @@ pub fn get_job(
                 ("tenant_id", plugin.tenant_id.to_string()),
                 // Passthrough vars
                 ("rust_log", passthru.rust_log),
-                ("observability_env_vars", passthru.observability_env_vars),
             ]);
-            cli.parse_hcl2(job_file_hcl, job_file_vars)
+            if plugin_type == PluginType::Analyzer {
+                job_file_vars.insert("graph_query_proxy_image", passthru.graph_query_proxy_image);
+            }
+            cli.parse_hcl2(hax_docker_nomad_job, job_file_vars)
         }
         PluginRuntime::Firecracker => {
             // This is currently dead code until we revive our Firecracker

@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.generator_plugin_executions
     CHECK (length(pipeline_message) < plugin_work_queue.megabytes(256)),
     CHECK (last_updated >= creation_time)
 )
-    PARTITION BY RANGE (creation_time);
+;
 
 CREATE TABLE IF NOT EXISTS plugin_work_queue.analyzer_plugin_executions
 (
@@ -64,43 +64,10 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.analyzer_plugin_executions
     CHECK (length(pipeline_message) < plugin_work_queue.megabytes(256)),
     CHECK (last_updated >= creation_time)
 )
-    PARTITION BY RANGE (creation_time);
+;
 
 CREATE INDEX IF NOT EXISTS execution_key_ix ON plugin_work_queue.generator_plugin_executions (execution_key);
 CREATE INDEX IF NOT EXISTS creation_time_ix ON plugin_work_queue.generator_plugin_executions (creation_time);
 
 CREATE INDEX IF NOT EXISTS execution_key_ix ON plugin_work_queue.analyzer_plugin_executions (execution_key);
 CREATE INDEX IF NOT EXISTS creation_time_ix ON plugin_work_queue.analyzer_plugin_executions (creation_time);
-
-CREATE SCHEMA IF NOT EXISTS partman;
-CREATE EXTENSION IF NOT EXISTS pg_partman WITH SCHEMA partman;
-
-
--- We partition our queue based on time with a daily partition
-SELECT partman.create_parent(p_parent_table => 'plugin_work_queue.generator_plugin_executions',
-                             p_control => 'creation_time',
-                             p_type => 'native',
-                             p_interval=> 'hourly',
-                             p_premake => 24
-           );
-
-SELECT partman.create_parent(p_parent_table => 'plugin_work_queue.analyzer_plugin_executions',
-                             p_control => 'creation_time',
-                             p_type => 'native',
-                             p_interval=> 'hourly',
-                             p_premake => 24
-           );
-
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-
--- We schedule partition maintenance to run hourly, retaining partitions for one month
-UPDATE partman.part_config
-SET infinite_time_partitions = true,
-    retention                = '1 month',
-    retention_keep_table= false
-WHERE (
-                  parent_table = 'plugin_work_queue.generator_plugin_executions' OR
-                  parent_table = 'plugin_work_queue.analyzer_plugin_executions'
-          );
-
-SELECT cron.schedule('@hourly', $$CALL partman.run_maintenance_proc()$$);

@@ -5,7 +5,7 @@ use std::time::Duration;
 use bytes::Bytes;
 use e2e_tests::test_utils::context::{
     E2eTestContext,
-    SetupResult,
+    SetupGeneratorResult,
 };
 use kafka::{
     config::ConsumerConfig,
@@ -44,11 +44,12 @@ fn find_node<'a>(
 #[tokio::test]
 async fn test_sysmon_event_produces_identified_graph(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     let test_name = "test_sysmon_event_produces_identified_graph";
-    let SetupResult {
+    let tenant_id = ctx.create_tenant().await?;
+    let SetupGeneratorResult {
         tenant_id,
-        plugin_id: _,
+        generator_plugin_id: _,
         event_source_id,
-    } = ctx.setup_sysmon_generator(test_name).await?;
+    } = ctx.setup_sysmon_generator(tenant_id, test_name).await?;
 
     let kafka_scanner = KafkaTopicScanner::new(
         ConsumerConfig::with_topic(CONSUMER_TOPIC),
@@ -152,10 +153,10 @@ async fn test_sysmon_event_produces_identified_graph(ctx: &mut E2eTestContext) -
 
     let parent_to_child_edge = identified_graph
         .edges
-        .get(parent_process.get_node_key())
+        .get(&parent_process.uid)
         .iter()
         .flat_map(|edge_list| edge_list.edges.iter())
-        .find(|edge| edge.to_node_key == child_process.get_node_key())
+        .find(|edge| edge.to_uid == child_process.uid)
         .expect("missing edge from parent to child");
 
     assert_eq!(parent_to_child_edge.edge_name, "children");

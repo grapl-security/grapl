@@ -121,12 +121,12 @@ pub struct PluginRegistryServiceConfig {
 
 #[derive(clap::Parser, Clone, Debug, Default)]
 pub struct PluginExecutionPassthroughVars {
-    #[clap(long, env = "PLUGIN_EXECUTION_OBSERVABILITY_ENV_VARS")]
-    pub observability_env_vars: String,
     #[clap(long, env = "PLUGIN_EXECUTION_GENERATOR_SIDECAR_IMAGE")]
     pub generator_sidecar_image: String,
     #[clap(long, env = "PLUGIN_EXECUTION_ANALYZER_SIDECAR_IMAGE")]
     pub analyzer_sidecar_image: String,
+    #[clap(long, env = "PLUGIN_EXECUTION_GRAPH_QUERY_PROXY_IMAGE")]
+    pub graph_query_proxy_image: String,
 
     // Pass through a couple env vars also used for the plugin-registry service
     // Since they're used in both ways - locally for this service, and the

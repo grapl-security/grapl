@@ -32,10 +32,6 @@ async fn plugin_lifecycle() -> eyre::Result<()> {
 
     let create_response = create_plugin(&app, plugin_name).await?;
 
-    //TODO: this shouldn't be necessary, but we're seeing 50 errors without it.
-    // I'll file a task to look into it for now so we can unblock frontend work.
-    std::thread::sleep(std::time::Duration::from_secs(5));
-
     let plugin_metadata = get_plugin_metadata(&app, &create_response.plugin_id).await?;
 
     eyre::ensure!(
@@ -58,10 +54,6 @@ async fn plugin_lifecycle() -> eyre::Result<()> {
         plugin_health.health_status == PluginHealthStatus::NotDeployed,
         "plugin health expected to be 'not_deployed'"
     );
-
-    //TODO: this shouldn't be necessary, but we're seeing 50 errors without it.
-    // I'll file a task to look into it for now so we can unblock frontend work.
-    std::thread::sleep(std::time::Duration::from_secs(5));
 
     deploy_plugin(&app, &plugin_id).await?;
 
@@ -102,11 +94,53 @@ async fn plugin_lifecycle() -> eyre::Result<()> {
     Ok(())
 }
 
-async fn create_plugin(app: &TestApp, plugin_name: &str) -> eyre::Result<CreateResponse> {
+pub async fn create_plugin(app: &TestApp, plugin_name: &str) -> eyre::Result<CreateResponse> {
+    // This includes retry logic that is very similar to, and for the same reasons as,
+    // TestApp::send_with_retries. We deplicate that logic here because we cannot clone
+    // the POST body.
+    //
+    // This is a (hopefully temporary) mitigation around intermittent errors we're getting from
+    // the Consul sidecar in Nomad.
+    // See: https://github.com/grapl-security/issue-tracker/issues/1008
+    let mut response = _create_plugin(app, plugin_name).await?;
+
+    let num_retries = 10;
+    for _ in 1..num_retries {
+        let status_code = response.status().as_u16();
+
+        if status_code >= 500 && status_code <= 599 {
+            // We recevied a 500 error, wait a moment before trying the request again
+            println!("Error: {:?}", response);
+
+            let one_sec = std::time::Duration::from_secs(1);
+            std::thread::sleep(one_sec);
+
+            response = _create_plugin(app, plugin_name).await?;
+
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    eyre::ensure!(
+        response.status() == actix_web::http::StatusCode::OK,
+        "unexpected response: {:?}",
+        &response
+    );
+
+    let response_body = response.json::<CreateResponse>().await?;
+
+    println!("create response body: {:?}", response_body);
+
+    Ok(response_body)
+}
+
+async fn _create_plugin(app: &TestApp, plugin_name: &str) -> eyre::Result<reqwest::Response> {
     let create_metadata_body = serde_json::json!({
-            "plugin_name": plugin_name,
-            "plugin_type": "generator",
-            "event_source_id": uuid::Uuid::new_v4()
+        "plugin_name": plugin_name,
+        "plugin_type": "generator",
+        "event_source_id": uuid::Uuid::new_v4()
     });
 
     let generator_bytes = e2e_tests::test_fixtures::get_sysmon_generator()?;
@@ -123,27 +157,15 @@ async fn create_plugin(app: &TestApp, plugin_name: &str) -> eyre::Result<CreateR
 
     let response = app.post("api/plugin/create").multipart(form).send().await?;
 
-    eyre::ensure!(
-        response.status() == actix_web::http::StatusCode::OK,
-        "unexpected response: {:?}",
-        &response
-    );
-
-    let response_body = response.json::<CreateResponse>().await?;
-
-    println!("create response body: {:?}", response_body);
-
-    Ok(response_body)
+    Ok(response)
 }
 
-async fn get_plugin_metadata(
+pub async fn get_plugin_metadata(
     app: &TestApp,
     plugin_id: &uuid::Uuid,
 ) -> eyre::Result<GetPluginMetadataResponse> {
-    let response = app
-        .get(format!("api/plugin/get_metadata?plugin_id={plugin_id}").as_str())
-        .send()
-        .await?;
+    let request = app.get(format!("api/plugin/get_metadata?plugin_id={plugin_id}").as_str());
+    let response = app.send_with_retries(request).await?;
 
     eyre::ensure!(
         response.status() == actix_web::http::StatusCode::OK,
@@ -163,7 +185,8 @@ async fn deploy_plugin(app: &TestApp, plugin_id: &uuid::Uuid) -> eyre::Result<()
             "plugin_id": plugin_id,
     });
 
-    let response = app.post("api/plugin/deploy").json(&body).send().await?;
+    let request = app.post("api/plugin/deploy").json(&body);
+    let response = app.send_with_retries(request).await?;
 
     eyre::ensure!(
         response.status() == actix_web::http::StatusCode::OK,
@@ -178,10 +201,8 @@ async fn get_deployment(
     app: &TestApp,
     plugin_id: &uuid::Uuid,
 ) -> eyre::Result<PluginDeploymentResponse> {
-    let response = app
-        .get(format!("api/plugin/get_deployment?plugin_id={plugin_id}").as_str())
-        .send()
-        .await?;
+    let request = app.get(format!("api/plugin/get_deployment?plugin_id={plugin_id}").as_str());
+    let response = app.send_with_retries(request).await?;
 
     eyre::ensure!(
         response.status() == actix_web::http::StatusCode::OK,
@@ -201,7 +222,8 @@ async fn tear_down(app: &TestApp, plugin_id: &uuid::Uuid) -> eyre::Result<()> {
             "plugin_id": plugin_id,
     });
 
-    let response = app.post("api/plugin/tear_down").json(&body).send().await?;
+    let request = app.post("api/plugin/tear_down").json(&body);
+    let response = app.send_with_retries(request).await?;
 
     eyre::ensure!(
         response.status() == actix_web::http::StatusCode::OK,
@@ -216,10 +238,8 @@ async fn get_health(
     app: &TestApp,
     plugin_id: &uuid::Uuid,
 ) -> eyre::Result<GetPluginHealthResponse> {
-    let response = app
-        .get(format!("api/plugin/get_health?plugin_id={plugin_id}").as_str())
-        .send()
-        .await?;
+    let request = app.get(format!("api/plugin/get_health?plugin_id={plugin_id}").as_str());
+    let response = app.send_with_retries(request).await?;
 
     eyre::ensure!(
         response.status() == actix_web::http::StatusCode::OK,

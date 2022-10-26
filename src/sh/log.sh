@@ -69,7 +69,7 @@ function error() {
 function fatal() {
     log "$(bright_red FATAL):" "${@}"
 
-    if [ -n "${EXIT_CODE}" ]; then
+    if [ -v EXIT_CODE ]; then
         exit "${EXIT_CODE}"
     else
         exit 1

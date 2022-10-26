@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use tonic::transport::Endpoint;
 
 use crate::{
@@ -23,6 +25,14 @@ impl Connectable for GraphMutationServiceClient<tonic::transport::Channel> {
 #[derive(Clone)]
 pub struct GraphMutationClient {
     client: Client<GraphMutationServiceClient<tonic::transport::Channel>>,
+}
+
+impl Debug for GraphMutationClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GraphMutationClient")
+            .field("client", &self.client)
+            .finish()
+    }
 }
 
 impl client_impl::WithClient<GraphMutationServiceClient<tonic::transport::Channel>>

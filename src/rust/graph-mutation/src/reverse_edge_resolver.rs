@@ -1,12 +1,10 @@
+use moka::future::Cache;
 use rust_proto::graplinc::grapl::{
     api::{
         client::ClientError,
         graph_schema_manager::v1beta1::{
             client::GraphSchemaManagerClient,
-            messages::{
-                GetEdgeSchemaRequest,
-                GetEdgeSchemaResponse,
-            },
+            messages::GetEdgeSchemaRequest,
         },
     },
     common::v1beta1::types::{
@@ -24,32 +22,31 @@ pub enum ReverseEdgeResolverError {
 #[derive(Clone)]
 pub struct ReverseEdgeResolver {
     schema_client: GraphSchemaManagerClient,
-    r_edge_cache: dashmap::DashMap<(uuid::Uuid, EdgeName, NodeType), GetEdgeSchemaResponse>,
+    r_edge_cache: Cache<(uuid::Uuid, EdgeName, NodeType), EdgeName>,
 }
 
 impl ReverseEdgeResolver {
-    pub fn new(schema_client: GraphSchemaManagerClient, cache_size: usize) -> Self {
-        let r_edge_cache = dashmap::DashMap::with_capacity(cache_size);
+    pub fn new(schema_client: GraphSchemaManagerClient, cache_size: u64) -> Self {
+        let r_edge_cache = Cache::new(cache_size);
         Self {
             schema_client,
             r_edge_cache,
         }
     }
 
+    #[tracing::instrument(skip(self), err)]
     pub async fn resolve_reverse_edge(
         &self,
         tenant_id: uuid::Uuid,
         node_type: NodeType,
         edge_name: EdgeName,
     ) -> Result<EdgeName, ReverseEdgeResolverError> {
-        match self
-            .r_edge_cache
-            .entry((tenant_id, edge_name.clone(), node_type.clone()))
-        {
-            dashmap::mapref::entry::Entry::Occupied(entry) => {
-                Ok(entry.get().reverse_edge_name.clone())
-            }
-            dashmap::mapref::entry::Entry::Vacant(entry) => {
+        let cache = &self.r_edge_cache;
+        let key = (tenant_id, edge_name.clone(), node_type.clone());
+
+        match cache.get(&key) {
+            Some(r_edge_name) => Ok(r_edge_name),
+            None => {
                 let mut schema_client = self.schema_client.clone();
                 let response = schema_client
                     .get_edge_schema(GetEdgeSchemaRequest {
@@ -59,9 +56,9 @@ impl ReverseEdgeResolver {
                     })
                     .await?;
 
-                let reverse_name = response.reverse_edge_name.clone();
-                entry.insert(response);
-                Ok(reverse_name)
+                let r_edge_name = response.reverse_edge_name.clone();
+                cache.insert(key, r_edge_name.clone()).await;
+                Ok(r_edge_name)
             }
         }
     }

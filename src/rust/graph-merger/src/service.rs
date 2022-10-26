@@ -1,22 +1,41 @@
 use std::{
+    collections::HashMap,
     fmt::Debug,
-    sync::Arc,
-    time::{
-        SystemTime,
-        UNIX_EPOCH,
-    },
 };
 
-use dgraph_tonic::Client as DgraphClient;
 use grapl_tracing::SetupTracingError;
-use rust_proto::graplinc::grapl::api::graph::v1beta1::{
-    IdentifiedGraph,
-    MergedGraph,
-};
-
-use crate::{
-    reverse_resolver::ReverseEdgeResolver,
-    upserter,
+use kafka::StreamProcessorError;
+use rust_proto::graplinc::grapl::{
+    api::{
+        client::ClientError,
+        graph::v1beta1::{
+            IdentifiedEdge,
+            IdentifiedGraph,
+            Property,
+        },
+        graph_mutation::v1beta1::{
+            client::GraphMutationClient,
+            messages::{
+                CreateEdgeRequest,
+                MutationRedundancy,
+                SetNodePropertyRequest,
+            },
+        },
+        plugin_sdk::analyzers::v1beta1::messages::{
+            EdgeUpdate,
+            Int64PropertyUpdate,
+            StringPropertyUpdate,
+            UInt64PropertyUpdate,
+            Update,
+        },
+    },
+    common::v1beta1::types::{
+        EdgeName,
+        NodeType,
+        PropertyName,
+        Uid,
+    },
+    pipeline::v1beta1::Envelope,
 };
 
 #[non_exhaustive]
@@ -37,8 +56,8 @@ pub enum GraphMergerError {
     #[error("failed to configure tracing {0}")]
     SetupTracingError(#[from] SetupTracingError),
 
-    #[error("anyhow error {0}")]
-    AnyhowError(#[from] anyhow::Error),
+    #[error("gRPC client error {0}")]
+    GrpcClientError(#[from] ClientError),
 }
 
 impl From<GraphMergerError> for kafka::StreamProcessorError {
@@ -55,75 +74,171 @@ impl From<&GraphMergerError> for kafka::StreamProcessorError {
 
 #[derive(Clone)]
 pub struct GraphMerger {
-    mg_client: Arc<DgraphClient>,
-    reverse_edge_resolver: ReverseEdgeResolver,
+    graph_mutation_client: GraphMutationClient,
 }
 
 impl GraphMerger {
-    pub fn new(mg_client: DgraphClient, reverse_edge_resolver: ReverseEdgeResolver) -> Self {
+    pub fn new(graph_mutation_client: GraphMutationClient) -> Self {
         Self {
-            mg_client: Arc::new(mg_client),
-            reverse_edge_resolver,
+            graph_mutation_client,
         }
     }
 
-    #[tracing::instrument(skip(self, subgraph))]
+    #[tracing::instrument(skip(self, event))]
     pub async fn handle_event(
-        &mut self,
-        subgraph: IdentifiedGraph,
-    ) -> Result<MergedGraph, Result<(MergedGraph, GraphMergerError), GraphMergerError>> {
-        if subgraph.is_empty() {
-            tracing::warn!("Attempted to merge empty subgraph. Short circuiting.");
-            return Ok(MergedGraph::default());
+        mut self,
+        event: Result<(tracing::Span, Envelope<IdentifiedGraph>), StreamProcessorError>,
+    ) -> Vec<Result<Envelope<Update>, GraphMergerError>> {
+        match event {
+            Ok((span, envelope)) => {
+                let _guard = span.enter();
+                let tenant_id = envelope.tenant_id();
+                let trace_id = envelope.trace_id();
+                let event_source_id = envelope.event_source_id();
+                let subgraph = envelope.inner_message();
+
+                tracing::debug!("received kafka message");
+
+                if subgraph.is_empty() {
+                    tracing::warn!("Attempted to merge empty subgraph. Short circuiting.");
+                    return vec![];
+                }
+
+                tracing::info!(
+                    message = "handling new subgraph",
+                    nodes =? subgraph.nodes.len(),
+                    edges =? subgraph.edges.len(),
+                );
+
+                let mut updates = Vec::with_capacity(subgraph.nodes.len() + subgraph.edges.len());
+
+                let node_types: HashMap<Uid, String> = subgraph
+                    .nodes
+                    .iter()
+                    .map(|(uid, n)| (*uid, n.node_type.clone()))
+                    .collect();
+                let nodes = subgraph.nodes;
+                let edges = subgraph.edges;
+
+                for node in nodes.into_values() {
+                    for (prop_name, prop_value) in node.properties {
+                        let update =
+                            property_to_update(node.uid, prop_name.clone(), &prop_value.property);
+
+                        let response = self
+                            .graph_mutation_client
+                            .set_node_property(SetNodePropertyRequest {
+                                tenant_id,
+                                node_type: NodeType {
+                                    value: node.node_type.clone(),
+                                },
+                                uid: node.uid,
+                                property_name: PropertyName { value: prop_name },
+                                property: prop_value,
+                            })
+                            .await;
+
+                        match response {
+                            Ok(set_node_property_response) => {
+                                if let MutationRedundancy::True =
+                                    set_node_property_response.mutation_redundancy
+                                {
+                                    continue;
+                                } else {
+                                    updates.push(Ok(Envelope::new(
+                                        tenant_id,
+                                        trace_id,
+                                        event_source_id,
+                                        update,
+                                    )));
+                                }
+                            }
+                            Err(e) => updates.push(Err(e.into())),
+                        }
+                    }
+                }
+
+                for edge_list in edges.into_values() {
+                    for edge in edge_list.edges {
+                        let IdentifiedEdge {
+                            to_uid,
+                            from_uid,
+                            edge_name,
+                        } = edge;
+                        let response = self
+                            .graph_mutation_client
+                            .create_edge(CreateEdgeRequest {
+                                tenant_id,
+                                edge_name: EdgeName {
+                                    value: edge_name.clone(),
+                                },
+                                from_uid,
+                                to_uid,
+                                source_node_type: NodeType {
+                                    value: node_types[&from_uid].clone(),
+                                },
+                            })
+                            .await;
+
+                        match response {
+                            Ok(create_edge_response) => {
+                                if let MutationRedundancy::True =
+                                    create_edge_response.mutation_redundancy
+                                {
+                                    continue;
+                                } else {
+                                    updates.push(Ok(Envelope::new(
+                                        tenant_id,
+                                        trace_id,
+                                        event_source_id,
+                                        Update::Edge(EdgeUpdate {
+                                            src_uid: from_uid,
+                                            dst_uid: to_uid,
+                                            forward_edge_name: EdgeName {
+                                                value: edge_name.clone(),
+                                            },
+                                            reverse_edge_name: EdgeName {
+                                                value: edge_name.clone(),
+                                            },
+                                        }),
+                                    )));
+                                }
+                            }
+                            Err(e) => updates.push(Err(e.into())),
+                        }
+                    }
+                }
+
+                updates
+            }
+            Err(e) => vec![Err(e.into())],
         }
-
-        tracing::info!(
-            message = "handling new subgraph",
-            nodes =? subgraph.nodes.len(),
-            edges =? subgraph.edges.len(),
-        );
-
-        let uncached_nodes = subgraph.nodes.into_iter().map(|(_, n)| n);
-        let mut uncached_edges: Vec<_> =
-            subgraph.edges.into_iter().flat_map(|e| e.1.edges).collect();
-        let reverse = self
-            .reverse_edge_resolver
-            .resolve_reverse_edges(uncached_edges.clone())
-            .await
-            .map_err(Err)?;
-
-        uncached_edges.extend_from_slice(&reverse[..]);
-
-        let mut merged_graph = MergedGraph::new();
-        let mut uncached_subgraph = IdentifiedGraph::new();
-
-        for node in uncached_nodes {
-            uncached_subgraph.add_node(node);
-        }
-
-        for edge in uncached_edges {
-            uncached_subgraph.add_edge(edge.edge_name, edge.from_node_key, edge.to_node_key);
-        }
-
-        upserter::GraphMergeHelper {}
-            .upsert_into(
-                self.mg_client.clone(),
-                &uncached_subgraph,
-                &mut merged_graph,
-            )
-            .await;
-
-        Ok(merged_graph)
     }
 }
 
-pub fn time_based_key_fn(_event: &[u8]) -> String {
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
-
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
+fn property_to_update(uid: Uid, property_name: String, property: &Property) -> Update {
+    match property {
+        Property::IncrementOnlyUintProp(_)
+        | Property::DecrementOnlyUintProp(_)
+        | Property::ImmutableUintProp(_) => Update::Uint64Property(UInt64PropertyUpdate {
+            uid,
+            property_name: PropertyName {
+                value: property_name,
+            },
+        }),
+        Property::IncrementOnlyIntProp(_)
+        | Property::DecrementOnlyIntProp(_)
+        | Property::ImmutableIntProp(_) => Update::Int64Property(Int64PropertyUpdate {
+            uid,
+            property_name: PropertyName {
+                value: property_name,
+            },
+        }),
+        Property::ImmutableStrProp(_) => Update::StringProperty(StringPropertyUpdate {
+            uid,
+            property_name: PropertyName {
+                value: property_name,
+            },
+        }),
+    }
 }

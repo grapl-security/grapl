@@ -4,7 +4,7 @@ env:
   BUILDKITE_PLUGIN_VAULT_ENV_SECRET_PREFIX: "secret/data/buildkite/env"
   # TODO: Figure out a way for this to be sourced from our
   # rust-toolchain file
-  RUST_VERSION: 1.63.0
+  RUST_VERSION: 1.64.0
 
 steps:
   - group: ":white_check_mark: Validation"
@@ -15,7 +15,7 @@ steps:
       - label: ":github: Validate CODEOWNERS"
         command: ".buildkite/scripts/validate_codeowners.sh"
         plugins:
-          - docker#v3.14.0:
+          - docker#v5.3.0:
               image: "node"
               entrypoint: "bash"
 
@@ -57,7 +57,7 @@ steps:
           - make lint-python
         plugins:
           - grapl-security/vault-login#v0.1.3
-          - grapl-security/vault-env#v0.1.0:
+          - grapl-security/vault-env#v0.2.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
 
@@ -66,7 +66,7 @@ steps:
           - make typecheck
         plugins:
           - grapl-security/vault-login#v0.1.3
-          - grapl-security/vault-env#v0.1.0:
+          - grapl-security/vault-env#v0.2.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
 
@@ -81,7 +81,7 @@ steps:
           - rustup set profile default
           - make lint-rust-rustfmt
         plugins:
-          - docker#v3.14.0:
+          - docker#v5.3.0:
               image: "rust:${RUST_VERSION}"
 
       - label: ":bash: Linting"
@@ -89,7 +89,7 @@ steps:
           - make lint-shell
         plugins:
           - grapl-security/vault-login#v0.1.3
-          - grapl-security/vault-env#v0.1.0:
+          - grapl-security/vault-env#v0.2.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
 
@@ -98,7 +98,7 @@ steps:
           - make lint-docker
         plugins:
           - grapl-security/vault-login#v0.1.3
-          - grapl-security/vault-env#v0.1.0:
+          - grapl-security/vault-env#v0.2.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
 
@@ -126,21 +126,6 @@ steps:
                     label: ":pipeline: Upload Cargo Audit"
                     group: ":lock_with_ink_pen: Dependency Audits"
                     command: ".buildkite/pipeline.cargo-audit.sh | buildkite-agent pipeline upload"
-
-      - label: ":thinking_face::nodejs: NPM Audit?"
-        plugins:
-          - grapl-security/grapl-release#v0.1.2
-          - chronotc/monorepo-diff#v2.2.0:
-              diff: grapl_diff.sh
-              log_level: "debug"
-              watch:
-                - path:
-                    - "**/package.json"
-                    - "**/package-lock.json"
-                  config:
-                    label: ":pipeline: Upload NPM Audit"
-                    group: ":lock_with_ink_pen: Dependency Audits"
-                    command: ".buildkite/pipeline.npm-audit.sh | buildkite-agent pipeline upload"
 
       - label: ":thinking_face::nodejs: Yarn Audit?"
         plugins:
@@ -180,7 +165,7 @@ steps:
           - make test-unit-python
         plugins:
           - grapl-security/vault-login#v0.1.3
-          - grapl-security/vault-env#v0.1.0:
+          - grapl-security/vault-env#v0.2.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
                 - grapl/CODECOV_TOKEN
@@ -191,7 +176,7 @@ steps:
           - make test-unit-rust-coverage
         plugins:
           - grapl-security/vault-login#v0.1.3
-          - grapl-security/vault-env#v0.1.0:
+          - grapl-security/vault-env#v0.2.0:
               secrets:
                 - grapl/CODECOV_TOKEN
           - grapl-security/codecov#v0.1.6
@@ -202,12 +187,12 @@ steps:
       - label: ":typescript: Unit Tests"
         command:
           - make test-unit-js
-        plugins:
-          - grapl-security/vault-login#v0.1.3
-          - grapl-security/vault-env#v0.1.0:
-              secrets:
-                - grapl/CODECOV_TOKEN
-          - grapl-security/codecov#v0.1.6
+  #        plugins:
+  #          - grapl-security/vault-login#v0.1.3
+  #          - grapl-security/vault-env#v0.2.0:
+  #              secrets:
+  #                - grapl/CODECOV_TOKEN
+  #          - grapl-security/codecov#v0.1.6
 
   - group: "Integration tests"
     key: integration-tests
@@ -217,7 +202,7 @@ steps:
           - make test-integration-python
         plugins:
           - grapl-security/vault-login#v0.1.3
-          - grapl-security/vault-env#v0.1.0:
+          - grapl-security/vault-env#v0.2.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
         env:
@@ -234,7 +219,7 @@ steps:
           - make test-integration-rust
         plugins:
           - grapl-security/vault-login#v0.1.3
-          - grapl-security/vault-env#v0.1.0:
+          - grapl-security/vault-env#v0.2.0:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
         env:

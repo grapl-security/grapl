@@ -20,6 +20,7 @@ impl Connectable for PipelineIngressServiceClient<tonic::transport::Channel> {
     }
 }
 
+#[derive(Clone)]
 pub struct PipelineIngressClient {
     client: Client<PipelineIngressServiceClient<tonic::transport::Channel>>,
 }

@@ -14,10 +14,9 @@ use rust_proto::graplinc::grapl::api::{
         ClientError,
         Connect,
     },
+    pipeline_ingress::v1beta1::client::PipelineIngressClient,
     plugin_registry::v1beta1::PluginRegistryClient,
 };
-
-use crate::upstream::GraphQlEndpointUrl;
 
 const KEY_SIZE: usize = 32;
 pub(crate) const SESSION_TOKEN: &'static str = "SESSION_TOKEN";
@@ -43,8 +42,8 @@ pub struct Config {
     pub session_key: [u8; KEY_SIZE],
     pub user_auth_table_name: String,
     pub user_session_table_name: String,
-    pub graphql_endpoint: GraphQlEndpointUrl,
     pub plugin_registry_client: PluginRegistryClient,
+    pub pipeline_ingress_client: PipelineIngressClient,
     pub google_client_id: String,
 }
 
@@ -55,11 +54,22 @@ impl Config {
         let listener = std::net::TcpListener::bind(builder.bind_address)?;
 
         let plugin_registry_config: ClientConfiguration = Figment::new()
-            .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+            .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
             .extract()?;
 
         let plugin_registry_client = PluginRegistryClient::connect_with_healthcheck(
             plugin_registry_config,
+            Duration::from_secs(60),
+            Duration::from_secs(1),
+        )
+        .await?;
+
+        let pipeline_ingress_config: ClientConfiguration = Figment::new()
+            .merge(Env::prefixed("PIPELINE_INGRESS_CLIENT_"))
+            .extract()?;
+
+        let pipeline_ingress_client = PipelineIngressClient::connect_with_healthcheck(
+            pipeline_ingress_config,
             Duration::from_secs(60),
             Duration::from_secs(1),
         )
@@ -76,8 +86,8 @@ impl Config {
             session_key,
             user_auth_table_name: builder.user_auth_table_name,
             user_session_table_name: builder.user_session_table_name,
-            graphql_endpoint: builder.graphql_endpoint,
             plugin_registry_client,
+            pipeline_ingress_client,
             google_client_id: builder.google_client_id,
         };
 
@@ -94,8 +104,6 @@ pub struct ConfigBuilder {
     pub user_auth_table_name: String,
     #[clap(env = "GRAPL_USER_SESSION_TABLE")]
     pub user_session_table_name: String,
-    #[clap(env = "GRAPL_GRAPHQL_ENDPOINT")]
-    pub graphql_endpoint: GraphQlEndpointUrl,
     #[clap(env = "GRAPL_GOOGLE_CLIENT_ID")]
     pub google_client_id: String,
 }

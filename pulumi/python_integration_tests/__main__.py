@@ -3,7 +3,7 @@ import sys
 sys.path.insert(0, "..")
 
 import os
-from typing import Mapping, cast
+from typing import Mapping
 
 import pulumi_aws as aws
 from infra import config
@@ -11,10 +11,10 @@ from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.config import repository_path
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
+from infra.grapl_stack import GraplStack
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Kafka
 from infra.nomad_job import NomadJob, NomadVars
-from infra.nomad_service_postgres import NomadServicePostgresDbArgs
 
 import pulumi
 
@@ -81,38 +81,12 @@ def main() -> None:
             "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
         }
 
-        python_integration_tests = NomadJob(
+        NomadJob(
             "python-integration-tests",
             jobspec=repository_path("nomad/local/python-integration-tests.nomad"),
             vars=python_integration_test_job_vars,
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
-
-
-class GraplStack:
-    def __init__(self, stack_name: str) -> None:
-        self.upstream_stack_name = (
-            "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
-        )
-        ref = pulumi.StackReference(self.upstream_stack_name)
-
-        def require_str(key: str) -> str:
-            return cast(str, ref.require_output(key))
-
-        self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
-        self.schema_properties_table_name = require_str("schema-properties-table")
-        self.schema_table_name = require_str("schema-table")
-        self.test_user_name = require_str("test-user-name")
-
-        self.plugin_work_queue_db = cast(
-            NomadServicePostgresDbArgs, ref.require_output("plugin-work-queue-db")
-        )
-
-        self.organization_management_db = cast(
-            NomadServicePostgresDbArgs, ref.require_output("organization-management-db")
-        )
-
-        self.test_user_password_secret_id = require_str("test-user-password-secret-id")
 
 
 if __name__ == "__main__":
