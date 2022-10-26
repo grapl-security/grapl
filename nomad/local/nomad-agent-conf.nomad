@@ -8,9 +8,9 @@ ui {
     ui_url = "http://localhost:8500/ui"
   }
 
-    vault {
-      ui_url = "http://localhost:8200/ui"
-    }
+  vault {
+    ui_url = "http://localhost:8200/ui"
+  }
 }
 
 ####################
