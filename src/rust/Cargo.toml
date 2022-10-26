@@ -18,6 +18,7 @@ members = [
   "./graph-schema-manager",
   "./grapl-config",
   "./grapl-graphql-codegen",
+  "./grapl-metrics",
   "./grapl-tracing",
   "./grapl-utils",
   "./grapl-web-ui",
