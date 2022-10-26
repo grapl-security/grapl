@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import logging
 import os
 import sys
 from dataclasses import dataclass, field
@@ -9,6 +8,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
 
 import grpc
+import structlog
 from grapl_plugin_sdk.analyzer.analyzer_context import AnalyzerContext
 
 if TYPE_CHECKING:
@@ -26,9 +26,12 @@ from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_m
 from python_proto.common import Uuid as PythonProtoUuid
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.environ["ANALYZER_LOG_LEVEL"])
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+structlog.configure(
+    wrapper_class=structlog.make_filtering_bound_logger(
+        min_level=os.environ["ANALYZER_LOG_LEVEL"]
+    ),
+)
+LOGGER = structlog.get_logger()
 
 
 def _get_tenant_id() -> PythonProtoUuid:
