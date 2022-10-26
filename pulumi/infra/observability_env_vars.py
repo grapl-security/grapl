@@ -87,12 +87,10 @@ receivers:
               regex: (.+)
             # Replace the port in the address with the one from the metrics_port
             # meta field.
-            # __meta_consul_service_address is 127.0.0.1
-            # __address__ should be http://ip:0 but appears to be empty for some reason
-            # __meta_consul_service_metadata_metrics_port_envoy may not be picked up. However it is a valid metadata tag
             - source_labels: [__meta_consul_service_metadata_metrics_port_envoy]
               regex: (.*)
-              replacement: 100.115.92.202:$1
+              # Since we're in a f-string curly braces must be escaped by adding a second curly brace
+              replacement: {{{{ env "attr.unique.network.ip-address" }}}}:${{1}}
               target_label: __address__
               action: replace
           static_configs:
