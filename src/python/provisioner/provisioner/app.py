@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 import boto3
 from argon2 import PasswordHasher
@@ -13,6 +14,9 @@ from grapl_common.env_helpers import (
 )
 from grapl_common.grapl_tracer import get_tracer
 from grapl_common.test_user_creds import get_test_user_creds
+from python_proto.api.scylla_provisioner.v1beta1.client import ScyllaProvisionerClient
+from python_proto.client import GrpcClientConfig
+from python_proto.common import Uuid
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -20,7 +24,12 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+formatter = logging.Formatter(
+    fmt="%(asctime)s %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+)
+stdout_handler = logging.StreamHandler(stream=sys.stdout)
+stdout_handler.setFormatter(formatter)
+LOGGER.addHandler(stdout_handler)
 
 GRAPL_SCHEMA_TABLE = os.environ["GRAPL_SCHEMA_TABLE"]
 GRAPL_SCHEMA_PROPERTIES_TABLE = os.environ["GRAPL_SCHEMA_PROPERTIES_TABLE"]
@@ -60,6 +69,23 @@ def _retrieve_test_user_password(
     )["SecretString"]
 
 
+def provision_scylla() -> None:
+    LOGGER.info("provisioning scylla")
+    scylla_provisioner_client = ScyllaProvisionerClient.connect(
+        client_config=GrpcClientConfig(
+            address=os.environ["SCYLLA_PROVISIONER_CLIENT_ADDRESS"],
+        )
+    )
+
+    # scylla_provisioner's API takes a tenant_id but it doesn't use it
+    # anymore
+    arbitrary_tenant_id = uuid4()
+    scylla_provisioner_client.provision_graph_for_tenant(
+        tenant_id=Uuid.from_uuid(arbitrary_tenant_id)
+    )
+    LOGGER.info("provisioned scylla")
+
+
 def provision() -> None:
     LOGGER.info("provisioning grapl")
     with TRACER.start_as_current_span(__name__):
@@ -78,3 +104,5 @@ def provision() -> None:
             org="00000000-0000-0000-0000-000000000000",
         )
         LOGGER.info("created test user")
+
+        provision_scylla()

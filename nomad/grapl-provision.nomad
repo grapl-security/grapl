@@ -69,6 +69,8 @@ variable "py_log_level" {
 }
 
 locals {
+  dns_servers = [attr.unique.network.ip-address]
+
   # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
   # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
   # Examples of keys we may add in the future: language, instance_id/ip, team
@@ -87,6 +89,9 @@ job "grapl-provision" {
   group "provisioner" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     task "provisioner" {
@@ -119,13 +124,16 @@ job "grapl-provision" {
 
       env {
         AWS_DEFAULT_REGION                 = var.aws_region
-        DGRAPH_DROP_ALL_DATA               = 1
         GRAPL_SCHEMA_TABLE                 = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE              = var.user_auth_table
         GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
         GRAPL_LOG_LEVEL                    = var.py_log_level
+
+        # Oddly, for this one client, it doesn't want the `http://` and I
+        # cannot explain it at all.
+        SCYLLA_PROVISIONER_CLIENT_ADDRESS = "${NOMAD_UPSTREAM_ADDR_scylla-provisioner}"
 
         OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
       }
@@ -135,7 +143,12 @@ job "grapl-provision" {
       name = "provisioner"
       connect {
         sidecar_service {
-          proxy {}
+          proxy {
+            upstreams {
+              destination_name = "scylla-provisioner"
+              local_bind_port  = 1000
+            }
+          }
         }
       }
     }
