@@ -77,6 +77,12 @@ job "grapl-plugin" {
       ]
 
       connect {
+        sidecar_task {
+          resources {
+            cpu = 50
+          }
+        }
+
         sidecar_service {
           proxy {
             upstreams {
@@ -141,6 +147,12 @@ job "grapl-plugin" {
       ]
 
       connect {
+        sidecar_task {
+          resources {
+            cpu = 50
+          }
+        }
+
         sidecar_service {
         }
       }

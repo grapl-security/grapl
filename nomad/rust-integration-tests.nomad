@@ -55,6 +55,14 @@ variable "kafka_credentials" {
   })
 }
 
+variable "observability_env_vars" {
+  type        = string
+  description = <<EOF
+With local-grapl, we have to inject env vars for Opentelemetry.
+In prod, this is currently disabled.
+EOF
+}
+
 variable "rust_log" {
   type        = string
   description = "Controls the logging behavior of Rust-based services."
@@ -92,6 +100,9 @@ variable "plugin_work_queue_db" {
 
 locals {
   dns_servers = [attr.unique.network.ip-address]
+
+  app_version                      = split(":", var.container_images["rust-integration-tests"])[1]
+  default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
 }
 
 job "rust-integration-tests" {
@@ -192,7 +203,12 @@ job "rust-integration-tests" {
         image = var.container_images["rust-integration-tests"]
       }
 
-      # This writes an env file that gets read by the task automatically
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       template {
         data        = var.aws_env_vars_for_local
         destination = "aws-env-vars-for-local.env"
@@ -204,6 +220,8 @@ job "rust-integration-tests" {
 
         RUST_BACKTRACE = 1
         RUST_LOG       = var.rust_log
+
+        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
 
         # web-ui
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table

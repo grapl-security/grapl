@@ -73,6 +73,7 @@ BUILD @christophermaier
 /src/rust/graph-schema-manager @colin-grapl @wimax-grapl
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
+/src/rust/grapl-metrics/ @wimax-grapl
 /src/rust/grapl-tracing/ @wimax-grapl
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/grapl-web-ui/ @inickles-grapl

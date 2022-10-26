@@ -25,7 +25,8 @@ job "otel-collector" {
 
       # Receivers
       port "otlp-grpc" {
-        to = 4317
+        to     = 4317
+        static = 4317
       }
 
       port "otlp-http" {
@@ -56,6 +57,10 @@ job "otel-collector" {
 
     service {
       port = "otlp-http"
+    }
+
+    service {
+      port = "otlp-grpc"
     }
 
     service {
