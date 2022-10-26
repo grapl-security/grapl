@@ -35,10 +35,15 @@ async fn test_record_histogram_gauge() -> eyre::Result<()> {
     let histogram = meter.f64_histogram("test-histogram").init();
     histogram.record(&cx, 5.5, &(common_attrs.clone()));
 
+    let counter = meter.i64_up_down_counter("test-counter").with_description("counter with total of 3").init();
+    counter.add(&cx, 1, common_attrs.as_ref());
+    counter.add(&cx, 2, common_attrs.as_ref());
+
     let gauge = meter
         .f64_observable_gauge("test-gauge")
         .with_description("A gauge set to 1.0")
         .init();
+    // You can only call `.observe` inside register_callback(...).
     meter.register_callback(move |cx| gauge.observe(cx, 1.0, common_attrs.clone().as_ref()))?;
 
     // wait a sec for the metrics to flush
