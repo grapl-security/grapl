@@ -15,7 +15,6 @@ use rust_proto::{
         GraphSchemaManagerClientConfig,
         PipelineIngressClientConfig,
         PluginRegistryClientConfig,
-        ScyllaProvisionerClientConfig,
         UidAllocatorClientConfig,
     },
     graplinc::grapl::api::{
@@ -37,10 +36,6 @@ use rust_proto::{
             PluginRegistryServiceClient,
             PluginType,
         },
-        scylla_provisioner::v1beta1::{
-            client::ScyllaProvisionerClient,
-            messages::ProvisionGraphForTenantRequest,
-        },
         uid_allocator::v1beta1::{
             client::UidAllocatorServiceClient,
             messages::CreateTenantKeyspaceRequest,
@@ -60,7 +55,6 @@ pub struct E2eTestContext {
     pub pipeline_ingress_client: PipelineIngressClient,
     pub plugin_work_queue_psql_client: PsqlQueue,
     pub uid_allocator_client: UidAllocatorServiceClient,
-    pub scylla_provisioner_client: ScyllaProvisionerClient,
     pub _guard: WorkerGuard,
 }
 
@@ -101,11 +95,6 @@ impl AsyncTestContext for E2eTestContext {
                 .await
                 .expect("uid_allocator_client");
 
-        let scylla_provisioner_client =
-            ScyllaProvisionerClient::connect_with_config(ScyllaProvisionerClientConfig::parse())
-                .await
-                .expect("scylla_provisioner_client");
-
         Self {
             event_source_client,
             graph_schema_manager_client,
@@ -113,7 +102,6 @@ impl AsyncTestContext for E2eTestContext {
             pipeline_ingress_client,
             plugin_work_queue_psql_client,
             uid_allocator_client,
-            scylla_provisioner_client,
             _guard,
         }
     }
@@ -141,11 +129,6 @@ impl E2eTestContext {
         self.uid_allocator_client
             .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
             .await?;
-        tracing::info!("provisioning graph");
-        self.scylla_provisioner_client
-            .provision_graph_for_tenant(ProvisionGraphForTenantRequest { tenant_id })
-            .await?;
-        tracing::info!("created tenant");
         Ok(tenant_id)
     }
 

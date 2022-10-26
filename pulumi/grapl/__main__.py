@@ -525,6 +525,7 @@ def main() -> None:
             provider=nomad_provider,
             depends_on=[
                 nomad_grapl_core.job,
+                nomad_graph_db.job,
             ],
         ),
     )
