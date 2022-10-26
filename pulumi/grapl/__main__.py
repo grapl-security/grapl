@@ -332,7 +332,7 @@ def main() -> None:
     # Apparently nomad templates use a different templating syntax than anywhere else
     nomad_agent_endpoint: str = '{{ env "attr.unique.network.ip-address" }}:4646'
     consul_agent_endpoint: str = '{{ env "attr.unique.network.ip-address" }}:8500'
-    # Get layer-7 metrics from Consul
+    # Get envoy metrics from Consul
     consul_l7_metric_endpoint: str = '{{ env "attr.unique.network.ip-address" }}:9102'
 
     otel_configuration = otel_config(
