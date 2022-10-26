@@ -22,7 +22,7 @@ config:
     organization-management: 20221026202745-92b396d
     pipeline-ingress: 20221026202745-92b396d
     plugin-bootstrap: 20221026202745-92b396d
-    plugin-registry: 20221026202745-92b396d
+    plugin-registry: 20221026205236-3bb3f51
     plugin-work-queue: 20221026202745-92b396d
     provisioner: 20221026155727-1e18a50
     rust-integration-tests: 20221026202745-92b396d
