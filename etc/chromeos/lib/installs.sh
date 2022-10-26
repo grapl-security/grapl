@@ -266,10 +266,10 @@ install_utilities() {
 }
 
 install_hashicorp_tools() {
-    echo_banner "Installing hashicorp tools: consul nomad packer"
+    echo_banner "Installing hashicorp tools: consul nomad packer vault"
 
-    CONSUL_VERSION="1.12.5-1"
-    NOMAD_VERSION="1.3.5-1"
+    CONSUL_VERSION="1.12.6-1"
+    NOMAD_VERSION="1.4.1-1"
     PACKER_VERSION="1.8.2-1"
     VAULT_VERSION="1.10.4-1"
 
