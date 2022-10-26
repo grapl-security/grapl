@@ -35,7 +35,10 @@ async fn test_metrics_primitives_histogram_gauge_counter() -> eyre::Result<()> {
     let histogram = meter.f64_histogram("test-histogram").init();
     histogram.record(&cx, 5.5, &(common_attrs.clone()));
 
-    let counter = meter.i64_up_down_counter("test-counter").with_description("counter with total of 3").init();
+    let counter = meter
+        .i64_up_down_counter("test-counter")
+        .with_description("counter with total of 3")
+        .init();
     counter.add(&cx, 1, common_attrs.as_ref());
     counter.add(&cx, 2, common_attrs.as_ref());
 
