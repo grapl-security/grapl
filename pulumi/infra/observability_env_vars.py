@@ -16,7 +16,6 @@ def get_observability_env_vars() -> str:
     # Default is 512. We were getting errors that our Thrift messages were too big.
     otel_bsp_max_export_batch_size = 32
 
-    # metrics_exporter_endpoint = "http://${NOMAD_UPSTREAM_ADDR_otel-grpc}"
     metrics_exporter_endpoint = f"http://{otel_host}:4317"
 
     return f"""

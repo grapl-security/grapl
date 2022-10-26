@@ -23,8 +23,6 @@ pub struct GraplMetrics {
     cx: Context,
 }
 
-impl GraplMetrics {}
-
 impl Drop for GraplMetrics {
     fn drop(&mut self) {
         // invokes shutdown on all otel span processors
