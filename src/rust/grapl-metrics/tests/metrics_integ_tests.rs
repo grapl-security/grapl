@@ -19,7 +19,7 @@ const TEST_KEY: Key = Key::from_static_str("test_key");
 /// 1. add `logging` to the metrics exporters in pulumi/infra/observability_env_vars.py
 /// 2. grep -A 5 metrics-integ-test $YOUR_TEST_ARTIFACTS/otel-collector/*
 #[test_log::test(tokio::test(flavor = "multi_thread"))]
-async fn test_record_histogram_gauge() -> eyre::Result<()> {
+async fn test_metrics_primitives_histogram_gauge_counter() -> eyre::Result<()> {
     let common_attrs: [KeyValue; 4] = [
         TEST_KEY.i64(10),
         KeyValue::new("A", "1"),
