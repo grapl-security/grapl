@@ -5,10 +5,10 @@ use tonic::transport::Endpoint;
 use crate::{
     graplinc::grapl::api::{
         client::{
-            client_impl,
             Client,
             ClientError,
             Connectable,
+            WithClient,
         },
         graph_mutation::v1beta1::messages as native,
     },
@@ -35,12 +35,7 @@ impl Debug for GraphMutationClient {
     }
 }
 
-impl client_impl::WithClient<GraphMutationServiceClient<tonic::transport::Channel>>
-    for GraphMutationClient
-{
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.graph_mutation.v1beta1.GraphMutationService";
-
+impl WithClient<GraphMutationServiceClient<tonic::transport::Channel>> for GraphMutationClient {
     fn with_client(client: Client<GraphMutationServiceClient<tonic::transport::Channel>>) -> Self {
         Self { client }
     }

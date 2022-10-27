@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use dashmap::DashMap;
 use rust_proto::graplinc::grapl::api::{
     client::{
@@ -38,12 +36,8 @@ impl CachingUidAllocatorClient {
         client_config: ClientConfiguration,
         count: u32,
     ) -> Result<Self, ClientError> {
-        let allocator = UidAllocatorClient::connect_with_healthcheck(
-            client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let allocator = UidAllocatorClient::connect(client_config).await?;
+
         Ok(Self::new(allocator, count))
     }
 

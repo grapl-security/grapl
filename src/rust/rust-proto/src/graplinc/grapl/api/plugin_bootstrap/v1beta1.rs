@@ -171,7 +171,7 @@ pub mod client {
             Connectable,
             ClientError,
             Client,
-            client_impl
+            WithClient,
         },
     };
 
@@ -191,12 +191,7 @@ pub mod client {
         client: Client<PluginBootstrapServiceClient<tonic::transport::Channel>>,
     }
 
-    impl client_impl::WithClient<PluginBootstrapServiceClient<tonic::transport::Channel>>
-        for PluginBootstrapClient
-    {
-        const SERVICE_NAME: &'static str =
-            "graplinc.grapl.api.plugin_bootstrap.v1beta1.PluginBootstrapService";
-
+    impl WithClient<PluginBootstrapServiceClient<tonic::transport::Channel>> for PluginBootstrapClient {
         fn with_client(
             client: Client<PluginBootstrapServiceClient<tonic::transport::Channel>>,
         ) -> Self {

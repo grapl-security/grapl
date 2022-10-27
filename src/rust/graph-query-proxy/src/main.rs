@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use clap::Parser;
 use figment::{
     providers::Env,
@@ -35,12 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let graph_query_service = GraphQueryProxy::new(
         config.tenant_id,
-        GraphQueryClient::connect_with_healthcheck(
-            graph_query_client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?,
+        GraphQueryClient::connect(graph_query_client_config).await?,
     );
 
     exec_service(config, graph_query_service).await

@@ -10,10 +10,10 @@ use tracing::instrument;
 use crate::{
     graplinc::grapl::api::{
         client::{
-            client_impl,
             Client,
             ClientError,
             Connectable,
+            WithClient,
         },
         plugin_registry::v1beta1 as native,
     },
@@ -32,12 +32,7 @@ pub struct PluginRegistryClient {
     client: Client<PluginRegistryServiceClient<tonic::transport::Channel>>,
 }
 
-impl client_impl::WithClient<PluginRegistryServiceClient<tonic::transport::Channel>>
-    for PluginRegistryClient
-{
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_registry.v1beta1.PluginRegistryService";
-
+impl WithClient<PluginRegistryServiceClient<tonic::transport::Channel>> for PluginRegistryClient {
     fn with_client(client: Client<PluginRegistryServiceClient<tonic::transport::Channel>>) -> Self {
         Self { client }
     }

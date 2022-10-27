@@ -50,13 +50,9 @@ impl AsyncTestContext for PipelineIngressTestContext {
             .merge(Env::prefixed("PIPELINE_INGRESS_CLIENT_"))
             .extract()
             .expect("failed to configure pipeline ingress client");
-        let pipeline_ingress_client = PipelineIngressClient::connect_with_healthcheck(
-            client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await
-        .expect("failed to connect to pipeline ingress");
+        let pipeline_ingress_client = PipelineIngressClient::connect(client_config)
+            .await
+            .expect("failed to connect to pipeline ingress");
 
         PipelineIngressTestContext {
             grpc_client: pipeline_ingress_client,

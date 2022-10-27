@@ -148,13 +148,9 @@ impl AsyncTestContext for PipelineIngressTestContext {
             Duration::from_secs(5),
             Duration::from_secs(60),
         );
-        let client = PipelineIngressClient::connect_with_healthcheck(
-            client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await
-        .expect("could not configure client");
+        let client = PipelineIngressClient::connect(client_config)
+            .await
+            .expect("could not configure client");
 
         PipelineIngressTestContext {
             client,

@@ -3,10 +3,10 @@ use tonic::transport::Endpoint;
 use crate::{
     graplinc::grapl::api::{
         client::{
-            client_impl,
             Client,
             ClientError,
             Connectable,
+            WithClient,
         },
         event_source::v1beta1 as native,
     },
@@ -25,11 +25,7 @@ pub struct EventSourceClient {
     client: Client<EventSourceServiceClient<tonic::transport::Channel>>,
 }
 
-impl client_impl::WithClient<EventSourceServiceClient<tonic::transport::Channel>>
-    for EventSourceClient
-{
-    const SERVICE_NAME: &'static str = "graplinc.grapl.api.event_source.v1beta1.EventSourceService";
-
+impl WithClient<EventSourceServiceClient<tonic::transport::Channel>> for EventSourceClient {
     fn with_client(client: Client<EventSourceServiceClient<tonic::transport::Channel>>) -> Self {
         Self { client }
     }

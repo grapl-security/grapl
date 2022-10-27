@@ -101,12 +101,7 @@ impl GeneratorDispatcher {
         let client_config = Figment::new()
             .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
             .extract()?;
-        let plugin_registry_client = PluginRegistryClient::connect_with_healthcheck(
-            client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let plugin_registry_client = PluginRegistryClient::connect(client_config).await?;
         let generator_ids_cache = AsyncCache::new(
             config.params.generator_ids_cache_capacity,
             Duration::from_millis(config.params.generator_ids_cache_ttl_ms),

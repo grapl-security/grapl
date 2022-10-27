@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use figment::{
     providers::Env,
     Figment,
@@ -59,12 +57,7 @@ impl AnalyzerWorkProcessor {
             .merge(Env::prefixed("ANALYZER_CLIENT_"))
             .extract()?;
 
-        let analyzer_client = AnalyzerClient::connect_with_healthcheck(
-            client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let analyzer_client = AnalyzerClient::connect(client_config).await?;
 
         Ok(AnalyzerWorkProcessor { analyzer_client })
     }

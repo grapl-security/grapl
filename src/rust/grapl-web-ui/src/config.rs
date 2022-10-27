@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use clap::Parser;
 use figment::{
     providers::Env,
@@ -57,23 +55,14 @@ impl Config {
             .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
             .extract()?;
 
-        let plugin_registry_client = PluginRegistryClient::connect_with_healthcheck(
-            plugin_registry_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let plugin_registry_client = PluginRegistryClient::connect(plugin_registry_config).await?;
 
         let pipeline_ingress_config: ClientConfiguration = Figment::new()
             .merge(Env::prefixed("PIPELINE_INGRESS_CLIENT_"))
             .extract()?;
 
-        let pipeline_ingress_client = PipelineIngressClient::connect_with_healthcheck(
-            pipeline_ingress_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let pipeline_ingress_client =
+            PipelineIngressClient::connect(pipeline_ingress_config).await?;
 
         let dynamodb_client = DynamoDbClient::from_env();
 

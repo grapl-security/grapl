@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use clap::Parser;
 use figment::{
     providers::Env,
@@ -41,12 +39,7 @@ async fn main() -> eyre::Result<()> {
     let graph_mutation_client_config = Figment::new()
         .merge(Env::prefixed("GRAPH_MUTATION_CLIENT_"))
         .extract()?;
-    let graph_mutation_client = GraphMutationClient::connect_with_healthcheck(
-        graph_mutation_client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let graph_mutation_client = GraphMutationClient::connect(graph_mutation_client_config).await?;
     let graph_merger = GraphMerger::new(graph_mutation_client);
 
     let consumer_config = ConsumerConfig::parse();

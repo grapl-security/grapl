@@ -3,10 +3,10 @@ use tonic::transport::Endpoint;
 use crate::{
     graplinc::grapl::api::{
         client::{
-            client_impl,
             Client,
             ClientError,
             Connectable,
+            WithClient,
         },
         plugin_work_queue::v1beta1 as native,
     },
@@ -25,12 +25,7 @@ pub struct PluginWorkQueueClient {
     client: Client<PluginWorkQueueServiceClient<tonic::transport::Channel>>,
 }
 
-impl client_impl::WithClient<PluginWorkQueueServiceClient<tonic::transport::Channel>>
-    for PluginWorkQueueClient
-{
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_work_queue.v1beta1.PluginWorkQueueService";
-
+impl WithClient<PluginWorkQueueServiceClient<tonic::transport::Channel>> for PluginWorkQueueClient {
     fn with_client(
         client: Client<PluginWorkQueueServiceClient<tonic::transport::Channel>>,
     ) -> Self {

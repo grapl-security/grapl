@@ -1,7 +1,4 @@
-use std::{
-    os::unix::fs::PermissionsExt,
-    time::Duration,
-};
+use std::os::unix::fs::PermissionsExt;
 
 use figment::{
     providers::Env,
@@ -29,12 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_BOOTSTRAP_CLIENT_"))
         .extract()?;
-    let mut bootstrap_client = PluginBootstrapClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut bootstrap_client = PluginBootstrapClient::connect(client_config).await?;
 
     let GetBootstrapResponse {
         plugin_payload,

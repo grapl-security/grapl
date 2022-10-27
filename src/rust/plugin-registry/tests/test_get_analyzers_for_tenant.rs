@@ -31,12 +31,7 @@ async fn test_get_analyzers_for_tenant() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let analyzer1_display_name = "my first analyzer".to_string();
@@ -74,7 +69,7 @@ async fn test_get_analyzers_for_tenant() -> eyre::Result<()> {
             analyzer1_metadata,
             futures::stream::once(async move { create_analyzer1_chunk }),
         )
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
     let analyzer1_plugin_id = create_analyzer1_response.plugin_id();
 
@@ -84,7 +79,7 @@ async fn test_get_analyzers_for_tenant() -> eyre::Result<()> {
             analyzer2_metadata,
             futures::stream::once(async move { create_analyzer2_chunk }),
         )
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
     let analyzer2_plugin_id = create_analyzer2_response.plugin_id();
 
@@ -94,13 +89,13 @@ async fn test_get_analyzers_for_tenant() -> eyre::Result<()> {
             generator_metadata,
             futures::stream::once(async move { create_generator_chunk }),
         )
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
     let generator_plugin_id = create_generator_response.plugin_id();
 
     let analyzers_for_tenant_response = client
         .get_analyzers_for_tenant(GetAnalyzersForTenantRequest::new(tenant_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
 
     assert_eq!(analyzers_for_tenant_response.plugin_ids().len(), 2);
@@ -126,18 +121,13 @@ async fn test_get_analyzers_for_tenant_not_found() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 
     if let Err(e) = client
         .get_analyzers_for_tenant(GetAnalyzersForTenantRequest::new(tenant_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await?
     {
         match e {

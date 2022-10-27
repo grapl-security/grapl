@@ -86,13 +86,9 @@ impl GeneratorTestContextInternals {
             Duration::from_millis(250),
         );
 
-        let client = GeneratorClient::connect_with_healthcheck(
-            client_config,
-            Duration::from_millis(250),
-            Duration::from_millis(10),
-        )
-        .await
-        .expect("generator never reported healthy");
+        let client = GeneratorClient::connect(client_config)
+            .await
+            .expect("generator never reported healthy");
 
         GeneratorTestContextInternals {
             client,

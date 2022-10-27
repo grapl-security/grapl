@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use figment::{
     providers::Env,
     Figment,
@@ -53,12 +51,7 @@ impl GeneratorWorkProcessor {
             .merge(Env::prefixed("GENERATOR_CLIENT_"))
             .extract()?;
 
-        let generator_client = GeneratorClient::connect_with_healthcheck(
-            client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let generator_client = GeneratorClient::connect(client_config).await?;
 
         Ok(GeneratorWorkProcessor { generator_client })
     }

@@ -7,7 +7,7 @@ use crate::{
             Client,
             Connectable,
             ClientError,
-            client_impl,
+            WithClient,
         },
     },
     protobufs::graplinc::grapl::api::graph_schema_manager::v1beta1::graph_schema_manager_service_client::GraphSchemaManagerServiceClient,
@@ -25,12 +25,9 @@ pub struct GraphSchemaManagerClient {
     client: Client<GraphSchemaManagerServiceClient<tonic::transport::Channel>>,
 }
 
-impl client_impl::WithClient<GraphSchemaManagerServiceClient<tonic::transport::Channel>>
+impl WithClient<GraphSchemaManagerServiceClient<tonic::transport::Channel>>
     for GraphSchemaManagerClient
 {
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.graph_schema_manager.v1beta1.GraphSchemaManagerService";
-
     fn with_client(
         client: Client<GraphSchemaManagerServiceClient<tonic::transport::Channel>>,
     ) -> Self {

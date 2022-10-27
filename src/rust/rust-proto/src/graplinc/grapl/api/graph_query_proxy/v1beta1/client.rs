@@ -3,10 +3,10 @@ use tonic::transport::Endpoint;
 use crate::{
     graplinc::grapl::api::{
         client::{
-            client_impl,
             Client,
             ClientError,
             Connectable,
+            WithClient,
         },
         graph_query_proxy::v1beta1::messages as native,
     },
@@ -25,12 +25,7 @@ pub struct GraphQueryProxyClient {
     client: Client<GraphQueryProxyServiceClient<tonic::transport::Channel>>,
 }
 
-impl client_impl::WithClient<GraphQueryProxyServiceClient<tonic::transport::Channel>>
-    for GraphQueryProxyClient
-{
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.graph_query_proxy.v1beta1.GraphQueryProxyService";
-
+impl WithClient<GraphQueryProxyServiceClient<tonic::transport::Channel>> for GraphQueryProxyClient {
     fn with_client(
         client: Client<GraphQueryProxyServiceClient<tonic::transport::Channel>>,
     ) -> Self {

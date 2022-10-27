@@ -1,7 +1,4 @@
 #![cfg(feature = "integration_tests")]
-
-use std::time::Duration;
-
 use bytes::Bytes;
 use figment::{
     providers::Env,
@@ -29,12 +26,7 @@ async fn test_deploy_schema() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_CLIENT_"))
         .extract()?;
-    let mut client = GraphSchemaManagerClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = GraphSchemaManagerClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

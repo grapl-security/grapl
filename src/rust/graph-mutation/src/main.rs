@@ -45,12 +45,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let graph_schema_manager_client_config = Figment::new()
         .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_CLIENT_"))
         .extract()?;
-    let graph_schema_manager_client = GraphSchemaManagerClient::connect_with_healthcheck(
-        graph_schema_manager_client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let graph_schema_manager_client =
+        GraphSchemaManagerClient::connect(graph_schema_manager_client_config).await?;
 
     let uid_allocator_client_config = Figment::new()
         .merge(Env::prefixed("UID_ALLOCATOR_CLIENT_"))

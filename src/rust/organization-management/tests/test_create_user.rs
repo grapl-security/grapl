@@ -1,7 +1,5 @@
 #![cfg(feature = "integration_tests")]
 
-use std::time::Duration;
-
 use clap::Parser;
 use figment::{
     providers::Env,
@@ -31,12 +29,7 @@ async fn test_create_user() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("ORGANIZATION_MANAGEMENT_CLIENT_"))
         .extract()?;
-    let mut client = OrganizationManagementClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = OrganizationManagementClient::connect(client_config).await?;
 
     // create organization with admin user
     let organization_display_name = uuid::Uuid::new_v4().to_string();

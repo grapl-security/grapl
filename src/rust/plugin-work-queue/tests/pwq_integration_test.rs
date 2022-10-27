@@ -21,12 +21,7 @@ async fn test_push_and_get_execute_generator() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
         .extract()?;
-    let mut pwq_client = PluginWorkQueueClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut pwq_client = PluginWorkQueueClient::connect(client_config).await?;
 
     // Send 2 jobs to Plugin Work Queue
     let tenant_id = uuid::Uuid::new_v4();
@@ -117,12 +112,7 @@ async fn test_message_available_after_failure() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
         .extract()?;
-    let mut pwq_client = PluginWorkQueueClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut pwq_client = PluginWorkQueueClient::connect(client_config).await?;
 
     // Send a job to Plugin Work Queue
     let tenant_id = uuid::Uuid::new_v4();

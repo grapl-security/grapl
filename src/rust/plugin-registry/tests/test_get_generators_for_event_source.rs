@@ -31,12 +31,7 @@ async fn test_get_generators_for_event_source() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let generator1_display_name = "my first generator".to_string();
@@ -73,7 +68,7 @@ async fn test_get_generators_for_event_source() -> eyre::Result<()> {
             generator1_metadata,
             futures::stream::once(async move { create_generator1_chunk }),
         )
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
     let generator1_plugin_id = create_generator1_response.plugin_id();
 
@@ -83,7 +78,7 @@ async fn test_get_generators_for_event_source() -> eyre::Result<()> {
             generator2_metadata,
             futures::stream::once(async move { create_generator2_chunk }),
         )
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
     let generator2_plugin_id = create_generator2_response.plugin_id();
 
@@ -93,13 +88,13 @@ async fn test_get_generators_for_event_source() -> eyre::Result<()> {
             analyzer_metadata,
             futures::stream::once(async move { create_analyzer_chunk }),
         )
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
     let analyzer_plugin_id = create_analyzer_response.plugin_id();
 
     let generators_for_event_source_response = client
         .get_generators_for_event_source(GetGeneratorsForEventSourceRequest::new(event_source_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
 
     assert_eq!(generators_for_event_source_response.plugin_ids().len(), 2);
@@ -125,18 +120,13 @@ async fn test_get_generators_for_event_source_not_found() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 
     if let Err(e) = client
         .get_generators_for_event_source(GetGeneratorsForEventSourceRequest::new(tenant_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await?
     {
         match e {

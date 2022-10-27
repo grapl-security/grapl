@@ -4,10 +4,10 @@ use tracing::instrument;
 use crate::{
     graplinc::grapl::api::{
         client::{
-            client_impl,
             Client,
             ClientError,
             Connectable,
+            WithClient,
         },
         plugin_sdk::analyzers::v1beta1::messages as native,
     },
@@ -26,9 +26,7 @@ pub struct AnalyzerClient {
     client: Client<AnalyzerServiceClient<tonic::transport::Channel>>,
 }
 
-impl client_impl::WithClient<AnalyzerServiceClient<tonic::transport::Channel>> for AnalyzerClient {
-    const SERVICE_NAME: &'static str = "graplinc.grapl.api.plugin_registry.v1beta1.AnalyzerService";
-
+impl WithClient<AnalyzerServiceClient<tonic::transport::Channel>> for AnalyzerClient {
     fn with_client(client: Client<AnalyzerServiceClient<tonic::transport::Channel>>) -> Self {
         Self { client }
     }

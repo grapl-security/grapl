@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use bytes::Bytes;
 use clap::Parser;
 use figment::{
@@ -66,61 +64,43 @@ impl AsyncTestContext for E2eTestContext {
             .merge(Env::prefixed("EVENT_SOURCE_CLIENT_"))
             .extract()
             .expect("failed to configure event-source client");
-        let event_source_client = EventSourceClient::connect_with_healthcheck(
-            event_source_client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await
-        .expect("failed to connect to event-source");
+        let event_source_client = EventSourceClient::connect(event_source_client_config)
+            .await
+            .expect("failed to connect to event-source");
 
         let plugin_registry_client_config = Figment::new()
             .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
             .extract()
             .expect("failed to configure plugin-registry client");
-        let plugin_registry_client = PluginRegistryClient::connect_with_healthcheck(
-            plugin_registry_client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await
-        .expect("failed to connect to plugin-registry");
+        let plugin_registry_client = PluginRegistryClient::connect(plugin_registry_client_config)
+            .await
+            .expect("failed to connect to plugin-registry");
 
         let graph_schema_manager_client_config = Figment::new()
             .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_CLIENT_"))
             .extract()
             .expect("failed to configure graph-schema-manager client");
-        let graph_schema_manager_client = GraphSchemaManagerClient::connect_with_healthcheck(
-            graph_schema_manager_client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await
-        .expect("failed to connect to graph-schema-manager");
+        let graph_schema_manager_client =
+            GraphSchemaManagerClient::connect(graph_schema_manager_client_config)
+                .await
+                .expect("failed to connect to graph-schema-manager");
 
         let pipeline_ingress_client_config = Figment::new()
             .merge(Env::prefixed("PIPELINE_INGRESS_CLIENT_"))
             .extract()
             .expect("failed to configure pipeline-ingress client");
-        let pipeline_ingress_client = PipelineIngressClient::connect_with_healthcheck(
-            pipeline_ingress_client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await
-        .expect("failed to connect to pipeline-ingress");
+        let pipeline_ingress_client =
+            PipelineIngressClient::connect(pipeline_ingress_client_config)
+                .await
+                .expect("failed to connect to pipeline-ingress");
 
         let uid_allocator_client_config = Figment::new()
             .merge(Env::prefixed("UID_ALLOCATOR_CLIENT_"))
             .extract()
             .expect("failed to configure uid-allocator client");
-        let uid_allocator_client = UidAllocatorClient::connect_with_healthcheck(
-            uid_allocator_client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await
-        .expect("failed to connect to uid-allocator");
+        let uid_allocator_client = UidAllocatorClient::connect(uid_allocator_client_config)
+            .await
+            .expect("failed to connect to uid-allocator");
 
         let plugin_work_queue_psql_client =
             PsqlQueue::init_with_config(PluginWorkQueueDbConfig::parse())

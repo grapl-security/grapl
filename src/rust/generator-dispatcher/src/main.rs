@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use figment::{
     providers::Env,
     Figment,
@@ -20,12 +18,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let plugin_work_queue_client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_WORK_QUEUE_"))
         .extract()?;
-    let plugin_work_queue_client = PluginWorkQueueClient::connect_with_healthcheck(
-        plugin_work_queue_client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let plugin_work_queue_client =
+        PluginWorkQueueClient::connect(plugin_work_queue_client_config).await?;
     let worker_pool_size = config.params.worker_pool_size;
     let mut generator_dispatcher =
         GeneratorDispatcher::new(config, plugin_work_queue_client).await?;

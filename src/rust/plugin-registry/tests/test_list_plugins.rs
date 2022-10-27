@@ -1,7 +1,5 @@
 #![cfg(feature = "integration_tests")]
 
-use std::time::Duration;
-
 use bytes::Bytes;
 use figment::{
     providers::Env,
@@ -22,12 +20,7 @@ async fn test_list_plugins() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_1_id = uuid::Uuid::new_v4();
@@ -118,12 +111,7 @@ async fn test_list_plugins_not_found() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

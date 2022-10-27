@@ -1,6 +1,4 @@
 #![cfg(feature = "integration_tests")]
-use std::time::Duration;
-
 use bytes::Bytes;
 use figment::{
     providers::Env,
@@ -50,12 +48,8 @@ async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> eyre::Result<(
     let graph_schema_manager_client_config = Figment::new()
         .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_CLIENT_"))
         .extract()?;
-    let mut graph_schema_manager_client = GraphSchemaManagerClient::connect_with_healthcheck(
-        graph_schema_manager_client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut graph_schema_manager_client =
+        GraphSchemaManagerClient::connect(graph_schema_manager_client_config).await?;
 
     fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
         // This path is created in rust/Dockerfile
@@ -92,32 +86,18 @@ impl GraphQueryIntegTestSetup {
         let query_client_config = Figment::new()
             .merge(Env::prefixed("GRAPH_QUERY_CLIENT_"))
             .extract()?;
-        let graph_query_client = GraphQueryClient::connect_with_healthcheck(
-            query_client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let graph_query_client = GraphQueryClient::connect(query_client_config).await?;
 
         let mutation_client_config = Figment::new()
             .merge(Env::prefixed("GRAPH_MUTATION_CLIENT_"))
             .extract()?;
-        let graph_mutation_client = GraphMutationClient::connect_with_healthcheck(
-            mutation_client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let graph_mutation_client = GraphMutationClient::connect(mutation_client_config).await?;
 
         let uid_allocator_client_config = Figment::new()
             .merge(Env::prefixed("UID_ALLOCATOR_CLIENT_"))
             .extract()?;
-        let mut uid_allocator_client = UidAllocatorClient::connect_with_healthcheck(
-            uid_allocator_client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let mut uid_allocator_client =
+            UidAllocatorClient::connect(uid_allocator_client_config).await?;
 
         let tenant_id = uuid::Uuid::new_v4();
         _span.record("tenant_id", &format!("{tenant_id}"));

@@ -190,10 +190,10 @@ pub mod client {
     use crate::{
         graplinc::grapl::api::{
             client::{
-                client_impl,
                 Client,
                 ClientError,
                 Connectable,
+                WithClient,
             },
             uid_allocator::v1beta1::messages as native,
         },
@@ -214,12 +214,7 @@ pub mod client {
         client: Client<UidAllocatorServiceClient<tonic::transport::Channel>>,
     }
 
-    impl client_impl::WithClient<UidAllocatorServiceClient<tonic::transport::Channel>>
-        for UidAllocatorClient
-    {
-        const SERVICE_NAME: &'static str =
-            "graplinc.grapl.api.uid_allocator.v1beta1.UidAllocatorService";
-
+    impl WithClient<UidAllocatorServiceClient<tonic::transport::Channel>> for UidAllocatorClient {
         fn with_client(
             client: Client<UidAllocatorServiceClient<tonic::transport::Channel>>,
         ) -> Self {

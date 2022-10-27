@@ -143,12 +143,7 @@ impl AnalyzerDispatcher {
         let client_config = Figment::new()
             .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
             .extract()?;
-        let plugin_registry_client = PluginRegistryClient::connect_with_healthcheck(
-            client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let plugin_registry_client = PluginRegistryClient::connect(client_config).await?;
 
         let analyzer_ids_cache = AsyncCache::new(
             config.params.analyzer_ids_cache_capacity,
@@ -374,12 +369,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let plugin_work_queue_client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
         .extract()?;
-    let plugin_work_queue_client = PluginWorkQueueClient::connect_with_healthcheck(
-        plugin_work_queue_client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let plugin_work_queue_client =
+        PluginWorkQueueClient::connect(plugin_work_queue_client_config).await?;
     let worker_pool_size = config.params.worker_pool_size;
     let mut analyzer_dispatcher = AnalyzerDispatcher::new(config, plugin_work_queue_client).await?;
 

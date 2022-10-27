@@ -29,12 +29,7 @@ async fn test_create_plugin() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 
@@ -56,14 +51,14 @@ async fn test_create_plugin() -> eyre::Result<()> {
             meta,
             futures::stream::once(async move { single_chunk.clone() }),
         )
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
 
     let plugin_id = response.plugin_id();
 
     let get_response: GetPluginResponse = client
         .get_plugin(GetPluginRequest::new(plugin_id, tenant_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
     assert_eq!(get_response.plugin_id(), plugin_id);
     assert_eq!(

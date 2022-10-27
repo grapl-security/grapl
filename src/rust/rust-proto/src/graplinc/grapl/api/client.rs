@@ -24,13 +24,7 @@ use thiserror::Error;
 use tonic::transport::Endpoint;
 use tracing::Instrument;
 
-use super::protocol::{
-    healthcheck::{
-        client::HealthcheckClient,
-        HealthcheckError,
-    },
-    status::Status,
-};
+use super::protocol::status::Status;
 use crate::{
     serde_impl::ProtobufSerializable,
     SerDeError,
@@ -134,9 +128,6 @@ pub enum ClientError {
     #[error("timeout has elapsed")]
     TimeoutElapsed,
 
-    #[error("healthcheck client failed to connect {0}")]
-    HealthCheckConnectFailed(#[from] HealthcheckError),
-
     #[error("rpc call failed with status {0}")]
     Status(#[from] Status),
 
@@ -170,6 +161,14 @@ impl From<client_executor::Error<tonic::Status>> for ClientError {
     }
 }
 
+pub(crate) trait WithClient<C>
+where
+    C: Connectable + Clone + Debug,
+    Self: Sized,
+{
+    fn with_client(client: Client<C>) -> Self;
+}
+
 #[async_trait::async_trait]
 pub trait Connectable: Sized {
     async fn connect(endpoint: Endpoint) -> Result<Self, ClientError>;
@@ -181,64 +180,17 @@ where
     C: Connectable + Clone,
 {
     async fn connect(configuration: ClientConfiguration) -> Result<Self, ClientError>;
-
-    async fn connect_with_healthcheck(
-        configuration: ClientConfiguration,
-        healthcheck_timeout: Duration,
-        healthcheck_polling_interval: Duration,
-    ) -> Result<Self, ClientError>;
 }
 
-pub(crate) mod client_impl {
-    use std::{
-        fmt::Debug,
-        time::Duration,
-    };
-
-    use crate::graplinc::grapl::api::client::{
-        Client,
-        ClientConfiguration,
-        ClientError,
-        Connect,
-        Connectable,
-    };
-
-    pub(crate) trait WithClient<C>
-    where
-        C: Connectable + Clone + Debug,
-        Self: Sized,
-    {
-        const SERVICE_NAME: &'static str;
-
-        fn with_client(client: Client<C>) -> Self;
-    }
-
-    #[async_trait::async_trait]
-    impl<T, C> Connect<C> for T
-    where
-        T: WithClient<C> + Send,
-        C: Connectable + Clone + Debug,
-    {
-        async fn connect(configuration: ClientConfiguration) -> Result<Self, ClientError> {
-            let client = Client::connect(configuration).await?;
-            Ok(Self::with_client(client))
-        }
-
-        async fn connect_with_healthcheck(
-            configuration: ClientConfiguration,
-            healthcheck_timeout: Duration,
-            healthcheck_polling_interval: Duration,
-        ) -> Result<Self, ClientError> {
-            let client = Client::connect_with_healthcheck(
-                configuration,
-                Self::SERVICE_NAME,
-                healthcheck_timeout,
-                healthcheck_polling_interval,
-            )
-            .await?;
-
-            Ok(Self::with_client(client))
-        }
+#[async_trait::async_trait]
+impl<T, C> Connect<C> for T
+where
+    T: WithClient<C> + Send,
+    C: Connectable + Clone + Debug,
+{
+    async fn connect(configuration: ClientConfiguration) -> Result<Self, ClientError> {
+        let client = Client::connect(configuration).await?;
+        Ok(Self::with_client(client))
     }
 }
 
@@ -278,24 +230,6 @@ where
             proto_client,
             client_executor,
         })
-    }
-
-    pub(crate) async fn connect_with_healthcheck(
-        configuration: ClientConfiguration,
-        service_name: &'static str,
-        healthcheck_timeout: Duration,
-        healthcheck_polling_interval: Duration,
-    ) -> Result<Self, ClientError> {
-        let endpoint = configuration.endpoint()?;
-        HealthcheckClient::wait_until_healthy(
-            endpoint,
-            service_name,
-            healthcheck_timeout,
-            healthcheck_polling_interval,
-        )
-        .await?;
-
-        Self::connect(configuration).await
     }
 
     pub(crate) async fn execute<PT, NT, PU, NU, P, F, R>(

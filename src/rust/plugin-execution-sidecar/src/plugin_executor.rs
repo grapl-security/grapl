@@ -51,12 +51,7 @@ where
             .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
             .extract()?;
 
-        let plugin_work_queue_client = PluginWorkQueueClient::connect_with_healthcheck(
-            client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await?;
+        let plugin_work_queue_client = PluginWorkQueueClient::connect(client_config).await?;
 
         Ok(Self {
             plugin_work_processor,

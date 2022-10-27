@@ -7,7 +7,7 @@ use crate::{
             Client,
             ClientError,
             Connectable,
-            client_impl,
+            WithClient,
         },
     },
     protobufs::graplinc::grapl::api::scylla_provisioner::v1beta1::scylla_provisioner_service_client::ScyllaProvisionerServiceClient,
@@ -24,12 +24,9 @@ pub struct ScyllaProvisionerClient {
     client: Client<ScyllaProvisionerServiceClient<tonic::transport::Channel>>,
 }
 
-impl client_impl::WithClient<ScyllaProvisionerServiceClient<tonic::transport::Channel>>
+impl WithClient<ScyllaProvisionerServiceClient<tonic::transport::Channel>>
     for ScyllaProvisionerClient
 {
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.scylla_provisioner.v1beta1.ScyllaProvisionerService";
-
     fn with_client(
         client: Client<ScyllaProvisionerServiceClient<tonic::transport::Channel>>,
     ) -> Self {

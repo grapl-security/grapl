@@ -37,12 +37,7 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -92,12 +87,7 @@ async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -150,12 +140,7 @@ async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 
@@ -234,12 +219,7 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
     let client_config = Figment::new()
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 
@@ -266,13 +246,9 @@ async fn test_teardown_plugin() {
         .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()
         .expect("failed to configure plugin-registry client");
-    let mut client = PluginRegistryClient::connect_with_healthcheck(
-        client_config,
-        Duration::from_secs(60),
-        Duration::from_secs(1),
-    )
-    .await
-    .expect("failed to connect to plugin-registry");
+    let mut client = PluginRegistryClient::connect(client_config)
+        .await
+        .expect("failed to connect to plugin-registry");
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();

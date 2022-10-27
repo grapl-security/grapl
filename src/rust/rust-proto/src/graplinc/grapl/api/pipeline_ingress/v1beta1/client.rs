@@ -3,10 +3,10 @@ use tonic::transport::Endpoint;
 use crate::{
     graplinc::grapl::api::{
         client::{
-            client_impl,
             Client,
             ClientError,
             Connectable,
+            WithClient,
         },
         pipeline_ingress::v1beta1 as native,
     },
@@ -25,12 +25,7 @@ pub struct PipelineIngressClient {
     client: Client<PipelineIngressServiceClient<tonic::transport::Channel>>,
 }
 
-impl client_impl::WithClient<PipelineIngressServiceClient<tonic::transport::Channel>>
-    for PipelineIngressClient
-{
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService";
-
+impl WithClient<PipelineIngressServiceClient<tonic::transport::Channel>> for PipelineIngressClient {
     fn with_client(
         client: Client<PipelineIngressServiceClient<tonic::transport::Channel>>,
     ) -> Self {

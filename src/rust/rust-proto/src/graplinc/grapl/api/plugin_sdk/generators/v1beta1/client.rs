@@ -3,10 +3,10 @@ use tonic::transport::Endpoint;
 use crate::{
     graplinc::grapl::api::{
         client::{
-            client_impl,
             Client,
             ClientError,
             Connectable,
+            WithClient,
         },
         plugin_sdk::generators::v1beta1 as native,
     },
@@ -25,12 +25,7 @@ pub struct GeneratorClient {
     client: Client<GeneratorServiceClient<tonic::transport::Channel>>,
 }
 
-impl client_impl::WithClient<GeneratorServiceClient<tonic::transport::Channel>>
-    for GeneratorClient
-{
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorService";
-
+impl WithClient<GeneratorServiceClient<tonic::transport::Channel>> for GeneratorClient {
     fn with_client(client: Client<GeneratorServiceClient<tonic::transport::Channel>>) -> Self {
         Self { client }
     }

@@ -201,7 +201,7 @@ pub mod client {
                 Client,
                 Connectable,
                 ClientError,
-                client_impl
+                WithClient,
             },
         },
         protobufs::graplinc::grapl::api::organization_management::v1beta1::organization_management_service_client::OrganizationManagementServiceClient,
@@ -218,12 +218,9 @@ pub mod client {
         client: Client<OrganizationManagementServiceClient<tonic::transport::Channel>>,
     }
 
-    impl client_impl::WithClient<OrganizationManagementServiceClient<tonic::transport::Channel>>
+    impl WithClient<OrganizationManagementServiceClient<tonic::transport::Channel>>
         for OrganizationManagementClient
     {
-        const SERVICE_NAME: &'static str =
-            "graplinc.grapl.api.organization_management.v1beta1.OrganizationManagementService";
-
         fn with_client(
             client: Client<OrganizationManagementServiceClient<tonic::transport::Channel>>,
         ) -> Self {
