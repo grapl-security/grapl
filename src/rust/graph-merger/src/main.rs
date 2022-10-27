@@ -39,7 +39,7 @@ async fn main() -> eyre::Result<()> {
     let _guard = setup_tracing(SERVICE_NAME)?;
 
     let graph_mutation_client_config = Figment::new()
-        .merge(Env::prefixed("GRAPH_MUTATION_CLIENT_CONFIG"))
+        .merge(Env::prefixed("GRAPH_MUTATION_CLIENT_"))
         .extract()?;
     let graph_mutation_client = GraphMutationClient::connect_with_healthcheck(
         graph_mutation_client_config,

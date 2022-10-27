@@ -48,7 +48,7 @@ where
         plugin_work_processor: P,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let client_config: ClientConfiguration = Figment::new()
-            .merge(Env::prefixed("PLUGIN_WORK_QUEUE_"))
+            .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
             .extract()?;
 
         let plugin_work_queue_client = PluginWorkQueueClient::connect_with_healthcheck(

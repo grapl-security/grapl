@@ -99,7 +99,7 @@ impl GeneratorDispatcher {
         let raw_logs_retry_producer: RetryProducer<RawLog> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
         let client_config = Figment::new()
-            .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+            .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
             .extract()?;
         let plugin_registry_client = PluginRegistryClient::connect_with_healthcheck(
             client_config,

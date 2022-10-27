@@ -27,7 +27,7 @@ async fn test_create_plugin() -> eyre::Result<()> {
         env=?std::env::args(),
     );
     let client_config = Figment::new()
-        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
     let mut client = PluginRegistryClient::connect_with_healthcheck(
         client_config,

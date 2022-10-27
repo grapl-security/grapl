@@ -35,7 +35,7 @@ use rust_proto::graplinc::grapl::api::{
 #[test_log::test(tokio::test)]
 async fn test_deploy_example_generator() -> eyre::Result<()> {
     let client_config = Figment::new()
-        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
     let mut client = PluginRegistryClient::connect_with_healthcheck(
         client_config,
@@ -90,7 +90,7 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
 #[test_log::test(tokio::test)]
 async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
     let client_config = Figment::new()
-        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
     let mut client = PluginRegistryClient::connect_with_healthcheck(
         client_config,
@@ -148,7 +148,7 @@ async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
 #[test_log::test(tokio::test)]
 async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
     let client_config = Figment::new()
-        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
     let mut client = PluginRegistryClient::connect_with_healthcheck(
         client_config,
@@ -232,7 +232,7 @@ async fn assert_health(
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
     let client_config = Figment::new()
-        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
     let mut client = PluginRegistryClient::connect_with_healthcheck(
         client_config,
@@ -263,7 +263,7 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
 #[test_log::test(tokio::test)]
 async fn test_teardown_plugin() {
     let client_config = Figment::new()
-        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()
         .expect("failed to configure plugin-registry client");
     let mut client = PluginRegistryClient::connect_with_healthcheck(

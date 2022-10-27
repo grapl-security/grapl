@@ -29,7 +29,7 @@ async fn test_get_analyzers_for_tenant() -> eyre::Result<()> {
     );
 
     let client_config = Figment::new()
-        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
     let mut client = PluginRegistryClient::connect_with_healthcheck(
         client_config,
@@ -124,7 +124,7 @@ async fn test_get_analyzers_for_tenant_not_found() -> eyre::Result<()> {
     );
 
     let client_config = Figment::new()
-        .merge(Env::prefixed("PLUGIN_REGISTRY_"))
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
         .extract()?;
     let mut client = PluginRegistryClient::connect_with_healthcheck(
         client_config,

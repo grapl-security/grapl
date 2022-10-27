@@ -50,7 +50,7 @@ pub struct GeneratorWorkProcessor {
 impl GeneratorWorkProcessor {
     pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let client_config: ClientConfiguration = Figment::new()
-            .merge(Env::prefixed("GENERATOR_"))
+            .merge(Env::prefixed("GENERATOR_CLIENT_"))
             .extract()?;
 
         let generator_client = GeneratorClient::connect_with_healthcheck(

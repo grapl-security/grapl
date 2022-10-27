@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = setup_tracing(SERVICE_NAME)?;
 
     let client_config = Figment::new()
-        .merge(Env::prefixed("PLUGIN_BOOTSTRAP_"))
+        .merge(Env::prefixed("PLUGIN_BOOTSTRAP_CLIENT_"))
         .extract()?;
     let mut bootstrap_client = PluginBootstrapClient::connect_with_healthcheck(
         client_config,

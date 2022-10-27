@@ -17,7 +17,7 @@ async fn test_uid_allocator() -> eyre::Result<()> {
     );
 
     let client_config = Figment::new()
-        .merge(Env::prefixed("UID_ALLOCATOR_"))
+        .merge(Env::prefixed("UID_ALLOCATOR_CLIENT_"))
         .extract()?;
     let mut allocator_client =
         CachingUidAllocatorClient::from_client_config(client_config, 100).await?;

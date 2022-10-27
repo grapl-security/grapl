@@ -29,7 +29,7 @@ async fn test_create_user() -> eyre::Result<()> {
     let pool = service_config.to_postgres_url().connect().await?;
 
     let client_config = Figment::new()
-        .merge(Env::prefixed("ORGANIZATION_MANAGEMENT_"))
+        .merge(Env::prefixed("ORGANIZATION_MANAGEMENT_CLIENT_"))
         .extract()?;
     let mut client = OrganizationManagementClient::connect_with_healthcheck(
         client_config,

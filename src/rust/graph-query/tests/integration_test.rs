@@ -48,7 +48,7 @@ use rust_proto::graplinc::grapl::{
 
 async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> eyre::Result<()> {
     let graph_schema_manager_client_config = Figment::new()
-        .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_"))
+        .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_CLIENT_"))
         .extract()?;
     let mut graph_schema_manager_client = GraphSchemaManagerClient::connect_with_healthcheck(
         graph_schema_manager_client_config,
