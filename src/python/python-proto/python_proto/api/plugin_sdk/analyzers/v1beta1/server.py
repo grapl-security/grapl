@@ -19,7 +19,7 @@ from graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2_grpc import (
 from grpc_health.v1 import health, health_pb2_grpc
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as native
 
-LOGGER = get_structlogger
+LOGGER = get_structlogger()
 
 
 class AnalyzerService(Protocol):
