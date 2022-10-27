@@ -189,7 +189,7 @@ locals {
   # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
   # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
   # Examples of keys we may add in the future: language, instance_id/ip, team
-  default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
+  default_otel_resource_attributes = "host.hostname=${attr.unique.hostname}"
 }
 
 job "grapl-core" {
