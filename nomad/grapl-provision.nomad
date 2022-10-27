@@ -34,6 +34,14 @@ variable "container_images" {
 EOF
 }
 
+variable "container_versions" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to that task's docker image version.
+  (See DockerImageVersion in Pulumi for further documentation.)
+EOF
+}
+
 variable "aws_region" {
   type = string
 }
@@ -135,7 +143,7 @@ job "grapl-provision" {
         # cannot explain it at all.
         SCYLLA_PROVISIONER_CLIENT_ADDRESS = "${NOMAD_UPSTREAM_ADDR_scylla-provisioner}"
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["provisioner"]}"
       }
     }
 

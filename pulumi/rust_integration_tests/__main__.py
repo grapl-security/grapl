@@ -35,6 +35,15 @@ def _rust_integration_container_images(
     }
 
 
+def _rust_integration_container_versions(
+    container_images: Mapping[str, DockerImageId]
+) -> Mapping[str, DockerImageVersion]:
+    container_versions = dict()
+    for key, value in container_images.items():
+        container_versions[key] = value.split(":")[1]
+    return container_versions
+
+
 def main() -> None:
     ##### Preamble
     stack_name = config.STACK_NAME
@@ -65,12 +74,14 @@ def main() -> None:
     kafka_credentials = kafka.service_credentials("integration-tests").apply(
         Credential.to_nomad_service_creds
     )
+    container_images = _rust_integration_container_images(artifacts)
 
     rust_integration_tests_job_vars: NomadVars = {
         "graph_db": grapl_stack.graph_db,
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
-        "container_images": _rust_integration_container_images(artifacts),
+        "container_images": container_images,
+        "container_versions": _rust_integration_container_versions(container_images),
         "kafka_bootstrap_servers": kafka.bootstrap_servers(),
         "kafka_consumer_group": kafka.consumer_group("integration-tests"),
         "kafka_credentials": kafka_credentials,

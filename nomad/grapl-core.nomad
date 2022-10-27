@@ -16,6 +16,14 @@ variable "container_images" {
 EOF
 }
 
+variable "container_versions" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to that task's docker image version.
+  (See DockerImageVersion in Pulumi for further documentation.)
+EOF
+}
+
 variable "aws_env_vars_for_local" {
   type        = string
   description = <<EOF
@@ -181,9 +189,6 @@ locals {
   # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
   # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
   # Examples of keys we may add in the future: language, instance_id/ip, team
-
-  # Currently we use the same version for all containers. As such we pick one container to get the version from
-  app_version                      = split(":", var.container_images["analyzer-dispatcher"])[1]
   default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
 }
 
@@ -258,7 +263,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["analyzer-dispatcher"]}"
       }
 
       resources {
@@ -332,7 +337,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["generator-dispatcher"]}"
       }
 
       resources {
@@ -405,7 +410,7 @@ job "grapl-core" {
         KAFKA_CONSUMER_TOPIC      = "identified-graphs"
         KAFKA_PRODUCER_TOPIC      = "merged-graphs"
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["graph-merger"]}"
       }
 
       resources {
@@ -477,7 +482,7 @@ job "grapl-core" {
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
         GRAPL_STATIC_MAPPING_TABLE  = var.static_mapping_table_name
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["node-identifier"]}"
       }
 
       resources {
@@ -536,7 +541,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["kafka-retry"]}"
       }
 
       resources {
@@ -574,7 +579,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["kafka-retry"]}"
       }
 
       resources {
@@ -635,7 +640,7 @@ job "grapl-core" {
         RUST_LOG                  = var.rust_log
         RUST_BACKTRACE            = local.rust_backtrace
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["web-ui"]}"
       }
 
       resources {
@@ -720,7 +725,7 @@ job "grapl-core" {
 
         ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = var.organization_management_healthcheck_polling_interval_ms
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["organization-management"]}"
       }
 
       resources {
@@ -782,7 +787,7 @@ job "grapl-core" {
         KAFKA_SASL_PASSWORD                              = var.kafka_credentials["pipeline-ingress"].sasl_password
         KAFKA_PRODUCER_TOPIC                             = "raw-logs"
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["pipeline-ingress"]}"
       }
 
       resources {
@@ -861,7 +866,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["plugin-registry"]}"
       }
 
       resources {
@@ -940,7 +945,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["plugin-work-queue"]}"
       }
 
       resources {
@@ -1010,7 +1015,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["event-source"]}"
       }
 
       resources {

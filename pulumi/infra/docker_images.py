@@ -16,6 +16,18 @@ The values can look like, for instance:
 - an image pulled from Cloudsmith
     "docker.cloudsmith.io/grapl/raw/graph-merger:20211105192234-a86a8ad2"
 """
+DockerImageVersion = NewType("DockerImageId", str)
+"""
+A Docker image version is something that can be consumed by the
+opentelemetry service.version tag.
+The values can look like, for instance:
+- a hardcoded value pulled from Dockerhub
+    "v21.0.3"
+- an image pulled from the host's Docker daemon (no `:latest`!)
+    "dev"
+- an image pulled from Cloudsmith
+    "20211105192234-a86a8ad2"
+"""
 
 
 def _docker_version_tag_from_env() -> str:

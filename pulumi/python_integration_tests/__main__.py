@@ -35,6 +35,15 @@ def _python_integration_container_images(
     }
 
 
+def _python_integration_container_versions(
+    container_images: Mapping[str, DockerImageId]
+) -> Mapping[str, DockerImageVersion]:
+    container_versions = dict()
+    for key, value in container_images.items():
+        container_versions[key] = value.split(":")[1]
+    return container_versions
+
+
 def main() -> None:
     ##### Preamble
     stack_name = config.STACK_NAME
@@ -70,10 +79,15 @@ def main() -> None:
         # on-disk Grapl repo.
         # FIXME: make python integration tests work in AWS.
 
+        container_images = (_python_integration_container_images(artifacts),)
+
         python_integration_test_job_vars: NomadVars = {
             "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
             "aws_region": aws.get_region().name,
-            "container_images": _python_integration_container_images(artifacts),
+            "container_images": container_images,
+            "container_versions": _python_integration_container_versions(
+                container_images
+            ),
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
