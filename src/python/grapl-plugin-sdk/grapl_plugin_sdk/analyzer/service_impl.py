@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
 import os
 import sys
 from dataclasses import dataclass, field
@@ -26,9 +27,11 @@ from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_m
 from python_proto.common import Uuid as PythonProtoUuid
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
 
+log_level_name = os.environ["ANALYZER_LOG_LEVEL"] # e.g. "DEBUG"
+log_level: int = getattr(logging, log_level_name)  # e.g. logging.DEBUG, an int
 structlog.configure(
     wrapper_class=structlog.make_filtering_bound_logger(
-        min_level=os.environ["ANALYZER_LOG_LEVEL"]
+        min_level=log_level,
     ),
 )
 LOGGER = structlog.get_logger()
