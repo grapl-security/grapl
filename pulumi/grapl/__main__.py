@@ -18,7 +18,6 @@ from infra.consul_service_default import ConsulServiceDefault
 from infra.docker_images import (
     DockerImageId,
     DockerImageIdBuilder,
-    DockerImageVersion,
     container_versions_from_container_ids,
 )
 from infra.firecracker_assets import (
