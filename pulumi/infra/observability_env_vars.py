@@ -68,7 +68,34 @@ receivers:
         #     format: ['prometheus']
         #   static_configs:
         #     - targets: [{args["consul_agent_endpoint"]}]
-        - job_name: 'consul-envoy'
+        # - job_name: 'consul-envoy'
+        #   scrape_interval: 20s
+        #   scrape_timeout: 10s
+        #   consul_sd_configs:
+        #     - server: {args["consul_agent_endpoint"]}
+        #   relabel_configs:
+        #     # Don't scrape the extra -sidecar-proxy services that Consul Connect
+        #     # sets up, otherwise we'll have duplicates.
+        #     - source_labels: [__meta_consul_service]
+        #       action: drop
+        #       regex: (.+)-sidecar-proxy
+        #     # Only scrape services that have a metrics_port meta field.
+        #     # This is optional, you can use other criteria to decide what
+        #     # to scrape.
+        #     - source_labels: [__meta_consul_service_metadata_metrics_port_envoy]
+        #       action: keep
+        #       regex: (.+)
+        #     # Replace the port in the address with the one from the metrics_port
+        #     # meta field.
+        #     - source_labels: [__meta_consul_service_metadata_metrics_port_envoy]
+        #       regex: (.*)
+        #       # Since we're in a f-string curly braces must be escaped by adding a second curly brace
+        #       replacement: {{{{ env "attr.unique.network.ip-address" }}}}:${{1}}
+        #       target_label: __address__
+        #       action: replace
+        #   static_configs:
+        #     - targets: [{args["consul_l7_metric_endpoint"]}]
+        - job_name: 'consul-l7'
           scrape_interval: 20s
           scrape_timeout: 10s
           consul_sd_configs:
@@ -82,19 +109,18 @@ receivers:
             # Only scrape services that have a metrics_port meta field.
             # This is optional, you can use other criteria to decide what
             # to scrape.
-            - source_labels: [__meta_consul_service_metadata_metrics_port_envoy]
+            - source_labels: [__meta_consul_service_metadata_metrics_port]
               action: keep
               regex: (.+)
             # Replace the port in the address with the one from the metrics_port
             # meta field.
-            - source_labels: [__meta_consul_service_metadata_metrics_port_envoy]
-              regex: (.*)
-              # Since we're in a f-string curly braces must be escaped by adding a second curly brace
-              replacement: {{{{ env "attr.unique.network.ip-address" }}}}:${{1}}
+            - source_labels: [__address__, __meta_consul_service_metadata_metrics_port]
+              regex: ([^:]+)(?::\d+)?;(\d+)
+              replacement: ${{1}}:${{2}}
               target_label: __address__
-              action: replace
           static_configs:
             - targets: [{args["consul_l7_metric_endpoint"]}]
+
         # - job_name: 'nomad-agent'
         #   scrape_interval: 20s
         #   scrape_timeout: 10s

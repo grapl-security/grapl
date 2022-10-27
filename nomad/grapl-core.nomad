@@ -220,6 +220,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
+      port "expose" {}
     }
 
     task "analyzer-dispatcher" {
@@ -271,11 +272,23 @@ job "grapl-core" {
       meta {
         # Tag for prometheus scrape-targeting via consul (envoy)
         metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        # L7 metrics port
+        metrics_port = "${NOMAD_HOST_PORT_expose}"
       }
       name = "analyzer-dispatcher"
       connect {
         sidecar_service {
           proxy {
+            # Expose L7 Metrics from the Envoy sidecar
+            expose {
+              path {
+                path            = "/metrics"
+                protocol        = "http"
+                local_path_port = 8080
+                listener_port   = "expose"
+              }
+            }
+
             upstreams {
               destination_name = "plugin-work-queue"
               local_bind_port  = 1000
@@ -299,6 +312,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
+      port "expose" {}
     }
 
     task "generator-dispatcher" {
@@ -350,11 +364,23 @@ job "grapl-core" {
       meta {
         # Tag for prometheus scrape-targeting via consul (envoy)
         metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        # L7 metrics port
+        metrics_port = "${NOMAD_HOST_PORT_expose}"
       }
       name = "generator-dispatcher"
       connect {
         sidecar_service {
           proxy {
+            # Expose L7 Metrics from the Envoy sidecar
+            expose {
+              path {
+                path            = "/metrics"
+                protocol        = "http"
+                local_path_port = 8080
+                listener_port   = "expose"
+              }
+            }
+
             upstreams {
               destination_name = "plugin-work-queue"
               local_bind_port  = 1000
@@ -378,6 +404,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
+      port "expose" {}
     }
 
     task "graph-merger" {
@@ -428,12 +455,24 @@ job "grapl-core" {
       meta {
         # Tag for prometheus scrape-targeting via consul (envoy)
         metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        # L7 metrics port
+        metrics_port = "${NOMAD_HOST_PORT_expose}"
       }
       name = "graph-merger"
 
       connect {
         sidecar_service {
           proxy {
+            # Expose L7 Metrics from the Envoy sidecar
+            expose {
+              path {
+                path            = "/metrics"
+                protocol        = "http"
+                local_path_port = 8080
+                listener_port   = "expose"
+              }
+            }
+
             upstreams {
               destination_name = "graph-mutation"
               local_bind_port  = 1001
@@ -453,6 +492,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
+      port "expose" {}
     }
 
     task "node-identifier" {
@@ -504,12 +544,24 @@ job "grapl-core" {
       meta {
         # Tag for prometheus scrape-targeting via consul (envoy)
         metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        # L7 metrics port
+        metrics_port = "${NOMAD_HOST_PORT_expose}"
       }
       name = "node-identifier"
 
       connect {
         sidecar_service {
           proxy {
+            # Expose L7 Metrics from the Envoy sidecar
+            expose {
+              path {
+                path            = "/metrics"
+                protocol        = "http"
+                local_path_port = 8080
+                listener_port   = "expose"
+              }
+            }
+
             upstreams {
               destination_name = "graph-mutation"
               local_bind_port  = 1001
@@ -529,6 +581,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
+      port "expose" {}
     }
 
     task "analyzer-dispatcher-retry" {
@@ -568,6 +621,8 @@ job "grapl-core" {
         meta {
           # Tag for prometheus scrape-targeting via consul (envoy)
           metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+          # L7 metrics port
+          metrics_port = "${NOMAD_HOST_PORT_expose}"
         }
         name = "analyzer-dispatcher-retry"
       }
@@ -610,6 +665,8 @@ job "grapl-core" {
         meta {
           # Tag for prometheus scrape-targeting via consul (envoy)
           metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+          # L7 metrics port
+          metrics_port = "${NOMAD_HOST_PORT_expose}"
         }
         name = "generator-dispatcher-retry"
       }
@@ -625,7 +682,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
-
+      port "expose" {}
       port "web-ui-port" {
       }
     }
@@ -680,12 +737,24 @@ job "grapl-core" {
       meta {
         # Tag for prometheus scrape-targeting via consul (envoy)
         metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        # L7 metrics port
+        metrics_port = "${NOMAD_HOST_PORT_expose}"
       }
       name = "web-ui"
       port = "web-ui-port"
       connect {
         sidecar_service {
           proxy {
+            # Expose L7 Metrics from the Envoy sidecar
+            expose {
+              path {
+                path            = "/metrics"
+                protocol        = "http"
+                local_path_port = 8080
+                listener_port   = "expose"
+              }
+            }
+
             config {
               protocol = "http"
             }
@@ -719,6 +788,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
+      port "expose" {}
       port "organization-management-port" {
       }
     }
@@ -767,11 +837,24 @@ job "grapl-core" {
       meta {
         # Tag for prometheus scrape-targeting via consul (envoy)
         metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        # L7 metrics port
+        metrics_port = "${NOMAD_HOST_PORT_expose}"
       }
       name = "organization-management"
       port = "organization-management-port"
       connect {
         sidecar_service {
+          proxy {
+            # Expose L7 Metrics from the Envoy sidecar
+            expose {
+              path {
+                path            = "/metrics"
+                protocol        = "http"
+                local_path_port = 8080
+                listener_port   = "expose"
+              }
+            }
+          }
         }
       }
     }
@@ -786,6 +869,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
+      port "expose" {}
       port "pipeline-ingress-port" {
       }
     }
@@ -834,11 +918,24 @@ job "grapl-core" {
       meta {
         # Tag for prometheus scrape-targeting via consul (envoy)
         metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        # L7 metrics port
+        metrics_port = "${NOMAD_HOST_PORT_expose}"
       }
       name = "pipeline-ingress"
       port = "pipeline-ingress-port"
       connect {
         sidecar_service {
+          proxy {
+            # Expose L7 Metrics from the Envoy sidecar
+            expose {
+              path {
+                path            = "/metrics"
+                protocol        = "http"
+                local_path_port = 8080
+                listener_port   = "expose"
+              }
+            }
+          }
         }
       }
 
@@ -860,7 +957,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
-
+      port "expose" {}
       port "plugin-registry-port" {
       }
     }
@@ -920,11 +1017,24 @@ job "grapl-core" {
       meta {
         # Tag for prometheus scrape-targeting via consul (envoy)
         metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        # L7 metrics port
+        metrics_port = "${NOMAD_HOST_PORT_expose}"
       }
       name = "plugin-registry"
       port = "plugin-registry-port"
       connect {
         sidecar_service {
+          proxy {
+            # Expose L7 Metrics from the Envoy sidecar
+            expose {
+              path {
+                path            = "/metrics"
+                protocol        = "http"
+                local_path_port = 8080
+                listener_port   = "expose"
+              }
+            }
+          }
         }
       }
 
@@ -946,6 +1056,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
+      port "expose" {}
 
       port "plugin-work-queue-port" {
       }
@@ -1002,11 +1113,24 @@ job "grapl-core" {
       meta {
         # Tag for prometheus scrape-targeting via consul (envoy)
         metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        # L7 metrics port
+        metrics_port = "${NOMAD_HOST_PORT_expose}"
       }
       name = "plugin-work-queue"
       port = "plugin-work-queue-port"
       connect {
         sidecar_service {
+          proxy {
+            # Expose L7 Metrics from the Envoy sidecar
+            expose {
+              path {
+                path            = "/metrics"
+                protocol        = "http"
+                local_path_port = 8080
+                listener_port   = "expose"
+              }
+            }
+          }
         }
       }
 
@@ -1028,6 +1152,7 @@ job "grapl-core" {
         servers = local.dns_servers
       }
       port "metrics_envoy" { to = 9102 }
+      port "expose" {}
 
       port "event-source-port" {
       }
@@ -1077,11 +1202,24 @@ job "grapl-core" {
       meta {
         # Tag for prometheus scrape-targeting via consul (envoy)
         metrics_port_envoy = "${NOMAD_HOST_PORT_metrics_envoy}"
+        # L7 metrics port
+        metrics_port = "${NOMAD_HOST_PORT_expose}"
       }
       name = "event-source"
       port = "event-source-port"
       connect {
         sidecar_service {
+          proxy {
+            # Expose L7 Metrics from the Envoy sidecar
+            expose {
+              path {
+                path            = "/metrics"
+                protocol        = "http"
+                local_path_port = 8080
+                listener_port   = "expose"
+              }
+            }
+          }
         }
       }
 
