@@ -55,8 +55,9 @@ pub struct AnalyzerWorkProcessor {
 
 impl AnalyzerWorkProcessor {
     pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let client_config: ClientConfiguration =
-            Figment::new().merge(Env::prefixed("ANALYZER_CLIENT_")).extract()?;
+        let client_config: ClientConfiguration = Figment::new()
+            .merge(Env::prefixed("ANALYZER_CLIENT_"))
+            .extract()?;
 
         let analyzer_client = AnalyzerClient::connect_with_healthcheck(
             client_config,
