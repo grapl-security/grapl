@@ -1,7 +1,3 @@
-use figment::{
-    providers::Env,
-    Figment,
-};
 use rust_proto::graplinc::{
     common::v1beta1::Duration,
     grapl::api::{
@@ -18,10 +14,7 @@ use rust_proto::graplinc::{
         },
         protocol::{
             error::ServeError,
-            healthcheck::{
-                client::HealthcheckClient,
-                HealthcheckStatus,
-            },
+            healthcheck::HealthcheckStatus,
         },
     },
 };
@@ -69,7 +62,7 @@ impl GeneratorTestContextInternals {
 
         // construct an http URI clients can use to connect to server bound to
         // the port.
-        let endpoint = format!("http://{}:{}", socket_address.ip(), socket_address.port());
+        let address = format!("http://{}:{}", socket_address.ip(), socket_address.port());
 
         let (server, shutdown_tx) = GeneratorServer::new(
             generator_api,
@@ -78,31 +71,28 @@ impl GeneratorTestContextInternals {
             Duration::from_millis(50),
         );
 
-        let service_name = server.service_name();
-
         let server_handle = tokio::task::spawn(server.serve());
 
-        HealthcheckClient::wait_until_healthy(
-            endpoint.clone(),
-            service_name,
+        let client_config = ClientConfiguration::new(
+            address,
+            Duration::from_millis(500),
+            Duration::from_millis(500),
+            2,
+            Duration::from_millis(1),
+            Duration::from_millis(100),
+            Duration::from_millis(10),
+            20,
+            Duration::from_millis(10),
+            Duration::from_millis(250),
+        );
+
+        let client = GeneratorClient::connect_with_healthcheck(
+            client_config,
             Duration::from_millis(250),
             Duration::from_millis(10),
         )
         .await
-        .expect("Generator never reported healthy");
-
-        let client_config: ClientConfiguration = Figment::new()
-            .merge(Env::prefixed("GENERATOR_"))
-            .extract()
-            .expect("failed to extract client configuration");
-
-        let client = GeneratorClient::connect_with_healthcheck(
-            client_config,
-            Duration::from_secs(60),
-            Duration::from_secs(1),
-        )
-        .await
-        .unwrap();
+        .expect("generator never reported healthy");
 
         GeneratorTestContextInternals {
             client,
