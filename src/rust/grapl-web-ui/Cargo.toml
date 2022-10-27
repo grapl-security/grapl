@@ -28,7 +28,7 @@ awc = { version = "3", default_features = false, features = [
 bytes = { workspace = true }
 chrono = { version = "0.4" }
 clap = { workspace = true }
-figment = { workspace= true }
+figment = { workspace = true }
 futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }

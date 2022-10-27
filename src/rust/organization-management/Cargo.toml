@@ -14,7 +14,7 @@ path = "src/main.rs"
 argon2 = { version = "0.4", features = ["std"] }
 async-trait = "0.1"
 clap = { workspace = true }
-figment = { workspace= true }
+figment = { workspace = true }
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }

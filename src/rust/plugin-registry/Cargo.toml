@@ -14,7 +14,7 @@ name = "plugin_registry"
 async-trait = "0.1"
 bytes = { workspace = true }
 clap = { workspace = true }
-figment = { workspace= true }
+figment = { workspace = true }
 futures = "0.3"
 futures-retry = "0.6"
 grapl-config = { path = "../grapl-config" }

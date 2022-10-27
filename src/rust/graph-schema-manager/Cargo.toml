@@ -7,7 +7,7 @@ edition = "2021"
 async-trait = "0.1"
 bytes = { workspace = true }
 clap = { workspace = true }
-figment = { workspace= true }
+figment = { workspace = true }
 grapl-config = { path = "../grapl-config" }
 grapl-graphql-codegen = { path = "../grapl-graphql-codegen" }
 grapl-tracing = { path = "../grapl-tracing" }

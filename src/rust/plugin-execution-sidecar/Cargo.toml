@@ -15,7 +15,7 @@ path = "generator-execution-sidecar.rs"
 [dependencies]
 async-trait = "0.1"
 clap = { workspace = true }
-figment = { workspace= true }
+figment = { workspace = true }
 grapl-tracing = { path = "../grapl-tracing" }
 rust-proto = { path = "../rust-proto" }
 serde = { workspace = true }

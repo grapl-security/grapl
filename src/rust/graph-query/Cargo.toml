@@ -11,7 +11,7 @@ bytes = { workspace = true }
 chrono = "0.4.19"
 clap = { workspace = true }
 env_logger = { workspace = true }
-figment = { workspace= true }
+figment = { workspace = true }
 futures = "0.3.21"
 grapl-tracing = { path = "../grapl-tracing" }
 itertools = "0.10.3"
