@@ -1,22 +1,15 @@
 from __future__ import annotations
 
 import dataclasses
-import logging
 import os
-import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
-
-import grpc
-import structlog
-from grapl_plugin_sdk.analyzer.analyzer_context import AnalyzerContext
-
-if TYPE_CHECKING:
-    from grapl_plugin_sdk.analyzer.analyzer import Analyzer
-
 from uuid import UUID
 
+import grpc
+from grapl_common.logger import get_structlogger
+from grapl_plugin_sdk.analyzer.analyzer_context import AnalyzerContext
 from grapl_plugin_sdk.analyzer.query_and_views import NodeView
 from grpc import aio as grpc_aio  # type: ignore
 
@@ -27,14 +20,11 @@ from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_m
 from python_proto.common import Uuid as PythonProtoUuid
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
 
-log_level_name = os.environ["ANALYZER_LOG_LEVEL"] # e.g. "DEBUG"
-log_level: int = getattr(logging, log_level_name)  # e.g. logging.DEBUG, an int
-structlog.configure(
-    wrapper_class=structlog.make_filtering_bound_logger(
-        min_level=log_level,
-    ),
-)
-LOGGER = structlog.get_logger()
+if TYPE_CHECKING:
+    from grapl_plugin_sdk.analyzer.analyzer import Analyzer
+
+
+LOGGER = get_structlogger()
 
 
 def _get_tenant_id() -> PythonProtoUuid:
@@ -99,15 +89,17 @@ class AnalyzerServiceImpl:
     async def _run_analyzer_inner(
         self, request: analyzer_messages.RunAnalyzerRequest
     ) -> analyzer_messages.RunAnalyzerResponse:
+        # structlog context
+        logger = LOGGER.bind(update_type=type(request.update.inner).__name__)
         match request.update.inner:
             case PropertyUpdate() as prop_update:
-                LOGGER.debug("PropertyUpdate")
+                logger.debug("PropertyUpdate")
                 # optimization
                 # i.e. if the update is for process_name, and you're not querying for
                 # process_name, that's obviously a miss
                 prop_name = prop_update.property_name
                 if not check_for_string_property(self._graph_query, prop_name):
-                    LOGGER.debug("No string property")
+                    logger.debug("No string property")
                     return MISS_RESPONSE
 
                 updated_node_uid = prop_update.uid
@@ -127,7 +119,7 @@ class AnalyzerServiceImpl:
         )
         # if matched_graphs empty, that's a textbook miss
         if not matched_graph:
-            LOGGER.debug("No matching graph, returning ExecutionMiss")
+            logger.debug("No matching graph, returning ExecutionMiss")
             return MISS_RESPONSE
 
         graph_view: graph_query_messages.GraphView = matched_graph.matched_graph
@@ -137,7 +129,7 @@ class AnalyzerServiceImpl:
         if not root_node_properties:
             # todo: log this, it's an error
             # todo: return an error
-            LOGGER.debug("(This should be an error)")
+            logger.debug("(This should be an error)")
             return MISS_RESPONSE
 
         analyzer = self._analyzer
@@ -155,7 +147,7 @@ class AnalyzerServiceImpl:
             root_node, ctx
         )
         if not execution_hit:
-            LOGGER.debug("No execution hit after calling analyze()")
+            logger.debug("No execution hit after calling analyze()")
             return MISS_RESPONSE
         execution_hit = dataclasses.replace(
             execution_hit, analyzer_name=self._analyzer_name

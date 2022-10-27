@@ -4,9 +4,9 @@ import os
 
 import boto3
 from grapl_common.env_helpers import SecretsManagerClientFactory
-from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.logger import get_structlogger
 
-LOGGER = get_module_grapl_logger(default_log_level="DEBUG")
+LOGGER = get_structlogger()
 
 
 def get_test_user_creds() -> tuple[str, str]:

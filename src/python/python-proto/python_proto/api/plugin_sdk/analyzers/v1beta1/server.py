@@ -5,14 +5,12 @@ we are ignoring *the entire file*.
 https://github.com/nipunn1313/mypy-protobuf/pull/217
 """
 
-import logging
-import os
-import sys
 from concurrent import futures
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Protocol
 
 import grpc
+from grapl_common.logger import get_structlogger
 from graplinc.grapl.api.plugin_sdk.analyzers.v1beta1 import analyzers_pb2 as proto
 from graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2_grpc import (
     AnalyzerServiceServicer,
@@ -21,9 +19,7 @@ from graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.analyzers_pb2_grpc import (
 from grpc_health.v1 import health, health_pb2_grpc
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as native
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.environ["ANALYZER_LOG_LEVEL"])
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER = get_structlogger
 
 
 class AnalyzerService(Protocol):
