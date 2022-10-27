@@ -31,6 +31,7 @@ def get_observability_env_vars() -> str:
 # typechecking
 def otel_config(
     lightstep_token: pulumi.Output,
+    consul_agent_endpoint: str,
     nomad_agent_endpoint: str,
     lightstep_endpoint: str,
     # This is optional because pulumi.config.get_bool returns Optional[bool]
@@ -41,6 +42,7 @@ def otel_config(
         lightstep_endpoint=lightstep_endpoint,
         lightstep_token=lightstep_token,
         lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
+        consul_agent_endpoint=consul_agent_endpoint,
         nomad_agent_endpoint=nomad_agent_endpoint,
         trace_sampling_percentage=trace_sampling_percentage,
     ).apply(
@@ -59,7 +61,15 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-        - job_name: 'nomad-server'
+        - job_name: 'consul-agent'
+          scrape_interval: 20s
+          scrape_timeout: 10s
+          metrics_path: '/v1/agent/metrics'
+          params:
+            format: ['prometheus']
+          static_configs:
+            - targets: [{args["consul_agent_endpoint"]}]
+        - job_name: 'nomad-agent'
           scrape_interval: 20s
           scrape_timeout: 10s
           metrics_path: '/v1/metrics'

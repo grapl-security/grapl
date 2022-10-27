@@ -331,9 +331,11 @@ def main() -> None:
     )
     # Apparently nomad templates use a different templating syntax than anywhere else
     nomad_agent_endpoint: str = '{{ env "attr.unique.network.ip-address" }}:4646'
+    consul_agent_endpoint: str = '{{ env "attr.unique.network.ip-address" }}:8500'
 
     otel_configuration = otel_config(
         lightstep_token=lightstep_access_token,
+        consul_agent_endpoint=consul_agent_endpoint,
         nomad_agent_endpoint=nomad_agent_endpoint,
         lightstep_endpoint=lightstep_endpoint,
         lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
