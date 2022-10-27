@@ -1,5 +1,5 @@
 import os
-from typing import NewType
+from typing import Mapping, NewType
 
 from infra.artifacts import ArtifactGetter
 
@@ -16,7 +16,7 @@ The values can look like, for instance:
 - an image pulled from Cloudsmith
     "docker.cloudsmith.io/grapl/raw/graph-merger:20211105192234-a86a8ad2"
 """
-DockerImageVersion = NewType("DockerImageId", str)
+DockerImageVersion = NewType("DockerImageVersion", str)
 """
 A Docker image version is something that can be consumed by the
 opentelemetry service.version tag.
@@ -40,6 +40,15 @@ def _docker_version_tag_from_env() -> str:
         tag != "latest"
     ), "Never try to deploy from a 'latest' tag! Plus, Nomad can't access these from the local host, making local development problematic"
     return tag
+
+
+def container_versions_from_container_ids(
+    container_images: Mapping[str, DockerImageId]
+) -> Mapping[str, DockerImageVersion]:
+    return {
+        key: DockerImageVersion(value.split(":")[1])
+        for key, value in container_images.items()
+    }
 
 
 class DockerImageIdBuilder:

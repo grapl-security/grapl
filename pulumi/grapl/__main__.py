@@ -15,7 +15,12 @@ from infra.config import repository_path
 from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
 from infra.consul_service_default import ConsulServiceDefault
-from infra.docker_images import DockerImageId, DockerImageIdBuilder, DockerImageVersion
+from infra.docker_images import (
+    DockerImageId,
+    DockerImageIdBuilder,
+    DockerImageVersion,
+    container_versions_from_container_ids,
+)
 from infra.firecracker_assets import (
     FirecrackerAssets,
     FirecrackerS3BucketObjects,
@@ -91,15 +96,6 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "web-ui": builder.build_with_tag("grapl-web-ui"),
         "uid-allocator": builder.build_with_tag("uid-allocator"),
     }
-
-
-def _container_versions(
-    container_images: Mapping[str, DockerImageId]
-) -> Mapping[str, DockerImageVersion]:
-    container_versions = dict()
-    for key, value in container_images.items():
-        container_versions[key] = value.split(":")[1]
-    return container_versions
 
 
 def _get_aws_env_vars_for_local() -> str:
@@ -242,7 +238,7 @@ def main() -> None:
         aws_env_vars_for_local=aws_env_vars_for_local,
         aws_region=aws.get_region().name,
         container_images=container_images,
-        container_versions=_container_versions(container_images),
+        container_versions=container_versions_from_container_ids(container_images),
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
         kafka_credentials=kafka_service_credentials,
         kafka_consumer_groups=kafka_consumer_groups,
