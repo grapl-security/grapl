@@ -25,7 +25,8 @@ job "otel-collector" {
 
       # Receivers
       port "otlp-grpc" {
-        to = 4317
+        to     = 4317
+        static = 4317
       }
 
       port "otlp-http" {
@@ -59,6 +60,10 @@ job "otel-collector" {
     }
 
     service {
+      port = "otlp-grpc"
+    }
+
+    service {
       name = "otel-collector-zipkin"
       port = "zipkin"
       tags = ["zipkin"]
@@ -80,11 +85,11 @@ job "otel-collector" {
       driver = "docker"
 
       config {
-        image      = "otel/opentelemetry-collector-contrib:0.40.0"
+        image      = "otel/opentelemetry-collector-contrib:0.63.0"
         force_pull = true
 
         entrypoint = [
-          "/otelcontribcol",
+          "/otelcol-contrib",
           "--config=local/config/otel-collector-config.yaml",
         ]
         ports = [

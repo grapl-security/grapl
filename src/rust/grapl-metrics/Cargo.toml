@@ -1,0 +1,25 @@
+[package]
+name = "grapl-metrics"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+opentelemetry = { workspace = true }
+opentelemetry-otlp = { version = "0.11", features = ["tonic", "metrics"] }
+opentelemetry-semantic-conventions = { version = "0.10" }
+tokio = { workspace = true }
+
+[dev-dependencies]
+env_logger = { workspace = true }
+eyre = { workspace = true }
+grapl-tracing = { path = "../grapl-tracing" }
+grapl-utils = { path = "../grapl-utils" }
+test-log = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }
+
+[features]
+integration_tests = []

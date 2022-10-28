@@ -16,11 +16,14 @@ def get_observability_env_vars() -> str:
     # Default is 512. We were getting errors that our Thrift messages were too big.
     otel_bsp_max_export_batch_size = 32
 
+    metrics_exporter_endpoint = f"http://{otel_host}:4317"
+
     return f"""
         OTEL_EXPORTER_JAEGER_AGENT_HOST = {otel_host}
         OTEL_EXPORTER_JAEGER_AGENT_PORT = {otel_port}
         OTEL_EXPORTER_ZIPKIN_ENDPOINT   = {zipkin_endpoint}
         OTEL_BSP_MAX_EXPORT_BATCH_SIZE = {otel_bsp_max_export_batch_size}
+        OTEL_OTLP_METRICS_EXPORTER_ENDPOINT = "{metrics_exporter_endpoint}"
     """
 
 
@@ -28,6 +31,7 @@ def get_observability_env_vars() -> str:
 # typechecking
 def otel_config(
     lightstep_token: pulumi.Output,
+    consul_agent_endpoint: str,
     nomad_agent_endpoint: str,
     lightstep_endpoint: str,
     # This is optional because pulumi.config.get_bool returns Optional[bool]
@@ -38,6 +42,7 @@ def otel_config(
         lightstep_endpoint=lightstep_endpoint,
         lightstep_token=lightstep_token,
         lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
+        consul_agent_endpoint=consul_agent_endpoint,
         nomad_agent_endpoint=nomad_agent_endpoint,
         trace_sampling_percentage=trace_sampling_percentage,
     ).apply(
@@ -56,7 +61,15 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-        - job_name: 'nomad-server'
+        - job_name: 'consul-agent'
+          scrape_interval: 20s
+          scrape_timeout: 10s
+          metrics_path: '/v1/agent/metrics'
+          params:
+            format: ['prometheus']
+          static_configs:
+            - targets: [{args["consul_agent_endpoint"]}]
+        - job_name: 'nomad-agent'
           scrape_interval: 20s
           scrape_timeout: 10s
           metrics_path: '/v1/metrics'
@@ -95,14 +108,14 @@ service:
       level: "debug"
   pipelines:
     metrics:
-      receivers: [prometheus]
+      receivers: [prometheus, otlp]
       processors: [batch]
-      # To enable debug logging, add logging to exporters
+      # To enable debug logging, add logging to the exporters array below
       exporters: [otlp/ls]
     traces:
       receivers: [jaeger, otlp, zipkin]
       processors: [batch, memory_limiter, probabilistic_sampler]
-      # To enable debug logging, add logging to exporters
+      # To enable debug logging, add logging to the exporters array below
       exporters: [otlp/ls]
 """
     )

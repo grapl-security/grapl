@@ -167,6 +167,7 @@ generator-dispatcher/integration_tests
 graph-merger/integration_tests
 graph-query/integration_tests
 graph-schema-manager/integration_tests
+grapl-metrics/integration_tests
 grapl-web-ui/integration_tests
 node-identifier/integration_tests
 organization-management/integration_tests
