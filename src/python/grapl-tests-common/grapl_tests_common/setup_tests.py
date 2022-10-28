@@ -4,14 +4,14 @@ import os
 from os import environ
 
 import pytest
-from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.logger import get_structlogger
 from grapl_common.utils.primitive_convertors import to_bool
 from grapl_tests_common.dump_dynamodb import dump_dynamodb
 
 # Toggle if you want to dump databases, logs, etc.
 DUMP_ARTIFACTS = to_bool(environ.get("DUMP_ARTIFACTS", False))
 
-LOGGER = get_module_grapl_logger()
+LOGGER = get_structlogger()
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL", "INFO")
 
 

@@ -1,13 +1,13 @@
 from http import HTTPStatus
 
 import requests
-from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.logger import get_structlogger
 from grapl_common.test_user_creds import get_test_user_creds
 from grapl_tests_common.clients.common import endpoint_url
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 
-LOGGER = get_module_grapl_logger(default_log_level="DEBUG")
+LOGGER = get_structlogger()
 
 
 class GraplWebClientException(Exception):

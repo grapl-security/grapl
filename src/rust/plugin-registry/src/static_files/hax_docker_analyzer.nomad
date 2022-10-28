@@ -286,7 +286,7 @@ EOF
         # runtime.
         # https://github.com/hashicorp/nomad/issues/14813
 
-        ANALYZER_LOG_LEVEL = "DEBUG"
+        GRAPL_LOG_LEVEL = "DEBUG"
       }
 
       // Each plugin should ideally have a very small footprint.
