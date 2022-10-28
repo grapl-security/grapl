@@ -8,10 +8,10 @@ import os
 import subprocess
 import sys
 
-from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.logger import get_structlogger
 from typing_extensions import Literal
 
-LOGGER = get_module_grapl_logger()
+LOGGER = get_structlogger()
 
 ServiceIdentifier = Literal["grapl_e2e_tests"]
 
