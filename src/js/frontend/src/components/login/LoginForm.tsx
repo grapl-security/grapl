@@ -17,13 +17,13 @@ export interface FormProps {
 const LoginForm = ({ onSubmit }: FormProps) => {
   const [state, setState] = React.useState({
     userLoggedIn: false, // Boolean represented as true when user is successfully authenticated,
-                      // false when there's an auth error, token has been removed or user has been logged out
+    // false when there's an auth error, token has been removed or user has been logged out
   });
 
   const handleSubmit = async (values: FormValues) => {
-    const successfulLoginResponse = await loginService(values.username, values.password);
+    const loginServiceResponse = await loginService(values.username, values.password);
 
-    if (successfulLoginResponse) {
+    if (loginServiceResponse["success"]) {
       window.history.replaceState("#/login", "", "#/");
       window.location.reload();
     } else {
@@ -32,7 +32,7 @@ const LoginForm = ({ onSubmit }: FormProps) => {
         userLoggedIn: true,
       });
     }
-    onSubmit(values);
+    onSubmit(values); // for jest mocks
   };
 
   return (
