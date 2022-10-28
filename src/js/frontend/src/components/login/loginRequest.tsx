@@ -2,14 +2,14 @@ import { CredentialResponse } from "@react-oauth/google";
 import { signInWithGoogleService } from "../../services/login/signInWithGoogleService";
 
 export const loginRequest = async (
-  state: { loginStatus: boolean },
-  setState: React.Dispatch<React.SetStateAction<{ loginStatus: boolean }>>,
+  state: { userLoggedIn: boolean },
+  setState: React.Dispatch<React.SetStateAction<{ userLoggedIn: boolean }>>,
   credentialResponse: CredentialResponse,
 ): Promise<void> => {
   if (credentialResponse.credential === undefined) {
     setState({
       ...state,
-      loginStatus: false,
+      userLoggedIn: false,
     });
     return;
   }
@@ -22,7 +22,7 @@ export const loginRequest = async (
   } else {
     setState({
       ...state,
-      loginStatus: false,
+      userLoggedIn: true,
     });
   }
   return;

@@ -16,8 +16,8 @@ export interface FormProps {
 
 const LoginForm = ({ onSubmit }: FormProps) => {
   const [state, setState] = React.useState({
-    loginStatus: true, // Boolean represented as true when user is successfully authenticated,
-    // false when there's an auth error, token has been removed or user has been logged out
+    userLoggedIn: false, // Boolean represented as true when user is successfully authenticated,
+                      // false when there's an auth error, token has been removed or user has been logged out
   });
 
   const handleSubmit = async (values: FormValues) => {
@@ -29,7 +29,7 @@ const LoginForm = ({ onSubmit }: FormProps) => {
     } else {
       setState({
         ...state,
-        loginStatus: false,
+        userLoggedIn: true,
       });
     }
     onSubmit(values);
@@ -64,7 +64,7 @@ const LoginForm = ({ onSubmit }: FormProps) => {
             <button data-testid={"button"} name="submitButton" type="submit">
               SUBMIT
             </button>
-            {state.loginStatus && <div data-testid={"loginError"}>Unsuccessful Login</div>}
+            {state.userLoggedIn && <div data-testid={"loginError"}>Unsuccessful Login</div>}
           </Form>
         )}
       </Formik>

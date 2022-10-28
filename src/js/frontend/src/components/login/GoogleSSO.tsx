@@ -3,10 +3,10 @@ import { GoogleLogin } from "@react-oauth/google";
 import { loginRequest } from "./loginRequest";
 
 type Props = {
-  state: { loginStatus: boolean };
+  state: { userLoggedIn: boolean };
   setState: React.Dispatch<
     React.SetStateAction<{
-      loginStatus: boolean;
+      userLoggedIn: boolean;
     }>
   >;
 };
