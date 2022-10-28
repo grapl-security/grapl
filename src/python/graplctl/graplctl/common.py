@@ -5,7 +5,7 @@ import time
 from typing import TYPE_CHECKING, Iterator
 
 import click
-from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.logger import get_structlogger
 
 if TYPE_CHECKING:
     import mypy_boto3_ec2.service_resource as ec2_resources
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from mypy_boto3_ssm.client import SSMClient
     from mypy_boto3_ssm.type_defs import GetCommandInvocationResultTypeDef
 
-LOGGER = get_module_grapl_logger(log_to_stdout=True)
+LOGGER = get_structlogger()
 
 IN_PROGRESS_STATUSES = {
     "Pending",

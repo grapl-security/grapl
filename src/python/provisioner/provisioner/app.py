@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import logging
 import os
-import sys
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -13,6 +11,7 @@ from grapl_common.env_helpers import (
     SecretsManagerClientFactory,
 )
 from grapl_common.grapl_tracer import get_tracer
+from grapl_common.logger import get_structlogger
 from grapl_common.test_user_creds import get_test_user_creds
 from python_proto.api.scylla_provisioner.v1beta1.client import ScyllaProvisionerClient
 from python_proto.client import GrpcClientConfig
@@ -22,14 +21,7 @@ if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
     from mypy_boto3_secretsmanager import Client as SecretsmanagerClient
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
-formatter = logging.Formatter(
-    fmt="%(asctime)s %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-)
-stdout_handler = logging.StreamHandler(stream=sys.stdout)
-stdout_handler.setFormatter(formatter)
-LOGGER.addHandler(stdout_handler)
+LOGGER = get_structlogger()
 
 GRAPL_SCHEMA_TABLE = os.environ["GRAPL_SCHEMA_TABLE"]
 GRAPL_SCHEMA_PROPERTIES_TABLE = os.environ["GRAPL_SCHEMA_PROPERTIES_TABLE"]

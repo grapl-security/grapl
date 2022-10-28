@@ -3,14 +3,14 @@ from http import HTTPStatus
 from typing import Any, cast
 
 import requests
-from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.logger import get_structlogger
 from grapl_tests_common.clients.common import endpoint_url
 
 # Would be nice to improve this as a TypedDict
 GqlLensDict = dict[str, Any]
 GraphqlType = dict[str, Any]
 
-LOGGER = get_module_grapl_logger(log_to_stdout=True)
+LOGGER = get_structlogger()
 
 
 class GraphQLException(Exception):

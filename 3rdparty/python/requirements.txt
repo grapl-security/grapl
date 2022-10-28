@@ -43,6 +43,7 @@ python-hcl2
 python-nomad
 requests
 setuptools
+structlog
 typer[all]
 typing-extensions
 zstd
