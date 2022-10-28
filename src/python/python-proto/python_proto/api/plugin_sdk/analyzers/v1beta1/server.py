@@ -42,12 +42,12 @@ class AnalyzerServiceWrapper(AnalyzerServiceServicer):
     ) -> proto.RunAnalyzerResponse:
         native_request = native.RunAnalyzerRequest.from_proto(proto_request)
         LOGGER.info("Running analyzer")
-        LOGGER.debug(f"Analyzer request: {native_request}")
+        LOGGER.debug("Analyzer request:", request=native_request)
         native_response = await self.analyzer_service_impl.run_analyzer(
             native_request, context
         )
         LOGGER.info("Analyzer run complete")
-        LOGGER.debug(f"Analyzer response: {native_response}")
+        LOGGER.debug("Analyzer response:", response=native_response)
         return native_response.into_proto()
 
     async def serve(self) -> None:
@@ -76,7 +76,7 @@ class AnalyzerServiceWrapper(AnalyzerServiceServicer):
         reflection.enable_server_reflection(SERVICE_NAMES, server)
         """
 
-        LOGGER.info("Starting analyzer server")
+        LOGGER.info("Starting analyzer server...")
         await server.start()
-        LOGGER.info("Analyzer started, waiting for requests.")
+        LOGGER.info("Started analyzer server, waiting for requests.")
         await server.wait_for_termination()
