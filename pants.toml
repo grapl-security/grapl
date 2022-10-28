@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.13.0"
+pants_version = "2.14.0"
 backend_packages = [
   "pants.backend.codegen.protobuf.lint.buf",
   "pants.backend.codegen.protobuf.python",
@@ -33,7 +33,6 @@ plugins = [
 remote_cache_read = true
 remote_cache_write = true
 remote_store_address = "grpcs://cache.toolchain.com:443"
-remote_auth_plugin = "toolchain.pants.auth.plugin:toolchain_auth_plugin"
 
 [toolchain-setup]
 org = "grapl-security"
