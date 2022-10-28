@@ -16,7 +16,6 @@ describe("Login Component", () => {
 
   test("Retrieves password from AWS and executes password in login form ", async () => {
     const onSubmit = jest.fn();
-    console.log("on submit function contents", onSubmit);
 
     act(() => {
       render(
@@ -65,5 +64,4 @@ describe("Login Component", () => {
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
-  // screen.debug()
 });
