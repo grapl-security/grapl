@@ -4,10 +4,9 @@ type Constructable<T> = {
   new (...args: any[]): T;
 };
 
-export default function getAwsClient<T>(clientType: Constructable<T>): T {
+const getAwsClient = <T> (clientType: Constructable<T>): T => {
   if ("GRAPL_AWS_ENDPOINT" in process.env) {
     // Running locally
-
     const region = process.env.AWS_DEFAULT_REGION || process.env.AWS_REGION;
     const endpoint = process.env.GRAPL_AWS_ENDPOINT;
     const username = process.env.GRAPL_TEST_USER_NAME;
@@ -32,3 +31,5 @@ export default function getAwsClient<T>(clientType: Constructable<T>): T {
     return new clientType({});
   }
 }
+
+export default getAwsClient;

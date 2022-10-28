@@ -16,20 +16,20 @@ export interface FormProps {
 
 const LoginForm = ({ onSubmit }: FormProps) => {
   const [state, setState] = React.useState({
-    loginFailed: false, // Boolean represented as true when user is successfully authenticated,
+    loginStatus: true, // Boolean represented as true when user is successfully authenticated,
     // false when there's an auth error, token has been removed or user has been logged out
   });
 
   const handleSubmit = async (values: FormValues) => {
-    const loginSuccess = await loginService(values.username, values.password);
+    const successfulLoginResponse = await loginService(values.username, values.password);
 
-    if (loginSuccess) {
+    if (successfulLoginResponse) {
       window.history.replaceState("#/login", "", "#/");
       window.location.reload();
     } else {
       setState({
         ...state,
-        loginFailed: true,
+        loginStatus: false,
       });
     }
     onSubmit(values);
@@ -64,7 +64,7 @@ const LoginForm = ({ onSubmit }: FormProps) => {
             <button data-testid={"button"} name="submitButton" type="submit">
               SUBMIT
             </button>
-            {state.loginFailed && <div data-testid={"loginError"}>Unsuccessful Login</div>}
+            {state.loginStatus && <div data-testid={"loginError"}>Unsuccessful Login</div>}
           </Form>
         )}
       </Formik>

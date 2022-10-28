@@ -1,12 +1,12 @@
 import React from "react";
 import { GoogleLogin } from "@react-oauth/google";
-import { loginSuccess } from "./loginSuccess";
+import { loginRequest } from "./loginRequest";
 
 type Props = {
-  state: { loginFailed: boolean };
+  state: { loginStatus: boolean };
   setState: React.Dispatch<
     React.SetStateAction<{
-      loginFailed: boolean;
+      loginStatus: boolean;
     }>
   >;
 };
@@ -18,7 +18,7 @@ export const GoogleSSO = ({ state, setState }: Props) => {
         data-testid="googleSSOButton"
         login_uri="/api/auth/signin_with_google"
         onSuccess={(credentialResponse) => {
-          loginSuccess(state, setState, credentialResponse).then((m) =>
+          loginRequest(state, setState, credentialResponse).then((m) =>
             console.log("User Successfully logged in Using Google SSO", m),
           );
         }}
