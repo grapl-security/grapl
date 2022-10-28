@@ -7,19 +7,21 @@ import { screen, cleanup, fireEvent, render, waitFor } from "@testing-library/re
 import { expect, test } from "@jest/globals";
 
 import { act } from "react-dom/test-utils";
-import LoginForm from "components/login/Login";
-
-import getSecrets from "../../../services/test/modules/getSecretValues";
+import LoginForm from "components/login/LoginForm";
+import getTestPasswordFromAWSSecretsManager from "../../../services/test/modules/getSecretValues";
 
 // to show the result of render(), use screen.debug() which displays HTML
 describe("Login Component", () => {
   afterEach(cleanup);
 
   test("Retrieves password from AWS and executes password in login form ", async () => {
+    const onSubmit = jest.fn();
+    console.log("on submit function contents", onSubmit);
+
     act(() => {
       render(
         <GoogleOAuthProvider clientId="340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com">
-          <LoginForm />
+          <LoginForm onSubmit={onSubmit} />
         </GoogleOAuthProvider>,
       );
     });
@@ -28,9 +30,7 @@ describe("Login Component", () => {
     const password = screen.getByPlaceholderText(/Password/i);
     const submitButton = screen.getByText("SUBMIT");
 
-    let getCreds = await getSecrets;
-
-    console.log("getCreds", getCreds);
+    const testPassword = await getTestPasswordFromAWSSecretsManager;
 
     await waitFor(() => {
       fireEvent.change(username, {
@@ -43,7 +43,7 @@ describe("Login Component", () => {
     await waitFor(() => {
       fireEvent.change(password, {
         target: {
-          value: getCreds.SecretString,
+          value: testPassword,
         },
       });
     });
@@ -54,11 +54,16 @@ describe("Login Component", () => {
 
     await waitFor(() => {
       expect(username).not.toBeNull();
-      expect(getCreds).not.toBeNull();
-      expect(getCreds).toBeDefined();
-      expect(getCreds).toHaveProperty("SecretString");
+      expect(testPassword).not.toBeNull();
+      expect(testPassword).toBeDefined();
+
+      expect(onSubmit).toHaveBeenCalledWith({
+        username: process.env.GRAPL_TEST_USER_NAME,
+        password: testPassword,
+      });
     });
 
-    screen.debug();
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
+  // screen.debug()
 });

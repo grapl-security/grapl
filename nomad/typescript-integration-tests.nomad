@@ -75,7 +75,7 @@ job "typescript-integration-tests" {
       }
 
       env {
-        AWS_REGION                         = "${var.aws_region}"
+        AWS_REGION                         = var.aws_region
         GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
       }

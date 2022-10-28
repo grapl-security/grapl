@@ -5,19 +5,25 @@ import { GoogleSSO } from "./GoogleSSO";
 import { loginService } from "../../services/login/loginService";
 import { yupValidationSchema } from "./yupValidationSchema";
 
-const LoginForm = () => {
+export interface FormValues {
+  username: string;
+  password: string;
+}
+
+export interface FormProps {
+  onSubmit: (formValue: FormValues) => void;
+}
+
+const LoginForm = ({ onSubmit }: FormProps) => {
   const [state, setState] = React.useState({
     loginFailed: false, // Boolean represented as true when user is successfully authenticated,
     // false when there's an auth error, token has been removed or user has been logged out
   });
 
-  const handleSubmit = async (values: { username: string; password: string }) => {
+  const handleSubmit = async (values: FormValues) => {
     const loginSuccess = await loginService(values.username, values.password);
 
     if (loginSuccess) {
-      {
-        !state.loginFailed && <div data-testid={"loginSuccess"}> Logging in</div>;
-      }
       window.history.replaceState("#/login", "", "#/");
       window.location.reload();
     } else {
@@ -26,13 +32,19 @@ const LoginForm = () => {
         loginFailed: true,
       });
     }
+    onSubmit(values);
   };
 
   return (
     <div data-testid="googleSSOContainer">
+      <h1 data-testid={"Grapl"}> Grapl </h1>
+
+      <img src={"./assets/graplLogoFull.svg"} alt={"Grapl Logo"} />
+
       <GoogleSSO state={state} setState={setState} />
 
       <Formik
+        data-testid="form"
         initialValues={{ username: "", password: "" }}
         validationSchema={yupValidationSchema}
         onSubmit={handleSubmit}
