@@ -4,7 +4,7 @@ import os
 import structlog
 
 
-def get_structlogger() -> structlog.BoundLogger:
+def get_structlogger() -> structlog.stdlib.BoundLogger:
     log_level_name = os.environ["GRAPL_LOG_LEVEL"]  # e.g. "DEBUG"
     log_level: int = getattr(logging, log_level_name)  # e.g. logging.DEBUG, an int
     structlog.configure(
