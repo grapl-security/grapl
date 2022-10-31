@@ -9,7 +9,10 @@ import boto3
 from grapl_common.env_helpers import DynamoDBResourceFactory
 
 if TYPE_CHECKING:
-    from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
+    from mypy_boto3_dynamodb.service_resource import (  # pants: no-infer-dep
+        DynamoDBServiceResource,
+        Table,
+    )
 
 DOCKER_VOLUME = Path("/mnt/dynamodb_dump")
 

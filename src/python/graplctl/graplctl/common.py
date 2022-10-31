@@ -8,17 +8,19 @@ import click
 from grapl_common.logger import get_structlogger
 
 if TYPE_CHECKING:
-    import mypy_boto3_ec2.service_resource as ec2_resources
-    from mypy_boto3_cloudwatch.client import CloudWatchClient
-    from mypy_boto3_dynamodb import DynamoDBServiceResource
-    from mypy_boto3_ec2 import EC2ServiceResource
-    from mypy_boto3_ec2.type_defs import TagTypeDef
-    from mypy_boto3_route53 import Route53Client
-    from mypy_boto3_s3 import S3Client
-    from mypy_boto3_sns import SNSClient
-    from mypy_boto3_sqs import SQSClient
-    from mypy_boto3_ssm.client import SSMClient
-    from mypy_boto3_ssm.type_defs import GetCommandInvocationResultTypeDef
+    import mypy_boto3_ec2.service_resource as ec2_resources  # pants: no-infer-dep
+    from mypy_boto3_cloudwatch.client import CloudWatchClient  # pants: no-infer-dep
+    from mypy_boto3_dynamodb import DynamoDBServiceResource  # pants: no-infer-dep
+    from mypy_boto3_ec2 import EC2ServiceResource  # pants: no-infer-dep
+    from mypy_boto3_ec2.type_defs import TagTypeDef  # pants: no-infer-dep
+    from mypy_boto3_route53 import Route53Client  # pants: no-infer-dep
+    from mypy_boto3_s3 import S3Client  # pants: no-infer-dep
+    from mypy_boto3_sns import SNSClient  # pants: no-infer-dep
+    from mypy_boto3_sqs import SQSClient  # pants: no-infer-dep
+    from mypy_boto3_ssm.client import SSMClient  # pants: no-infer-dep
+    from mypy_boto3_ssm.type_defs import (  # pants: no-infer-dep
+        GetCommandInvocationResultTypeDef,
+    )
 
 LOGGER = get_structlogger()
 

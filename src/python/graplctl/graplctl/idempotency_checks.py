@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING
 from grapl_common.logger import get_structlogger
 
 if TYPE_CHECKING:
-    from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
+    from mypy_boto3_dynamodb.service_resource import (
+        DynamoDBServiceResource,  # pants: no-infer-dep
+    )
+    from mypy_boto3_dynamodb.service_resource import Table  # pants: no-infer-dep
 
 LOGGER = get_structlogger()
 

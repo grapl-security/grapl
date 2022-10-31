@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, NamedTuple, Sequence
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client
+    from mypy_boto3_s3 import S3Client  # pants: no-infer-dep
 
 
 class AnalyzerUpload(NamedTuple):

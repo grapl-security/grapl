@@ -18,8 +18,10 @@ from python_proto.client import GrpcClientConfig
 from python_proto.common import Uuid
 
 if TYPE_CHECKING:
-    from mypy_boto3_dynamodb import DynamoDBServiceResource
-    from mypy_boto3_secretsmanager import Client as SecretsmanagerClient
+    from mypy_boto3_dynamodb import DynamoDBServiceResource  # pants: no-infer-dep
+    from mypy_boto3_secretsmanager import (
+        Client as SecretsmanagerClient,  # pants: no-infer-dep
+    )
 
 LOGGER = get_structlogger()
 
