@@ -9,7 +9,11 @@ from infra import config, log_levels
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.config import repository_path
-from infra.docker_images import DockerImageId, DockerImageIdBuilder
+from infra.docker_images import (
+    DockerImageId,
+    DockerImageIdBuilder,
+    container_versions_from_container_ids,
+)
 from infra.grapl_stack import GraplStack
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Credential, Kafka
@@ -65,12 +69,14 @@ def main() -> None:
     kafka_credentials = kafka.service_credentials("integration-tests").apply(
         Credential.to_nomad_service_creds
     )
+    container_images = _rust_integration_container_images(artifacts)
 
     rust_integration_tests_job_vars: NomadVars = {
         "graph_db": grapl_stack.graph_db,
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
-        "container_images": _rust_integration_container_images(artifacts),
+        "container_images": container_images,
+        "container_versions": container_versions_from_container_ids(container_images),
         "kafka_bootstrap_servers": kafka.bootstrap_servers(),
         "kafka_consumer_group": kafka.consumer_group("integration-tests"),
         "kafka_credentials": kafka_credentials,

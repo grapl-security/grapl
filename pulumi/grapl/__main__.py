@@ -15,7 +15,11 @@ from infra.config import repository_path
 from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
 from infra.consul_service_default import ConsulServiceDefault
-from infra.docker_images import DockerImageId, DockerImageIdBuilder
+from infra.docker_images import (
+    DockerImageId,
+    DockerImageIdBuilder,
+    container_versions_from_container_ids,
+)
 from infra.firecracker_assets import (
     FirecrackerAssets,
     FirecrackerS3BucketObjects,
@@ -226,11 +230,14 @@ def main() -> None:
         "340240241744-6mu4h5i6h9j7ntp45p3aki81lqd4gc8t.apps.googleusercontent.com"
     )
 
+    container_images = _container_images(artifacts)
+
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         aws_env_vars_for_local=aws_env_vars_for_local,
         aws_region=aws.get_region().name,
-        container_images=_container_images(artifacts),
+        container_images=container_images,
+        container_versions=container_versions_from_container_ids(container_images),
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
         kafka_credentials=kafka_service_credentials,
         kafka_consumer_groups=kafka_consumer_groups,
@@ -261,6 +268,7 @@ def main() -> None:
                 "aws_env_vars_for_local",
                 "aws_region",
                 "container_images",
+                "container_versions",
                 "observability_env_vars",
                 "py_log_level",
                 "schema_properties_table_name",
@@ -482,6 +490,7 @@ def main() -> None:
             nomad_inputs,
             {
                 "container_images",
+                "container_versions",
                 "observability_env_vars",
                 "rust_log",
             },

@@ -10,7 +10,11 @@ from infra import config
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.config import repository_path
-from infra.docker_images import DockerImageId, DockerImageIdBuilder
+from infra.docker_images import (
+    DockerImageId,
+    DockerImageIdBuilder,
+    container_versions_from_container_ids,
+)
 from infra.grapl_stack import GraplStack
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Kafka
@@ -70,10 +74,15 @@ def main() -> None:
         # on-disk Grapl repo.
         # FIXME: make python integration tests work in AWS.
 
+        container_images = _python_integration_container_images(artifacts)
+
         python_integration_test_job_vars: NomadVars = {
             "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
             "aws_region": aws.get_region().name,
-            "container_images": _python_integration_container_images(artifacts),
+            "container_images": container_images,
+            "container_versions": container_versions_from_container_ids(
+                container_images
+            ),
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
