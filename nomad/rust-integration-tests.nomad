@@ -9,6 +9,14 @@ variable "container_images" {
 EOF
 }
 
+variable "container_versions" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to that task's docker image version.
+  (See DockerImageVersion in Pulumi for further documentation.)
+EOF
+}
+
 variable "aws_region" {
   type = string
 }
@@ -101,8 +109,10 @@ variable "plugin_work_queue_db" {
 locals {
   dns_servers = [attr.unique.network.ip-address]
 
-  app_version                      = split(":", var.container_images["rust-integration-tests"])[1]
-  default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
+  # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
+  # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
+  # Examples of keys we may add in the future: language, instance_id/ip, team
+  default_otel_resource_attributes = "host.hostname=${attr.unique.hostname}"
 }
 
 job "rust-integration-tests" {
@@ -221,7 +231,7 @@ job "rust-integration-tests" {
         RUST_BACKTRACE = 1
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["rust-integration-tests"]}"
 
         # web-ui
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table
