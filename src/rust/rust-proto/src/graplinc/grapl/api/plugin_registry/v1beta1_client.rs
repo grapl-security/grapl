@@ -56,7 +56,7 @@ impl PluginRegistryClient {
         .map(proto::CreatePluginRequest::from);
 
         self.client
-            .execute_streaming(proto_stream, |mut client, request| async move {
+            .execute_client_streaming(proto_stream, |mut client, request| async move {
                 client.create_plugin(request).await
             })
             .await

@@ -367,23 +367,24 @@ pub(crate) mod serde_impl {
         SerDeError,
     };
 
-    /// You can use this blanket implementation to automatically implement SerDe
-    /// for a type YourType defined within this crate. YourType must implement
-    /// either From<proto::YourType> or TryFrom<proto::YourType> and you must
-    /// implement either From<YourType> or TryFrom<YourType> for
-    /// proto::YourType. YourType must also implement type_url::TypeUrl. If
-    /// YourType meets these conditions you can automatically implement SerDe by
-    /// implementing the simpler trait ProtobufSerializable.
-    ///
-    /// Example usage:
-    ///
+    /// You can use this blanket implementation to automatically implement `SerDe`
+    /// for a type `YourType` defined within this crate. `YourType` must implement
+    /// either `From<proto::YourType>` or `TryFrom<proto::YourType>` and you must
+    /// implement either `From<YourType>` or `TryFrom<YourType>` for
+    /// `proto::YourType`. `YourType` must also implement `type_url::TypeUrl`. If
+    /// `YourType` meets these conditions you can automatically implement `SerDe` by
+    /// implementing the simpler trait `ProtobufSerializable`.
+    /// \
+    /// # Example usage:
+    /// \
+    /// ```ignore
     /// use crate::{
     ///     protobufs::graplinc::v1beta1 as proto,
     ///     serde_impl,
     ///     type_url,
     /// };
     ///
-    /// pub struct YourType {...}
+    /// pub struct YourType { }
     ///
     /// impl type_url::TypeUrl for YourType {
     ///     const TYPE_URL: &'static str =
@@ -393,7 +394,7 @@ pub(crate) mod serde_impl {
     /// impl serde_impl::ProtobufSerializable for YourType {
     ///    type ProtobufMessage = proto::YourType;
     /// }
-    ///
+    /// ```
     pub(crate) trait ProtobufSerializable: Sized {
         type ProtobufMessage: TryFrom<Self> + TryInto<Self> + Message + Default;
     }
