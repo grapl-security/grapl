@@ -53,6 +53,8 @@ pub enum PluginRegistryServiceError {
     StreamInputError(&'static str),
     #[error("DeploymentStateError {0}")]
     DeploymentStateError(String),
+    #[error(transparent)]
+    HealthCheckError(#[from] consul_client::CheckHealthError),
     // TODO: These errs are meant to be human-readable and are not directly
     // sent over the wire, so add {0}s to them!
     #[error("not found")]

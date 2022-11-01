@@ -38,6 +38,11 @@ async fn query_nomad_for_health(
 ) -> Result<PluginHealthStatus, PluginRegistryServiceError> {
     let job_name = plugin_nomad_job::job_name().to_owned();
     let namespace_name = plugin_nomad_job::namespace_name(&plugin_id);
+    let service_name = format!("plugin-{plugin_id}");
+    let service_health = consul_client::check_health(service_name).await?;
+    tracing::info!("health result", service_health = ?service_health);
+    Ok(PluginHealthStatus::Dead);
+    /*
     let job = nomad_client.get_job(job_name, Some(namespace_name)).await?;
     match job.status {
         Some(status) => match status.as_str() {
@@ -51,5 +56,6 @@ async fn query_nomad_for_health(
         _ => Err(PluginRegistryServiceError::DeploymentStateError(
             "No State for this job? Is this even possible?".to_owned(),
         )),
-    }
+    } 
+    */
 }
