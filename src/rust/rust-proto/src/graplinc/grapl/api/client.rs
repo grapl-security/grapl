@@ -137,9 +137,11 @@ pub struct ClientConfiguration {
     address: String,
 
     /// The max duration the request is allowed to take (gRPC timeout)
+    #[serde(with = "humantime_serde")]
     request_timeout: Duration,
 
     /// Internal timeout for the request future
+    #[serde(with = "humantime_serde")]
     executor_timeout: Duration,
 
     /// Max number of concurrent client connections
@@ -156,12 +158,15 @@ pub struct ClientConfiguration {
     /// ```
     ///
     /// where `fib(N)` denotes the Nth Fibonacci number
+    #[serde(with = "humantime_serde")]
     initial_backoff_delay: Duration,
 
     /// Max duration to wait between retries
+    #[serde(with = "humantime_serde")]
     maximum_backoff_delay: Duration,
 
     /// The max duration allowed to establish a connection to the gRPC server
+    #[serde(with = "humantime_serde")]
     connect_timeout: Duration,
 
     /// How many times to attempt connecting to the gRPC server before giving up
@@ -170,9 +175,11 @@ pub struct ClientConfiguration {
     /// Duration to wait before trying to connect again -- the same Fibonacci
     /// backoff strategy is used to retry connection attempts as is used to
     /// retry requests
+    #[serde(with = "humantime_serde")]
     connect_initial_backoff_delay: Duration,
 
     /// The max duration to wait between connection attempts
+    #[serde(with = "humantime_serde")]
     connect_maximum_backoff_delay: Duration,
 }
 

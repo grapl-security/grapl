@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = grapl_tracing::setup_tracing("generator-dispatcher")?;
     let config = GeneratorDispatcherConfig::parse();
     let plugin_work_queue_client_config = Figment::new()
-        .merge(Env::prefixed("PLUGIN_WORK_QUEUE_"))
+        .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
         .extract()?;
     let plugin_work_queue_client =
         PluginWorkQueueClient::connect(plugin_work_queue_client_config).await?;

@@ -55,7 +55,7 @@ opentelemetry-jaeger = { version = "0.17", features = [
   "collector_client",
   "rt-tokio"
 ] }
-serde = { version = "1.0" }
+serde = { version = "1.0", features = ["derive"] }
 sqlx = { version = "0.6", features = [
   "chrono",
   "migrate",
