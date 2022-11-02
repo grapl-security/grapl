@@ -4,7 +4,7 @@ members = [
   "./async-cache",
   "./client-executor",
   "./consul-client",
-  "./consul-connect",  # TODO delete
+  "./consul-connect", # TODO delete
   "./derive-dynamic-node",
   "./e2e-tests",
   "./endpoint-plugin",

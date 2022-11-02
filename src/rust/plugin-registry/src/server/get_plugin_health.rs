@@ -1,3 +1,8 @@
+use clap::Parser;
+use consul_client::{
+    ConsulClient,
+    ConsulClientConfig,
+};
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginHealthStatus;
 
 use super::plugin_nomad_job;
@@ -38,16 +43,13 @@ async fn query_nomad_for_health(
 ) -> Result<PluginHealthStatus, PluginRegistryServiceError> {
     let job_name = plugin_nomad_job::job_name().to_owned();
     let namespace_name = plugin_nomad_job::namespace_name(&plugin_id);
-    let service_name = format!("plugin-{plugin_id}");
-    let service_health = consul_client::check_health(service_name).await?;
-    tracing::info!("health result", service_health = ?service_health);
-    Ok(PluginHealthStatus::Dead);
-    /*
     let job = nomad_client.get_job(job_name, Some(namespace_name)).await?;
     match job.status {
         Some(status) => match status.as_str() {
             "pending" => Ok(PluginHealthStatus::Pending),
-            "running" => Ok(PluginHealthStatus::Running),
+            // Okay, so now we know the job is running; let's ask Consul
+            // if the plugin service is healthy.
+            "running" => query_consul_for_service_health(plugin_id).await,
             "dead" => Ok(PluginHealthStatus::Dead),
             other => Err(PluginRegistryServiceError::DeploymentStateError(format!(
                 "Unknown state {other}"
@@ -56,6 +58,18 @@ async fn query_nomad_for_health(
         _ => Err(PluginRegistryServiceError::DeploymentStateError(
             "No State for this job? Is this even possible?".to_owned(),
         )),
-    } 
-    */
+    }
+}
+
+async fn query_consul_for_service_health(
+    plugin_id: uuid::Uuid,
+) -> Result<PluginHealthStatus, PluginRegistryServiceError> {
+    let service_name = format!("plugin-{plugin_id}");
+    let consul_client = ConsulClient::new(ConsulClientConfig::parse());
+    let service_health = consul_client.check_health(service_name).await?;
+    tracing::info!(message = "health result", service_health =? service_health);
+    match service_health.all_passing() {
+        true => Ok(PluginHealthStatus::Running),
+        false => Ok(PluginHealthStatus::Pending),
+    }
 }
