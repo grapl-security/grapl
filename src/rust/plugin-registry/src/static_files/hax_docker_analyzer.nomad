@@ -93,7 +93,7 @@ job "grapl-plugin" {
       connect {
         sidecar_task {
           resources {
-            cpu = local.consul_connect_proxy_cpu
+            cpu    = local.consul_connect_proxy_cpu
             memory = local.consul_connect_proxy_mem_mb
           }
         }
@@ -128,7 +128,7 @@ job "grapl-plugin" {
       connect {
         sidecar_task {
           resources {
-            cpu = local.consul_connect_proxy_cpu
+            cpu    = local.consul_connect_proxy_cpu
             memory = local.consul_connect_proxy_mem_mb
           }
         }
@@ -243,7 +243,7 @@ job "grapl-plugin" {
       connect {
         sidecar_task {
           resources {
-            cpu = local.consul_connect_proxy_cpu
+            cpu    = local.consul_connect_proxy_cpu
             memory = local.consul_connect_proxy_mem_mb
           }
         }
