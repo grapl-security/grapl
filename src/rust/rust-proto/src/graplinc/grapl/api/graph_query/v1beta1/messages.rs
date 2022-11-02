@@ -13,6 +13,8 @@ use crate::{
         Uid,
     },
     protobufs::graplinc::grapl::api::graph_query::v1beta1 as proto,
+    serde_impl,
+    type_url,
     SerDeError,
 };
 
@@ -31,6 +33,7 @@ impl Default for QueryId {
 
 impl TryFrom<proto::QueryId> for QueryId {
     type Error = SerDeError;
+
     fn try_from(value: proto::QueryId) -> Result<Self, Self::Error> {
         Ok(Self { value: value.value })
     }
@@ -40,6 +43,15 @@ impl From<QueryId> for proto::QueryId {
     fn from(value: QueryId) -> Self {
         Self { value: value.value }
     }
+}
+
+impl type_url::TypeUrl for QueryId {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.QueryId";
+}
+
+impl serde_impl::ProtobufSerializable for QueryId {
+    type ProtobufMessage = proto::QueryId;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -114,6 +126,15 @@ impl From<IntFilter> for proto::IntFilter {
     }
 }
 
+impl type_url::TypeUrl for IntFilter {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.IntFilter";
+}
+
+impl serde_impl::ProtobufSerializable for IntFilter {
+    type ProtobufMessage = proto::IntFilter;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AndIntFilters {
     pub int_filters: Vec<IntFilter>,
@@ -143,6 +164,15 @@ impl From<AndIntFilters> for proto::AndIntFilters {
     }
 }
 
+impl type_url::TypeUrl for AndIntFilters {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.AndIntFilters";
+}
+
+impl serde_impl::ProtobufSerializable for AndIntFilters {
+    type ProtobufMessage = proto::AndIntFilters;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct OrIntFilters {
     pub and_int_filters: Vec<AndIntFilters>,
@@ -169,6 +199,15 @@ impl From<OrIntFilters> for proto::OrIntFilters {
             .collect();
         Self { and_int_filters }
     }
+}
+
+impl type_url::TypeUrl for OrIntFilters {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.OrIntFilters";
+}
+
+impl serde_impl::ProtobufSerializable for OrIntFilters {
+    type ProtobufMessage = proto::OrIntFilters;
 }
 
 // Higher level helper
@@ -321,6 +360,15 @@ impl From<StringFilter> for proto::StringFilter {
     }
 }
 
+impl type_url::TypeUrl for StringFilter {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.StringFilter";
+}
+
+impl serde_impl::ProtobufSerializable for StringFilter {
+    type ProtobufMessage = proto::StringFilter;
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct AndStringFilters {
     pub string_filters: Vec<StringFilter>,
@@ -356,6 +404,15 @@ impl From<Vec<StringCmp>> for AndStringFilters {
             string_filters: cmps.into_iter().map(StringFilter::from).collect(),
         }
     }
+}
+
+impl type_url::TypeUrl for AndStringFilters {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.AndStringFilters";
+}
+
+impl serde_impl::ProtobufSerializable for AndStringFilters {
+    type ProtobufMessage = proto::AndStringFilters;
 }
 
 #[derive(Debug, Clone, Default)]
@@ -421,6 +478,15 @@ impl From<OrStringFilters> for proto::OrStringFilters {
     }
 }
 
+impl type_url::TypeUrl for OrStringFilters {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.OrStringFilters";
+}
+
+impl serde_impl::ProtobufSerializable for OrStringFilters {
+    type ProtobufMessage = proto::OrStringFilters;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum UidOperation {
     Equal,
@@ -474,6 +540,15 @@ impl From<UidFilter> for proto::UidFilter {
     }
 }
 
+impl type_url::TypeUrl for UidFilter {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.UidFilter";
+}
+
+impl serde_impl::ProtobufSerializable for UidFilter {
+    type ProtobufMessage = proto::UidFilter;
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct UidFilters {
     pub uid_filters: Vec<UidFilter>,
@@ -501,6 +576,15 @@ impl From<UidFilters> for proto::UidFilters {
                 .collect(),
         }
     }
+}
+
+impl type_url::TypeUrl for UidFilters {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.UidFilters";
+}
+
+impl serde_impl::ProtobufSerializable for UidFilters {
+    type ProtobufMessage = proto::UidFilters;
 }
 
 #[derive(Debug, Clone)]
@@ -624,6 +708,15 @@ impl From<NodePropertyQuery> for proto::NodePropertyQuery {
             uid_filters: Some(uid_filters),
         }
     }
+}
+
+impl type_url::TypeUrl for NodePropertyQuery {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.NodePropertyQuery";
+}
+
+impl serde_impl::ProtobufSerializable for NodePropertyQuery {
+    type ProtobufMessage = proto::NodePropertyQuery;
 }
 
 #[derive(Debug, Clone)]
@@ -783,6 +876,15 @@ impl From<GraphQuery> for proto::GraphQuery {
     }
 }
 
+impl type_url::TypeUrl for GraphQuery {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.GraphQuery";
+}
+
+impl serde_impl::ProtobufSerializable for GraphQuery {
+    type ProtobufMessage = proto::GraphQuery;
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct StringProperties {
     pub prop_map: FxHashMap<PropertyName, String>,
@@ -829,6 +931,15 @@ impl From<StringProperties> for proto::StringProperties {
             properties: props_as_vec,
         }
     }
+}
+
+impl type_url::TypeUrl for StringProperties {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.StringProperties";
+}
+
+impl serde_impl::ProtobufSerializable for StringProperties {
+    type ProtobufMessage = proto::StringProperties;
 }
 
 #[derive(Debug, Clone)]
@@ -894,6 +1005,15 @@ impl From<NodePropertiesView> for proto::NodePropertiesView {
     }
 }
 
+impl type_url::TypeUrl for NodePropertiesView {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.NodePropertiesView";
+}
+
+impl serde_impl::ProtobufSerializable for NodePropertiesView {
+    type ProtobufMessage = proto::NodePropertiesView;
+}
+
 #[derive(Debug, Clone)]
 pub struct NodePropertiesViewEntry {
     pub uid: Uid,
@@ -923,6 +1043,15 @@ impl From<NodePropertiesViewEntry> for proto::NodePropertiesViewEntry {
             node_view: Some(value.node_view.into()),
         }
     }
+}
+
+impl type_url::TypeUrl for NodePropertiesViewEntry {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.NodePropertiesViewEntry";
+}
+
+impl serde_impl::ProtobufSerializable for NodePropertiesViewEntry {
+    type ProtobufMessage = proto::NodePropertiesViewEntry;
 }
 
 #[derive(Debug, Clone)]
@@ -965,6 +1094,15 @@ impl From<NodePropertiesViewMap> for proto::NodePropertiesViewMap {
 
         Self { entries }
     }
+}
+
+impl type_url::TypeUrl for NodePropertiesViewMap {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.NodePropertiesViewMap";
+}
+
+impl serde_impl::ProtobufSerializable for NodePropertiesViewMap {
+    type ProtobufMessage = proto::NodePropertiesViewMap;
 }
 
 #[derive(Debug, Clone)]
@@ -1010,6 +1148,15 @@ impl From<EdgeViewEntry> for proto::EdgeViewEntry {
     }
 }
 
+impl type_url::TypeUrl for EdgeViewEntry {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.EdgeViewEntry";
+}
+
+impl serde_impl::ProtobufSerializable for EdgeViewEntry {
+    type ProtobufMessage = proto::EdgeViewEntry;
+}
+
 #[derive(Debug, Clone)]
 pub struct EdgeViewMap {
     pub entries: FxHashMap<(Uid, EdgeName), FxHashSet<Uid>>,
@@ -1047,6 +1194,15 @@ impl From<EdgeViewMap> for proto::EdgeViewMap {
 
         Self { entries }
     }
+}
+
+impl type_url::TypeUrl for EdgeViewMap {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.EdgeViewMap";
+}
+
+impl serde_impl::ProtobufSerializable for EdgeViewMap {
+    type ProtobufMessage = proto::EdgeViewMap;
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1149,6 +1305,15 @@ impl From<GraphView> for proto::GraphView {
     }
 }
 
+impl type_url::TypeUrl for GraphView {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.GraphView";
+}
+
+impl serde_impl::ProtobufSerializable for GraphView {
+    type ProtobufMessage = proto::GraphView;
+}
+
 #[derive(Debug, Clone)]
 pub struct QueryGraphWithUidRequest {
     pub tenant_id: uuid::Uuid,
@@ -1187,6 +1352,15 @@ impl From<QueryGraphWithUidRequest> for proto::QueryGraphWithUidRequest {
     }
 }
 
+impl type_url::TypeUrl for QueryGraphWithUidRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.QueryGraphWithUidRequest";
+}
+
+impl serde_impl::ProtobufSerializable for QueryGraphWithUidRequest {
+    type ProtobufMessage = proto::QueryGraphWithUidRequest;
+}
+
 #[derive(Debug, Clone)]
 pub struct MatchedGraphWithUid {
     pub matched_graph: GraphView,
@@ -1219,6 +1393,15 @@ impl From<MatchedGraphWithUid> for proto::MatchedGraphWithUid {
     }
 }
 
+impl type_url::TypeUrl for MatchedGraphWithUid {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.MatchedGraphWithUid";
+}
+
+impl serde_impl::ProtobufSerializable for MatchedGraphWithUid {
+    type ProtobufMessage = proto::MatchedGraphWithUid;
+}
+
 #[derive(Debug, Clone)]
 pub struct NoMatchWithUid {}
 
@@ -1234,6 +1417,15 @@ impl From<NoMatchWithUid> for proto::NoMatchWithUid {
         let NoMatchWithUid {} = value;
         Self {}
     }
+}
+
+impl type_url::TypeUrl for NoMatchWithUid {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.NoMatchWithUid";
+}
+
+impl serde_impl::ProtobufSerializable for NoMatchWithUid {
+    type ProtobufMessage = proto::NoMatchWithUid;
 }
 
 #[derive(Debug, Clone)]
@@ -1270,6 +1462,15 @@ impl From<MaybeMatchWithUid> for proto::MaybeMatchWithUid {
     }
 }
 
+impl type_url::TypeUrl for MaybeMatchWithUid {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.MaybeMatchWithUid";
+}
+
+impl serde_impl::ProtobufSerializable for MaybeMatchWithUid {
+    type ProtobufMessage = proto::MaybeMatchWithUid;
+}
+
 #[derive(Debug, Clone)]
 pub struct QueryGraphWithUidResponse {
     pub maybe_match: MaybeMatchWithUid,
@@ -1293,6 +1494,15 @@ impl From<QueryGraphWithUidResponse> for proto::QueryGraphWithUidResponse {
             maybe_match: Some(value.maybe_match.into()),
         }
     }
+}
+
+impl type_url::TypeUrl for QueryGraphWithUidResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.QueryGraphWithUidResponse";
+}
+
+impl serde_impl::ProtobufSerializable for QueryGraphWithUidResponse {
+    type ProtobufMessage = proto::QueryGraphWithUidResponse;
 }
 
 #[derive(Debug, Clone)]
@@ -1333,6 +1543,15 @@ impl From<QueryGraphFromUidRequest> for proto::QueryGraphFromUidRequest {
     }
 }
 
+impl type_url::TypeUrl for QueryGraphFromUidRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.QueryGraphFromUidRequest";
+}
+
+impl serde_impl::ProtobufSerializable for QueryGraphFromUidRequest {
+    type ProtobufMessage = proto::QueryGraphFromUidRequest;
+}
+
 #[derive(Debug, Clone)]
 pub struct QueryGraphFromUidResponse {
     pub matched_graph: Option<GraphView>,
@@ -1353,4 +1572,13 @@ impl From<QueryGraphFromUidResponse> for proto::QueryGraphFromUidResponse {
             matched_graph: value.matched_graph.map(Into::into),
         }
     }
+}
+
+impl type_url::TypeUrl for QueryGraphFromUidResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_service.v1beta1.QueryGraphFromUidResponse";
+}
+
+impl serde_impl::ProtobufSerializable for QueryGraphFromUidResponse {
+    type ProtobufMessage = proto::QueryGraphFromUidResponse;
 }

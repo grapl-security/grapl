@@ -1,102 +1,70 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use client_executor::{
-    Executor,
-    ExecutorConfig,
-};
 use futures::{
     Stream,
     StreamExt,
 };
-use proto::plugin_registry_service_client::PluginRegistryServiceClient as PluginRegistryServiceClientProto;
+use proto::plugin_registry_service_client::PluginRegistryServiceClient;
+use tonic::transport::Endpoint;
 use tracing::instrument;
 
 use crate::{
-    client_factory::services::PluginRegistryClientConfig,
-    client_macros::RpcConfig,
-    create_proto_client,
-    execute_client_rpc,
-    graplinc::grapl::api::plugin_registry::v1beta1 as native,
-    protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
-    protocol::{
-        endpoint::Endpoint,
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
+    graplinc::grapl::api::{
+        client::{
+            Client,
+            ClientError,
             Connectable,
+            WithClient,
         },
-        status::Status,
+        plugin_registry::v1beta1 as native,
     },
+    protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
 };
 
-#[derive(Clone)]
-pub struct PluginRegistryServiceClient {
-    proto_client: PluginRegistryServiceClientProto<tonic::transport::Channel>,
-    executor: Executor,
-}
-
 #[async_trait::async_trait]
-impl Connectable for PluginRegistryServiceClient {
-    type Config = PluginRegistryClientConfig;
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_registry.v1beta1.PluginRegistryService";
-
-    #[tracing::instrument(err)]
-    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = create_proto_client!(
-            executor,
-            PluginRegistryServiceClientProto<tonic::transport::Channel>,
-            endpoint,
-        );
-
-        Ok(PluginRegistryServiceClient {
-            proto_client,
-            executor,
-        })
+impl Connectable for PluginRegistryServiceClient<tonic::transport::Channel> {
+    async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+        Ok(Self::connect(endpoint).await?)
     }
 }
 
-impl PluginRegistryServiceClient {
-    /// create a new plugin.
-    /// NOTE: Most consumers will want `create_plugin`, not `create_plugin_raw`.
-    /// NOTE: streaming RPCs aren't hooked up to client-executor just yet.
-    #[instrument(skip(self, request), err)]
-    pub async fn create_plugin_raw<S>(
-        &mut self,
-        request: S,
-    ) -> Result<native::CreatePluginResponse, GrpcClientError>
-    where
-        S: Stream<Item = native::CreatePluginRequest> + Send + 'static,
-    {
-        let proto_response = self
-            .proto_client
-            .create_plugin(request.map(proto::CreatePluginRequest::from))
-            .await
-            .map_err(Status::from)?;
-        let native_response = native::CreatePluginResponse::try_from(proto_response.into_inner())?;
-        Ok(native_response)
-    }
+#[derive(Clone)]
+pub struct PluginRegistryClient {
+    client: Client<PluginRegistryServiceClient<tonic::transport::Channel>>,
+}
 
+impl WithClient<PluginRegistryServiceClient<tonic::transport::Channel>> for PluginRegistryClient {
+    fn with_client(client: Client<PluginRegistryServiceClient<tonic::transport::Channel>>) -> Self {
+        Self { client }
+    }
+}
+
+impl PluginRegistryClient {
     /// Create a new plugin
-    ///
     #[instrument(skip(self, metadata, plugin_artifact), err)]
     pub async fn create_plugin<S>(
         &mut self,
+        request_timeout: Duration,
         metadata: native::PluginMetadata,
         plugin_artifact: S,
-    ) -> Result<native::CreatePluginResponse, GrpcClientError>
+    ) -> Result<native::CreatePluginResponse, ClientError>
     where
         S: Stream<Item = Bytes> + Send + 'static,
     {
-        // Send the metadata first followed by N chunks
-        let request = futures::stream::iter(std::iter::once(
+        let proto_stream = futures::stream::iter(std::iter::once(
             native::CreatePluginRequest::Metadata(metadata),
         ))
-        .chain(plugin_artifact.map(native::CreatePluginRequest::Chunk));
+        .chain(plugin_artifact.map(native::CreatePluginRequest::Chunk))
+        .map(proto::CreatePluginRequest::from);
 
-        self.create_plugin_raw(request).await
+        self.client
+            .execute_client_streaming(
+                request_timeout,
+                proto_stream,
+                |mut client, request| async move { client.create_plugin(request).await },
+            )
+            .await
     }
 
     /// retrieve the plugin corresponding to the given plugin_id
@@ -104,45 +72,45 @@ impl PluginRegistryServiceClient {
     pub async fn get_plugin(
         &mut self,
         request: native::GetPluginRequest,
-    ) -> Result<native::GetPluginResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            get_plugin,
-            proto::GetPluginRequest,
-            native::GetPluginResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::GetPluginResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_plugin(request).await },
+            )
+            .await
     }
 
     #[instrument(skip(self, request), err)]
     pub async fn list_plugins(
         &mut self,
         request: native::ListPluginsRequest,
-    ) -> Result<native::ListPluginsResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            list_plugins,
-            proto::ListPluginsRequest,
-            native::ListPluginsResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::ListPluginsResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.list_plugins(request).await },
+            )
+            .await
     }
 
     #[instrument(skip(self, request), err)]
     pub async fn get_plugin_deployment(
         &mut self,
         request: native::GetPluginDeploymentRequest,
-    ) -> Result<native::GetPluginDeploymentResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            get_plugin_deployment,
-            proto::GetPluginDeploymentRequest,
-            native::GetPluginDeploymentResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::GetPluginDeploymentResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_plugin_deployment(request).await },
+            )
+            .await
     }
 
     /// turn on a particular plugin's code
@@ -150,15 +118,15 @@ impl PluginRegistryServiceClient {
     pub async fn deploy_plugin(
         &mut self,
         request: native::DeployPluginRequest,
-    ) -> Result<native::DeployPluginResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            deploy_plugin,
-            proto::DeployPluginRequest,
-            native::DeployPluginResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::DeployPluginResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.deploy_plugin(request).await },
+            )
+            .await
     }
 
     /// turn off a particular plugin's code
@@ -166,30 +134,30 @@ impl PluginRegistryServiceClient {
     pub async fn tear_down_plugin(
         &mut self,
         request: native::TearDownPluginRequest,
-    ) -> Result<native::TearDownPluginResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            tear_down_plugin,
-            proto::TearDownPluginRequest,
-            native::TearDownPluginResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::TearDownPluginResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.tear_down_plugin(request).await },
+            )
+            .await
     }
 
     #[instrument(skip(self, request), err)]
     pub async fn get_plugin_health(
         &mut self,
         request: native::GetPluginHealthRequest,
-    ) -> Result<native::GetPluginHealthResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            get_plugin_health,
-            proto::GetPluginHealthRequest,
-            native::GetPluginHealthResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::GetPluginHealthResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_plugin_health(request).await },
+            )
+            .await
     }
 
     /// Given information about an event source, return all generators that handle that event source
@@ -197,15 +165,17 @@ impl PluginRegistryServiceClient {
     pub async fn get_generators_for_event_source(
         &mut self,
         request: native::GetGeneratorsForEventSourceRequest,
-    ) -> Result<native::GetGeneratorsForEventSourceResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            get_generators_for_event_source,
-            proto::GetGeneratorsForEventSourceRequest,
-            native::GetGeneratorsForEventSourceResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::GetGeneratorsForEventSourceResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move {
+                    client.get_generators_for_event_source(request).await
+                },
+            )
+            .await
     }
 
     /// Given information about a tenant, return all analyzers for that tenant
@@ -213,14 +183,14 @@ impl PluginRegistryServiceClient {
     pub async fn get_analyzers_for_tenant(
         &mut self,
         request: native::GetAnalyzersForTenantRequest,
-    ) -> Result<native::GetAnalyzersForTenantResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            get_analyzers_for_tenant,
-            proto::GetAnalyzersForTenantRequest,
-            native::GetAnalyzersForTenantResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::GetAnalyzersForTenantResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_analyzers_for_tenant(request).await },
+            )
+            .await
     }
 }

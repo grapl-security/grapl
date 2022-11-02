@@ -10,8 +10,8 @@ use grapl_config::{
     PostgresClient,
 };
 use rusoto_s3::S3Client;
-use rust_proto::{
-    graplinc::grapl::api::plugin_registry::v1beta1::{
+use rust_proto::graplinc::grapl::api::{
+    plugin_registry::v1beta1::{
         CreatePluginRequest,
         CreatePluginResponse,
         DeployPluginRequest,

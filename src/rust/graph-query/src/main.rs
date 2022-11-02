@@ -9,8 +9,8 @@ use graph_query::{
     server,
 };
 use grapl_tracing::setup_tracing;
-use rust_proto::{
-    graplinc::grapl::api::graph_query::v1beta1::server::GraphQueryServiceServer,
+use rust_proto::graplinc::grapl::api::{
+    graph_query::v1beta1::server::GraphQueryServiceServer,
     protocol::healthcheck::HealthcheckStatus,
 };
 use scylla::CachingSession;

@@ -23,21 +23,23 @@ use tonic::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::scylla_provisioner::v1beta1::messages as native,
+    graplinc::grapl::api::{
+        protocol::{
+            error::ServeError,
+            healthcheck::{
+                server::init_health_service,
+                HealthcheckError,
+                HealthcheckStatus,
+            },
+            status::Status,
+        },
+        scylla_provisioner::v1beta1::messages as native,
+        server::GrpcApi,
+    },
     protobufs::graplinc::grapl::api::scylla_provisioner::v1beta1::{
         self as proto,
         scylla_provisioner_service_server::ScyllaProvisionerServiceServer as ScyllaProvisionerServiceProto,
     },
-    protocol::{
-        error::ServeError,
-        healthcheck::{
-            server::init_health_service,
-            HealthcheckError,
-            HealthcheckStatus,
-        },
-        status::Status,
-    },
-    server_internals::GrpcApi,
 };
 
 /// Implement this trait to define the API business logic

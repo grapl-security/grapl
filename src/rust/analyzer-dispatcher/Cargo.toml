@@ -8,6 +8,7 @@ edition = "2021"
 async-cache = { path = "../async-cache" }
 async-trait = "0.1"
 clap = { workspace = true }
+figment = { workspace = true }
 futures = "0.3"
 grapl-tracing = { path = "../grapl-tracing" }
 kafka = { path = "../kafka", version = "*" }

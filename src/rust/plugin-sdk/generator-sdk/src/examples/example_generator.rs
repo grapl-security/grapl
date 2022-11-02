@@ -8,15 +8,13 @@ use generator_sdk::server::{
     GeneratorServiceConfig,
 };
 use grapl_tracing::setup_tracing;
-use rust_proto::{
-    graplinc::grapl::api::{
-        graph::v1beta1::GraphDescription,
-        plugin_sdk::generators::v1beta1::{
-            server::GeneratorApi,
-            GeneratedGraph,
-            RunGeneratorRequest,
-            RunGeneratorResponse,
-        },
+use rust_proto::graplinc::grapl::api::{
+    graph::v1beta1::GraphDescription,
+    plugin_sdk::generators::v1beta1::{
+        server::GeneratorApi,
+        GeneratedGraph,
+        RunGeneratorRequest,
+        RunGeneratorResponse,
     },
     protocol::status::Status,
 };

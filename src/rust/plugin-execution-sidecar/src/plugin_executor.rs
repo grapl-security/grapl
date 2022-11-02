@@ -1,24 +1,42 @@
 use std::time::Duration;
 
-use clap::Parser;
-use rust_proto::{
-    client_factory::services::PluginWorkQueueClientConfig,
-    graplinc::grapl::api::plugin_work_queue::v1beta1::PluginWorkQueueServiceClient,
-    protocol::service_client::ConnectWithConfig,
+use figment::{
+    providers::Env,
+    Figment,
+};
+use rust_proto::graplinc::grapl::api::{
+    client::{
+        ClientConfiguration,
+        Connect,
+    },
+    plugin_work_queue::v1beta1::PluginWorkQueueClient,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use uuid::Uuid;
+
+use crate::work::{
+    PluginWorkProcessor,
+    Workload,
 };
 
-use crate::{
-    config::PluginExecutorConfig,
-    work::{
-        PluginWorkProcessor,
-        Workload,
-    },
-};
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct SidecarConfig {
+    plugin_id: Uuid,
+}
+
+impl SidecarConfig {
+    pub fn plugin_id(&self) -> Uuid {
+        self.plugin_id
+    }
+}
 
 pub struct PluginExecutor<P: PluginWorkProcessor> {
     plugin_work_processor: P,
-    plugin_work_queue_client: PluginWorkQueueServiceClient,
-    config: PluginExecutorConfig,
+    plugin_work_queue_client: PluginWorkQueueClient,
+    plugin_id: Uuid,
 }
 
 impl<P> PluginExecutor<P>
@@ -26,17 +44,19 @@ where
     P: PluginWorkProcessor,
 {
     pub async fn new(
-        config: PluginExecutorConfig,
+        plugin_id: Uuid,
         plugin_work_processor: P,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let client_config = PluginWorkQueueClientConfig::parse();
-        let plugin_work_queue_client =
-            PluginWorkQueueServiceClient::connect_with_config(client_config).await?;
+        let client_config: ClientConfiguration = Figment::new()
+            .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
+            .extract()?;
+
+        let plugin_work_queue_client = PluginWorkQueueClient::connect(client_config).await?;
 
         Ok(Self {
             plugin_work_processor,
             plugin_work_queue_client,
-            config,
+            plugin_id,
         })
     }
 
@@ -45,7 +65,7 @@ where
         // Continually scan for new work for this Plugin.
         while let Ok(work) = self
             .plugin_work_processor
-            .get_work(&self.config, &mut self.plugin_work_queue_client)
+            .get_work(self.plugin_id, &mut self.plugin_work_queue_client)
             .await
         {
             let request_id = work.request_id();
@@ -53,7 +73,7 @@ where
                 let tenant_id = job.tenant_id();
                 let trace_id = job.trace_id();
                 let event_source_id = job.event_source_id();
-                let plugin_id = self.config.plugin_id;
+                let plugin_id = self.plugin_id;
 
                 tracing::debug!(
                     message = "retrieved execution job",
@@ -67,7 +87,7 @@ where
                 // Process the job
                 let process_result = self
                     .plugin_work_processor
-                    .process_job(&self.config, job)
+                    .process_job(self.plugin_id, job)
                     .await;
 
                 if let Err(e) = process_result.as_ref() {
@@ -103,7 +123,7 @@ where
                 if should_ack {
                     self.plugin_work_processor
                         .ack_work(
-                            &self.config,
+                            self.plugin_id,
                             &mut self.plugin_work_queue_client,
                             process_result,
                             request_id,

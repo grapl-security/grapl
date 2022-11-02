@@ -22,6 +22,7 @@ chrono = "0.4"
 clap = { workspace = true }
 eyre = { workspace = true }
 failure = "0.1"
+figment = { workspace = true }
 futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
@@ -51,7 +52,6 @@ tokio = { version = "1.17", features = [
   "time",
 ] }
 tracing = { workspace = true }
-uid-allocator = { path = "../uid-allocator" }
 uuid = { workspace = true }
 
 [dev-dependencies]

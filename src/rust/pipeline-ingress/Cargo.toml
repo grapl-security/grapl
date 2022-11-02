@@ -7,6 +7,7 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1"
 clap = { workspace = true }
+figment = { workspace = true }
 grapl-tracing = { path = "../grapl-tracing" }
 kafka = { path = "../kafka" }
 rust-proto = { path = "../rust-proto", version = "*" }

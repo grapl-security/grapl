@@ -1,5 +1,11 @@
+use std::time::Duration;
+
 use bytes::Bytes;
 use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use grapl_config::PostgresClient;
 use grapl_tracing::{
     setup_tracing,
@@ -9,39 +15,30 @@ use plugin_work_queue::{
     psql_queue::PsqlQueue,
     PluginWorkQueueDbConfig,
 };
-use rust_proto::{
-    client_factory::services::{
-        EventSourceClientConfig,
-        GraphSchemaManagerClientConfig,
-        PipelineIngressClientConfig,
-        PluginRegistryClientConfig,
-        UidAllocatorClientConfig,
+use rust_proto::graplinc::grapl::api::{
+    client::Connect,
+    event_source::v1beta1::{
+        client::EventSourceClient,
+        CreateEventSourceRequest,
     },
-    graplinc::grapl::api::{
-        event_source::v1beta1::{
-            client::EventSourceServiceClient,
-            CreateEventSourceRequest,
-        },
-        graph_schema_manager::v1beta1::{
-            client::GraphSchemaManagerClient,
-            messages::{
-                DeploySchemaRequest,
-                SchemaType,
-            },
-        },
-        pipeline_ingress::v1beta1::client::PipelineIngressClient,
-        plugin_registry::v1beta1::{
-            DeployPluginRequest,
-            PluginMetadata,
-            PluginRegistryServiceClient,
-            PluginType,
-        },
-        uid_allocator::v1beta1::{
-            client::UidAllocatorServiceClient,
-            messages::CreateTenantKeyspaceRequest,
+    graph_schema_manager::v1beta1::{
+        client::GraphSchemaManagerClient,
+        messages::{
+            DeploySchemaRequest,
+            SchemaType,
         },
     },
-    protocol::service_client::ConnectWithConfig,
+    pipeline_ingress::v1beta1::client::PipelineIngressClient,
+    plugin_registry::v1beta1::{
+        DeployPluginRequest,
+        PluginMetadata,
+        PluginRegistryClient,
+        PluginType,
+    },
+    uid_allocator::v1beta1::{
+        client::UidAllocatorClient,
+        messages::CreateTenantKeyspaceRequest,
+    },
 };
 use test_context::AsyncTestContext;
 use uuid::Uuid;
@@ -49,12 +46,12 @@ use uuid::Uuid;
 use crate::test_fixtures;
 
 pub struct E2eTestContext {
-    pub event_source_client: EventSourceServiceClient,
+    pub event_source_client: EventSourceClient,
     pub graph_schema_manager_client: GraphSchemaManagerClient,
-    pub plugin_registry_client: PluginRegistryServiceClient,
+    pub plugin_registry_client: PluginRegistryClient,
     pub pipeline_ingress_client: PipelineIngressClient,
     pub plugin_work_queue_psql_client: PsqlQueue,
-    pub uid_allocator_client: UidAllocatorServiceClient,
+    pub uid_allocator_client: UidAllocatorClient,
     pub _guard: WorkerGuard,
 }
 
@@ -65,35 +62,52 @@ impl AsyncTestContext for E2eTestContext {
     async fn setup() -> Self {
         let _guard = setup_tracing(SERVICE_NAME).expect("setup_tracing");
 
-        let event_source_client =
-            EventSourceServiceClient::connect_with_config(EventSourceClientConfig::parse())
-                .await
-                .expect("event_source_client");
+        let event_source_client_config = Figment::new()
+            .merge(Env::prefixed("EVENT_SOURCE_CLIENT_"))
+            .extract()
+            .expect("failed to configure event-source client");
+        let event_source_client = EventSourceClient::connect(event_source_client_config)
+            .await
+            .expect("failed to connect to event-source");
 
-        let plugin_registry_client =
-            PluginRegistryServiceClient::connect_with_config(PluginRegistryClientConfig::parse())
-                .await
-                .expect("plugin_registry_client");
+        let plugin_registry_client_config = Figment::new()
+            .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
+            .extract()
+            .expect("failed to configure plugin-registry client");
+        let plugin_registry_client = PluginRegistryClient::connect(plugin_registry_client_config)
+            .await
+            .expect("failed to connect to plugin-registry");
 
+        let graph_schema_manager_client_config = Figment::new()
+            .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_CLIENT_"))
+            .extract()
+            .expect("failed to configure graph-schema-manager client");
         let graph_schema_manager_client =
-            GraphSchemaManagerClient::connect_with_config(GraphSchemaManagerClientConfig::parse())
+            GraphSchemaManagerClient::connect(graph_schema_manager_client_config)
                 .await
-                .expect("graph_schema_manager_client");
+                .expect("failed to connect to graph-schema-manager");
 
+        let pipeline_ingress_client_config = Figment::new()
+            .merge(Env::prefixed("PIPELINE_INGRESS_CLIENT_"))
+            .extract()
+            .expect("failed to configure pipeline-ingress client");
         let pipeline_ingress_client =
-            PipelineIngressClient::connect_with_config(PipelineIngressClientConfig::parse())
+            PipelineIngressClient::connect(pipeline_ingress_client_config)
                 .await
-                .expect("pipeline_ingress_client");
+                .expect("failed to connect to pipeline-ingress");
+
+        let uid_allocator_client_config = Figment::new()
+            .merge(Env::prefixed("UID_ALLOCATOR_CLIENT_"))
+            .extract()
+            .expect("failed to configure uid-allocator client");
+        let uid_allocator_client = UidAllocatorClient::connect(uid_allocator_client_config)
+            .await
+            .expect("failed to connect to uid-allocator");
 
         let plugin_work_queue_psql_client =
             PsqlQueue::init_with_config(PluginWorkQueueDbConfig::parse())
                 .await
                 .expect("plugin_work_queue");
-
-        let uid_allocator_client =
-            UidAllocatorServiceClient::connect_with_config(UidAllocatorClientConfig::parse())
-                .await
-                .expect("uid_allocator_client");
 
         Self {
             event_source_client,
@@ -180,6 +194,7 @@ impl E2eTestContext {
         let generator = self
             .plugin_registry_client
             .create_plugin(
+                Duration::from_secs(60),
                 PluginMetadata::new(
                     tenant_id,
                     display_name,
@@ -217,6 +232,7 @@ impl E2eTestContext {
         let analyzer = self
             .plugin_registry_client
             .create_plugin(
+                Duration::from_secs(60),
                 PluginMetadata::new(tenant_id, display_name, PluginType::Analyzer, None),
                 futures::stream::once(async move { analyzer_artifact }),
             )

@@ -21,29 +21,31 @@ use tonic::transport::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::graph_query_proxy::v1beta1::messages::{
-        QueryGraphFromUidRequest,
-        QueryGraphFromUidResponse,
-        QueryGraphWithUidRequest,
-        QueryGraphWithUidResponse,
+    graplinc::grapl::api::{
+        graph_query_proxy::v1beta1::messages::{
+            QueryGraphFromUidRequest,
+            QueryGraphFromUidResponse,
+            QueryGraphWithUidRequest,
+            QueryGraphWithUidResponse,
+        },
+        protocol::{
+            error::ServeError,
+            healthcheck::{
+                server::init_health_service,
+                HealthcheckError,
+                HealthcheckStatus,
+            },
+            status::Status,
+        },
+        server::GrpcApi,
     },
     protobufs::graplinc::grapl::api::graph_query_proxy::v1beta1::{
         self as proto,
         graph_query_proxy_service_server::{
-            GraphQueryProxyService as GraphQueryProxyServiceProto,
-            GraphQueryProxyServiceServer as GraphQueryProxyServiceServerProto,
+            GraphQueryProxyService,
+            GraphQueryProxyServiceServer,
         },
     },
-    protocol::{
-        error::ServeError,
-        healthcheck::{
-            server::init_health_service,
-            HealthcheckError,
-            HealthcheckStatus,
-        },
-        status::Status,
-    },
-    server_internals::GrpcApi,
 };
 
 #[tonic::async_trait]
@@ -60,7 +62,7 @@ pub trait GraphQueryProxyApi {
 }
 
 #[tonic::async_trait]
-impl<T> GraphQueryProxyServiceProto for GrpcApi<T>
+impl<T> GraphQueryProxyService for GrpcApi<T>
 where
     T: GraphQueryProxyApi + Send + Sync + 'static,
 {
@@ -85,7 +87,7 @@ where
  * Lots of opportunities to deduplicate and simplify.
  */
 /// A server construct that drives the GraphQueryProxyApi implementation.
-pub struct GraphQueryProxyServiceServer<T, H, F>
+pub struct GraphQueryProxyServer<T, H, F>
 where
     T: GraphQueryProxyApi + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
@@ -100,7 +102,7 @@ where
     f_: PhantomData<F>,
 }
 
-impl<T, H, F> GraphQueryProxyServiceServer<T, H, F>
+impl<T, H, F> GraphQueryProxyServer<T, H, F>
 where
     T: GraphQueryProxyApi + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
@@ -125,7 +127,7 @@ where
                 healthcheck_polling_interval,
                 tcp_listener,
                 shutdown_rx,
-                service_name: GraphQueryProxyServiceServerProto::<GrpcApi<T>>::NAME,
+                service_name: GraphQueryProxyServiceServer::<GrpcApi<T>>::NAME,
                 f_: PhantomData,
             },
             shutdown_tx,
@@ -143,7 +145,7 @@ where
     /// address. Returns a ServeError if the gRPC server cannot run.
     pub async fn serve(self) -> Result<(), ServeError> {
         let (healthcheck_handle, health_service) =
-            init_health_service::<GraphQueryProxyServiceServerProto<GrpcApi<T>>, _, _>(
+            init_health_service::<GraphQueryProxyServiceServer<GrpcApi<T>>, _, _>(
                 self.healthcheck,
                 self.healthcheck_polling_interval,
             )
@@ -162,7 +164,7 @@ where
 
         Ok(server_builder
             .add_service(health_service)
-            .add_service(GraphQueryProxyServiceServerProto::new(GrpcApi::new(
+            .add_service(GraphQueryProxyServiceServer::new(GrpcApi::new(
                 self.api_server,
             )))
             .serve_with_incoming_shutdown(
