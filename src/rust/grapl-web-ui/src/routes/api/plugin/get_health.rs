@@ -7,7 +7,7 @@ use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     GetPluginHealthRequest,
     PluginHealthStatus,
-    PluginRegistryServiceClient,
+    PluginRegistryClient,
 };
 use uuid::Uuid;
 
@@ -27,7 +27,7 @@ pub struct GetPluginHealthResponse {
 
 #[tracing::instrument(skip(plugin_registry_client, data))]
 pub(super) async fn get_health(
-    plugin_registry_client: web::Data<PluginRegistryServiceClient>,
+    plugin_registry_client: web::Data<PluginRegistryClient>,
     user: crate::authn::AuthenticatedUser,
     data: web::Query<GetPluginHealthParameters>,
 ) -> Result<impl Responder, PluginError> {

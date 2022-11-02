@@ -9,13 +9,14 @@ license = "MIT"
 [dependencies]
 async-trait = "0.1"
 bytes = { workspace = true }
-clap = { workspace = true }
 client-executor = { path = "../client-executor" }
+figment = { workspace = true }
 futures = "0.3"
-grapl-utils = { path = "../grapl-utils" }
+humantime-serde = "1.0"
 prost = "0.11"
 rand = "0.8.5"
 rustc-hash = "1.1.0"
+serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["time"] }
 tokio-stream = { version = "0.1", features = ["net"] }
@@ -34,6 +35,3 @@ quickcheck = "1.0"
 quickcheck_macros = "1.0"
 test-context = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-[features]
-default = []

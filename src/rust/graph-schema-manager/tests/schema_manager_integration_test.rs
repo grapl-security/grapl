@@ -1,17 +1,18 @@
 #![cfg(feature = "integration_tests")]
-
 use bytes::Bytes;
-use clap::Parser;
-use rust_proto::{
-    client_factory::services::GraphSchemaManagerClientConfig,
-    graplinc::grapl::{
-        api::graph_schema_manager::v1beta1::{
+use figment::{
+    providers::Env,
+    Figment,
+};
+use rust_proto::graplinc::grapl::{
+    api::{
+        client::Connect,
+        graph_schema_manager::v1beta1::{
             client::GraphSchemaManagerClient,
             messages as sm_api,
         },
-        common::v1beta1::types as common_api,
     },
-    protocol::service_client::ConnectWithConfig,
+    common::v1beta1::types as common_api,
 };
 
 pub fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
@@ -22,8 +23,10 @@ pub fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
 
 #[tokio::test]
 async fn test_deploy_schema() -> eyre::Result<()> {
-    let client_config = GraphSchemaManagerClientConfig::parse();
-    let mut client = GraphSchemaManagerClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_CLIENT_"))
+        .extract()?;
+    let mut client = GraphSchemaManagerClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 

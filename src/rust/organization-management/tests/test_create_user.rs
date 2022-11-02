@@ -1,16 +1,19 @@
 #![cfg(feature = "integration_tests")]
 
 use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use grapl_config::ToPostgresUrl;
 use organization_management::OrganizationManagementServiceConfig;
-use rust_proto::{
-    client_factory::services::OrganizationManagementClientConfig,
-    graplinc::grapl::api::organization_management::v1beta1::{
+use rust_proto::graplinc::grapl::api::{
+    client::Connect,
+    organization_management::v1beta1::{
         client::OrganizationManagementClient,
         CreateOrganizationRequest,
         CreateUserRequest,
     },
-    protocol::service_client::ConnectWithConfig,
 };
 
 #[test_log::test(tokio::test)]
@@ -23,8 +26,10 @@ async fn test_create_user() -> eyre::Result<()> {
 
     let pool = service_config.to_postgres_url().connect().await?;
 
-    let client_config = OrganizationManagementClientConfig::parse();
-    let mut client = OrganizationManagementClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("ORGANIZATION_MANAGEMENT_CLIENT_"))
+        .extract()?;
+    let mut client = OrganizationManagementClient::connect(client_config).await?;
 
     // create organization with admin user
     let organization_display_name = uuid::Uuid::new_v4().to_string();

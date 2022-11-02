@@ -27,7 +27,19 @@ use tonic::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::event_source::v1beta1 as native,
+    graplinc::grapl::api::{
+        event_source::v1beta1 as native,
+        protocol::{
+            error::ServeError,
+            healthcheck::{
+                server::init_health_service,
+                HealthcheckError,
+                HealthcheckStatus,
+            },
+            status::Status,
+        },
+        server::GrpcApi,
+    },
     protobufs::graplinc::grapl::api::event_source::v1beta1::{
         self as proto,
         event_source_service_server::{
@@ -35,16 +47,6 @@ use crate::{
             EventSourceServiceServer as ServerProto,
         },
     },
-    protocol::{
-        error::ServeError,
-        healthcheck::{
-            server::init_health_service,
-            HealthcheckError,
-            HealthcheckStatus,
-        },
-        status::Status,
-    },
-    server_internals::GrpcApi,
 };
 
 /// Implement this trait to define the API business logic

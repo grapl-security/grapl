@@ -1,11 +1,19 @@
-use rust_proto::{
-    client_factory::{
-        build_grpc_client,
-        services::AnalyzerClientConfig,
+use figment::{
+    providers::{
+        Env,
+        Format,
+        Json,
     },
+    Figment,
+};
+use rust_proto::{
     graplinc::grapl::api::{
+        client::{
+            ClientConfiguration,
+            Connect,
+        },
         plugin_sdk::analyzers::v1beta1::{
-            client::AnalyzerServiceClient,
+            client::AnalyzerClient,
             messages::{
                 ExecutionResult,
                 RunAnalyzerRequest,
@@ -17,7 +25,7 @@ use rust_proto::{
             ExecutionJob,
             GetExecuteAnalyzerRequest,
             GetExecuteAnalyzerResponse,
-            PluginWorkQueueServiceClient,
+            PluginWorkQueueClient,
         },
     },
     SerDe,
@@ -32,7 +40,6 @@ use super::{
     },
     PluginWorkProcessor,
 };
-use crate::config::PluginExecutorConfig;
 
 impl Workload for GetExecuteAnalyzerResponse {
     fn request_id(&self) -> i64 {
@@ -45,27 +52,21 @@ impl Workload for GetExecuteAnalyzerResponse {
 }
 
 pub struct AnalyzerWorkProcessor {
-    analyzer_service_client: AnalyzerServiceClient,
+    analyzer_client: AnalyzerClient,
 }
 
 impl AnalyzerWorkProcessor {
-    pub async fn new(config: &PluginExecutorConfig) -> Result<Self, Box<dyn std::error::Error>> {
-        let plugin_id = config.plugin_id;
+    pub async fn new(plugin_id: Uuid) -> Result<Self, Box<dyn std::error::Error>> {
         let upstream_addr_env_var = format!("NOMAD_UPSTREAM_ADDR_plugin-{plugin_id}");
-        let upstream_addr = std::env::var(&upstream_addr_env_var).expect(&upstream_addr_env_var);
-        let address = format!("http://{upstream_addr}");
+        let address = format!("http://{}", std::env::var(&upstream_addr_env_var)?);
+        let client_config: ClientConfiguration = Figment::new()
+            .merge(Json::string(&format!("{{\"address\": \"{}\"}}", address)))
+            .merge(Env::prefixed("ANALYZER_CLIENT_"))
+            .extract()?;
 
-        tracing::info!(message = "connecting to analyzer plugin", address = address);
+        let analyzer_client = AnalyzerClient::connect(client_config).await?;
 
-        let client_config = AnalyzerClientConfig {
-            analyzer_client_address: address.parse().expect("analyzer client address"),
-        };
-
-        let analyzer_service_client = build_grpc_client(client_config).await?;
-
-        Ok(AnalyzerWorkProcessor {
-            analyzer_service_client,
-        })
+        Ok(AnalyzerWorkProcessor { analyzer_client })
     }
 }
 
@@ -76,10 +77,9 @@ impl PluginWorkProcessor for AnalyzerWorkProcessor {
 
     async fn get_work(
         &self,
-        config: &PluginExecutorConfig,
-        pwq_client: &mut PluginWorkQueueServiceClient,
+        plugin_id: Uuid,
+        pwq_client: &mut PluginWorkQueueClient,
     ) -> Result<Self::Work, PluginWorkProcessorError> {
-        let plugin_id = config.plugin_id;
         let response = pwq_client
             .get_execute_analyzer(GetExecuteAnalyzerRequest::new(plugin_id))
             .await?;
@@ -111,16 +111,14 @@ impl PluginWorkProcessor for AnalyzerWorkProcessor {
 
     async fn ack_work(
         &self,
-        config: &PluginExecutorConfig,
-        pwq_client: &mut PluginWorkQueueServiceClient,
+        plugin_id: Uuid,
+        pwq_client: &mut PluginWorkQueueClient,
         process_result: Result<Self::ProducedMessage, PluginWorkProcessorError>,
         request_id: RequestId,
         tenant_id: Uuid,
         trace_id: Uuid,
         event_source_id: Uuid,
     ) -> Result<(), PluginWorkProcessorError> {
-        let plugin_id = config.plugin_id;
-
         tracing::debug!(
             message = "acknowledging analyzer work",
             tenant_id =% tenant_id,
@@ -147,11 +145,11 @@ impl PluginWorkProcessor for AnalyzerWorkProcessor {
 
     async fn process_job(
         &mut self,
-        _config: &PluginExecutorConfig,
+        _plugin_id: Uuid,
         job: ExecutionJob,
     ) -> Result<Self::ProducedMessage, PluginWorkProcessorError> {
         let run_analyzer_response = self
-            .analyzer_service_client
+            .analyzer_client
             .run_analyzer(RunAnalyzerRequest::new(Update::deserialize(job.data())?))
             .await?;
 

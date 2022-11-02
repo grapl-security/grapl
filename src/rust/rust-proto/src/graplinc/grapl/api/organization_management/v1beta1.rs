@@ -192,59 +192,39 @@ impl serde_impl::ProtobufSerializable for CreateUserResponse {
 //
 
 pub mod client {
-    use std::time::Duration;
-
-    use client_executor::{
-        Executor,
-        ExecutorConfig,
-    };
+    use tonic::transport::Endpoint;
 
     use crate::{
-        client_factory::services::OrganizationManagementClientConfig,
-        client_macros::RpcConfig,
-        create_proto_client,
-        execute_client_rpc,
-        graplinc::grapl::api::organization_management::v1beta1 as native,
-        protobufs::graplinc::grapl::api::organization_management::{
-            v1beta1 as proto,
-            v1beta1::organization_management_service_client::OrganizationManagementServiceClient as OrganizationManagementServiceClientProto,
-        },
-        protocol::{
-            endpoint::Endpoint,
-            error::GrpcClientError,
-            service_client::{
-                ConnectError,
+        graplinc::grapl::api::{
+            organization_management::v1beta1 as native,
+            client::{
+                Client,
                 Connectable,
+                ClientError,
+                WithClient,
             },
         },
+        protobufs::graplinc::grapl::api::organization_management::v1beta1::organization_management_service_client::OrganizationManagementServiceClient,
     };
 
-    pub type OrganizationManagementClientError = GrpcClientError;
-
-    pub struct OrganizationManagementClient {
-        executor: Executor,
-        proto_client: OrganizationManagementServiceClientProto<tonic::transport::Channel>,
+    #[async_trait::async_trait]
+    impl Connectable for OrganizationManagementServiceClient<tonic::transport::Channel> {
+        async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+            Ok(Self::connect(endpoint).await?)
+        }
     }
 
-    #[async_trait::async_trait]
-    impl Connectable for OrganizationManagementClient {
-        type Config = OrganizationManagementClientConfig;
-        const SERVICE_NAME: &'static str =
-            "graplinc.grapl.api.organization_management.v1beta1.OrganizationManagementService";
+    pub struct OrganizationManagementClient {
+        client: Client<OrganizationManagementServiceClient<tonic::transport::Channel>>,
+    }
 
-        #[tracing::instrument(err)]
-        async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-            let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-            let proto_client = create_proto_client!(
-                executor,
-                OrganizationManagementServiceClientProto<tonic::transport::Channel>,
-                endpoint,
-            );
-
-            Ok(Self {
-                executor,
-                proto_client,
-            })
+    impl WithClient<OrganizationManagementServiceClient<tonic::transport::Channel>>
+        for OrganizationManagementClient
+    {
+        fn with_client(
+            client: Client<OrganizationManagementServiceClient<tonic::transport::Channel>>,
+        ) -> Self {
+            Self { client }
         }
     }
 
@@ -253,30 +233,30 @@ pub mod client {
         pub async fn create_organization(
             &mut self,
             request: native::CreateOrganizationRequest,
-        ) -> Result<native::CreateOrganizationResponse, OrganizationManagementClientError> {
-            execute_client_rpc!(
-                self,
-                request,
-                create_organization,
-                proto::CreateOrganizationRequest,
-                native::CreateOrganizationResponse,
-                RpcConfig::default(),
-            )
+        ) -> Result<native::CreateOrganizationResponse, ClientError> {
+            self.client
+                .execute(
+                    request,
+                    |status| status.code() == tonic::Code::Unavailable,
+                    10,
+                    |mut client, request| async move { client.create_organization(request).await },
+                )
+                .await
         }
 
         #[tracing::instrument(skip(self, request), err)]
         pub async fn create_user(
             &mut self,
             request: native::CreateUserRequest,
-        ) -> Result<native::CreateUserResponse, OrganizationManagementClientError> {
-            execute_client_rpc!(
-                self,
-                request,
-                create_user,
-                proto::CreateUserRequest,
-                native::CreateUserResponse,
-                RpcConfig::default(),
-            )
+        ) -> Result<native::CreateUserResponse, ClientError> {
+            self.client
+                .execute(
+                    request,
+                    |status| status.code() == tonic::Code::Unavailable,
+                    10,
+                    |mut client, request| async move { client.create_user(request).await },
+                )
+                .await
         }
     }
 }
@@ -314,6 +294,18 @@ pub mod server {
         CreateUserResponse,
     };
     use crate::{
+        graplinc::grapl::api::{
+            protocol::{
+                error::ServeError,
+                healthcheck::{
+                    server::init_health_service,
+                    HealthcheckError,
+                    HealthcheckStatus,
+                },
+                status::Status,
+            },
+            server::GrpcApi,
+        },
         protobufs::graplinc::grapl::api::organization_management::v1beta1::{
             organization_management_service_server::{
                 OrganizationManagementService as OrganizationManagementServiceProto,
@@ -324,16 +316,6 @@ pub mod server {
             CreateUserRequest as CreateUserRequestProto,
             CreateUserResponse as CreateUserResponseProto,
         },
-        protocol::{
-            error::ServeError,
-            healthcheck::{
-                server::init_health_service,
-                HealthcheckError,
-                HealthcheckStatus,
-            },
-            status::Status,
-        },
-        server_internals::GrpcApi,
         SerDeError,
     };
 

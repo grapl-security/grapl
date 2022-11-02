@@ -5,7 +5,7 @@ use actix_web::{
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     DeployPluginRequest,
-    PluginRegistryServiceClient,
+    PluginRegistryClient,
 };
 
 use super::PluginError;
@@ -17,7 +17,7 @@ pub(super) struct DeployPluginParameters {
 
 #[tracing::instrument(skip(plugin_registry_client, data))]
 pub(super) async fn deploy(
-    plugin_registry_client: web::Data<PluginRegistryServiceClient>,
+    plugin_registry_client: web::Data<PluginRegistryClient>,
     user: crate::authn::AuthenticatedUser,
     data: web::Json<DeployPluginParameters>,
 ) -> Result<impl actix_web::Responder, PluginError> {

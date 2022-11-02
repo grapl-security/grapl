@@ -1,15 +1,17 @@
 use std::os::unix::fs::PermissionsExt;
 
-use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use grapl_tracing::setup_tracing;
-use rust_proto::{
-    client_factory::services::PluginBootstrapClientConfig,
-    graplinc::grapl::api::plugin_bootstrap::v1beta1::{
+use rust_proto::graplinc::grapl::api::{
+    client::Connect,
+    plugin_bootstrap::v1beta1::{
         client::PluginBootstrapClient,
         GetBootstrapRequest,
         GetBootstrapResponse,
     },
-    protocol::service_client::ConnectWithConfig,
 };
 
 static PLUGIN_BINARY_PATH: &str = "/usr/local/bin/grapl-plugin";
@@ -21,8 +23,10 @@ const SERVICE_NAME: &'static str = "plugin-bootstrap-init";
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = setup_tracing(SERVICE_NAME)?;
 
-    let client_config = PluginBootstrapClientConfig::parse();
-    let mut bootstrap_client = PluginBootstrapClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_BOOTSTRAP_CLIENT_"))
+        .extract()?;
+    let mut bootstrap_client = PluginBootstrapClient::connect(client_config).await?;
 
     let GetBootstrapResponse {
         plugin_payload,

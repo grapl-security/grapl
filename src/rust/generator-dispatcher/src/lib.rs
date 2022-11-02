@@ -4,8 +4,11 @@ use async_cache::{
     AsyncCache,
     AsyncCacheError,
 };
-use clap::Parser;
 use config::GeneratorDispatcherConfig;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use futures::{
     pin_mut,
     StreamExt,
@@ -19,36 +22,29 @@ use kafka::{
     ProducerError,
     RetryProducer,
 };
-use rust_proto::{
-    client_factory::services::PluginRegistryClientConfig,
-    graplinc::grapl::{
-        api::{
-            plugin_registry::v1beta1::{
-                GetGeneratorsForEventSourceRequest,
-                PluginRegistryServiceClient,
-            },
-            plugin_work_queue::v1beta1::{
-                ExecutionJob,
-                PluginWorkQueueServiceClient,
-                PluginWorkQueueServiceClientError,
-                PushExecuteGeneratorRequest,
-            },
+use rust_proto::graplinc::grapl::{
+    api::{
+        client::{
+            ClientError,
+            Connect,
         },
-        pipeline::v1beta1::{
-            Envelope,
-            RawLog,
+        plugin_registry::v1beta1::{
+            GetGeneratorsForEventSourceRequest,
+            PluginRegistryClient,
         },
-    },
-    protocol::{
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
-            ConnectWithConfig,
+        plugin_work_queue::v1beta1::{
+            ExecutionJob,
+            PluginWorkQueueClient,
+            PushExecuteGeneratorRequest,
         },
-        status::{
+        protocol::status::{
             Code,
             Status,
         },
+    },
+    pipeline::v1beta1::{
+        Envelope,
+        RawLog,
     },
 };
 use thiserror::Error;
@@ -59,11 +55,14 @@ pub mod config;
 
 #[derive(Debug, Error)]
 pub enum ConfigurationError {
-    #[error("error configuring kafka client")]
+    #[error("error configuring kafka client {0}")]
     KafkaConfigurationError(#[from] KafkaConfigurationError),
 
-    #[error("error configuring generator IDs cache")]
-    GeneratorIdsCacheConfigurationError(#[from] ConnectError),
+    #[error("error from gRPC client {0}")]
+    ClientError(#[from] ClientError),
+
+    #[error("error extracting figment config {0}")]
+    FigmentError(#[from] figment::Error),
 }
 
 #[derive(Debug, Error)]
@@ -72,8 +71,8 @@ pub enum GeneratorDispatcherError {
     GeneratorIdsCacheError(#[from] AsyncCacheError),
 
     // FIXME: don't crash the service when this happens
-    #[error("error sending data to plugin-work-queue {0}")]
-    PluginWorkQueueClientError(#[from] PluginWorkQueueServiceClientError),
+    #[error("error from gRPC client {0}")]
+    ClientError(#[from] ClientError),
 
     // FIXME: also don't crash the service when this happens
     #[error("error trying to send message to kafka {0}")]
@@ -84,7 +83,7 @@ pub enum GeneratorDispatcherError {
 }
 
 pub struct GeneratorDispatcher {
-    plugin_work_queue_client: PluginWorkQueueServiceClient,
+    plugin_work_queue_client: PluginWorkQueueClient,
     raw_logs_consumer: Consumer<RawLog>,
     raw_logs_retry_producer: RetryProducer<RawLog>,
     generator_ids_cache: AsyncCache<Uuid, Vec<Uuid>>,
@@ -94,14 +93,15 @@ impl GeneratorDispatcher {
     #[tracing::instrument(skip(plugin_work_queue_client), err)]
     pub async fn new(
         config: GeneratorDispatcherConfig,
-        plugin_work_queue_client: PluginWorkQueueServiceClient,
+        plugin_work_queue_client: PluginWorkQueueClient,
     ) -> Result<Self, ConfigurationError> {
         let raw_logs_consumer: Consumer<RawLog> = Consumer::new(config.kafka_config)?;
         let raw_logs_retry_producer: RetryProducer<RawLog> =
             RetryProducer::new(config.kafka_retry_producer_config)?;
-        let client_config = PluginRegistryClientConfig::parse();
-        let plugin_registry_client =
-            PluginRegistryServiceClient::connect_with_config(client_config).await?;
+        let client_config = Figment::new()
+            .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
+            .extract()?;
+        let plugin_registry_client = PluginRegistryClient::connect(client_config).await?;
         let generator_ids_cache = AsyncCache::new(
             config.params.generator_ids_cache_capacity,
             Duration::from_millis(config.params.generator_ids_cache_ttl_ms),
@@ -118,7 +118,7 @@ impl GeneratorDispatcher {
                         .await
                     {
                         Ok(response) => Some(response.plugin_ids().to_vec()),
-                        Err(GrpcClientError::ErrorStatus(Status {
+                        Err(ClientError::Status(Status {
                             code: Code::NotFound,
                             ..
                         })) => {
@@ -283,7 +283,7 @@ async fn retry_message(
 
 #[tracing::instrument(skip(plugin_work_queue_client, generator_ids, envelope), err)]
 async fn enqueue_plugin_work(
-    plugin_work_queue_client: PluginWorkQueueServiceClient,
+    plugin_work_queue_client: PluginWorkQueueClient,
     generator_ids: Vec<Uuid>,
     envelope: Envelope<RawLog>,
 ) -> Result<(), GeneratorDispatcherError> {

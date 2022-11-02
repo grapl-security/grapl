@@ -16,12 +16,12 @@ use rust_proto::{
                     PluginWorkQueueServer,
                 },
             },
+            protocol::{
+                healthcheck::HealthcheckStatus,
+                status::Status,
+            },
         },
         pipeline::v1beta1::Envelope,
-    },
-    protocol::{
-        healthcheck::HealthcheckStatus,
-        status::Status,
     },
     SerDeError,
 };

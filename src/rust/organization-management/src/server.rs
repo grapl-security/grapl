@@ -8,8 +8,8 @@ use argon2::{
     PasswordHasher,
 };
 use grapl_config::PostgresClient;
-use rust_proto::{
-    graplinc::grapl::api::organization_management::v1beta1::{
+use rust_proto::graplinc::grapl::api::{
+    organization_management::v1beta1::{
         server::{
             OrganizationManagementApi,
             OrganizationManagementServer,

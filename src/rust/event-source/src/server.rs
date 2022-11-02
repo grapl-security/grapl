@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use grapl_config::PostgresClient;
-use rust_proto::{
-    graplinc::grapl::api::event_source::{
+use rust_proto::graplinc::grapl::api::{
+    event_source::{
         v1beta1 as native,
         v1beta1::server::{
             EventSourceApi,

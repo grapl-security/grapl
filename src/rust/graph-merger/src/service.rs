@@ -7,16 +7,14 @@ use grapl_tracing::SetupTracingError;
 use kafka::StreamProcessorError;
 use rust_proto::graplinc::grapl::{
     api::{
+        client::ClientError,
         graph::v1beta1::{
             IdentifiedEdge,
             IdentifiedGraph,
             Property,
         },
         graph_mutation::v1beta1::{
-            client::{
-                GraphMutationClient,
-                GraphMutationClientError,
-            },
+            client::GraphMutationClient,
             messages::{
                 CreateEdgeRequest,
                 MutationRedundancy,
@@ -58,8 +56,8 @@ pub enum GraphMergerError {
     #[error("failed to configure tracing {0}")]
     SetupTracingError(#[from] SetupTracingError),
 
-    #[error("GraphMutationClientError {0}")]
-    GraphMutationClientError(#[from] GraphMutationClientError),
+    #[error("gRPC client error {0}")]
+    GrpcClientError(#[from] ClientError),
 }
 
 impl From<GraphMergerError> for kafka::StreamProcessorError {

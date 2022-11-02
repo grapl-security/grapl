@@ -1,73 +1,53 @@
-use std::time::Duration;
-
-use client_executor::{
-    Executor,
-    ExecutorConfig,
-};
-use proto::plugin_work_queue_service_client::PluginWorkQueueServiceClient as PluginWorkQueueServiceClientProto;
+use tonic::transport::Endpoint;
 
 use crate::{
-    client_factory::services::PluginWorkQueueClientConfig,
-    client_macros::RpcConfig,
-    create_proto_client,
-    execute_client_rpc,
-    graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
-    protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
-    protocol::{
-        endpoint::Endpoint,
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
+    graplinc::grapl::api::{
+        client::{
+            Client,
+            ClientError,
             Connectable,
+            WithClient,
         },
+        plugin_work_queue::v1beta1 as native,
     },
+    protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1::plugin_work_queue_service_client::PluginWorkQueueServiceClient,
 };
 
-pub type PluginWorkQueueServiceClientError = GrpcClientError;
-
-#[derive(Clone)]
-pub struct PluginWorkQueueServiceClient {
-    executor: Executor,
-    proto_client: PluginWorkQueueServiceClientProto<tonic::transport::Channel>,
-}
-
 #[async_trait::async_trait]
-impl Connectable for PluginWorkQueueServiceClient {
-    type Config = PluginWorkQueueClientConfig;
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_work_queue.v1beta1.PluginWorkQueueService";
-
-    #[tracing::instrument(err)]
-    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = create_proto_client!(
-            executor,
-            PluginWorkQueueServiceClientProto<tonic::transport::Channel>,
-            endpoint,
-        );
-
-        Ok(Self {
-            executor,
-            proto_client,
-        })
+impl Connectable for PluginWorkQueueServiceClient<tonic::transport::Channel> {
+    async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+        Ok(Self::connect(endpoint).await?)
     }
 }
 
-impl PluginWorkQueueServiceClient {
+#[derive(Clone)]
+pub struct PluginWorkQueueClient {
+    client: Client<PluginWorkQueueServiceClient<tonic::transport::Channel>>,
+}
+
+impl WithClient<PluginWorkQueueServiceClient<tonic::transport::Channel>> for PluginWorkQueueClient {
+    fn with_client(
+        client: Client<PluginWorkQueueServiceClient<tonic::transport::Channel>>,
+    ) -> Self {
+        Self { client }
+    }
+}
+
+impl PluginWorkQueueClient {
     /// Adds a new execution job for a generator
     #[tracing::instrument(skip(self, request), err)]
     pub async fn push_execute_generator(
         &mut self,
         request: native::PushExecuteGeneratorRequest,
-    ) -> Result<native::PushExecuteGeneratorResponse, PluginWorkQueueServiceClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            push_execute_generator,
-            proto::PushExecuteGeneratorRequest,
-            native::PushExecuteGeneratorResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::PushExecuteGeneratorResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.push_execute_generator(request).await },
+            )
+            .await
     }
 
     /// Adds a new execution job for an analyzer
@@ -75,15 +55,15 @@ impl PluginWorkQueueServiceClient {
     pub async fn push_execute_analyzer(
         &mut self,
         request: native::PushExecuteAnalyzerRequest,
-    ) -> Result<native::PushExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            push_execute_analyzer,
-            proto::PushExecuteAnalyzerRequest,
-            native::PushExecuteAnalyzerResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::PushExecuteAnalyzerResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.push_execute_analyzer(request).await },
+            )
+            .await
     }
 
     /// Retrieves a new execution job for a generator
@@ -91,15 +71,15 @@ impl PluginWorkQueueServiceClient {
     pub async fn get_execute_generator(
         &mut self,
         request: native::GetExecuteGeneratorRequest,
-    ) -> Result<native::GetExecuteGeneratorResponse, PluginWorkQueueServiceClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            get_execute_generator,
-            proto::GetExecuteGeneratorRequest,
-            native::GetExecuteGeneratorResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::GetExecuteGeneratorResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_execute_generator(request).await },
+            )
+            .await
     }
 
     /// Retrieves a new execution job for an analyzer
@@ -107,15 +87,15 @@ impl PluginWorkQueueServiceClient {
     pub async fn get_execute_analyzer(
         &mut self,
         request: native::GetExecuteAnalyzerRequest,
-    ) -> Result<native::GetExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            get_execute_analyzer,
-            proto::GetExecuteAnalyzerRequest,
-            native::GetExecuteAnalyzerResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::GetExecuteAnalyzerResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_execute_analyzer(request).await },
+            )
+            .await
     }
 
     /// Acknowledges the completion of a generator job
@@ -123,15 +103,15 @@ impl PluginWorkQueueServiceClient {
     pub async fn acknowledge_generator(
         &mut self,
         request: native::AcknowledgeGeneratorRequest,
-    ) -> Result<native::AcknowledgeGeneratorResponse, PluginWorkQueueServiceClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            acknowledge_generator,
-            proto::AcknowledgeGeneratorRequest,
-            native::AcknowledgeGeneratorResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::AcknowledgeGeneratorResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.acknowledge_generator(request).await },
+            )
+            .await
     }
 
     /// Acknowledges the completion of an analyzer job
@@ -139,14 +119,14 @@ impl PluginWorkQueueServiceClient {
     pub async fn acknowledge_analyzer(
         &mut self,
         request: native::AcknowledgeAnalyzerRequest,
-    ) -> Result<native::AcknowledgeAnalyzerResponse, PluginWorkQueueServiceClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            acknowledge_analyzer,
-            proto::AcknowledgeAnalyzerRequest,
-            native::AcknowledgeAnalyzerResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::AcknowledgeAnalyzerResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.acknowledge_analyzer(request).await },
+            )
+            .await
     }
 }

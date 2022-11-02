@@ -1,10 +1,11 @@
-// Re-export the Response types
 use crate::{
     graplinc::grapl::{
         api::graph_query::v1beta1::messages as graph_query_messages,
         common::v1beta1::types::Uid,
     },
     protobufs::graplinc::grapl::api::graph_query_proxy::v1beta1 as proto,
+    serde_impl,
+    type_url,
     SerDeError,
 };
 
@@ -38,6 +39,15 @@ impl From<QueryGraphWithUidRequest> for proto::QueryGraphWithUidRequest {
             graph_query: Some(value.graph_query.into()),
         }
     }
+}
+
+impl type_url::TypeUrl for QueryGraphWithUidRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_proxy.v1beta1.QueryGraphWithUidRequest";
+}
+
+impl serde_impl::ProtobufSerializable for QueryGraphWithUidRequest {
+    type ProtobufMessage = proto::QueryGraphWithUidRequest;
 }
 
 #[derive(Debug, Clone)]
@@ -74,6 +84,15 @@ impl From<graph_query_messages::QueryGraphWithUidResponse> for QueryGraphWithUid
     }
 }
 
+impl type_url::TypeUrl for QueryGraphWithUidResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_proxy.v1beta1.QueryGraphWithUidResponse";
+}
+
+impl serde_impl::ProtobufSerializable for QueryGraphWithUidResponse {
+    type ProtobufMessage = proto::QueryGraphWithUidResponse;
+}
+
 #[derive(Debug, Clone)]
 pub struct QueryGraphFromUidRequest {
     pub node_uid: Uid,
@@ -106,6 +125,15 @@ impl From<QueryGraphFromUidRequest> for proto::QueryGraphFromUidRequest {
     }
 }
 
+impl type_url::TypeUrl for QueryGraphFromUidRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_proxy.v1beta1.QueryGraphFromUidRequest";
+}
+
+impl serde_impl::ProtobufSerializable for QueryGraphFromUidRequest {
+    type ProtobufMessage = proto::QueryGraphFromUidRequest;
+}
+
 #[derive(Debug, Clone)]
 pub struct QueryGraphFromUidResponse {
     pub matched_graph: Option<graph_query_messages::GraphView>,
@@ -135,4 +163,13 @@ impl From<graph_query_messages::QueryGraphFromUidResponse> for QueryGraphFromUid
             matched_graph: other.matched_graph,
         }
     }
+}
+
+impl type_url::TypeUrl for QueryGraphFromUidResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_query_proxy.v1beta1.QueryGraphFromUidResponse";
+}
+
+impl serde_impl::ProtobufSerializable for QueryGraphFromUidResponse {
+    type ProtobufMessage = proto::QueryGraphFromUidResponse;
 }

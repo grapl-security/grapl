@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1"
 clap = { workspace = true }
+figment = { workspace = true }
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
@@ -23,7 +24,6 @@ uuid = { workspace = true }
 [build-dependencies]
 
 [dev-dependencies]
-env_logger = { workspace = true }
 eyre = { workspace = true }
 test-log = { workspace = true }
 
