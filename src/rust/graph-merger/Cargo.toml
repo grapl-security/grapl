@@ -22,13 +22,11 @@ clap = { workspace = true }
 eyre = { workspace = true }
 figment = { workspace = true }
 futures = "0.3"
-futures-retry = "0.6"
 grapl-config = { path = "../grapl-config", version = "*" }
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
 kafka = { path = "../kafka", version = "*" }
 lazy_static = "1.4"
-lru = "0.7"
 rusoto_core = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }

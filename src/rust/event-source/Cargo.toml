@@ -24,7 +24,6 @@ uuid = { workspace = true }
 [build-dependencies]
 
 [dev-dependencies]
-env_logger = { workspace = true }
 eyre = { workspace = true }
 test-log = { workspace = true }
 

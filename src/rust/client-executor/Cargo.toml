@@ -13,7 +13,6 @@ tokio-retry = "0.3.0"
 tracing = { workspace = true }
 
 [dev-dependencies]
-env_logger = { workspace = true }
 test-log = { workspace = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",

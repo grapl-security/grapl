@@ -899,7 +899,6 @@ dependencies = [
 name = "client-executor"
 version = "0.1.0"
 dependencies = [
- "env_logger 0.9.1",
  "pin-project",
  "recloser",
  "test-log",
@@ -1524,19 +1523,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "env_logger"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c90bf5f19754d10198ccb95b70664fc925bd1fc090a0fd9a6ebc54acc8cd6272"
-dependencies = [
- "atty",
- "humantime",
- "log",
- "regex",
- "termcolor",
-]
-
-[[package]]
 name = "error-chain"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1557,7 +1543,6 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "clap 3.2.23",
- "env_logger 0.9.1",
  "eyre",
  "figment",
  "grapl-config",
@@ -1869,13 +1854,11 @@ dependencies = [
  "eyre",
  "figment",
  "futures",
- "futures-retry",
  "grapl-config",
  "grapl-tracing",
  "grapl-utils",
  "kafka",
  "lazy_static",
- "lru",
  "rusoto_core",
  "rusoto_credential",
  "rusoto_dynamodb",
@@ -1899,7 +1882,6 @@ dependencies = [
  "figment",
  "grapl-tracing",
  "grapl-utils",
- "hash_hasher",
  "lazy_static",
  "moka",
  "rust-proto",
@@ -1920,8 +1902,6 @@ dependencies = [
  "bytes",
  "chrono",
  "clap 3.2.23",
- "e2e-tests",
- "env_logger 0.9.1",
  "eyre",
  "figment",
  "futures",
@@ -1933,7 +1913,6 @@ dependencies = [
  "scylla",
  "secrecy",
  "serde",
- "test-context",
  "test-log",
  "thiserror",
  "tokio",
@@ -2024,13 +2003,9 @@ dependencies = [
 name = "grapl-metrics"
 version = "0.0.1"
 dependencies = [
- "env_logger 0.9.1",
  "eyre",
- "grapl-tracing",
- "grapl-utils",
  "opentelemetry",
  "opentelemetry-otlp",
- "opentelemetry-semantic-conventions",
  "test-log",
  "tokio",
  "tracing",
@@ -2123,12 +2098,6 @@ name = "half"
 version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eabb4a44450da02c90444cf74558da904edde8fb4e9035a9a6a4e15445af0bd7"
-
-[[package]]
-name = "hash_hasher"
-version = "2.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74721d007512d0cb3338cd20f0654ac913920061a4c4d0d8708edb3f2a698c0c"
 
 [[package]]
 name = "hashbrown"
@@ -2695,15 +2664,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lru"
-version = "0.7.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e999beba7b6e8345721bd280141ed958096a2e4abdf74f67ff4ce49b4b54e47a"
-dependencies = [
- "hashbrown",
-]
-
-[[package]]
 name = "lru-cache"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2899,7 +2859,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "uid-allocator",
  "uuid",
 ]
 
@@ -3237,7 +3196,6 @@ dependencies = [
  "argon2",
  "async-trait",
  "clap 3.2.23",
- "env_logger 0.9.1",
  "eyre",
  "figment",
  "grapl-config",
@@ -3557,7 +3515,6 @@ name = "plugin-execution-sidecar"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "clap 3.2.23",
  "figment",
  "grapl-tracing",
  "rust-proto",
@@ -3576,7 +3533,6 @@ dependencies = [
  "bytes",
  "clap 3.2.23",
  "e2e-tests",
- "env_logger 0.9.1",
  "eyre",
  "figment",
  "futures",
@@ -3862,7 +3818,7 @@ version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "588f6378e4dd99458b60ec275b4477add41ce4fa9f64dcba6f15adccb19b50d6"
 dependencies = [
- "env_logger 0.8.4",
+ "env_logger",
  "log",
  "rand",
 ]
@@ -4247,11 +4203,9 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
- "clap 3.2.23",
  "client-executor",
  "figment",
  "futures",
- "grapl-utils",
  "humantime-serde",
  "proptest",
  "prost",
@@ -4505,12 +4459,10 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "clap 3.2.23",
- "env_logger 0.9.1",
  "grapl-tracing",
  "rust-proto",
  "scylla",
  "secrecy",
- "test-log",
  "thiserror",
  "tokio",
  "tracing",
@@ -5624,7 +5576,6 @@ dependencies = [
  "async-trait",
  "clap 3.2.23",
  "dashmap",
- "env_logger 0.9.1",
  "eyre",
  "figment",
  "futures",

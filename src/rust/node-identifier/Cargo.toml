@@ -52,7 +52,6 @@ tokio = { version = "1.17", features = [
   "time",
 ] }
 tracing = { workspace = true }
-uid-allocator = { path = "../uid-allocator" }
 uuid = { workspace = true }
 
 [dev-dependencies]

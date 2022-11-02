@@ -10,7 +10,6 @@ async-trait = "0.1.56"
 bytes = { workspace = true }
 chrono = "0.4.19"
 clap = { workspace = true }
-env_logger = { workspace = true }
 figment = { workspace = true }
 futures = "0.3.21"
 grapl-tracing = { path = "../grapl-tracing" }
@@ -31,9 +30,7 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
 uuid = { workspace = true }
 
 [dev-dependencies]
-e2e-tests = { path = "../e2e-tests" }
 eyre = { workspace = true }
-test-context = { workspace = true }
 test-log = { workspace = true }
 
 [features]

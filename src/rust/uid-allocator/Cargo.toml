@@ -30,7 +30,6 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
 uuid = { workspace = true }
 
 [dev-dependencies]
-env_logger = { workspace = true }
 eyre = { workspace = true }
 tracing-subscriber = "0.3.2"
 
