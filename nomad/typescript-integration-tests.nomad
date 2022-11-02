@@ -60,6 +60,20 @@ job "typescript-integration-tests" {
       mode = "bridge"
     }
 
+    service {
+      name = "typescript-integration-tests"
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "web-ui"
+              local_bind_port  = 1006
+            }
+          }
+        }
+      }
+    }
+
     task "typescript-integration-tests" {
       driver = "docker"
 
@@ -78,8 +92,8 @@ job "typescript-integration-tests" {
         AWS_REGION                         = var.aws_region
         GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
+        GRAPL_WEB_UI_ENDPOINT_ADDRESS      = "http://${NOMAD_UPSTREAM_ADDR_web-ui}"
       }
     }
   }
-
 }
