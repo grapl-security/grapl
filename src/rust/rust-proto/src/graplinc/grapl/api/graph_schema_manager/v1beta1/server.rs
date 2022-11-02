@@ -19,11 +19,23 @@ use tonic::transport::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::graph_schema_manager::v1beta1::messages::{
-        DeploySchemaRequest,
-        DeploySchemaResponse,
-        GetEdgeSchemaRequest,
-        GetEdgeSchemaResponse,
+    graplinc::grapl::api::{
+        graph_schema_manager::v1beta1::messages::{
+            DeploySchemaRequest,
+            DeploySchemaResponse,
+            GetEdgeSchemaRequest,
+            GetEdgeSchemaResponse,
+        },
+        protocol::{
+            error::ServeError,
+            healthcheck::{
+                server::init_health_service,
+                HealthcheckError,
+                HealthcheckStatus,
+            },
+            status::Status,
+        },
+        server::GrpcApi,
     },
     protobufs::graplinc::grapl::api::graph_schema_manager::{
         v1beta1 as proto,
@@ -32,16 +44,6 @@ use crate::{
             GraphSchemaManagerServiceServer as GraphSchemaManagerServiceServerProto,
         },
     },
-    protocol::{
-        error::ServeError,
-        healthcheck::{
-            server::init_health_service,
-            HealthcheckError,
-            HealthcheckStatus,
-        },
-        status::Status,
-    },
-    server_internals::GrpcApi,
 };
 
 #[derive(thiserror::Error, Debug)]

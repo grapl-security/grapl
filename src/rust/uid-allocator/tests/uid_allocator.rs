@@ -1,11 +1,11 @@
 #![cfg(all(test, feature = "integration_tests"))]
 
-use clap::Parser;
-use rust_proto::{
-    client_factory::services::UidAllocatorClientConfig,
-    graplinc::grapl::api::uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest,
+use figment::{
+    providers::Env,
+    Figment,
 };
-use uid_allocator::client::CachingUidAllocatorServiceClient;
+use rust_proto::graplinc::grapl::api::uid_allocator::v1beta1::messages::CreateTenantKeyspaceRequest;
+use uid_allocator::client::CachingUidAllocatorClient;
 
 #[tokio::test]
 async fn test_uid_allocator() -> eyre::Result<()> {
@@ -16,9 +16,11 @@ async fn test_uid_allocator() -> eyre::Result<()> {
         tenant_id = ?tenant_id,
     );
 
-    let client_config = UidAllocatorClientConfig::parse();
+    let client_config = Figment::new()
+        .merge(Env::prefixed("UID_ALLOCATOR_CLIENT_"))
+        .extract()?;
     let mut allocator_client =
-        CachingUidAllocatorServiceClient::from_client_config(client_config, 100).await?;
+        CachingUidAllocatorClient::from_client_config(client_config, 100).await?;
 
     tracing::info!("creating keyspace");
     allocator_client

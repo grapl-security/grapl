@@ -3,6 +3,8 @@ use crate::{
         ProvisionGraphForTenantRequest as ProvisionGraphForTenantRequestProto,
         ProvisionGraphForTenantResponse as ProvisionGraphForTenantResponseProto,
     },
+    serde_impl,
+    type_url,
     SerDeError,
 };
 
@@ -32,6 +34,15 @@ impl From<ProvisionGraphForTenantRequest> for ProvisionGraphForTenantRequestProt
     }
 }
 
+impl type_url::TypeUrl for ProvisionGraphForTenantRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.scylla_provisioner.v1beta1.ProvisionGraphForTenantRequest";
+}
+
+impl serde_impl::ProtobufSerializable for ProvisionGraphForTenantRequest {
+    type ProtobufMessage = ProvisionGraphForTenantRequestProto;
+}
+
 #[derive(Debug, Clone)]
 pub struct ProvisionGraphForTenantResponse {}
 
@@ -49,4 +60,13 @@ impl From<ProvisionGraphForTenantResponse> for ProvisionGraphForTenantResponsePr
         let ProvisionGraphForTenantResponse {} = request;
         Self {}
     }
+}
+
+impl type_url::TypeUrl for ProvisionGraphForTenantResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.scylla_provisioner.v1beta1.ProvisionGraphForTenantResponse";
+}
+
+impl serde_impl::ProtobufSerializable for ProvisionGraphForTenantResponse {
+    type ProtobufMessage = ProvisionGraphForTenantResponseProto;
 }

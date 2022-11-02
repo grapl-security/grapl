@@ -1,22 +1,21 @@
-use rust_proto::{
-    client_factory::services::GeneratorClientConfig,
-    graplinc::{
-        common::v1beta1::Duration,
-        grapl::api::plugin_sdk::generators::v1beta1::{
-            client::GeneratorServiceClient,
+use rust_proto::graplinc::{
+    common::v1beta1::Duration,
+    grapl::api::{
+        client::{
+            ClientConfiguration,
+            Connect,
+        },
+        plugin_sdk::generators::v1beta1::{
+            client::GeneratorClient,
             server::{
                 GeneratorApi,
                 GeneratorServer,
             },
         },
-    },
-    protocol::{
-        error::ServeError,
-        healthcheck::{
-            client::HealthcheckClient,
-            HealthcheckStatus,
+        protocol::{
+            error::ServeError,
+            healthcheck::HealthcheckStatus,
         },
-        service_client::ConnectWithConfig,
     },
 };
 use test_context::{
@@ -43,10 +42,11 @@ After experimenting a bit, this seemed the most ergonomic solution.
 */
 
 struct GeneratorTestContextInternals {
-    client: GeneratorServiceClient,
+    client: GeneratorClient,
     server_handle: JoinHandle<Result<(), ServeError>>,
     shutdown_tx: Sender<()>,
 }
+
 impl GeneratorTestContextInternals {
     async fn new(generator_api: impl GeneratorApi + Send + Sync + 'static) -> Self {
         // binding the tcp listener on port 0 tells the operating system to
@@ -62,7 +62,7 @@ impl GeneratorTestContextInternals {
 
         // construct an http URI clients can use to connect to server bound to
         // the port.
-        let endpoint = format!("http://{}:{}", socket_address.ip(), socket_address.port());
+        let address = format!("http://{}:{}", socket_address.ip(), socket_address.port());
 
         let (server, shutdown_tx) = GeneratorServer::new(
             generator_api,
@@ -71,25 +71,24 @@ impl GeneratorTestContextInternals {
             Duration::from_millis(50),
         );
 
-        let service_name = server.service_name();
-
         let server_handle = tokio::task::spawn(server.serve());
 
-        HealthcheckClient::wait_until_healthy(
-            endpoint.clone(),
-            service_name,
-            Duration::from_millis(250),
+        let client_config = ClientConfiguration::new(
+            address,
+            Duration::from_millis(500),
+            Duration::from_millis(500),
+            2,
+            Duration::from_millis(1),
+            Duration::from_millis(100),
             Duration::from_millis(10),
-        )
-        .await
-        .expect("Generator never reported healthy");
+            20,
+            Duration::from_millis(10),
+            Duration::from_millis(250),
+        );
 
-        let client_config = GeneratorClientConfig {
-            generator_client_address: endpoint,
-        };
-        let client = GeneratorServiceClient::connect_with_config(client_config)
+        let client = GeneratorClient::connect(client_config)
             .await
-            .unwrap();
+            .expect("generator never reported healthy");
 
         GeneratorTestContextInternals {
             client,
@@ -118,17 +117,19 @@ impl AsyncTestContext for GeneratorTestContext {
     async fn setup() -> Self {
         Self { internals: None }
     }
+
     async fn teardown(self) {
         if let Some(i) = self.internals {
             i.teardown().await;
         }
     }
 }
+
 impl GeneratorTestContext {
     pub async fn get_client(
         &mut self,
         generator_api: impl GeneratorApi + Send + Sync + 'static,
-    ) -> GeneratorServiceClient {
+    ) -> GeneratorClient {
         if let None = self.internals {
             self.internals = Some(GeneratorTestContextInternals::new(generator_api).await)
         }

@@ -9,6 +9,7 @@ async-trait = "0.1.56"
 bytes = { workspace = true }
 clap = { workspace = true }
 futures = "0.3.21"
+figment = { workspace = true }
 grapl-tracing = { path = "../grapl-tracing" }
 tokio = { workspace = true }
 tracing = { workspace = true }

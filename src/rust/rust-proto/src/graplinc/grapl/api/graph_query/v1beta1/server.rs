@@ -21,11 +21,23 @@ use tonic::transport::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::graph_query::v1beta1::messages::{
-        QueryGraphFromUidRequest,
-        QueryGraphFromUidResponse,
-        QueryGraphWithUidRequest,
-        QueryGraphWithUidResponse,
+    graplinc::grapl::api::{
+        graph_query::v1beta1::messages::{
+            QueryGraphFromUidRequest,
+            QueryGraphFromUidResponse,
+            QueryGraphWithUidRequest,
+            QueryGraphWithUidResponse,
+        },
+        protocol::{
+            error::ServeError,
+            healthcheck::{
+                server::init_health_service,
+                HealthcheckError,
+                HealthcheckStatus,
+            },
+            status::Status,
+        },
+        server::GrpcApi,
     },
     protobufs::graplinc::grapl::api::graph_query::v1beta1::{
         graph_query_service_server::{
@@ -37,16 +49,6 @@ use crate::{
         QueryGraphWithUidRequest as QueryGraphWithUidRequestProto,
         QueryGraphWithUidResponse as QueryGraphWithUidResponseProto,
     },
-    protocol::{
-        error::ServeError,
-        healthcheck::{
-            server::init_health_service,
-            HealthcheckError,
-            HealthcheckStatus,
-        },
-        status::Status,
-    },
-    server_internals::GrpcApi,
 };
 
 #[derive(thiserror::Error, Debug)]

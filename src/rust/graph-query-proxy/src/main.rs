@@ -1,14 +1,14 @@
 use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use grapl_tracing::setup_tracing;
-use rust_proto::{
-    graplinc::grapl::api::{
-        graph_query::v1beta1::client::GraphQueryClient,
-        graph_query_proxy::v1beta1::server::GraphQueryProxyServiceServer,
-    },
-    protocol::{
-        healthcheck::HealthcheckStatus,
-        service_client::ConnectWithConfig,
-    },
+use rust_proto::graplinc::grapl::api::{
+    client::Connect,
+    graph_query::v1beta1::client::GraphQueryClient,
+    graph_query_proxy::v1beta1::server::GraphQueryProxyServer,
+    protocol::healthcheck::HealthcheckStatus,
 };
 use tokio::net::TcpListener;
 
@@ -27,10 +27,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = setup_tracing(SERVICE_NAME)?;
     let config = config::GraphQueryProxyConfig::parse();
 
+    let graph_query_client_config = Figment::new()
+        .merge(Env::prefixed("GRAPH_QUERY_CLIENT_"))
+        .extract()?;
+
     let graph_query_service = GraphQueryProxy::new(
         config.tenant_id,
-        GraphQueryClient::connect_with_config(config.graph_query_service_client_config.clone())
-            .await?,
+        GraphQueryClient::connect(graph_query_client_config).await?,
     );
 
     exec_service(config, graph_query_service).await
@@ -49,7 +52,7 @@ pub async fn exec_service(
         socket_address = %addr,
     );
 
-    let (server, _shutdown_tx) = GraphQueryProxyServiceServer::new(
+    let (server, _shutdown_tx) = GraphQueryProxyServer::new(
         api_server,
         TcpListener::bind(addr.clone()).await?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage

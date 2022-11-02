@@ -22,18 +22,20 @@ use tonic::transport::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
-    protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
-    protocol::{
-        error::ServeError,
-        healthcheck::{
-            server::init_health_service,
-            HealthcheckError,
-            HealthcheckStatus,
+    graplinc::grapl::api::{
+        plugin_work_queue::v1beta1 as native,
+        protocol::{
+            error::ServeError,
+            healthcheck::{
+                server::init_health_service,
+                HealthcheckError,
+                HealthcheckStatus,
+            },
+            status::Status,
         },
-        status::Status,
+        server::GrpcApi,
     },
-    server_internals::GrpcApi,
+    protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
 };
 
 /// Implement this trait to define the API business logic

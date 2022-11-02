@@ -11,6 +11,7 @@ async-trait = "0.1"
 bytes = { workspace = true }
 clap = { workspace = true }
 eyre = { workspace = true }
+figment = { workspace = true }
 futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }

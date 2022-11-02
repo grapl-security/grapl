@@ -1,35 +1,31 @@
-use rust_proto::{
-    graplinc::grapl::api::{
-        graph_query::v1beta1::{
-            client::{
-                GraphQueryClient,
-                GraphQueryClientError,
-            },
-            messages as non_proxy_messages,
+use rust_proto::graplinc::grapl::api::{
+    client::ClientError,
+    graph_query::v1beta1::{
+        client::GraphQueryClient,
+        messages as non_proxy_messages,
+    },
+    graph_query_proxy::v1beta1::{
+        messages::{
+            QueryGraphFromUidRequest,
+            QueryGraphFromUidResponse,
+            QueryGraphWithUidRequest,
+            QueryGraphWithUidResponse,
         },
-        graph_query_proxy::v1beta1::{
-            messages::{
-                QueryGraphFromUidRequest,
-                QueryGraphFromUidResponse,
-                QueryGraphWithUidRequest,
-                QueryGraphWithUidResponse,
-            },
-            server::GraphQueryProxyApi,
-        },
+        server::GraphQueryProxyApi,
     },
     protocol::status::Status,
 };
 
 #[derive(thiserror::Error, Debug)]
 pub enum GraphQueryProxyError {
-    #[error("GraphQueryClientError {0}")]
-    GraphQueryClientError(#[from] GraphQueryClientError),
+    #[error("gRPC client error {0}")]
+    GrpcClientError(#[from] ClientError),
 }
 
 impl From<GraphQueryProxyError> for Status {
     fn from(gqp_err: GraphQueryProxyError) -> Self {
         match gqp_err {
-            GraphQueryProxyError::GraphQueryClientError(e) => Status::unknown(e.to_string()),
+            GraphQueryProxyError::GrpcClientError(e) => Status::unknown(e.to_string()),
         }
     }
 }

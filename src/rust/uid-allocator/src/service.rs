@@ -1,8 +1,12 @@
 use std::time::Duration;
 
 use grapl_config::PostgresClient;
-use rust_proto::{
-    graplinc::grapl::api::uid_allocator::v1beta1::{
+use rust_proto::graplinc::grapl::api::{
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        status::Status,
+    },
+    uid_allocator::v1beta1::{
         messages::{
             AllocateIdsRequest,
             AllocateIdsResponse,
@@ -13,10 +17,6 @@ use rust_proto::{
             UidAllocatorApi,
             UidAllocatorServer,
         },
-    },
-    protocol::{
-        healthcheck::HealthcheckStatus,
-        status::Status,
     },
 };
 

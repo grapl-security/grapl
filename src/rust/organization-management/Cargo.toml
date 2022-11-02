@@ -14,6 +14,7 @@ path = "src/main.rs"
 argon2 = { version = "0.4", features = ["std"] }
 async-trait = "0.1"
 clap = { workspace = true }
+figment = { workspace = true }
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
@@ -29,7 +30,6 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
 uuid = { workspace = true }
 
 [dev-dependencies]
-env_logger = { workspace = true }
 eyre = { workspace = true }
 test-log = { workspace = true }
 

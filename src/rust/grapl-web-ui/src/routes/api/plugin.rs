@@ -13,7 +13,7 @@ use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     GetPluginRequest,
     PluginMetadata,
-    PluginRegistryServiceClient,
+    PluginRegistryClient,
 };
 
 pub(super) fn config(cfg: &mut web::ServiceConfig) {
@@ -37,7 +37,7 @@ pub(super) fn config(cfg: &mut web::ServiceConfig) {
 /// Returns validated Plugin metadata.
 #[tracing::instrument(skip(client))]
 async fn verify_plugin_ownership<'a>(
-    client: &mut PluginRegistryServiceClient,
+    client: &mut PluginRegistryClient,
     user: &crate::authn::AuthenticatedUser,
     plugin_id: uuid::Uuid,
 ) -> Result<PluginMetadata, PluginError> {

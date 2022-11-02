@@ -6,7 +6,7 @@ use rusoto_s3::{
     UploadPartError,
 };
 use rust_proto::{
-    protocol::status::Status,
+    graplinc::grapl::api::protocol::status::Status,
     SerDeError,
 };
 

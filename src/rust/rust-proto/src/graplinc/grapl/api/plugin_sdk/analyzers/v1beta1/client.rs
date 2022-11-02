@@ -1,72 +1,51 @@
-use std::time::Duration;
-
-use client_executor::{
-    Executor,
-    ExecutorConfig,
-};
+use tonic::transport::Endpoint;
 use tracing::instrument;
 
 use crate::{
-    client_factory::services::AnalyzerClientConfig,
-    client_macros::RpcConfig,
-    create_proto_client,
-    execute_client_rpc,
-    graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages as native,
-    protobufs::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::{
-        self as proto,
-        analyzer_service_client::AnalyzerServiceClient as AnalyzerServiceClientProto,
-    },
-    protocol::{
-        endpoint::Endpoint,
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
+    graplinc::grapl::api::{
+        client::{
+            Client,
+            ClientError,
             Connectable,
+            WithClient,
         },
+        plugin_sdk::analyzers::v1beta1::messages as native,
     },
+    protobufs::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::analyzer_service_client::AnalyzerServiceClient,
 };
 
-#[derive(Clone)]
-pub struct AnalyzerServiceClient {
-    proto_client: AnalyzerServiceClientProto<tonic::transport::Channel>,
-    executor: Executor,
-}
-
 #[async_trait::async_trait]
-impl Connectable for AnalyzerServiceClient {
-    type Config = AnalyzerClientConfig;
-    const SERVICE_NAME: &'static str = "graplinc.grapl.api.plugin_registry.v1beta1.AnalyzerService";
-
-    #[tracing::instrument(err)]
-    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = create_proto_client!(
-            executor,
-            AnalyzerServiceClientProto<tonic::transport::Channel>,
-            endpoint,
-        );
-
-        Ok(AnalyzerServiceClient {
-            proto_client,
-            executor,
-        })
+impl Connectable for AnalyzerServiceClient<tonic::transport::Channel> {
+    async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+        Ok(Self::connect(endpoint).await?)
     }
 }
 
-impl AnalyzerServiceClient {
+#[derive(Clone)]
+pub struct AnalyzerClient {
+    client: Client<AnalyzerServiceClient<tonic::transport::Channel>>,
+}
+
+impl WithClient<AnalyzerServiceClient<tonic::transport::Channel>> for AnalyzerClient {
+    fn with_client(client: Client<AnalyzerServiceClient<tonic::transport::Channel>>) -> Self {
+        Self { client }
+    }
+}
+
+impl AnalyzerClient {
     /// retrieve the plugin corresponding to the given plugin_id
     #[instrument(skip(self, request), err)]
     pub async fn run_analyzer(
         &mut self,
         request: native::RunAnalyzerRequest,
-    ) -> Result<native::RunAnalyzerResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            run_analyzer,
-            proto::RunAnalyzerRequest,
-            native::RunAnalyzerResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::RunAnalyzerResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.run_analyzer(request).await },
+            )
+            .await
     }
 }
