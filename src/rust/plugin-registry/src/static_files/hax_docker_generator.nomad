@@ -39,6 +39,13 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
+locals {
+  # default values are cpu = 100 / mem = 300
+  # per https://developer.hashicorp.com/nomad/docs/job-specification/resources
+  consul_connect_proxy_cpu    = 50
+  consul_connect_proxy_mem_mb = 50
+}
+
 job "grapl-plugin" {
   datacenters = ["dc1"]
   namespace   = "plugin-${var.plugin_id}"
@@ -79,7 +86,8 @@ job "grapl-plugin" {
       connect {
         sidecar_task {
           resources {
-            cpu = 50
+            cpu = local.consul_connect_proxy_cpu
+            memory = local.consul_connect_proxy_mem_mb
           }
         }
 
@@ -167,7 +175,8 @@ job "grapl-plugin" {
       connect {
         sidecar_task {
           resources {
-            cpu = 50
+            cpu = local.consul_connect_proxy_cpu
+            memory = local.consul_connect_proxy_mem_mb
           }
         }
 
