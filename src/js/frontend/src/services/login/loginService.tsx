@@ -7,10 +7,6 @@ export const loginService = async (username: string | undefined, password: strin
     password: password,
   });
 
-  console.log("loginBody", loginBody)
-    console.log("username", username)
-  console.log("password", password)
-
   try {
     const loginData = await apiPostRequestWithBody(
       `${DEV_API_EDGES.auth}/sign_in_with_password`,

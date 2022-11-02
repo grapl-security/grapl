@@ -10,8 +10,6 @@ export default function GraplRoutes() {
         <Route path="/" element={<Dashboard />}></Route>
         <Route path="/login" element={<LoginForm onSubmit={(formValue) => {}} />}></Route>
       </Routes>
-
     </HashRouter>
-
   );
 }

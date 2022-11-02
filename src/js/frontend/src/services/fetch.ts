@@ -17,7 +17,7 @@ export const apiFetchReq = async (urlSlug: string, method = "GET") => {
 };
 
 export const apiPostRequestWithBody = async (urlSlug: string, body: string) => {
-  const response = await fetch(urlSlug, {
+  const response = await fetch(`${process.env.GRAPL_WEB_UI_ENDPOINT_ADDRESS}/${urlSlug}`, {
     method: "POST",
     credentials: "include",
     headers: new Headers({

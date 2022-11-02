@@ -55,7 +55,7 @@ const LoginForm = ({ onSubmit }: FormProps) => {
             {touched.username && errors.username && <div>{errors.username}</div>}
             <Field
               data-testid={"password"}
-              name="password"
+              name="password"s
               type="password"
               placeholder="Password"
             />{" "}
