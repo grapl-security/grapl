@@ -47,8 +47,8 @@ async fn query_nomad_for_health(
     match job.status {
         Some(status) => match status.as_str() {
             "pending" => Ok(PluginHealthStatus::Pending),
-            // Okay, so now we know the job is running; let's ask Consul
-            // if the plugin service is healthy.
+            // Okay, so now we know the job is running in Nomad; next let's
+            // query Consul if the plugin service is healthy.
             "running" => query_consul_for_service_health(plugin_id).await,
             "dead" => Ok(PluginHealthStatus::Dead),
             other => Err(PluginRegistryServiceError::DeploymentStateError(format!(
@@ -61,6 +61,8 @@ async fn query_nomad_for_health(
     }
 }
 
+/// Given a plugin-id, query Consul to see if the service
+/// `plugin-${plugin_id}` is healthy.
 async fn query_consul_for_service_health(
     plugin_id: uuid::Uuid,
 ) -> Result<PluginHealthStatus, PluginRegistryServiceError> {

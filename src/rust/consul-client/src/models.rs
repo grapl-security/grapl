@@ -2,20 +2,20 @@
 pub struct CheckHealthResponse(pub Vec<CheckHealthResponseElem>);
 
 impl CheckHealthResponse {
+    /// Return whether all service healthchecks in a CheckHealthResponse
+    /// have state "passing"
     pub fn all_passing(&self) -> bool {
-        if self.0.len() == 0 {
-            tracing::info!("no service found");
-            // no such service found
+        if self.0.is_empty() {
+            // no such service found - it may still be booting up
             return false;
         }
 
         if self.0.iter().all(|elem| elem.status == "passing") {
-            tracing::info!("all pass");
             return true;
         }
 
-        tracing::info!("other");
-        return false;
+        // at least one such service is critical
+        false
     }
 }
 

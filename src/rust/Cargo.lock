@@ -984,6 +984,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d6f2aa4d0537bcc1c74df8755072bd31c1ef1a3a1b85a68e8404a8c353b7b8b"
 
 [[package]]
+name = "consul-client"
+version = "0.0.1"
+dependencies = [
+ "clap 3.2.23",
+ "reqwest",
+ "serde",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "consul-connect"
 version = "1.0.0"
 dependencies = [
@@ -3532,6 +3543,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "clap 3.2.23",
+ "consul-client",
  "e2e-tests",
  "eyre",
  "figment",

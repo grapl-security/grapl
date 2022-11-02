@@ -2,10 +2,13 @@
 
 use std::time::Duration;
 
-use e2e_tests::test_fixtures::{
-    get_example_generator,
-    get_suspicious_svchost_analyzer,
-    get_sysmon_generator,
+use e2e_tests::{
+    test_fixtures::{
+        get_example_generator,
+        get_suspicious_svchost_analyzer,
+        get_sysmon_generator,
+    },
+    test_utils::plugin_health::assert_eventual_health,
 };
 use figment::{
     providers::Env,
@@ -58,7 +61,7 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
-            .timeout(std::time::Duration::from_secs(5))
+            .timeout(Duration::from_secs(5))
             .await??
     };
 
@@ -68,7 +71,7 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
 
     let _response = client
         .deploy_plugin(request)
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
 
     let plugin_deployment = client
@@ -109,7 +112,7 @@ async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
-            .timeout(std::time::Duration::from_secs(5))
+            .timeout(Duration::from_secs(5))
             .await??
     };
 
@@ -118,21 +121,27 @@ async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
     // Ensure that an un-deployed plugin is NotDeployed
     assert_health(&mut client, plugin_id, PluginHealthStatus::NotDeployed).await?;
 
+    tracing::info!(
+        message = "test_deploy_sysmon_generator IDs",
+        tenant_id =? tenant_id,
+        plugin_id =? plugin_id,
+    );
+
     let _deploy_response = client
         .deploy_plugin(DeployPluginRequest::new(plugin_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
-
-    // Let the task run for a bit. Tasks may potentially restart - e.g. if the
-    // sidecar comes up before the main task, it'll panic because it expected a
-    // healthy main-task health check.
-    // Anyway: we let it run for a bit and _then_ check task health.
-    tokio::time::sleep(Duration::from_secs(15)).await;
 
     // Ensure that a now-deployed plugin is now Running
     // If it's Pending, it's possible the agent is out of mem or disk
     // and was unable to allocate it.
-    assert_health(&mut client, plugin_id, PluginHealthStatus::Running).await?;
+    assert_eventual_health(
+        &client,
+        plugin_id,
+        PluginHealthStatus::Running,
+        Duration::from_secs(60),
+    )
+    .await?;
 
     Ok(())
 }
@@ -162,7 +171,7 @@ async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
-            .timeout(std::time::Duration::from_secs(5))
+            .timeout(Duration::from_secs(5))
             .await??
     };
 
@@ -173,19 +182,19 @@ async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
 
     let _deploy_response = client
         .deploy_plugin(DeployPluginRequest::new(plugin_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
-
-    // Let the task run for a bit. Tasks may potentially restart - e.g. if the
-    // sidecar comes up before the main task, it'll panic because it expected a
-    // healthy main-task health check.
-    // Anyway: we let it run for a bit and _then_ check task health.
-    tokio::time::sleep(Duration::from_secs(15)).await;
 
     // Ensure that a now-deployed plugin is now Running
     // If it's Pending, it's possible the agent is out of mem or disk
     // and was unable to allocate it.
-    assert_health(&mut client, plugin_id, PluginHealthStatus::Running).await?;
+    assert_eventual_health(
+        &client,
+        plugin_id,
+        PluginHealthStatus::Running,
+        Duration::from_secs(60),
+    )
+    .await?;
 
     Ok(())
 }
@@ -204,7 +213,7 @@ async fn assert_health(
 ) -> eyre::Result<()> {
     let get_health_response: GetPluginHealthResponse = client
         .get_plugin_health(GetPluginHealthRequest::new(plugin_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
 
     let actual = get_health_response.health_status();
@@ -230,7 +239,7 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
 
     let response = client
         .deploy_plugin(request)
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await?;
 
     match response {
@@ -272,7 +281,7 @@ async fn test_teardown_plugin() {
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
-            .timeout(std::time::Duration::from_secs(5))
+            .timeout(Duration::from_secs(5))
             .await
             .expect("timeout elapsed")
             .expect("failed to create plugin")
@@ -287,14 +296,14 @@ async fn test_teardown_plugin() {
 
     client
         .deploy_plugin(DeployPluginRequest::new(plugin_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await
         .expect("timeout elapsed")
         .expect("failed to deploy plugin");
 
     client
         .tear_down_plugin(TearDownPluginRequest::new(plugin_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await
         .expect("timeout elapsed")
         .expect("failed to tear down plugin");
