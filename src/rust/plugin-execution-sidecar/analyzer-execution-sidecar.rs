@@ -26,11 +26,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(Env::prefixed("ANALYZER_EXECUTION_SIDECAR_"))
         .extract()?;
 
-    let analyzer_work_processor = AnalyzerWorkProcessor::new().await?;
-    let mut plugin_executor =
-        PluginExecutor::new(sidecar_config.plugin_id(), analyzer_work_processor).await?;
+    let plugin_id = sidecar_config.plugin_id();
+    let analyzer_work_processor = AnalyzerWorkProcessor::new(plugin_id).await?;
+    let mut plugin_executor = PluginExecutor::new(plugin_id, analyzer_work_processor).await?;
 
-    tracing::info!("starting analyzer executor");
+    tracing::info!(
+        message = "starting analyzer executor",
+        plugin_id =% plugin_id,
+    );
 
     plugin_executor.main_loop().await
 }

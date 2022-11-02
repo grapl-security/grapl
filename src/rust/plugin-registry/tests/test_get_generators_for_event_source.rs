@@ -65,6 +65,7 @@ async fn test_get_generators_for_event_source() -> eyre::Result<()> {
     let create_generator1_chunk = chunk.clone();
     let create_generator1_response = client
         .create_plugin(
+            Duration::from_secs(60),
             generator1_metadata,
             futures::stream::once(async move { create_generator1_chunk }),
         )
@@ -75,6 +76,7 @@ async fn test_get_generators_for_event_source() -> eyre::Result<()> {
     let create_generator2_chunk = chunk.clone();
     let create_generator2_response = client
         .create_plugin(
+            Duration::from_secs(60),
             generator2_metadata,
             futures::stream::once(async move { create_generator2_chunk }),
         )
@@ -85,6 +87,7 @@ async fn test_get_generators_for_event_source() -> eyre::Result<()> {
     let create_analyzer_chunk = chunk.clone();
     let create_analyzer_response = client
         .create_plugin(
+            Duration::from_secs(60),
             analyzer_metadata,
             futures::stream::once(async move { create_analyzer_chunk }),
         )

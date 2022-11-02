@@ -49,7 +49,7 @@ clap = { version = "3.0", default_features = false, features = [
 ] }
 env_logger = "0.9.0"
 eyre = "0.6"
-figment = { version = "0.10", features = ["env"] }
+figment = { version = "0.10", features = ["env", "json"] }
 opentelemetry = { version = "0.18", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.17", features = [
   "collector_client",

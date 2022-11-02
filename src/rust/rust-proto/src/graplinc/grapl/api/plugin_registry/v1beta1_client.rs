@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bytes::Bytes;
 use futures::{
     Stream,
@@ -43,6 +45,7 @@ impl PluginRegistryClient {
     #[instrument(skip(self, metadata, plugin_artifact), err)]
     pub async fn create_plugin<S>(
         &mut self,
+        request_timeout: Duration,
         metadata: native::PluginMetadata,
         plugin_artifact: S,
     ) -> Result<native::CreatePluginResponse, ClientError>
@@ -56,9 +59,11 @@ impl PluginRegistryClient {
         .map(proto::CreatePluginRequest::from);
 
         self.client
-            .execute_client_streaming(proto_stream, |mut client, request| async move {
-                client.create_plugin(request).await
-            })
+            .execute_client_streaming(
+                request_timeout,
+                proto_stream,
+                |mut client, request| async move { client.create_plugin(request).await },
+            )
             .await
     }
 

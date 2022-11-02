@@ -1,5 +1,9 @@
 use figment::{
-    providers::Env,
+    providers::{
+        Env,
+        Format,
+        Json,
+    },
     Figment,
 };
 use rust_proto::{
@@ -52,8 +56,11 @@ pub struct AnalyzerWorkProcessor {
 }
 
 impl AnalyzerWorkProcessor {
-    pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(plugin_id: Uuid) -> Result<Self, Box<dyn std::error::Error>> {
+        let upstream_addr_env_var = format!("NOMAD_UPSTREAM_ADDR_plugin-{plugin_id}");
+        let address = format!("http://{}", std::env::var(&upstream_addr_env_var)?);
         let client_config: ClientConfiguration = Figment::new()
+            .merge(Json::string(&format!("{{\"address\": \"{}\"}}", address)))
             .merge(Env::prefixed("ANALYZER_CLIENT_"))
             .extract()?;
 

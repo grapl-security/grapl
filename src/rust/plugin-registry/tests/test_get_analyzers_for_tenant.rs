@@ -66,6 +66,7 @@ async fn test_get_analyzers_for_tenant() -> eyre::Result<()> {
     let create_analyzer1_chunk = chunk.clone();
     let create_analyzer1_response = client
         .create_plugin(
+            Duration::from_secs(60),
             analyzer1_metadata,
             futures::stream::once(async move { create_analyzer1_chunk }),
         )
@@ -76,6 +77,7 @@ async fn test_get_analyzers_for_tenant() -> eyre::Result<()> {
     let create_analyzer2_chunk = chunk.clone();
     let create_analyzer2_response = client
         .create_plugin(
+            Duration::from_secs(60),
             analyzer2_metadata,
             futures::stream::once(async move { create_analyzer2_chunk }),
         )
@@ -86,6 +88,7 @@ async fn test_get_analyzers_for_tenant() -> eyre::Result<()> {
     let create_generator_chunk = chunk.clone();
     let create_generator_response = client
         .create_plugin(
+            Duration::from_secs(60),
             generator_metadata,
             futures::stream::once(async move { create_generator_chunk }),
         )

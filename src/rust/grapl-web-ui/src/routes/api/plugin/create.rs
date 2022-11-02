@@ -66,7 +66,11 @@ pub(super) async fn create(
 
     let mut plugin_registry_client = plugin_registry_client.get_ref().clone();
     let response = plugin_registry_client
-        .create_plugin(plugin_metadata, plugin_artifact_stream)
+        .create_plugin(
+            std::time::Duration::from_secs(5),
+            plugin_metadata,
+            plugin_artifact_stream,
+        )
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 

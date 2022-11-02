@@ -48,6 +48,7 @@ async fn test_create_plugin() -> eyre::Result<()> {
 
     let response = client
         .create_plugin(
+            Duration::from_secs(60),
             meta,
             futures::stream::once(async move { single_chunk.clone() }),
         )

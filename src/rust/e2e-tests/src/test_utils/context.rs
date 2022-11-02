@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bytes::Bytes;
 use clap::Parser;
 use figment::{
@@ -192,6 +194,7 @@ impl E2eTestContext {
         let generator = self
             .plugin_registry_client
             .create_plugin(
+                Duration::from_secs(60),
                 PluginMetadata::new(
                     tenant_id,
                     display_name,
@@ -229,6 +232,7 @@ impl E2eTestContext {
         let analyzer = self
             .plugin_registry_client
             .create_plugin(
+                Duration::from_secs(60),
                 PluginMetadata::new(tenant_id, display_name, PluginType::Analyzer, None),
                 futures::stream::once(async move { analyzer_artifact }),
             )

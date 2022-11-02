@@ -54,6 +54,7 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
@@ -104,6 +105,7 @@ async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
@@ -156,6 +158,7 @@ async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
@@ -265,6 +268,7 @@ async fn test_teardown_plugin() {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )

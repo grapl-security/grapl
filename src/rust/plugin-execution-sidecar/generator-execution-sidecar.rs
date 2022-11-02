@@ -23,16 +23,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Give the plugin a little time to become available.
     tokio::time::sleep(Duration::from_secs(5)).await;
 
-    let generator_work_processor = GeneratorWorkProcessor::new().await?;
-
     let sidecar_config: SidecarConfig = Figment::new()
         .merge(Env::prefixed("GENERATOR_EXECUTION_SIDECAR_"))
         .extract()?;
 
-    let mut plugin_executor =
-        PluginExecutor::new(sidecar_config.plugin_id(), generator_work_processor).await?;
+    let plugin_id = sidecar_config.plugin_id();
+    let generator_work_processor = GeneratorWorkProcessor::new(plugin_id).await?;
+    let mut plugin_executor = PluginExecutor::new(plugin_id, generator_work_processor).await?;
 
-    tracing::info!("starting generator executor");
+    tracing::info!(
+        message = "starting generator executor",
+        plugin_id =% plugin_id,
+    );
 
     plugin_executor.main_loop().await
 }

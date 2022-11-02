@@ -488,6 +488,14 @@ where
     /// \
     /// # Params
     /// \
+    /// - `request_timeout` -- The max duration the request is allowed to take
+    ///    (gRPC timeout). Streaming requests can't be meaningfully
+    ///    automatically retried, so they bypass the executor-based retry
+    ///    machinery used for synchronous gRPC requests. Therefore we use a
+    ///    per-request timeout here instead of the one specified in the
+    ///    ClientConfiguration, and the caller is responsible for handling the
+    ///    consequences of hitting this timeout.
+    ///
     /// - `proto_stream` -- A stream of `prost::Message` types `PT`.
     ///
     /// - `grpc_call` -- A closure which executes the gRPC API call in terms of
@@ -521,6 +529,7 @@ where
     /// ```
     pub(crate) async fn execute_client_streaming<'a, S, PT, PU, NU, F, R>(
         &'a self,
+        request_timeout: Duration,
         proto_stream: S,
         mut grpc_call: F,
     ) -> Result<NU, ClientError>
@@ -533,7 +542,6 @@ where
         R: Future<Output = Result<tonic::Response<PU>, tonic::Status>>,
         ClientError: From<<NU as TryFrom<PU>>::Error>,
     {
-        let request_timeout = self.configuration.request_timeout;
         let mut request = tonic::Request::new(proto_stream);
         request.set_timeout(request_timeout);
 

@@ -1,5 +1,7 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use bytes::Bytes;
 use figment::{
     providers::Env,
@@ -38,6 +40,7 @@ async fn test_list_plugins() -> eyre::Result<()> {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
@@ -58,6 +61,7 @@ async fn test_list_plugins() -> eyre::Result<()> {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
@@ -78,6 +82,7 @@ async fn test_list_plugins() -> eyre::Result<()> {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
