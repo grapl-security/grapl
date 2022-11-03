@@ -17,7 +17,7 @@ export interface FormProps {
 const LoginForm = ({ onSubmit }: FormProps) => {
   const [state, setState] = React.useState({
     userLoggedIn: false, // Boolean represented as true when user is successfully authenticated,
-    // false when there's an auth error, token has been removed or user has been logged out
+                        // false when there's an auth error, token has been removed or user has been logged out
   });
 
   const handleSubmit = async (values: FormValues) => {
