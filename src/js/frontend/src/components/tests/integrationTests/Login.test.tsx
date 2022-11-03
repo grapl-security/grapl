@@ -8,18 +8,14 @@ import { expect, test } from "@jest/globals";
 
 import { act } from "react-dom/test-utils";
 import LoginForm from "components/login/LoginForm";
-import getTestPasswordFromAWSSecretsManager from "../../../services/test/modules/getSecretValues";
-import { loginService } from "../../../services/login/loginService";
-import { apiPostRequestWithBody } from "../../../services/fetch";
 
 // to show the result of render(), use screen.debug() which displays HTML
 describe("Login Component", () => {
-  beforeEach(() => jest.clearAllMocks())
+  beforeEach(() => jest.clearAllMocks());
   afterEach(cleanup);
 
   test("Retrieves password from AWS and executes password in login form ", async () => {
     const onSubmit = jest.fn();
-
 
     act(() => {
       render(
@@ -33,8 +29,8 @@ describe("Login Component", () => {
     const password = screen.getByPlaceholderText(/Password/i);
     const submitButton = screen.getByText("SUBMIT");
 
-    const testUsername: string | undefined = process.env.GRAPL_TEST_USER_NAME;
-    const testPassword: string | undefined = await getTestPasswordFromAWSSecretsManager;
+    const testUsername: string = "grapl-test-user";
+    const testPassword: string = "grapl-test-password";
 
     await waitFor(() => {
       fireEvent.change(username, {
@@ -70,16 +66,5 @@ describe("Login Component", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  test("Test Login Call", async () => {
-    const testUsername: string | undefined = process.env.GRAPL_TEST_USER_NAME;
-    const testPassword: string | undefined = await getTestPasswordFromAWSSecretsManager;
-    const webUiAddress = `${process.env["GRAPL_WEB_UI_ENDPOINT_ADDRESS"]}/`; // don't forget trailing `/`
-
-    console.log("loggedIN", loggedIn);
-  });
-
-
   screen.debug();
 });
-
-// actix-session

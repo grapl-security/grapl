@@ -1,7 +1,7 @@
 import DEV_API_EDGES from "../constants";
 import { apiPostRequestWithBody } from "../fetch";
 
-export const loginService = async (username: string | undefined, password: string | undefined) => {
+export const loginService = async (username: string, password: string) => {
   const loginBody = JSON.stringify({
     username: username,
     password: password,
@@ -12,7 +12,6 @@ export const loginService = async (username: string | undefined, password: strin
       `${DEV_API_EDGES.auth}/sign_in_with_password`,
       loginBody,
     );
-    console.log("Login Data", loginData);
     return loginData;
   } catch (e) {
     console.log("Login Error", e);
