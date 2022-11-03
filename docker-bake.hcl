@@ -147,9 +147,10 @@ group "default" {
 group "grapl-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
+    "infra-services",
+    "plugin-support",
     "python-services",
     "rust-services",
-    "plugin-support",
   ]
 }
 
@@ -160,6 +161,7 @@ group "cloudsmith-images" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "grapl-services",
+    "infra-services",
     "rust-integration-tests"
   ]
 }
@@ -201,6 +203,14 @@ group "python-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "provisioner"
+  ]
+}
+
+# These are utility services that are used both locally and
+# in cloud (AWS) deployments.
+group "infra-services" {
+  targets = [
+    "otel-collector"
   ]
 }
 
@@ -533,6 +543,18 @@ target "rust-integration-tests" {
     # Yes, we push this up to Cloudsmith to run tests against AWS
     # infrastructure; that's why we use `upstream_aware_tag`.
     upstream_aware_tag("rust-integration-tests")
+  ]
+}
+
+# Infra Services
+# ----------------------------------------------------------------------
+# Customized versions of our infrastructure such as the otel-collector
+target "otel-collector" {
+  inherits   = ["_grapl-base"]
+  context    = "otel-collector"
+  dockerfile = "Dockerfile"
+  tags = [
+    upstream_aware_tag("otel-collector")
   ]
 }
 

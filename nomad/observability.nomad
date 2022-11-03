@@ -1,3 +1,11 @@
+variable "container_images" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to the URL for that task's docker image ID.
+  (See DockerImageId in Pulumi for further documentation.)
+EOF
+}
+
 variable "otel_config" {
   # We're setting a default here because of what appears to be a silent type error during preview
   # Oddly, the reflection runs correctly, but the variable we pass in seems to be unset at some point?
@@ -85,8 +93,7 @@ job "otel-collector" {
       driver = "docker"
 
       config {
-        image      = "otel/opentelemetry-collector-contrib:0.63.0"
-        force_pull = true
+        image = var.container_images["otel-collector"]
 
         entrypoint = [
           "/otelcol-contrib",

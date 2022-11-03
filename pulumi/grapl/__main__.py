@@ -85,6 +85,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "hax-docker-plugin-runtime": builder.build_with_tag("docker-plugin-runtime"),
         "kafka-retry": builder.build_with_tag("kafka-retry"),
         "node-identifier": builder.build_with_tag("node-identifier"),
+        "otel-collector": builder.build_with_tag("otel-collector"),
         "organization-management": builder.build_with_tag("organization-management"),
         "pipeline-ingress": builder.build_with_tag("pipeline-ingress"),
         "plugin-bootstrap": builder.build_with_tag("plugin-bootstrap"),
@@ -349,10 +350,20 @@ def main() -> None:
         lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
         trace_sampling_percentage=trace_sampling_percentage,
     )
+    observability_vars: Final[NomadVars] = {
+        "otel_config": otel_configuration,
+        **_get_subset(
+            nomad_inputs,
+            {
+                "container_images",
+            },
+        ),
+    }
+
     NomadJob(
         "otel-collector",
         jobspec=repository_path("nomad/observability.nomad"),
-        vars=dict(otel_config=otel_configuration),
+        vars=observability_vars,
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
         ),
