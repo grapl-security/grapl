@@ -59,6 +59,7 @@ BUILD @christophermaier
 /src/rust/async-cache/ @jgrillo-grapl
 /src/rust/analyzer-dispatcher/ @jgrillo-grapl
 /src/rust/client-executor/ @colin-grapl
+/src/rust/consul-client/ @wimax-grapl
 /src/rust/consul-connect/ @colin-grapl @wimax-grapl
 /src/rust/derive-dynamic-node/ @colin-grapl
 /src/rust/e2e-tests/ @wimax-grapl

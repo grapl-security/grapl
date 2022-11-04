@@ -10,6 +10,7 @@ use e2e_tests::{
             E2eTestContext,
             SetupGeneratorResult,
         },
+        plugin_health::assert_eventual_health,
         predicates::events_36lines_node_identity_predicate,
     },
 };
@@ -28,6 +29,7 @@ use rust_proto::graplinc::grapl::{
             IdentifiedGraph,
         },
         pipeline_ingress::v1beta1::PublishRawLogRequest,
+        plugin_registry::v1beta1::PluginHealthStatus,
         plugin_sdk::analyzers::v1beta1::messages::{
             StringPropertyUpdate,
             UInt64PropertyUpdate,
@@ -44,6 +46,7 @@ use rust_proto::graplinc::grapl::{
     },
 };
 use test_context::test_context;
+use tracing::Instrument;
 use uuid::Uuid;
 
 #[tracing::instrument(skip(ctx))]
@@ -65,6 +68,27 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         .setup_suspicious_svchost_analyzer(tenant_id, test_name)
         .await?;
 
+    tracing::info!(">> Waiting for Generator and Analyzer to report healthy.");
+    {
+        let plugin_healthy_timeout = Duration::from_secs(60);
+        let (generator_healthy, analyzer_healthy) = tokio::join!(
+            assert_eventual_health(
+                &ctx.plugin_registry_client,
+                generator_plugin_id,
+                PluginHealthStatus::Running,
+                plugin_healthy_timeout
+            ),
+            assert_eventual_health(
+                &ctx.plugin_registry_client,
+                analyzer_plugin_id,
+                PluginHealthStatus::Running,
+                plugin_healthy_timeout
+            ),
+        );
+        generator_healthy?;
+        analyzer_healthy?;
+    }
+
     tracing::info!(">> Setup complete. Now let's test milestones in the pipeline.");
 
     let raw_logs_scanner_handle = KafkaTopicScanner::new(
@@ -78,6 +102,10 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         ),
     )
     .scan_for_tenant(tenant_id, 36, |_log: RawLog| true)
+    .instrument(tracing::span!(
+        tracing::Level::INFO,
+        "raw_logs_scanner_handle"
+    ))
     .await;
 
     let generated_graphs_scanner_handle = KafkaTopicScanner::new(
@@ -91,6 +119,10 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         ),
     )
     .scan_for_tenant(tenant_id, 36, |_graph: GraphDescription| true)
+    .instrument(tracing::span!(
+        tracing::Level::INFO,
+        "generated_graphs_scanner_handle"
+    ))
     .await;
 
     let node_identifier_scanner_handle = KafkaTopicScanner::new(
@@ -104,6 +136,10 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         ),
     )
     .scan_for_tenant(tenant_id, 36, |_graph: IdentifiedGraph| true)
+    .instrument(tracing::span!(
+        tracing::Level::INFO,
+        "node_identifier_scanner_handle"
+    ))
     .await;
 
     // Sometimes we find 40 or 41 messages; for tability we'll just let this

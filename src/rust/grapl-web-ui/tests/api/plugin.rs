@@ -1,5 +1,7 @@
 #![cfg(feature = "integration_tests")]
 
+use std::time::Duration;
+
 use grapl_web_ui::routes::api::plugin::{
     create::CreateResponse,
     // get_analyzers::GetAnalyzersResponse,
@@ -67,11 +69,13 @@ async fn plugin_lifecycle() -> eyre::Result<()> {
     );
 
     // check health again, ensure it is running
-    let plugin_health = get_health(&app, &plugin_id).await?;
-    eyre::ensure!(
-        plugin_health.health_status == PluginHealthStatus::Running,
-        "plugin health expected to be 'running'"
-    );
+    assert_eventual_health(
+        &app,
+        &plugin_id,
+        PluginHealthStatus::Running,
+        Duration::from_secs(60),
+    )
+    .await?;
 
     // cool, now tear it down
     tear_down(&app, &plugin_id).await?;
@@ -252,6 +256,32 @@ async fn get_health(
     println!("response body: {:?}", response_body);
 
     Ok(response_body)
+}
+
+async fn assert_eventual_health(
+    app: &TestApp,
+    plugin_id: &uuid::Uuid,
+    expected: PluginHealthStatus,
+    timeout: Duration,
+) -> eyre::Result<GetPluginHealthResponse> {
+    let start_time = std::time::SystemTime::now();
+    loop {
+        let elapsed = start_time.elapsed()?;
+        if elapsed > timeout {
+            eyre::bail!("Plugin {plugin_id} never reached {expected:?} within {timeout:?}");
+        }
+
+        let get_health_response: GetPluginHealthResponse = get_health(app, plugin_id).await?;
+        let actual = get_health_response.health_status;
+        if expected == actual {
+            tracing::debug!(
+                "Plugin {plugin_id} reached expected status {expected:?} after {elapsed:?}"
+            );
+            return Ok(get_health_response);
+        } else {
+            tokio::time::sleep(Duration::from_secs(3)).await;
+        }
+    }
 }
 
 // async fn get_analyzers(app: &TestApp) -> eyre::Result<GetAnalyzersResponse> {

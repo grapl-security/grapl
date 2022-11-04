@@ -1192,6 +1192,7 @@ pub enum PluginHealthStatus {
     Pending,
     Running,
     Dead,
+    // We may want a discrimination between "running-healthy" and "running-unhealthy"
 }
 
 impl TryFrom<proto::PluginHealthStatus> for PluginHealthStatus {

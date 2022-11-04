@@ -16,7 +16,7 @@ opentelemetry = { workspace = true }
 opentelemetry-jaeger = { workspace = true }
 rand = "0.8.5"
 rust-proto = { path = "../rust-proto" }
-serde = { version = "1.0.136", features = ["derive"] }
+serde = { workspace = true }
 sqlx = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

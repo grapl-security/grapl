@@ -1,3 +1,8 @@
+use clap::Parser;
+use consul_client::{
+    ConsulClient,
+    ConsulClientConfig,
+};
 use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::PluginHealthStatus;
 
 use super::plugin_nomad_job;
@@ -42,7 +47,9 @@ async fn query_nomad_for_health(
     match job.status {
         Some(status) => match status.as_str() {
             "pending" => Ok(PluginHealthStatus::Pending),
-            "running" => Ok(PluginHealthStatus::Running),
+            // Okay, so now we know the job is running in Nomad; next let's
+            // query Consul if the plugin service is healthy.
+            "running" => query_consul_for_service_health(plugin_id).await,
             "dead" => Ok(PluginHealthStatus::Dead),
             other => Err(PluginRegistryServiceError::DeploymentStateError(format!(
                 "Unknown state {other}"
@@ -52,4 +59,16 @@ async fn query_nomad_for_health(
             "No State for this job? Is this even possible?".to_owned(),
         )),
     }
+}
+
+/// Given a plugin-id, query Consul to see if the service
+/// `plugin-${plugin_id}` is healthy.
+async fn query_consul_for_service_health(
+    plugin_id: uuid::Uuid,
+) -> Result<PluginHealthStatus, PluginRegistryServiceError> {
+    let service_name = format!("plugin-{plugin_id}");
+    let consul_client = ConsulClient::new(ConsulClientConfig::parse());
+    let service_health = consul_client.check_health(service_name).await?;
+    tracing::info!(message = "health result", service_health =? service_health);
+    Ok(service_health.into())
 }

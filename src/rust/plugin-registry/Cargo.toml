@@ -13,6 +13,7 @@ name = "plugin_registry"
 [dependencies]
 async-trait = "0.1"
 bytes = { workspace = true }
+consul-client = { path = "../consul-client" }
 clap = { workspace = true }
 figment = { workspace = true }
 futures = "0.3"
