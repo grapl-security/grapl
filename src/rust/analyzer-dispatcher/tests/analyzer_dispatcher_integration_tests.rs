@@ -3,9 +3,9 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use e2e_tests::{
+use integration_test_utils::{
+    context::E2eTestContext,
     test_fixtures,
-    test_utils::context::E2eTestContext,
 };
 use plugin_work_queue::test_utils::scan_analyzer_messages;
 use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::PublishRawLogRequest;

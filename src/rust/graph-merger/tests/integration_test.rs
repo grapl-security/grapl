@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use e2e_tests::test_utils::context::{
+use integration_test_utils::context::{
     E2eTestContext,
     SetupGeneratorResult,
 };
