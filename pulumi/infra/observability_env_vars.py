@@ -95,9 +95,9 @@ processors:
     sampling_percentage: {args["trace_sampling_percentage"]}
 exporters:
   file/metrics:
-    path: /tmp/metrics.json
+    path: /local/metrics.json
   file/traces:
-    path: /tmp/traces.json
+    path: /local/traces.json
   logging:
     logLevel: debug
   otlp/ls:

@@ -9,6 +9,10 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
+# Nomad creates a writable /local directory, hence why these are in /local instead of /tmp
+otel_metrics_file_path = Path("/local/metrics.json").resolve()
+otel_traces_file_path = Path("/local/traces.json").resolve()
+
 
 def _container_names_by_prefix(prefix: str) -> list[str]:
     """Return a list of all containers (running or not) whose names begin
@@ -43,6 +47,22 @@ def _container_names_by_prefix(prefix: str) -> list[str]:
             " deploying Pulumi."
         )
     return containers
+
+
+def _cp_file(container_id: str, file_path: Path, artifact_dir: Path):
+    """Copies files over to the artifacts directory. We need to use docker cp because Nomad does NOT have the ability to
+    copy files from a running allocation to outside the alloc"""
+
+    result = subprocess.run(
+        [
+            "docker",
+            "cp",
+            f"{container_id}:{file_path}",
+            f"{artifact_dir}",
+        ],
+        capture_output=True,
+        text=True,
+    )
 
 
 def dump_docker_ps(dir: Path) -> None:
@@ -106,3 +126,15 @@ def dump_all_docker_logs(compose_project: str, artifacts_dir: Path) -> None:
     containers = _container_names_by_prefix(compose_project)
     for container in containers:
         _dump_docker_log(container_name=container, dir=artifacts_dir)
+
+
+def write_otel_files(artifact_dir: Path) -> None:
+    # may need to create a _container_id_by_prefix
+    otel_container = _container_names_by_prefix("otel")
+
+    otel_file_paths = [
+        otel_metrics_file_path,
+        otel_traces_file_path,
+    ]
+    for file_path in otel_file_paths:
+        _cp_file(otel_container[0], file_path, artifact_dir)

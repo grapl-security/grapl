@@ -93,7 +93,7 @@ job "otel-collector" {
       driver = "docker"
 
       config {
-        image = var.container_images["otel-collector"]
+        image = "otel/opentelemetry-collector-contrib:0.63.0"
 
         entrypoint = [
           "/otelcol-contrib",
