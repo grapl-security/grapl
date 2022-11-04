@@ -17,7 +17,6 @@ pub struct ConsulClientConfig {
     consul_service_address: SocketAddr,
 }
 
-/// A thin wrapper around the nomad_client_gen with usability improvements.
 pub struct ConsulClient {
     address: String,
 }
