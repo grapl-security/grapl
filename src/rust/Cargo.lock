@@ -1465,21 +1465,14 @@ dependencies = [
 name = "e2e-tests"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "bytes",
- "clap 3.2.23",
  "eyre",
- "figment",
  "futures",
- "grapl-config",
- "grapl-tracing",
- "grapl-utils",
  "integration-test-utils",
  "kafka",
  "plugin-work-queue",
  "rust-proto",
  "test-context",
- "thiserror",
  "tokio",
  "tracing",
  "uuid",
