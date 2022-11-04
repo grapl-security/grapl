@@ -78,6 +78,7 @@ BUILD @christophermaier
 /src/rust/grapl-tracing/ @wimax-grapl
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/grapl-web-ui/ @inickles-grapl
+/src/rust/integration-test-utils/ @wimax-grapl
 /src/rust/kafka/ @grapl-security/wg-data-infra
 /src/rust/kafka-retry/ @jgrillo-grapl
 /src/rust/node-identifier/ @grapl-security/wg-data-infra

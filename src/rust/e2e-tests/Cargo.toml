@@ -16,6 +16,7 @@ futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
 grapl-utils = { path = "../grapl-utils" }
+integration-test-utils = { path = "../integration-test-utils" }
 kafka = { path = "../kafka", features = ["test-utils"] }
 plugin-work-queue = { path = "../plugin-work-queue", features = ["test-utils"] }
 rust-proto = { path = "../rust-proto" }

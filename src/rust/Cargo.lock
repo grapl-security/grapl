@@ -1474,6 +1474,7 @@ dependencies = [
  "grapl-config",
  "grapl-tracing",
  "grapl-utils",
+ "integration-test-utils",
  "kafka",
  "plugin-work-queue",
  "rust-proto",
