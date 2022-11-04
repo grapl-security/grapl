@@ -6,9 +6,9 @@ use rust_proto::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginRegistryClient,
 };
 
-/// After a deploy, plugins seem to take quite some time to deploy.
-/// This function lets us assert that a plugin eventually reaches
-/// a certain state within <some duration>.
+/// After a deploy, plugins seem to take quite some time to become healthy.
+/// This function lets us assert that a plugin eventually reaches a certain
+/// state within <some duration>.
 pub async fn assert_eventual_health(
     client: &PluginRegistryClient,
     plugin_id: uuid::Uuid,
