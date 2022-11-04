@@ -2458,6 +2458,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bb03732005da905c88227371639bf1ad885cc712789c011c31c5fb3ab3ccf02"
 
 [[package]]
+name = "integration-test-utils"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "clap 3.2.23",
+ "eyre",
+ "figment",
+ "futures",
+ "grapl-config",
+ "grapl-tracing",
+ "grapl-utils",
+ "kafka",
+ "plugin-work-queue",
+ "rust-proto",
+ "test-context",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "ipconfig"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
