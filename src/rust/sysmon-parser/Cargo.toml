@@ -18,7 +18,7 @@ serde = ["dep:serde", "uuid/serde", "chrono/serde"]
 chrono = { version = "0.4" }
 derive-into-owned = "0.2"
 memchr = "2"
-serde = { version = "1.0", default-features = false, features = [
+serde = { workspace = true, default-features = false, features = [
   "derive"
 ], optional = true }
 thiserror = { workspace = true }

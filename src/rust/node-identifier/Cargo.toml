@@ -38,7 +38,7 @@ rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
 rust-proto = { path = "../rust-proto", version = "*" }
-serde = "1.0"
+serde = { workspace = true }
 serde_dynamodb = { version = "0.9", default_features = false, features = [
   "rustls"
 ] }

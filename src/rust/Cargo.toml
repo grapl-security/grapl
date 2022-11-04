@@ -3,7 +3,8 @@ members = [
   "./analyzer-dispatcher",
   "./async-cache",
   "./client-executor",
-  "./consul-connect",
+  "./consul-client",
+  "./consul-connect", # TODO delete
   "./derive-dynamic-node",
   "./e2e-tests",
   "./endpoint-plugin",
