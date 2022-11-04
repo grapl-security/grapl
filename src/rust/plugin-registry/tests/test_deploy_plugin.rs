@@ -2,19 +2,19 @@
 
 use std::time::Duration;
 
-use e2e_tests::{
-    test_fixtures::{
-        get_example_generator,
-        get_suspicious_svchost_analyzer,
-        get_sysmon_generator,
-    },
-    test_utils::plugin_health::assert_eventual_health,
-};
 use figment::{
     providers::Env,
     Figment,
 };
 use grapl_utils::future_ext::GraplFutureExt;
+use integration_test_utils::{
+    plugin_health::assert_eventual_health,
+    test_fixtures::{
+        get_example_generator,
+        get_suspicious_svchost_analyzer,
+        get_sysmon_generator,
+    },
+};
 use rust_proto::graplinc::grapl::api::{
     client::{
         ClientError,

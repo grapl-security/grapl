@@ -24,8 +24,8 @@ uuid = { workspace = true }
 [dev-dependencies]
 async-trait = "0.1"
 bytes = { workspace = true }
-e2e-tests = { path = "../e2e-tests" }
 eyre = { workspace = true }
+integration-test-utils = { path = "../integration-test-utils" }
 plugin-work-queue = { path = "../plugin-work-queue", features = ["test-utils"] }
 test-context = { workspace = true }
 

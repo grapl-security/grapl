@@ -3,16 +3,14 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use e2e_tests::{
-    test_fixtures,
-    test_utils::{
-        context::{
-            E2eTestContext,
-            SetupGeneratorResult,
-        },
-        plugin_health::assert_eventual_health,
-        predicates::events_36lines_node_identity_predicate,
+use integration_test_utils::{
+    context::{
+        E2eTestContext,
+        SetupGeneratorResult,
     },
+    plugin_health::assert_eventual_health,
+    predicates::events_36lines_node_identity_predicate,
+    test_fixtures,
 };
 use kafka::{
     config::ConsumerConfig,

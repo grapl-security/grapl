@@ -3,7 +3,7 @@ use rust_proto::graplinc::grapl::api::graph::v1beta1::{
     ImmutableUintProp,
 };
 
-use crate::test_utils::find_node::FindNode;
+use crate::find_node::FindNode;
 
 /// Look for some nodes we'd expect to see from 36_eventlog.xml being node-identified
 pub fn events_36lines_node_identity_predicate(identified_graph: IdentifiedGraph) -> bool {

@@ -147,7 +147,7 @@ async fn _create_plugin(app: &TestApp, plugin_name: &str) -> eyre::Result<reqwes
         "event_source_id": uuid::Uuid::new_v4()
     });
 
-    let generator_bytes = e2e_tests::test_fixtures::get_sysmon_generator()?;
+    let generator_bytes = integration_test_utils::test_fixtures::get_sysmon_generator()?;
 
     let form = reqwest::multipart::Form::new()
         .part(
