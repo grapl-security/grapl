@@ -70,8 +70,5 @@ async fn query_consul_for_service_health(
     let consul_client = ConsulClient::new(ConsulClientConfig::parse());
     let service_health = consul_client.check_health(service_name).await?;
     tracing::info!(message = "health result", service_health =? service_health);
-    match service_health.all_passing() {
-        true => Ok(PluginHealthStatus::Running),
-        false => Ok(PluginHealthStatus::Pending),
-    }
+    Ok(service_health.into())
 }

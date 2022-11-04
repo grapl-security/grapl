@@ -989,6 +989,7 @@ version = "0.0.1"
 dependencies = [
  "clap 3.2.23",
  "reqwest",
+ "rust-proto",
  "serde",
  "thiserror",
  "tracing",
