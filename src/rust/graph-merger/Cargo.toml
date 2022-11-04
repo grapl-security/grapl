@@ -42,6 +42,6 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-e2e-tests = { path = "../e2e-tests" }
+integration-test-utils = { path = "../integration-test-utils" }
 kafka = { path = "../kafka", features = ["test-utils"] }
 test-context = { workspace = true }

@@ -2,7 +2,12 @@
 
 use std::time::Duration;
 
-use e2e_tests::{
+use figment::{
+    providers::Env,
+    Figment,
+};
+use grapl_utils::future_ext::GraplFutureExt;
+use integration_test_utils::{
     test_fixtures::{
         get_example_generator,
         get_suspicious_svchost_analyzer,
@@ -10,11 +15,6 @@ use e2e_tests::{
     },
     test_utils::plugin_health::assert_eventual_health,
 };
-use figment::{
-    providers::Env,
-    Figment,
-};
-use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::graplinc::grapl::api::{
     client::{
         ClientError,
