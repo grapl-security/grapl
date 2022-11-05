@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-source etc/chromeos/lib/installs.sh
+source etc/deb_linux/lib/installs.sh
 
 echo "Starting Grapl OPTIONAL tooling installation"
 install_git_hooks
