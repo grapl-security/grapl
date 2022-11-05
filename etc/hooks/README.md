@@ -6,7 +6,7 @@ the grapl repo. In particular, these should be local only, not global.
 ## Enabling git hooks
 
 This should be automatically enabled as part of the
-`etc/chromeos/setup_chromeos.sh` script. To manually enable a specific git hook
+`etc/deb_linux/setup_linux.sh` script. To manually enable a specific git hook
 run
 
 ```
@@ -19,5 +19,5 @@ ln --symbolic --relative "$GIT_ROOT/etc/hooks/pre-commit.sh" "$GIT_ROOT/.git/hoo
 When creating a new git hook:
 
 1. Make the file executable (and committed to git as executable)
-2. Update the chromeos installs script to add the new git hook inside the
+2. Update the deb_linux installs script to add the new git hook inside the
    install_git_hooks function
