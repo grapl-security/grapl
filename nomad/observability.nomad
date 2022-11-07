@@ -1,11 +1,3 @@
-variable "container_images" {
-  type        = map(string)
-  description = <<EOF
-  A map of $NAME_OF_TASK to the URL for that task's docker image ID.
-  (See DockerImageId in Pulumi for further documentation.)
-EOF
-}
-
 variable "otel_config" {
   # We're setting a default here because of what appears to be a silent type error during preview
   # Oddly, the reflection runs correctly, but the variable we pass in seems to be unset at some point?
