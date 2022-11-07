@@ -150,7 +150,6 @@ impl PsqlQueue {
     ) -> Result<Option<Message>, PsqlQueueError> {
         // This function does a few things
         // 1. It attempts to get a message from the queue
-        //      -> Where that message isn't over a day old
         //      -> Where that message is "visible"
         //      -> Where that message isn't currently being evaluated by another transaction
         //      -> Where that message is in the 'enqueued' state
@@ -161,11 +160,9 @@ impl PsqlQueue {
         // * messages are invisible for 10 seconds *after* each select
         //      * The 10 second timeout is arbitrary but reasonable.
         // * messages are immediately visible after their insert
-        // * messages 'expire' after one day
         // * messages currently do not have a maximum retry limit
-        // * The one day expiration matches our 1 day partitioning strategy
 
-        // In the future we can leverage a maximum retry limit as well as a batch version of this query
+        // In the future we can leverage a batch version of this query
         // A more dynamic visibility strategy would also be reasonable
         let request: Option<NextExecutionRequest> = sqlx::query_as!(
             NextExecutionRequest,
@@ -189,7 +186,6 @@ impl PsqlQueue {
                  FROM plugin_work_queue.generator_plugin_executions
                  WHERE plugin_id = $1
                    AND current_status = 'enqueued'
-                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
                    AND visible_after <= CURRENT_TIMESTAMP
                  ORDER BY creation_time ASC
                  FOR UPDATE SKIP LOCKED
@@ -219,7 +215,6 @@ impl PsqlQueue {
     ) -> Result<Option<Message>, PsqlQueueError> {
         // `get_message` does a few things
         // 1. It attempts to get a message from the queue
-        //      -> Where that message isn't over a day old
         //      -> Where that message is "visible"
         //      -> Where that message isn't currently being evaluated by another transaction
         //      -> Where that message is in the 'enqueued' state
@@ -230,11 +225,9 @@ impl PsqlQueue {
         // * messages are invisible for 10 seconds *after* each select
         //      * The 10 second timeout is arbitrary but reasonable.
         // * messages are immediately visible after their insert
-        // * messages 'expire' after one day
         // * messages currently do not have a maximum retry limit
-        // * The one day expiration matches our 1 day partitioning strategy
 
-        // In the future we can leverage a maximum retry limit as well as a batch version of this query
+        // In the future we can leverage a batch version of this query
         // A more dynamic visibility strategy would also be reasonable
         let request: Option<NextExecutionRequest> = sqlx::query_as!(
             NextExecutionRequest,
@@ -258,7 +251,6 @@ impl PsqlQueue {
                  FROM plugin_work_queue.analyzer_plugin_executions
                  WHERE plugin_id = $1
                    AND current_status = 'enqueued'
-                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
                    AND visible_after <= CURRENT_TIMESTAMP
                  ORDER BY creation_time ASC
                  FOR UPDATE SKIP LOCKED
