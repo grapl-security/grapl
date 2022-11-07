@@ -63,7 +63,7 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         .expect("failed to setup the sysmon-generator");
 
     let analyzer_plugin_id = ctx
-        .setup_suspicious_svchost_analyzer(tenant_id, test_name)
+        .setup_process_named_svchost_analyzer(tenant_id, test_name)
         .await?;
 
     tracing::info!(">> Waiting for Generator and Analyzer to report healthy.");

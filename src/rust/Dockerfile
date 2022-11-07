@@ -254,6 +254,7 @@ COPY --from=etc-ctx sample_data/36_eventlog.xml /test-fixtures
 # hadolint-ignore reason: https://github.com/hadolint/hadolint/issues/830
 # hadolint ignore=DL3022
 COPY --from=dist-ctx suspicious_svchost_analyzer.pex /test-fixtures
+COPY --from=dist-ctx process_named_svchost_analyzer.pex /test-fixtures
 
 # Copy in the example generator so we can deploy it in test_deploy_plugin
 COPY --from=build /outputs/example-generator /test-fixtures
