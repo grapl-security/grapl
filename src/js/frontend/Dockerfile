@@ -34,4 +34,4 @@ RUN yarn install \
     && yarn build \
     && yarn cache clean
 
-CMD ["yarn integrationTest --watchAll=false"]
+CMD ["yarn integrationTest"]

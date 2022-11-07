@@ -48,4 +48,6 @@ build-code
 .bash_history
 .cache/
 .node/
-
+/test-results/
+/playwright-report/
+/playwright/.cache/

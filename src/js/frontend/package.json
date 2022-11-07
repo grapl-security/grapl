@@ -22,7 +22,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "integrationTest": "react-scripts test tests/integration --maxWorkers=1",
+    "integrationTest": "yarn playwright test",
     "unitTest": "react-scripts test tests/unit --maxWorkers=1",
     "eject": "react-scripts eject",
     "check-types": "tsc --project tsconfig.json --pretty --noEmit",
@@ -45,6 +45,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.27.1",
     "@testing-library/dom": "^8.18.1",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
