@@ -349,10 +349,14 @@ def main() -> None:
         lightstep_is_endpoint_insecure=lightstep_is_endpoint_insecure,
         trace_sampling_percentage=trace_sampling_percentage,
     )
+    observability_vars: Final[NomadVars] = {
+        "otel_config": otel_configuration,
+    }
+
     NomadJob(
         "otel-collector",
         jobspec=repository_path("nomad/observability.nomad"),
-        vars=dict(otel_config=otel_configuration),
+        vars=observability_vars,
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
         ),
