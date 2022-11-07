@@ -49,11 +49,11 @@ def _container_names_by_prefix(prefix: str) -> list[str]:
     return containers
 
 
-def _cp_file(container_id: str, file_path: Path, artifact_dir: Path):
+def _cp_file(container_id: str, file_path: Path, artifact_dir: Path) -> None:
     """Copies files over to the artifacts directory. We need to use docker cp because Nomad does NOT have the ability to
     copy files from a running allocation to outside the alloc"""
 
-    result = subprocess.run(
+    subprocess.run(
         [
             "docker",
             "cp",
