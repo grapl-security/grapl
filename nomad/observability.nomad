@@ -85,8 +85,7 @@ job "otel-collector" {
       driver = "docker"
 
       config {
-        image      = "otel/opentelemetry-collector-contrib:0.63.0"
-        force_pull = true
+        image = "otel/opentelemetry-collector-contrib:0.63.0"
 
         entrypoint = [
           "/otelcol-contrib",

@@ -144,7 +144,7 @@ class NomadTask:
                 ),
             )
         except URLNotFoundNomadException as e:
-            LOGGER.warn(
+            LOGGER.warning(
                 f"No logs for task '{self.name}' in namespace '{self.parent.parent.name}'"
             )
             return None

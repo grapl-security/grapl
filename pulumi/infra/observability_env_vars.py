@@ -94,6 +94,10 @@ processors:
   probabilistic_sampler:
     sampling_percentage: {args["trace_sampling_percentage"]}
 exporters:
+  file/metrics:
+    path: /local/metrics.json
+  file/traces:
+    path: /local/traces.json
   logging:
     logLevel: debug
   otlp/ls:
@@ -111,11 +115,11 @@ service:
       receivers: [prometheus, otlp]
       processors: [batch]
       # To enable debug logging, add logging to the exporters array below
-      exporters: [otlp/ls]
+      exporters: [file/metrics, otlp/ls]
     traces:
       receivers: [jaeger, otlp, zipkin]
       processors: [batch, memory_limiter, probabilistic_sampler]
       # To enable debug logging, add logging to the exporters array below
-      exporters: [otlp/ls]
+      exporters: [file/traces, otlp/ls]
 """
     )
