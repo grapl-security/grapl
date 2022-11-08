@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import grpc
+from grapl_common.logger import get_structlogger
+from grapl_common.retry import retry
 from graplinc.grapl.api.graph_query_proxy.v1beta1.graph_query_proxy_pb2_grpc import (
     GraphQueryProxyServiceStub,
 )
@@ -15,6 +17,8 @@ from python_proto.api.graph_query_proxy.v1beta1.messages import (
 )
 from python_proto.client import Connectable, GrpcClientConfig
 from python_proto.grapl.common.v1beta1.messages import Uid
+
+LOGGER = get_structlogger()
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +35,10 @@ class GraphQueryProxyClient(Connectable):
 
         return cls(proto_client=stub, client_config=client_config)
 
+    @retry(
+        Exception,
+        logger=LOGGER,
+    )
     def query_with_uid(
         self,
         node_uid: Uid,
@@ -45,6 +53,10 @@ class GraphQueryProxyClient(Connectable):
         )
         return QueryGraphWithUidResponse.from_proto(proto_response)
 
+    @retry(
+        Exception,
+        logger=LOGGER,
+    )
     def query_from_uid(
         self,
         node_uid: Uid,
