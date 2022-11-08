@@ -205,7 +205,7 @@ job "grapl-plugin" {
       env {
         GRAPH_QUERY_PROXY_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_graph-query-proxy}"
 
-        GRAPH_QUERY_CLIENT_ADDRESS     = "http://${NOMAD_UPSTREAM_ADDR_graph-query}"
+        GRAPH_QUERY_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_graph-query}"
         GRAPH_QUERY_CLIENT_REQUEST_TIMEOUT               = "5s"
         GRAPH_QUERY_CLIENT_EXECUTOR_TIMEOUT              = "5s"
         GRAPH_QUERY_CLIENT_CONCURRENCY_LIMIT             = 16
@@ -216,7 +216,7 @@ job "grapl-plugin" {
         GRAPH_QUERY_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
         GRAPH_QUERY_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
 
-        TENANT_ID                      = var.tenant_id
+        TENANT_ID = var.tenant_id
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
