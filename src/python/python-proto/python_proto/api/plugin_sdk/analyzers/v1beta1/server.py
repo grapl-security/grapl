@@ -41,7 +41,6 @@ class AnalyzerServiceWrapper(AnalyzerServiceServicer):
         context: grpc.aio.ServicerContext,
     ) -> proto.RunAnalyzerResponse:
         native_request = native.RunAnalyzerRequest.from_proto(proto_request)
-        LOGGER.info("Running analyzer")
         LOGGER.debug("Analyzer request:", request=native_request)
         native_response = await self.analyzer_service_impl.run_analyzer(
             native_request, context

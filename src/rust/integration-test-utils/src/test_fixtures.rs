@@ -19,6 +19,10 @@ pub fn get_suspicious_svchost_analyzer() -> Result<Bytes, std::io::Error> {
     std::fs::read("/test-fixtures/suspicious_svchost_analyzer.pex").map(Bytes::from)
 }
 
+pub fn get_process_named_svchost_analyzer() -> Result<Bytes, std::io::Error> {
+    std::fs::read("/test-fixtures/process_named_svchost_analyzer.pex").map(Bytes::from)
+}
+
 pub fn single_sysmon_event() -> Bytes {
     r#"
 <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
