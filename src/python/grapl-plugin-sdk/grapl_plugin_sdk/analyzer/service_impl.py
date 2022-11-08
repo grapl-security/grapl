@@ -81,11 +81,12 @@ class AnalyzerServiceImpl:
         logger = LOGGER.bind(
             request_id=str(request_id),
         )
+        logger.debug("run_analyzer on request", request=request)
 
         try:
             return await self._run_analyzer_inner(request, logger)
         except Exception as e:
-            logger.error("Analyzer run failed", error=str(e))
+            logger.error("run_analyzer failed", error=str(e))
             details = f"error_as_grpc_abort exception: {str(e)}"
             code = grpc.StatusCode.UNKNOWN
             await context.abort(
@@ -97,9 +98,6 @@ class AnalyzerServiceImpl:
     async def _run_analyzer_inner(
         self, request: analyzer_messages.RunAnalyzerRequest, logger: Structlogger
     ) -> analyzer_messages.RunAnalyzerResponse:
-        # structlog context
-        # get a random request-id that's shared across requests
-        logger.info("req", request=request)
         match request.update.inner:
             case PropertyUpdate() as prop_update:
                 # optimization
