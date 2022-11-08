@@ -102,7 +102,6 @@ class AnalyzerServiceImpl:
         logger.info("req", request=request)
         match request.update.inner:
             case PropertyUpdate() as prop_update:
-                logger.debug("PropertyUpdate")
                 # optimization
                 # i.e. if the update is for process_name, and you're not querying for
                 # process_name, that's obviously a miss
@@ -118,7 +117,6 @@ class AnalyzerServiceImpl:
                 )
                 # updated_node_uid = TODO
 
-        logger.info("we here")
         # Now we have the UID of nodes recently updated, and a
         # query. check if the UID could match any in the query.
         matched_graph: graph_query_messages.MatchedGraphWithUid | None = (
@@ -132,11 +130,8 @@ class AnalyzerServiceImpl:
             logger.debug("No matching graph, returning ExecutionMiss")
             return MISS_RESPONSE
 
-        logger.info("matched graph")
-
         graph_view: graph_query_messages.GraphView = matched_graph.matched_graph
         root_uid = matched_graph.root_uid
-        logger.info("root??? uid???", root_uid=root_uid)
 
         root_node_properties = graph_view.get_node(root_uid)
         if not root_node_properties:
@@ -148,7 +143,6 @@ class AnalyzerServiceImpl:
         analyzer = self._analyzer
         ctx = self._new_ctx()
 
-        logger.info("still here")
         root_node = NodeView.from_parts(
             root_node_properties,
             graph_view,
@@ -156,12 +150,9 @@ class AnalyzerServiceImpl:
             tenant_id=TENANT_ID,
         )
 
-        # todo: Add a timeout here
-        logger.debug("Awaiting analyzer")
         execution_hit: analyzer_messages.ExecutionHit | None = await analyzer.analyze(
             root_node, ctx
         )
-        logger.debug("Analyzer result", execution_hit=execution_hit)
         if not execution_hit:
             logger.debug("No execution hit after calling analyze()")
             return MISS_RESPONSE
