@@ -3,12 +3,14 @@ import time
 from functools import wraps
 from typing import Any, Callable, TypeVar, cast
 
+from grapl_common.logger import Structlogger
+
 F = TypeVar("F", bound=Callable)
 
 
 def retry(
     exception_cls: type[Exception],
-    logger: logging.Logger,
+    logger: logging.Logger | Structlogger,
     on_falsey: bool = False,
     tries: int = 3,
     delay: float = 0.5,

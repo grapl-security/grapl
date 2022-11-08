@@ -5,10 +5,10 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import grpc
-from grapl_common.logger import get_structlogger
+from grapl_common.logger import Structlogger, get_structlogger
 from grapl_plugin_sdk.analyzer.analyzer_context import AnalyzerContext
 from grapl_plugin_sdk.analyzer.query_and_views import NodeView
 from grpc import aio as grpc_aio  # type: ignore
@@ -75,9 +75,18 @@ class AnalyzerServiceImpl:
         request: analyzer_messages.RunAnalyzerRequest,
         context: grpc_aio.ServicerContext,
     ) -> analyzer_messages.RunAnalyzerResponse:
+
+        # TODO: Extract a Request ID from context.invocation_metadata()
+        request_id = uuid4()
+        logger = LOGGER.bind(
+            request_id=str(request_id),
+        )
+        logger.debug("run_analyzer on request", request=request)
+
         try:
-            return await self._run_analyzer_inner(request)
+            return await self._run_analyzer_inner(request, logger)
         except Exception as e:
+            logger.error("run_analyzer failed", error=str(e))
             details = f"error_as_grpc_abort exception: {str(e)}"
             code = grpc.StatusCode.UNKNOWN
             await context.abort(
@@ -87,13 +96,10 @@ class AnalyzerServiceImpl:
         raise AssertionError("not reachable")
 
     async def _run_analyzer_inner(
-        self, request: analyzer_messages.RunAnalyzerRequest
+        self, request: analyzer_messages.RunAnalyzerRequest, logger: Structlogger
     ) -> analyzer_messages.RunAnalyzerResponse:
-        # structlog context
-        logger = LOGGER.bind(update_type=type(request.update.inner).__name__)
         match request.update.inner:
             case PropertyUpdate() as prop_update:
-                logger.debug("PropertyUpdate")
                 # optimization
                 # i.e. if the update is for process_name, and you're not querying for
                 # process_name, that's obviously a miss
@@ -142,7 +148,6 @@ class AnalyzerServiceImpl:
             tenant_id=TENANT_ID,
         )
 
-        # todo: Add a timeout here
         execution_hit: analyzer_messages.ExecutionHit | None = await analyzer.analyze(
             root_node, ctx
         )

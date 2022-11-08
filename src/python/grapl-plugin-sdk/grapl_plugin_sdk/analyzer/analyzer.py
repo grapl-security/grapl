@@ -79,7 +79,7 @@ def graph_query_proxy_address() -> str:
     plugin_id = os.environ["PLUGIN_ID"]
     upstream_addr_env_var = f"NOMAD_UPSTREAM_ADDR_graph-query-proxy-{plugin_id}"
     upstream_addr = os.environ[upstream_addr_env_var]
-    return f"http://{upstream_addr}"
+    return upstream_addr
 
 
 def serve_analyzer(
