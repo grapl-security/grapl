@@ -40,7 +40,9 @@ class GraphQueryProxyClient(Connectable):
             node_uid=node_uid,
             graph_query=graph_query,
         )
-        proto_response = self.proto_client.QueryGraphWithUid(request.into_proto())
+        proto_response = self.proto_client.QueryGraphWithUid(
+            request.into_proto(), timeout=5
+        )
         return QueryGraphWithUidResponse.from_proto(proto_response)
 
     def query_from_uid(
@@ -52,5 +54,7 @@ class GraphQueryProxyClient(Connectable):
             node_uid=node_uid,
             graph_query=graph_query,
         )
-        proto_response = self.proto_client.QueryGraphFromUid(request.into_proto())
+        proto_response = self.proto_client.QueryGraphFromUid(
+            request.into_proto(), timeout=5
+        )
         return QueryGraphFromUidResponse.from_proto(proto_response)
