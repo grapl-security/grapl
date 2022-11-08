@@ -149,7 +149,7 @@ async fn test_message_available_after_failure() -> eyre::Result<()> {
     // If we get the job again, it should be None this time.
     let retrieved_job = retrieve_job().await?.execution_job();
     eyre::ensure!(
-        retrieved_job == None,
+        retrieved_job.is_none(),
         "Expected None job: {:?}",
         retrieved_job,
     );

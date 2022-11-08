@@ -53,6 +53,8 @@ pub enum PluginRegistryServiceError {
     StreamInputError(&'static str),
     #[error("DeploymentStateError {0}")]
     DeploymentStateError(String),
+    #[error(transparent)]
+    PluginHealthCheckError(#[from] consul_client::ConsulClientError),
     // TODO: These errs are meant to be human-readable and are not directly
     // sent over the wire, so add {0}s to them!
     #[error("not found")]
@@ -84,6 +86,7 @@ impl From<PluginRegistryServiceError> for Status {
             }
             e @ (Error::NomadClientError(_)
             | Error::NomadCliError(_)
+            | Error::PluginHealthCheckError(_)
             | Error::NomadJobAllocationError(_)) => Status::unknown(e.to_string()),
             Error::StreamInputError(e) => {
                 // Since it's regarding user input, we can de-anonymize this message

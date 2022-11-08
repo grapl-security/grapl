@@ -144,7 +144,7 @@ async fn get_plugin_artifact(payload: &mut Multipart) -> Result<web::Bytes, Plug
 
         // Get form body
         let mut body = web::BytesMut::new();
-        if let Some(chunk) = field.next().await {
+        while let Some(chunk) = field.next().await {
             let chunk = chunk?;
             body.extend_from_slice(&chunk);
         }

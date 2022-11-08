@@ -60,7 +60,7 @@ pub(crate) fn match_property(
                     (true, true) => continue 'outer,
                     (_, _) => (),
                 },
-                StrCmp::Contains(to, negated) => match (negated, property_value.contains(&to)) {
+                StrCmp::Contains(to, negated) => match (negated, property_value.contains(to)) {
                     (false, false) => continue 'outer,
                     (true, true) => continue 'outer,
                     (_, _) => (),

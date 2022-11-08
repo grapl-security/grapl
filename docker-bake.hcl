@@ -147,9 +147,9 @@ group "default" {
 group "grapl-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
+    "plugin-support",
     "python-services",
     "rust-services",
-    "plugin-support",
   ]
 }
 

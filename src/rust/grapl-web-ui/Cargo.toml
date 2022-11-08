@@ -44,7 +44,7 @@ rusoto_dynamodb = { version = "0.47", default_features = false, features = [
 ] }
 rust-proto = { path = "../rust-proto" }
 secrecy = { version = "0.8", features = ["serde"] }
-serde = "1"
+serde = { workspace = true }
 serde_dynamodb = "0.9"
 serde_json = "1"
 thiserror = { workspace = true }
@@ -55,8 +55,8 @@ url = "2.2"
 uuid = { workspace = true }
 
 [dev-dependencies]
-e2e-tests = { path = "../e2e-tests" }
 eyre = { workspace = true }
+integration-test-utils = { path = "../integration-test-utils" }
 reqwest = { version = "0.11", default-features = false, features = [
   "json",
   "cookies",
