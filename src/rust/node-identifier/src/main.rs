@@ -1,6 +1,10 @@
 #![recursion_limit = "1024"]
 
 use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use futures::{
     FutureExt,
     StreamExt,
@@ -16,18 +20,16 @@ use kafka::{
     StreamProcessorError,
 };
 use rusoto_dynamodb::DynamoDbClient;
-use rust_proto::{
-    graplinc::grapl::{
-        api::{
-            graph::v1beta1::{
-                GraphDescription,
-                IdentifiedGraph,
-            },
-            graph_mutation::v1beta1::client::GraphMutationClient,
+use rust_proto::graplinc::grapl::{
+    api::{
+        client::Connect,
+        graph::v1beta1::{
+            GraphDescription,
+            IdentifiedGraph,
         },
-        pipeline::v1beta1::Envelope,
+        graph_mutation::v1beta1::client::GraphMutationClient,
     },
-    protocol::service_client::ConnectWithConfig,
+    pipeline::v1beta1::Envelope,
 };
 use tracing::{
     instrument::WithSubscriber,
@@ -65,9 +67,10 @@ async fn handler() -> eyre::Result<()> {
     let service_config = NodeIdentifierConfig::parse();
     let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(dynamo.clone(), service_config.grapl_dynamic_session_table);
-    let graph_mutation_client =
-        GraphMutationClient::connect_with_config(service_config.graph_mutation_client_config)
-            .await?;
+    let graph_mutation_client_config = Figment::new()
+        .merge(Env::prefixed("GRAPH_MUTATION_CLIENT_"))
+        .extract()?;
+    let graph_mutation_client = GraphMutationClient::connect(graph_mutation_client_config).await?;
 
     let static_mapping_db = StaticMappingDb::new(
         dynamo.clone(),

@@ -15,9 +15,9 @@ use kafka::{
     Producer,
     ProducerError,
 };
-use rust_proto::{
-    graplinc::grapl::{
-        api::pipeline_ingress::v1beta1::{
+use rust_proto::graplinc::grapl::{
+    api::{
+        pipeline_ingress::v1beta1::{
             server::{
                 PipelineIngressApi,
                 PipelineIngressServer,
@@ -25,15 +25,15 @@ use rust_proto::{
             PublishRawLogRequest,
             PublishRawLogResponse,
         },
-        pipeline::v1beta1::{
-            Envelope,
-            RawLog,
+        protocol::{
+            error::ServeError,
+            healthcheck::HealthcheckStatus,
+            status::Status,
         },
     },
-    protocol::{
-        error::ServeError,
-        healthcheck::HealthcheckStatus,
-        status::Status,
+    pipeline::v1beta1::{
+        Envelope,
+        RawLog,
     },
 };
 use thiserror::Error;

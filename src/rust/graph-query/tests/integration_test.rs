@@ -1,58 +1,55 @@
 #![cfg(feature = "integration_tests")]
 use bytes::Bytes;
-use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use graph_query::node_query::NodeQuery;
-use rust_proto::{
-    client_factory::services::{
-        GraphMutationClientConfig,
-        GraphQueryClientConfig,
-        GraphSchemaManagerClientConfig,
-        UidAllocatorClientConfig,
-    },
-    graplinc::grapl::{
-        api::{
-            graph::v1beta1::{
-                ImmutableStrProp,
-                IncrementOnlyUintProp,
-                NodeProperty,
-                Property,
-            },
-            graph_mutation::v1beta1::{
-                client::GraphMutationClient,
-                messages as mutation,
-            },
-            graph_query::v1beta1::{
-                client::GraphQueryClient,
-                messages::{
-                    MatchedGraphWithUid,
-                    MaybeMatchWithUid,
-                    NodePropertyQuery,
-                    QueryGraphFromUidRequest,
-                    QueryGraphWithUidRequest,
-                    StringCmp,
-                },
-            },
-            graph_schema_manager::v1beta1::{
-                client::GraphSchemaManagerClient,
-                messages as graph_schema_manager_api,
-            },
-            uid_allocator::v1beta1::{
-                client::UidAllocatorServiceClient,
-                messages::CreateTenantKeyspaceRequest,
+use rust_proto::graplinc::grapl::{
+    api::{
+        client::Connect,
+        graph::v1beta1::{
+            ImmutableStrProp,
+            IncrementOnlyUintProp,
+            NodeProperty,
+            Property,
+        },
+        graph_mutation::v1beta1::{
+            client::GraphMutationClient,
+            messages as mutation,
+        },
+        graph_query::v1beta1::{
+            client::GraphQueryClient,
+            messages::{
+                MatchedGraphWithUid,
+                MaybeMatchWithUid,
+                NodePropertyQuery,
+                QueryGraphFromUidRequest,
+                QueryGraphWithUidRequest,
+                StringCmp,
             },
         },
-        common::v1beta1::types::{
-            EdgeName,
-            NodeType,
+        graph_schema_manager::v1beta1::{
+            client::GraphSchemaManagerClient,
+            messages as graph_schema_manager_api,
+        },
+        uid_allocator::v1beta1::{
+            client::UidAllocatorClient,
+            messages::CreateTenantKeyspaceRequest,
         },
     },
-    protocol::service_client::ConnectWithConfig,
+    common::v1beta1::types::{
+        EdgeName,
+        NodeType,
+    },
 };
 
 async fn provision_example_graph_schema(tenant_id: uuid::Uuid) -> eyre::Result<()> {
-    let graph_schema_manager_client_config = GraphSchemaManagerClientConfig::parse();
+    let graph_schema_manager_client_config = Figment::new()
+        .merge(Env::prefixed("GRAPH_SCHEMA_MANAGER_CLIENT_"))
+        .extract()?;
     let mut graph_schema_manager_client =
-        GraphSchemaManagerClient::connect_with_config(graph_schema_manager_client_config).await?;
+        GraphSchemaManagerClient::connect(graph_schema_manager_client_config).await?;
 
     fn get_example_graphql_schema() -> Result<Bytes, std::io::Error> {
         // This path is created in rust/Dockerfile
@@ -86,22 +83,25 @@ impl GraphQueryIntegTestSetup {
             "tenant_id", tenant_id=?tracing::field::Empty,
         );
 
-        let query_client_config = GraphQueryClientConfig::parse();
-        let graph_query_client = GraphQueryClient::connect_with_config(query_client_config).await?;
+        let query_client_config = Figment::new()
+            .merge(Env::prefixed("GRAPH_QUERY_CLIENT_"))
+            .extract()?;
+        let graph_query_client = GraphQueryClient::connect(query_client_config).await?;
 
-        let mutation_client_config = GraphMutationClientConfig::parse();
-        let graph_mutation_client =
-            GraphMutationClient::connect_with_config(mutation_client_config).await?;
+        let mutation_client_config = Figment::new()
+            .merge(Env::prefixed("GRAPH_MUTATION_CLIENT_"))
+            .extract()?;
+        let graph_mutation_client = GraphMutationClient::connect(mutation_client_config).await?;
+
+        let uid_allocator_client_config = Figment::new()
+            .merge(Env::prefixed("UID_ALLOCATOR_CLIENT_"))
+            .extract()?;
+        let mut uid_allocator_client =
+            UidAllocatorClient::connect(uid_allocator_client_config).await?;
 
         let tenant_id = uuid::Uuid::new_v4();
         _span.record("tenant_id", &format!("{tenant_id}"));
 
-        // Only used to provision the keyspace. It's okay here to use the
-        // otherwise-unrecommended non-caching UidAllocator client.
-
-        let mut uid_allocator_client =
-            UidAllocatorServiceClient::connect_with_config(UidAllocatorClientConfig::parse())
-                .await?;
         uid_allocator_client
             .create_tenant_keyspace(CreateTenantKeyspaceRequest { tenant_id })
             .await?;

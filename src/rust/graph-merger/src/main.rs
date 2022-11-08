@@ -1,4 +1,8 @@
 use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use futures::{
     FutureExt,
     StreamExt,
@@ -11,25 +15,19 @@ use kafka::{
     },
     StreamProcessor,
 };
-use rust_proto::{
-    graplinc::grapl::api::{
-        graph::v1beta1::IdentifiedGraph,
-        graph_mutation::v1beta1::client::GraphMutationClient,
-        plugin_sdk::analyzers::v1beta1::messages::Update,
-    },
-    protocol::service_client::ConnectWithConfig,
+use rust_proto::graplinc::grapl::api::{
+    client::Connect,
+    graph::v1beta1::IdentifiedGraph,
+    graph_mutation::v1beta1::client::GraphMutationClient,
+    plugin_sdk::analyzers::v1beta1::messages::Update,
 };
 use tracing::instrument::WithSubscriber;
 
-use crate::{
-    config::GraphMergerConfig,
-    service::{
-        GraphMerger,
-        GraphMergerError,
-    },
+use crate::service::{
+    GraphMerger,
+    GraphMergerError,
 };
 
-pub mod config;
 pub mod service;
 
 const SERVICE_NAME: &'static str = "graph-merger";
@@ -38,10 +36,10 @@ const SERVICE_NAME: &'static str = "graph-merger";
 async fn main() -> eyre::Result<()> {
     let _guard = setup_tracing(SERVICE_NAME)?;
 
-    let service_config = GraphMergerConfig::parse();
-    let graph_mutation_client =
-        GraphMutationClient::connect_with_config(service_config.graph_mutation_client_config)
-            .await?;
+    let graph_mutation_client_config = Figment::new()
+        .merge(Env::prefixed("GRAPH_MUTATION_CLIENT_"))
+        .extract()?;
+    let graph_mutation_client = GraphMutationClient::connect(graph_mutation_client_config).await?;
     let graph_merger = GraphMerger::new(graph_mutation_client);
 
     let consumer_config = ConsumerConfig::parse();

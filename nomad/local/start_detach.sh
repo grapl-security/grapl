@@ -24,7 +24,7 @@ ensure_cros_bridge_networking_workaround() {
         if ! grep -q "_/bridge.ko" "$module_filepath"; then
             echo "It looks like you're on ChromeOS, but haven't installed the Nomad bridge networking workaround."
             # shellcheck source-path=SCRIPTDIR
-            source "${THIS_DIR}/../../etc/chromeos/lib/installs.sh"
+            source "${THIS_DIR}/../../etc/deb_linux/lib/installs.sh"
             (
                 install_nomad_chromeos_workaround
             )
@@ -38,7 +38,7 @@ ensure_firecracker_driver_installed() {
     if [[ ! -f "${expected_cni_path}" ]]; then
         echo "It looks like you don't have the Firecracker nomad stuff set up yet."
         # shellcheck source-path=SCRIPTDIR
-        source "${THIS_DIR}/../../etc/chromeos/lib/installs.sh"
+        source "${THIS_DIR}/../../etc/deb_linux/lib/installs.sh"
         (install_nomad_firecracker)
         echo "Continuing..."
     fi

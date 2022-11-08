@@ -1,68 +1,49 @@
-use std::time::Duration;
+use tonic::transport::Endpoint;
 
-use client_executor::{
-    Executor,
-    ExecutorConfig,
-};
-use generator_service_client::GeneratorServiceClient as GeneratorServiceClientProto;
-
-pub use crate::protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1::generator_service_client;
 use crate::{
-    client_factory::services::GeneratorClientConfig,
-    client_macros::RpcConfig,
-    create_proto_client,
-    execute_client_rpc,
-    graplinc::grapl::api::plugin_sdk::generators::v1beta1 as native,
-    protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as proto,
-    protocol::{
-        endpoint::Endpoint,
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
+    graplinc::grapl::api::{
+        client::{
+            Client,
+            ClientError,
             Connectable,
+            WithClient,
         },
+        plugin_sdk::generators::v1beta1 as native,
     },
+    protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1::generator_service_client::GeneratorServiceClient,
 };
 
-#[derive(Clone)]
-pub struct GeneratorServiceClient {
-    executor: Executor,
-    proto_client: GeneratorServiceClientProto<tonic::transport::Channel>,
-}
 #[async_trait::async_trait]
-impl Connectable for GeneratorServiceClient {
-    type Config = GeneratorClientConfig;
-    const SERVICE_NAME: &'static str =
-        "graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratorService";
-
-    #[tracing::instrument(err)]
-    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = create_proto_client!(
-            executor,
-            GeneratorServiceClientProto<tonic::transport::Channel>,
-            endpoint,
-        );
-        Ok(GeneratorServiceClient {
-            executor,
-            proto_client,
-        })
+impl Connectable for GeneratorServiceClient<tonic::transport::Channel> {
+    async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+        Ok(Self::connect(endpoint).await?)
     }
 }
 
-impl GeneratorServiceClient {
+#[derive(Clone)]
+pub struct GeneratorClient {
+    client: Client<GeneratorServiceClient<tonic::transport::Channel>>,
+}
+
+impl WithClient<GeneratorServiceClient<tonic::transport::Channel>> for GeneratorClient {
+    fn with_client(client: Client<GeneratorServiceClient<tonic::transport::Channel>>) -> Self {
+        Self { client }
+    }
+}
+
+impl GeneratorClient {
     #[tracing::instrument(skip(self, request), err)]
     pub async fn run_generator(
         &mut self,
         request: native::RunGeneratorRequest,
-    ) -> Result<native::RunGeneratorResponse, GrpcClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            run_generator,
-            proto::RunGeneratorRequest,
-            native::RunGeneratorResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::RunGeneratorResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.run_generator(request).await },
+            )
+            .await
     }
 }

@@ -5,9 +5,9 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.53"
-chrono = "0.4.19"
 clap = { workspace = true }
 dashmap = "5.2.0"
+figment = { workspace = true }
 futures = "0.3.21"
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
@@ -16,7 +16,7 @@ opentelemetry = { workspace = true }
 opentelemetry-jaeger = { workspace = true }
 rand = "0.8.5"
 rust-proto = { path = "../rust-proto" }
-serde = { version = "1.0.136", features = ["derive"] }
+serde = { workspace = true }
 sqlx = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
@@ -30,7 +30,6 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
 uuid = { workspace = true }
 
 [dev-dependencies]
-env_logger = { workspace = true }
 eyre = { workspace = true }
 tracing-subscriber = "0.3.2"
 

@@ -66,7 +66,7 @@ impl TestApp {
 
             if status_code >= 500 && status_code <= 599 {
                 // We recevied a 500 error, wait a moment before trying the request again
-                println!("Error: {:?}", response);
+                println!("5xx Error: {:?}", response);
 
                 let one_sec = std::time::Duration::from_secs(1);
                 std::thread::sleep(one_sec);

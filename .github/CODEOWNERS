@@ -59,6 +59,7 @@ BUILD @christophermaier
 /src/rust/async-cache/ @jgrillo-grapl
 /src/rust/analyzer-dispatcher/ @jgrillo-grapl
 /src/rust/client-executor/ @colin-grapl
+/src/rust/consul-client/ @wimax-grapl
 /src/rust/consul-connect/ @colin-grapl @wimax-grapl
 /src/rust/derive-dynamic-node/ @colin-grapl
 /src/rust/e2e-tests/ @wimax-grapl
@@ -73,9 +74,11 @@ BUILD @christophermaier
 /src/rust/graph-schema-manager @colin-grapl @wimax-grapl
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
+/src/rust/grapl-metrics/ @wimax-grapl
 /src/rust/grapl-tracing/ @wimax-grapl
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/grapl-web-ui/ @inickles-grapl
+/src/rust/integration-test-utils/ @wimax-grapl
 /src/rust/kafka/ @grapl-security/wg-data-infra
 /src/rust/kafka-retry/ @jgrillo-grapl
 /src/rust/node-identifier/ @grapl-security/wg-data-infra

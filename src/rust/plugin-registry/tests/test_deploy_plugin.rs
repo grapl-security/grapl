@@ -2,16 +2,25 @@
 
 use std::time::Duration;
 
-use clap::Parser;
-use e2e_tests::test_fixtures::{
-    get_example_generator,
-    get_suspicious_svchost_analyzer,
-    get_sysmon_generator,
+use figment::{
+    providers::Env,
+    Figment,
 };
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto::{
-    client_factory::services::PluginRegistryClientConfig,
-    graplinc::grapl::api::plugin_registry::v1beta1::{
+use integration_test_utils::{
+    plugin_health::assert_eventual_health,
+    test_fixtures::{
+        get_example_generator,
+        get_suspicious_svchost_analyzer,
+        get_sysmon_generator,
+    },
+};
+use rust_proto::graplinc::grapl::api::{
+    client::{
+        ClientError,
+        Connect,
+    },
+    plugin_registry::v1beta1::{
         DeployPluginRequest,
         GetPluginDeploymentRequest,
         GetPluginHealthRequest,
@@ -19,21 +28,19 @@ use rust_proto::{
         PluginDeploymentStatus,
         PluginHealthStatus,
         PluginMetadata,
-        PluginRegistryServiceClient,
+        PluginRegistryClient,
         PluginType,
         TearDownPluginRequest,
     },
-    protocol::{
-        error::GrpcClientError,
-        service_client::ConnectWithConfig,
-        status::Code,
-    },
+    protocol::status::Code,
 };
 
 #[test_log::test(tokio::test)]
 async fn test_deploy_example_generator() -> eyre::Result<()> {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -50,10 +57,11 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
-            .timeout(std::time::Duration::from_secs(5))
+            .timeout(Duration::from_secs(5))
             .await??
     };
 
@@ -63,7 +71,7 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
 
     let _response = client
         .deploy_plugin(request)
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
 
     let plugin_deployment = client
@@ -80,8 +88,10 @@ async fn test_deploy_example_generator() -> eyre::Result<()> {
 
 #[test_log::test(tokio::test)]
 async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -98,10 +108,11 @@ async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
-            .timeout(std::time::Duration::from_secs(5))
+            .timeout(Duration::from_secs(5))
             .await??
     };
 
@@ -110,29 +121,37 @@ async fn test_deploy_sysmon_generator() -> eyre::Result<()> {
     // Ensure that an un-deployed plugin is NotDeployed
     assert_health(&mut client, plugin_id, PluginHealthStatus::NotDeployed).await?;
 
+    tracing::info!(
+        message = "test_deploy_sysmon_generator IDs",
+        tenant_id =? tenant_id,
+        plugin_id =? plugin_id,
+    );
+
     let _deploy_response = client
         .deploy_plugin(DeployPluginRequest::new(plugin_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
-
-    // Let the task run for a bit. Tasks may potentially restart - e.g. if the
-    // sidecar comes up before the main task, it'll panic because it expected a
-    // healthy main-task health check.
-    // Anyway: we let it run for a bit and _then_ check task health.
-    tokio::time::sleep(Duration::from_secs(15)).await;
 
     // Ensure that a now-deployed plugin is now Running
     // If it's Pending, it's possible the agent is out of mem or disk
     // and was unable to allocate it.
-    assert_health(&mut client, plugin_id, PluginHealthStatus::Running).await?;
+    assert_eventual_health(
+        &client,
+        plugin_id,
+        PluginHealthStatus::Running,
+        Duration::from_secs(60),
+    )
+    .await?;
 
     Ok(())
 }
 
 #[test_log::test(tokio::test)]
 async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 
@@ -148,10 +167,11 @@ async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
-            .timeout(std::time::Duration::from_secs(5))
+            .timeout(Duration::from_secs(5))
             .await??
     };
 
@@ -162,19 +182,19 @@ async fn test_deploy_suspicious_svchost_analyzer() -> eyre::Result<()> {
 
     let _deploy_response = client
         .deploy_plugin(DeployPluginRequest::new(plugin_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
-
-    // Let the task run for a bit. Tasks may potentially restart - e.g. if the
-    // sidecar comes up before the main task, it'll panic because it expected a
-    // healthy main-task health check.
-    // Anyway: we let it run for a bit and _then_ check task health.
-    tokio::time::sleep(Duration::from_secs(15)).await;
 
     // Ensure that a now-deployed plugin is now Running
     // If it's Pending, it's possible the agent is out of mem or disk
     // and was unable to allocate it.
-    assert_health(&mut client, plugin_id, PluginHealthStatus::Running).await?;
+    assert_eventual_health(
+        &client,
+        plugin_id,
+        PluginHealthStatus::Running,
+        Duration::from_secs(60),
+    )
+    .await?;
 
     Ok(())
 }
@@ -187,13 +207,13 @@ fn assert_contains(input: &str, expected_substr: &str) {
 }
 
 async fn assert_health(
-    client: &mut PluginRegistryServiceClient,
+    client: &mut PluginRegistryClient,
     plugin_id: uuid::Uuid,
     expected: PluginHealthStatus,
 ) -> eyre::Result<()> {
     let get_health_response: GetPluginHealthResponse = client
         .get_plugin_health(GetPluginHealthRequest::new(plugin_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await??;
 
     let actual = get_health_response.health_status();
@@ -208,8 +228,10 @@ async fn assert_health(
 /// So we *expect* this call to fail since it's an arbitrary PluginID that
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config).await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
+        .extract()?;
+    let mut client = PluginRegistryClient::connect(client_config).await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 
@@ -217,11 +239,11 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
 
     let response = client
         .deploy_plugin(request)
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await?;
 
     match response {
-        Err(GrpcClientError::ErrorStatus(s)) => {
+        Err(ClientError::Status(s)) => {
             assert_eq!(s.code(), Code::NotFound);
             assert_contains(s.message(), &sqlx::Error::RowNotFound.to_string());
         }
@@ -232,10 +254,13 @@ async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> eyre::Result<()> {
 
 #[test_log::test(tokio::test)]
 async fn test_teardown_plugin() {
-    let client_config = PluginRegistryClientConfig::parse();
-    let mut client = PluginRegistryServiceClient::connect_with_config(client_config)
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_REGISTRY_CLIENT_"))
+        .extract()
+        .expect("failed to configure plugin-registry client");
+    let mut client = PluginRegistryClient::connect(client_config)
         .await
-        .expect("failed to build grpc client");
+        .expect("failed to connect to plugin-registry");
 
     let tenant_id = uuid::Uuid::new_v4();
     let event_source_id = uuid::Uuid::new_v4();
@@ -252,10 +277,11 @@ async fn test_teardown_plugin() {
 
         client
             .create_plugin(
+                Duration::from_secs(60),
                 metadata,
                 futures::stream::once(async move { artifact.clone() }),
             )
-            .timeout(std::time::Duration::from_secs(5))
+            .timeout(Duration::from_secs(5))
             .await
             .expect("timeout elapsed")
             .expect("failed to create plugin")
@@ -270,14 +296,14 @@ async fn test_teardown_plugin() {
 
     client
         .deploy_plugin(DeployPluginRequest::new(plugin_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await
         .expect("timeout elapsed")
         .expect("failed to deploy plugin");
 
     client
         .tear_down_plugin(TearDownPluginRequest::new(plugin_id))
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .await
         .expect("timeout elapsed")
         .expect("failed to tear down plugin");

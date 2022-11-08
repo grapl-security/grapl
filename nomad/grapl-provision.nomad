@@ -34,6 +34,14 @@ variable "container_images" {
 EOF
 }
 
+variable "container_versions" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to that task's docker image version.
+  (See DockerImageVersion in Pulumi for further documentation.)
+EOF
+}
+
 variable "aws_region" {
   type = string
 }
@@ -74,10 +82,7 @@ locals {
   # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
   # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
   # Examples of keys we may add in the future: language, instance_id/ip, team
-
-  # Currently we use the same version for all containers. As such we pick one container to get the version from
-  app_version                      = split(":", var.container_images["provisioner"])[1]
-  default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
+  default_otel_resource_attributes = "host.hostname=${attr.unique.hostname}"
 }
 
 job "grapl-provision" {
@@ -135,7 +140,7 @@ job "grapl-provision" {
         # cannot explain it at all.
         SCYLLA_PROVISIONER_CLIENT_ADDRESS = "${NOMAD_UPSTREAM_ADDR_scylla-provisioner}"
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["provisioner"]}"
       }
     }
 

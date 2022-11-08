@@ -1,0 +1,23 @@
+[package]
+name = "integration-test-utils"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1"
+bytes = { workspace = true }
+clap = { workspace = true }
+eyre = { workspace = true }
+figment = { workspace = true }
+futures = "0.3"
+grapl-config = { path = "../grapl-config" }
+grapl-tracing = { path = "../grapl-tracing" }
+grapl-utils = { path = "../grapl-utils" }
+kafka = { path = "../kafka", features = ["test-utils"] }
+plugin-work-queue = { path = "../plugin-work-queue", features = ["test-utils"] }
+rust-proto = { path = "../rust-proto" }
+test-context = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }

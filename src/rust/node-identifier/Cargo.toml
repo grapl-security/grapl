@@ -22,6 +22,7 @@ chrono = "0.4"
 clap = { workspace = true }
 eyre = { workspace = true }
 failure = "0.1"
+figment = { workspace = true }
 futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
@@ -37,7 +38,7 @@ rusoto_dynamodb = { version = "0.47", default_features = false, features = [
   "rustls"
 ] }
 rust-proto = { path = "../rust-proto", version = "*" }
-serde = "1.0"
+serde = { workspace = true }
 serde_dynamodb = { version = "0.9", default_features = false, features = [
   "rustls"
 ] }
@@ -51,12 +52,11 @@ tokio = { version = "1.17", features = [
   "time",
 ] }
 tracing = { workspace = true }
-uid-allocator = { path = "../uid-allocator" }
 uuid = { workspace = true }
 
 [dev-dependencies]
 async-trait = "0.1"
-e2e-tests = { path = "../e2e-tests" }
+integration-test-utils = { path = "../integration-test-utils" }
 kafka = { path = "../kafka", features = ["test-utils"] }
 rand = "0.8"
 test-context = { workspace = true }

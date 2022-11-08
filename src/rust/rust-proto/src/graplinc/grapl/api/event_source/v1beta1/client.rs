@@ -1,102 +1,79 @@
-use std::time::Duration;
-
-use client_executor::{
-    Executor,
-    ExecutorConfig,
-};
+use tonic::transport::Endpoint;
 
 use crate::{
-    client_factory::services::EventSourceClientConfig,
-    client_macros::RpcConfig,
-    create_proto_client,
-    execute_client_rpc,
-    graplinc::grapl::api::event_source::v1beta1 as native,
-    protobufs::graplinc::grapl::api::event_source::v1beta1::{
-        self as proto,
-        event_source_service_client::EventSourceServiceClient as EventSourceServiceClientProto,
-    },
-    protocol::{
-        endpoint::Endpoint,
-        error::GrpcClientError,
-        service_client::{
-            ConnectError,
+    graplinc::grapl::api::{
+        client::{
+            Client,
+            ClientError,
             Connectable,
+            WithClient,
         },
+        event_source::v1beta1 as native,
     },
+    protobufs::graplinc::grapl::api::event_source::v1beta1::event_source_service_client::EventSourceServiceClient,
 };
 
-pub type EventSourceServiceClientError = GrpcClientError;
-
-#[derive(Clone)]
-pub struct EventSourceServiceClient {
-    proto_client: EventSourceServiceClientProto<tonic::transport::Channel>,
-    executor: Executor,
-}
-
 #[async_trait::async_trait]
-impl Connectable for EventSourceServiceClient {
-    type Config = EventSourceClientConfig;
-    const SERVICE_NAME: &'static str = "graplinc.grapl.api.event_source.v1beta1.EventSourceService";
-
-    #[tracing::instrument(err)]
-    async fn connect_with_endpoint(endpoint: Endpoint) -> Result<Self, ConnectError> {
-        let executor = Executor::new(ExecutorConfig::new(Duration::from_secs(30)));
-        let proto_client = create_proto_client!(
-            executor,
-            EventSourceServiceClientProto<tonic::transport::Channel>,
-            endpoint,
-        );
-
-        Ok(EventSourceServiceClient {
-            executor,
-            proto_client,
-        })
+impl Connectable for EventSourceServiceClient<tonic::transport::Channel> {
+    async fn connect(endpoint: Endpoint) -> Result<Self, ClientError> {
+        Ok(Self::connect(endpoint).await?)
     }
 }
 
-impl EventSourceServiceClient {
+#[derive(Clone)]
+pub struct EventSourceClient {
+    client: Client<EventSourceServiceClient<tonic::transport::Channel>>,
+}
+
+impl WithClient<EventSourceServiceClient<tonic::transport::Channel>> for EventSourceClient {
+    fn with_client(client: Client<EventSourceServiceClient<tonic::transport::Channel>>) -> Self {
+        Self { client }
+    }
+}
+
+impl EventSourceClient {
     #[tracing::instrument(skip(self, request), err)]
     pub async fn create_event_source(
         &mut self,
         request: native::CreateEventSourceRequest,
-    ) -> Result<native::CreateEventSourceResponse, EventSourceServiceClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            create_event_source,
-            proto::CreateEventSourceRequest,
-            native::CreateEventSourceResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::CreateEventSourceResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.create_event_source(request).await },
+            )
+            .await
     }
 
     #[tracing::instrument(skip(self, request), err)]
     pub async fn update_event_source(
         &mut self,
         request: native::UpdateEventSourceRequest,
-    ) -> Result<native::UpdateEventSourceResponse, EventSourceServiceClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            update_event_source,
-            proto::UpdateEventSourceRequest,
-            native::UpdateEventSourceResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::UpdateEventSourceResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.update_event_source(request).await },
+            )
+            .await
     }
 
     #[tracing::instrument(skip(self, request), err)]
     pub async fn get_event_source(
         &mut self,
         request: native::GetEventSourceRequest,
-    ) -> Result<native::GetEventSourceResponse, EventSourceServiceClientError> {
-        execute_client_rpc!(
-            self,
-            request,
-            get_event_source,
-            proto::GetEventSourceRequest,
-            native::GetEventSourceResponse,
-            RpcConfig::default(),
-        )
+    ) -> Result<native::GetEventSourceResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.get_event_source(request).await },
+            )
+            .await
     }
 }

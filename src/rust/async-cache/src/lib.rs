@@ -144,7 +144,7 @@ where
     ///   - AsyncCacheError::Fatal - something happened which has "poisoned" the
     ///     AsyncCache instance such that all future calls to this method will
     ///     fail.
-    //#[tracing::instrument(skip(self, key))]
+    #[tracing::instrument(skip(self, key), err)]
     pub async fn get(&mut self, key: K) -> Result<Option<V>, AsyncCacheError> {
         if let Some(value) = self.cache.get(&key) {
             Ok(Some(value)) // cache hit

@@ -3,7 +3,10 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use clap::Parser;
+use figment::{
+    providers::Env,
+    Figment,
+};
 use grapl_tracing::{
     setup_tracing,
     WorkerGuard,
@@ -12,19 +15,18 @@ use kafka::{
     config::ConsumerConfig,
     test_utils::topic_scanner::KafkaTopicScanner,
 };
-use rust_proto::{
-    client_factory::services::PipelineIngressClientConfig,
-    graplinc::grapl::{
-        api::pipeline_ingress::v1beta1::{
+use rust_proto::graplinc::grapl::{
+    api::{
+        client::Connect,
+        pipeline_ingress::v1beta1::{
             client::PipelineIngressClient,
             PublishRawLogRequest,
         },
-        pipeline::v1beta1::{
-            Envelope,
-            RawLog,
-        },
     },
-    protocol::service_client::ConnectWithConfig,
+    pipeline::v1beta1::{
+        Envelope,
+        RawLog,
+    },
 };
 use test_context::{
     test_context,
@@ -44,10 +46,13 @@ impl AsyncTestContext for PipelineIngressTestContext {
     async fn setup() -> Self {
         let _guard = setup_tracing("pipeline-ingress-integration-tests").expect("setup_tracing");
 
-        let client_config = PipelineIngressClientConfig::parse();
-        let pipeline_ingress_client = PipelineIngressClient::connect_with_config(client_config)
+        let client_config = Figment::new()
+            .merge(Env::prefixed("PIPELINE_INGRESS_CLIENT_"))
+            .extract()
+            .expect("failed to configure pipeline ingress client");
+        let pipeline_ingress_client = PipelineIngressClient::connect(client_config)
             .await
-            .expect("pipeline_ingress_client");
+            .expect("failed to connect to pipeline ingress");
 
         PipelineIngressTestContext {
             grpc_client: pipeline_ingress_client,

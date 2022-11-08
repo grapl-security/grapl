@@ -13,7 +13,9 @@ name = "plugin_registry"
 [dependencies]
 async-trait = "0.1"
 bytes = { workspace = true }
+consul-client = { path = "../consul-client" }
 clap = { workspace = true }
+figment = { workspace = true }
 futures = "0.3"
 futures-retry = "0.6"
 grapl-config = { path = "../grapl-config" }
@@ -36,9 +38,8 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-e2e-tests = { path = "../e2e-tests" }
-env_logger = { workspace = true }
 eyre = { workspace = true }
+integration-test-utils = { path = "../integration-test-utils" }
 test-log = { workspace = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",

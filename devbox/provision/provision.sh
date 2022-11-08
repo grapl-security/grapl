@@ -154,7 +154,7 @@ source "${GRAPL_DEVBOX_CONFIG}"
         # Gotta do the https because our ssh key can't read from github
         git clone https://github.com/grapl-security/grapl.git
         cd grapl
-        ./etc/chromeos/setup_chromeos.sh
+        ./etc/deb_linux/setup_linux.sh
     fi
 EOF
     )"

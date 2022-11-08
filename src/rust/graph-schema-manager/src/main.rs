@@ -7,8 +7,8 @@ use graph_schema_manager::{
     server::GraphSchemaManager,
 };
 use grapl_config::PostgresClient;
-use rust_proto::{
-    graplinc::grapl::api::graph_schema_manager::v1beta1::server::GraphSchemaManagerServer,
+use rust_proto::graplinc::grapl::api::{
+    graph_schema_manager::v1beta1::server::GraphSchemaManagerServer,
     protocol::healthcheck::HealthcheckStatus,
 };
 use tokio::net::TcpListener;

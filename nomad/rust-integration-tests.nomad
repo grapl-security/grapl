@@ -9,6 +9,14 @@ variable "container_images" {
 EOF
 }
 
+variable "container_versions" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to that task's docker image version.
+  (See DockerImageVersion in Pulumi for further documentation.)
+EOF
+}
+
 variable "aws_region" {
   type = string
 }
@@ -55,6 +63,14 @@ variable "kafka_credentials" {
   })
 }
 
+variable "observability_env_vars" {
+  type        = string
+  description = <<EOF
+With local-grapl, we have to inject env vars for Opentelemetry.
+In prod, this is currently disabled.
+EOF
+}
+
 variable "rust_log" {
   type        = string
   description = "Controls the logging behavior of Rust-based services."
@@ -92,6 +108,11 @@ variable "plugin_work_queue_db" {
 
 locals {
   dns_servers = [attr.unique.network.ip-address]
+
+  # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
+  # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
+  # Examples of keys we may add in the future: language, instance_id/ip, team
+  default_otel_resource_attributes = "host.hostname=${attr.unique.hostname}"
 }
 
 job "rust-integration-tests" {
@@ -192,7 +213,12 @@ job "rust-integration-tests" {
         image = var.container_images["rust-integration-tests"]
       }
 
-      # This writes an env file that gets read by the task automatically
+      template {
+        data        = var.observability_env_vars
+        destination = "observability.env"
+        env         = true
+      }
+
       template {
         data        = var.aws_env_vars_for_local
         destination = "aws-env-vars-for-local.env"
@@ -204,6 +230,8 @@ job "rust-integration-tests" {
 
         RUST_BACKTRACE = 1
         RUST_LOG       = var.rust_log
+
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["rust-integration-tests"]}"
 
         # web-ui
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table
@@ -217,16 +245,115 @@ job "rust-integration-tests" {
 
         ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
-        EVENT_SOURCE_CLIENT_ADDRESS            = "http://${NOMAD_UPSTREAM_ADDR_event-source}"
-        GRAPH_QUERY_CLIENT_ADDRESS             = "http://${NOMAD_UPSTREAM_ADDR_graph-query}"
-        GRAPH_MUTATION_CLIENT_ADDRESS          = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
-        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS    = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
-        ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
-        PIPELINE_INGRESS_CLIENT_ADDRESS        = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
-        PLUGIN_REGISTRY_CLIENT_ADDRESS         = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
-        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS       = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
-        SCYLLA_PROVISIONER_CLIENT_ADDRESS      = "http://${NOMAD_UPSTREAM_ADDR_scylla-provisioner}"
-        UID_ALLOCATOR_CLIENT_ADDRESS           = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
+        EVENT_SOURCE_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_event-source}"
+        EVENT_SOURCE_CLIENT_REQUEST_TIMEOUT               = "5s"
+        EVENT_SOURCE_CLIENT_EXECUTOR_TIMEOUT              = "5s"
+        EVENT_SOURCE_CLIENT_CONCURRENCY_LIMIT             = 16
+        EVENT_SOURCE_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        EVENT_SOURCE_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        EVENT_SOURCE_CLIENT_CONNECT_TIMEOUT               = "5s"
+        EVENT_SOURCE_CLIENT_CONNECT_RETRIES               = 10
+        EVENT_SOURCE_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        EVENT_SOURCE_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        GRAPH_QUERY_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_graph-query}"
+        GRAPH_QUERY_CLIENT_REQUEST_TIMEOUT               = "5s"
+        GRAPH_QUERY_CLIENT_EXECUTOR_TIMEOUT              = "5s"
+        GRAPH_QUERY_CLIENT_CONCURRENCY_LIMIT             = 16
+        GRAPH_QUERY_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        GRAPH_QUERY_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        GRAPH_QUERY_CLIENT_CONNECT_TIMEOUT               = "5s"
+        GRAPH_QUERY_CLIENT_CONNECT_RETRIES               = 10
+        GRAPH_QUERY_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        GRAPH_QUERY_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        GRAPH_MUTATION_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
+        GRAPH_MUTATION_CLIENT_REQUEST_TIMEOUT               = "5s"
+        GRAPH_MUTATION_CLIENT_EXECUTOR_TIMEOUT              = "5s"
+        GRAPH_MUTATION_CLIENT_CONCURRENCY_LIMIT             = 16
+        GRAPH_MUTATION_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        GRAPH_MUTATION_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        GRAPH_MUTATION_CLIENT_CONNECT_TIMEOUT               = "5s"
+        GRAPH_MUTATION_CLIENT_CONNECT_RETRIES               = 10
+        GRAPH_MUTATION_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        GRAPH_MUTATION_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
+        GRAPH_SCHEMA_MANAGER_CLIENT_REQUEST_TIMEOUT               = "5s"
+        GRAPH_SCHEMA_MANAGER_CLIENT_EXECUTOR_TIMEOUT              = "5s"
+        GRAPH_SCHEMA_MANAGER_CLIENT_CONCURRENCY_LIMIT             = 16
+        GRAPH_SCHEMA_MANAGER_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        GRAPH_SCHEMA_MANAGER_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        GRAPH_SCHEMA_MANAGER_CLIENT_CONNECT_TIMEOUT               = "5s"
+        GRAPH_SCHEMA_MANAGER_CLIENT_CONNECT_RETRIES               = 10
+        GRAPH_SCHEMA_MANAGER_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        GRAPH_SCHEMA_MANAGER_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        ORGANIZATION_MANAGEMENT_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_organization-management}"
+        ORGANIZATION_MANAGEMENT_CLIENT_REQUEST_TIMEOUT               = "5s"
+        ORGANIZATION_MANAGEMENT_CLIENT_EXECUTOR_TIMEOUT              = "5s"
+        ORGANIZATION_MANAGEMENT_CLIENT_CONCURRENCY_LIMIT             = 16
+        ORGANIZATION_MANAGEMENT_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        ORGANIZATION_MANAGEMENT_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        ORGANIZATION_MANAGEMENT_CLIENT_CONNECT_TIMEOUT               = "5s"
+        ORGANIZATION_MANAGEMENT_CLIENT_CONNECT_RETRIES               = 10
+        ORGANIZATION_MANAGEMENT_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        ORGANIZATION_MANAGEMENT_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        PIPELINE_INGRESS_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
+        PIPELINE_INGRESS_CLIENT_REQUEST_TIMEOUT               = "5s"
+        PIPELINE_INGRESS_CLIENT_EXECUTOR_TIMEOUT              = "5s"
+        PIPELINE_INGRESS_CLIENT_CONCURRENCY_LIMIT             = 16
+        PIPELINE_INGRESS_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        PIPELINE_INGRESS_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        PIPELINE_INGRESS_CLIENT_CONNECT_TIMEOUT               = "5s"
+        PIPELINE_INGRESS_CLIENT_CONNECT_RETRIES               = 10
+        PIPELINE_INGRESS_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        PIPELINE_INGRESS_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        PLUGIN_REGISTRY_CLIENT_ADDRESS                       = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
+        PLUGIN_REGISTRY_CLIENT_REQUEST_TIMEOUT               = "5s"
+        PLUGIN_REGISTRY_CLIENT_EXECUTOR_TIMEOUT              = "5s"
+        PLUGIN_REGISTRY_CLIENT_CONCURRENCY_LIMIT             = 16
+        PLUGIN_REGISTRY_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        PLUGIN_REGISTRY_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_TIMEOUT               = "5s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_RETRIES               = 10
+        PLUGIN_REGISTRY_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+        PLUGIN_WORK_QUEUE_CLIENT_REQUEST_TIMEOUT               = "5s"
+        PLUGIN_WORK_QUEUE_CLIENT_EXECUTOR_TIMEOUT              = "5s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONCURRENCY_LIMIT             = 16
+        PLUGIN_WORK_QUEUE_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        PLUGIN_WORK_QUEUE_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_TIMEOUT               = "5s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_RETRIES               = 10
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        SCYLLA_PROVISIONER_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_scylla-provisioner}"
+        SCYLLA_PROVISIONER_CLIENT_REQUEST_TIMEOUT               = "5s"
+        SCYLLA_PROVISIONER_CLIENT_EXECUTOR_TIMEOUT              = "5s"
+        SCYLLA_PROVISIONER_CLIENT_CONCURRENCY_LIMIT             = 16
+        SCYLLA_PROVISIONER_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        SCYLLA_PROVISIONER_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        SCYLLA_PROVISIONER_CLIENT_CONNECT_TIMEOUT               = "5s"
+        SCYLLA_PROVISIONER_CLIENT_CONNECT_RETRIES               = 10
+        SCYLLA_PROVISIONER_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        SCYLLA_PROVISIONER_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        UID_ALLOCATOR_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
+        UID_ALLOCATOR_CLIENT_REQUEST_TIMEOUT               = "5s"
+        UID_ALLOCATOR_CLIENT_EXECUTOR_TIMEOUT              = "5s"
+        UID_ALLOCATOR_CLIENT_CONCURRENCY_LIMIT             = 16
+        UID_ALLOCATOR_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        UID_ALLOCATOR_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        UID_ALLOCATOR_CLIENT_CONNECT_TIMEOUT               = "5s"
+        UID_ALLOCATOR_CLIENT_CONNECT_RETRIES               = 10
+        UID_ALLOCATOR_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        UID_ALLOCATOR_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
 
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_group

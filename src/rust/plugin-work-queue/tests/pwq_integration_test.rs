@@ -2,23 +2,26 @@
 
 use std::time::Duration;
 
-use clap::Parser;
-use rust_proto::{
-    client_factory::services::PluginWorkQueueClientConfig,
-    graplinc::grapl::api::plugin_work_queue::v1beta1::{
+use figment::{
+    providers::Env,
+    Figment,
+};
+use rust_proto::graplinc::grapl::api::{
+    client::Connect,
+    plugin_work_queue::v1beta1::{
         ExecutionJob,
         GetExecuteGeneratorRequest,
-        PluginWorkQueueServiceClient,
+        PluginWorkQueueClient,
         PushExecuteGeneratorRequest,
     },
-    protocol::service_client::ConnectWithConfig,
 };
 
 #[tokio::test]
 async fn test_push_and_get_execute_generator() -> eyre::Result<()> {
-    let mut pwq_client =
-        PluginWorkQueueServiceClient::connect_with_config(PluginWorkQueueClientConfig::parse())
-            .await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
+        .extract()?;
+    let mut pwq_client = PluginWorkQueueClient::connect(client_config).await?;
 
     // Send 2 jobs to Plugin Work Queue
     let tenant_id = uuid::Uuid::new_v4();
@@ -106,9 +109,10 @@ async fn test_push_and_get_execute_generator() -> eyre::Result<()> {
 
 #[tokio::test]
 async fn test_message_available_after_failure() -> eyre::Result<()> {
-    let mut pwq_client =
-        PluginWorkQueueServiceClient::connect_with_config(PluginWorkQueueClientConfig::parse())
-            .await?;
+    let client_config = Figment::new()
+        .merge(Env::prefixed("PLUGIN_WORK_QUEUE_CLIENT_"))
+        .extract()?;
+    let mut pwq_client = PluginWorkQueueClient::connect(client_config).await?;
 
     // Send a job to Plugin Work Queue
     let tenant_id = uuid::Uuid::new_v4();
@@ -145,7 +149,7 @@ async fn test_message_available_after_failure() -> eyre::Result<()> {
     // If we get the job again, it should be None this time.
     let retrieved_job = retrieve_job().await?.execution_job();
     eyre::ensure!(
-        retrieved_job == None,
+        retrieved_job.is_none(),
         "Expected None job: {:?}",
         retrieved_job,
     );

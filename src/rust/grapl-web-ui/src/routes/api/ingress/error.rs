@@ -1,10 +1,10 @@
-use rust_proto::protocol::error::GrpcClientError;
+use rust_proto::graplinc::grapl::api::client::ClientError;
 
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
 pub enum IngressError {
     #[error(transparent)]
-    PluginRegistryClient(#[from] GrpcClientError),
+    GrpcClient(#[from] ClientError),
     #[error(transparent)]
     Payload(#[from] actix_web::error::PayloadError),
     #[error("gRPC client timeout: {0}")]

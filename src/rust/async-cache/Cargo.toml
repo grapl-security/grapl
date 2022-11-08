@@ -9,3 +9,4 @@ futures = "0.3"
 moka = { version = "0.9", features = ["future"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tracing = { workspace = true }

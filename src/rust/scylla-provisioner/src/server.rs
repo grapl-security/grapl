@@ -7,17 +7,17 @@ use std::{
 };
 
 use async_trait::async_trait;
-use rust_proto::{
-    graplinc::grapl::api::scylla_provisioner::v1beta1::{
+use rust_proto::graplinc::grapl::api::{
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        status::Status,
+    },
+    scylla_provisioner::v1beta1::{
         messages as native,
         server::{
             ScyllaProvisionerApi,
             ScyllaProvisionerServer,
         },
-    },
-    protocol::{
-        healthcheck::HealthcheckStatus,
-        status::Status,
     },
 };
 use scylla::{

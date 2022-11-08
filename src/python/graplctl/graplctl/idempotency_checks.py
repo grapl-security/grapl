@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.logger import get_structlogger
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
-LOGGER = get_module_grapl_logger(log_to_stdout=True)
+LOGGER = get_structlogger()
 
 
 def is_grapl_provisioned(

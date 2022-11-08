@@ -311,7 +311,7 @@ impl ExecutorConfig {
 /// If the failure rate or slow call rate is then equal or greater than the configured threshold,
 /// the state changes back to `Open`. If the failure rate and slow call rate is below the threshold,
 /// the state changes back to `Closed`.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Executor {
     recloser: AsyncRecloser,
     timeout: Duration,

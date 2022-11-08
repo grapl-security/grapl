@@ -1,6 +1,7 @@
 [GLOBAL]
-pants_version = "2.13.0"
+pants_version = "2.14.0"
 backend_packages = [
+  "pants.backend.build_files.fmt.black",
   "pants.backend.codegen.protobuf.lint.buf",
   "pants.backend.codegen.protobuf.python",
   "pants.backend.docker",
@@ -18,22 +19,18 @@ backend_packages = [
   "pants.backend.shell.lint.shfmt"
 ]
 
-use_deprecated_directory_cli_args_semantics = false
-use_deprecated_pex_binary_run_semantics = false
-
 pants_ignore=[
     "!.buildkite",
     "/src/proto/google"
 ]
 
 plugins = [
-  "toolchain.pants.plugin==0.24.0"
+  "toolchain.pants.plugin==0.25.0"
 ]
 
 remote_cache_read = true
 remote_cache_write = true
 remote_store_address = "grpcs://cache.toolchain.com:443"
-remote_auth_plugin = "toolchain.pants.auth.plugin:toolchain_auth_plugin"
 
 [toolchain-setup]
 org = "grapl-security"

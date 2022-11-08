@@ -11,6 +11,14 @@ variable "container_images" {
 EOF
 }
 
+variable "container_versions" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to that task's docker image version.
+  (See DockerImageVersion in Pulumi for further documentation.)
+EOF
+}
+
 variable "observability_env_vars" {
   type        = string
   description = <<EOF
@@ -56,10 +64,7 @@ locals {
   # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
   # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
   # Examples of keys we may add in the future: language, instance_id/ip, team
-
-  # Currently we use the same version for all containers. As such we pick one container to get the version from
-  app_version                      = split(":", var.container_images["scylla-provisioner"])[1]
-  default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
+  default_otel_resource_attributes = "host.hostname=${attr.unique.hostname}"
 }
 
 job "grapl-graph-db" {
@@ -116,7 +121,7 @@ job "grapl-graph-db" {
         GRAPH_DB_AUTH_PASSWORD          = var.graph_db.password
         GRAPH_DB_AUTH_USERNAME          = var.graph_db.username
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["scylla-provisioner"]}"
       }
     }
 
@@ -188,7 +193,7 @@ job "grapl-graph-db" {
         GRAPH_DB_AUTH_PASSWORD           = var.graph_db.password
         GRAPH_DB_AUTH_USERNAME           = var.graph_db.username
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["graph-query"]}"
       }
     }
 
@@ -262,10 +267,29 @@ job "grapl-graph-db" {
         GRAPH_DB_AUTH_USERNAME = var.graph_db.username
 
         # upstreams
-        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
-        UID_ALLOCATOR_CLIENT_ADDRESS        = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
+        GRAPH_SCHEMA_MANAGER_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_graph-schema-manager}"
+        GRAPH_SCHEMA_MANAGER_CLIENT_REQUEST_TIMEOUT               = "1s"
+        GRAPH_SCHEMA_MANAGER_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        GRAPH_SCHEMA_MANAGER_CLIENT_CONCURRENCY_LIMIT             = 16
+        GRAPH_SCHEMA_MANAGER_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        GRAPH_SCHEMA_MANAGER_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        GRAPH_SCHEMA_MANAGER_CLIENT_CONNECT_TIMEOUT               = "5s"
+        GRAPH_SCHEMA_MANAGER_CLIENT_CONNECT_RETRIES               = 10
+        GRAPH_SCHEMA_MANAGER_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        GRAPH_SCHEMA_MANAGER_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        UID_ALLOCATOR_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_uid-allocator}"
+        UID_ALLOCATOR_CLIENT_REQUEST_TIMEOUT               = "1s"
+        UID_ALLOCATOR_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        UID_ALLOCATOR_CLIENT_CONCURRENCY_LIMIT             = 16
+        UID_ALLOCATOR_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        UID_ALLOCATOR_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        UID_ALLOCATOR_CLIENT_CONNECT_TIMEOUT               = "5s"
+        UID_ALLOCATOR_CLIENT_CONNECT_RETRIES               = 10
+        UID_ALLOCATOR_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        UID_ALLOCATOR_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["graph-mutation"]}"
       }
     }
 
@@ -358,7 +382,7 @@ job "grapl-graph-db" {
         RUST_BACKTRACE          = local.rust_backtrace
         RUST_LOG                = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["uid-allocator"]}"
       }
     }
 
@@ -435,7 +459,7 @@ job "grapl-graph-db" {
         GRAPH_SCHEMA_DB_PASSWORD = var.graph_schema_manager_db.password
         GRAPH_SCHEMA_DB_USERNAME = var.graph_schema_manager_db.username
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["graph-schema-manager"]}"
       }
     }
 

@@ -18,7 +18,19 @@ use tonic::transport::{
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::graph_mutation::v1beta1::messages as native,
+    graplinc::grapl::api::{
+        graph_mutation::v1beta1::messages as native,
+        protocol::{
+            error::ServeError,
+            healthcheck::{
+                server::init_health_service,
+                HealthcheckError,
+                HealthcheckStatus,
+            },
+            status::Status,
+        },
+        server::GrpcApi,
+    },
     protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
         self as proto,
         graph_mutation_service_server::{
@@ -26,16 +38,6 @@ use crate::{
             GraphMutationServiceServer as GraphMutationServiceServerProto,
         },
     },
-    protocol::{
-        error::ServeError,
-        healthcheck::{
-            server::init_health_service,
-            HealthcheckError,
-            HealthcheckStatus,
-        },
-        status::Status,
-    },
-    server_internals::GrpcApi,
 };
 
 #[derive(thiserror::Error, Debug)]

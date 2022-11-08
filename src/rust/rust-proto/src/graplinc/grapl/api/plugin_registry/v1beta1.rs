@@ -7,7 +7,7 @@ use bytes::Bytes;
 use proto::create_plugin_request;
 
 pub use crate::graplinc::grapl::api::plugin_registry::{
-    v1beta1_client::PluginRegistryServiceClient,
+    v1beta1_client::PluginRegistryClient,
     v1beta1_server::{
         PluginRegistryApi,
         PluginRegistryServer,
@@ -1192,6 +1192,7 @@ pub enum PluginHealthStatus {
     Pending,
     Running,
     Dead,
+    // We may want a discrimination between "running-healthy" and "running-unhealthy"
 }
 
 impl TryFrom<proto::PluginHealthStatus> for PluginHealthStatus {

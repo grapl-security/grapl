@@ -16,6 +16,14 @@ variable "container_images" {
 EOF
 }
 
+variable "container_versions" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to that task's docker image version.
+  (See DockerImageVersion in Pulumi for further documentation.)
+EOF
+}
+
 variable "aws_env_vars_for_local" {
   type        = string
   description = <<EOF
@@ -181,10 +189,7 @@ locals {
   # Set up default tags for otel traces via the OTEL_RESOURCE_ATTRIBUTES env variable. Format is key=value,key=value
   # We're setting up defaults on a per-job basis, but these can be expanded on a per-service basis as necessary.
   # Examples of keys we may add in the future: language, instance_id/ip, team
-
-  # Currently we use the same version for all containers. As such we pick one container to get the version from
-  app_version                      = split(":", var.container_images["analyzer-dispatcher"])[1]
-  default_otel_resource_attributes = "service.version=${local.app_version},host.hostname=${attr.unique.hostname}"
+  default_otel_resource_attributes = "host.hostname=${attr.unique.hostname}"
 }
 
 job "grapl-core" {
@@ -238,8 +243,27 @@ job "grapl-core" {
 
       env {
         # Upstreams
-        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
-        PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+        PLUGIN_WORK_QUEUE_CLIENT_REQUEST_TIMEOUT               = "1s"
+        PLUGIN_WORK_QUEUE_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONCURRENCY_LIMIT             = 16
+        PLUGIN_WORK_QUEUE_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        PLUGIN_WORK_QUEUE_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_TIMEOUT               = "5s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_RETRIES               = 10
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        PLUGIN_REGISTRY_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+        PLUGIN_REGISTRY_CLIENT_REQUEST_TIMEOUT               = "1s"
+        PLUGIN_REGISTRY_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        PLUGIN_REGISTRY_CLIENT_CONCURRENCY_LIMIT             = 16
+        PLUGIN_REGISTRY_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        PLUGIN_REGISTRY_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_TIMEOUT               = "5s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_RETRIES               = 10
+        PLUGIN_REGISTRY_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
 
         # Kafka
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
@@ -260,7 +284,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["analyzer-dispatcher"]}"
       }
 
       resources {
@@ -330,8 +354,27 @@ job "grapl-core" {
 
       env {
         # Upstreams
-        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
-        PLUGIN_REGISTRY_CLIENT_ADDRESS   = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+        PLUGIN_WORK_QUEUE_CLIENT_REQUEST_TIMEOUT               = "1s"
+        PLUGIN_WORK_QUEUE_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONCURRENCY_LIMIT             = 16
+        PLUGIN_WORK_QUEUE_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        PLUGIN_WORK_QUEUE_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_TIMEOUT               = "5s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_RETRIES               = 10
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        PLUGIN_REGISTRY_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+        PLUGIN_REGISTRY_CLIENT_REQUEST_TIMEOUT               = "1s"
+        PLUGIN_REGISTRY_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        PLUGIN_REGISTRY_CLIENT_CONCURRENCY_LIMIT             = 16
+        PLUGIN_REGISTRY_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        PLUGIN_REGISTRY_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_TIMEOUT               = "5s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_RETRIES               = 10
+        PLUGIN_REGISTRY_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
 
         # Kafka
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
@@ -352,7 +395,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["generator-dispatcher"]}"
       }
 
       resources {
@@ -432,7 +475,16 @@ job "grapl-core" {
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = local.rust_backtrace
 
-        GRAPH_MUTATION_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
+        GRAPH_MUTATION_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
+        GRAPH_MUTATION_CLIENT_REQUEST_TIMEOUT               = "1s"
+        GRAPH_MUTATION_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        GRAPH_MUTATION_CLIENT_CONCURRENCY_LIMIT             = 16
+        GRAPH_MUTATION_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        GRAPH_MUTATION_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        GRAPH_MUTATION_CLIENT_CONNECT_TIMEOUT               = "5s"
+        GRAPH_MUTATION_CLIENT_CONNECT_RETRIES               = 10
+        GRAPH_MUTATION_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        GRAPH_MUTATION_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
 
         GRAPL_SCHEMA_TABLE = var.schema_table_name
 
@@ -443,7 +495,7 @@ job "grapl-core" {
         KAFKA_CONSUMER_TOPIC      = "identified-graphs"
         KAFKA_PRODUCER_TOPIC      = "merged-graphs"
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["graph-merger"]}"
       }
 
       resources {
@@ -527,13 +579,22 @@ job "grapl-core" {
         KAFKA_CONSUMER_TOPIC      = "generated-graphs"
         KAFKA_PRODUCER_TOPIC      = "identified-graphs"
 
-        GRAPH_MUTATION_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
+        GRAPH_MUTATION_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_graph-mutation}"
+        GRAPH_MUTATION_CLIENT_REQUEST_TIMEOUT               = "1s"
+        GRAPH_MUTATION_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        GRAPH_MUTATION_CLIENT_CONCURRENCY_LIMIT             = 16
+        GRAPH_MUTATION_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        GRAPH_MUTATION_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        GRAPH_MUTATION_CLIENT_CONNECT_TIMEOUT               = "5s"
+        GRAPH_MUTATION_CLIENT_CONNECT_RETRIES               = 10
+        GRAPH_MUTATION_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        GRAPH_MUTATION_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
 
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
         GRAPL_STATIC_MAPPING_TABLE  = var.static_mapping_table_name
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["node-identifier"]}"
       }
 
       resources {
@@ -610,7 +671,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["kafka-retry"]}"
       }
 
       resources {
@@ -654,7 +715,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["kafka-retry"]}"
       }
 
       resources {
@@ -714,15 +775,34 @@ job "grapl-core" {
         GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
 
-        PLUGIN_REGISTRY_CLIENT_ADDRESS  = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
-        PIPELINE_INGRESS_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
+        PLUGIN_REGISTRY_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}"
+        PLUGIN_REGISTRY_CLIENT_REQUEST_TIMEOUT               = "1s"
+        PLUGIN_REGISTRY_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        PLUGIN_REGISTRY_CLIENT_CONCURRENCY_LIMIT             = 16
+        PLUGIN_REGISTRY_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        PLUGIN_REGISTRY_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_TIMEOUT               = "5s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_RETRIES               = 10
+        PLUGIN_REGISTRY_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        PLUGIN_REGISTRY_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
+
+        PIPELINE_INGRESS_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_pipeline-ingress}"
+        PIPELINE_INGRESS_CLIENT_REQUEST_TIMEOUT               = "1s"
+        PIPELINE_INGRESS_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        PIPELINE_INGRESS_CLIENT_CONCURRENCY_LIMIT             = 16
+        PIPELINE_INGRESS_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        PIPELINE_INGRESS_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        PIPELINE_INGRESS_CLIENT_CONNECT_TIMEOUT               = "5s"
+        PIPELINE_INGRESS_CLIENT_CONNECT_RETRIES               = 10
+        PIPELINE_INGRESS_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        PIPELINE_INGRESS_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
 
         GRAPL_WEB_UI_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_web-ui-port}"
         GRAPL_GOOGLE_CLIENT_ID    = var.google_client_id
         RUST_LOG                  = var.rust_log
         RUST_BACKTRACE            = local.rust_backtrace
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["web-ui"]}"
       }
 
       resources {
@@ -825,7 +905,7 @@ job "grapl-core" {
 
         ORGANIZATION_MANAGEMENT_HEALTHCHECK_POLLING_INTERVAL_MS = var.organization_management_healthcheck_polling_interval_ms
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["organization-management"]}"
       }
 
       resources {
@@ -906,7 +986,7 @@ job "grapl-core" {
         KAFKA_SASL_PASSWORD                              = var.kafka_credentials["pipeline-ingress"].sasl_password
         KAFKA_PRODUCER_TOPIC                             = "raw-logs"
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["pipeline-ingress"]}"
       }
 
       resources {
@@ -984,6 +1064,7 @@ job "grapl-core" {
 
       env {
         AWS_REGION                                      = var.aws_region
+        CONSUL_SERVICE_ADDRESS                          = "${attr.unique.network.ip-address}:8500"
         NOMAD_SERVICE_ADDRESS                           = "${attr.unique.network.ip-address}:4646"
         PLUGIN_REGISTRY_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
         PLUGIN_REGISTRY_DB_ADDRESS                      = "${var.plugin_registry_db.hostname}:${var.plugin_registry_db.port}"
@@ -1003,7 +1084,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["plugin-registry"]}"
       }
 
       resources {
@@ -1101,7 +1182,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["plugin-work-queue"]}"
       }
 
       resources {
@@ -1190,7 +1271,7 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         RUST_LOG       = var.rust_log
 
-        OTEL_RESOURCE_ATTRIBUTES = local.default_otel_resource_attributes
+        OTEL_RESOURCE_ATTRIBUTES = "${local.default_otel_resource_attributes},service.version=${var.container_versions["event-source"]}"
       }
 
       resources {

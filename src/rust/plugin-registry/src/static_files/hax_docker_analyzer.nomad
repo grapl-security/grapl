@@ -45,6 +45,13 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
+locals {
+  # default values are cpu = 100 / mem = 300
+  # per https://developer.hashicorp.com/nomad/docs/job-specification/resources
+  consul_connect_proxy_cpu    = 50
+  consul_connect_proxy_mem_mb = 50
+}
+
 job "grapl-plugin" {
   datacenters = ["dc1"]
   namespace   = "plugin-${var.plugin_id}"
@@ -57,7 +64,7 @@ job "grapl-plugin" {
 
   # This makes sure that analyzers only run on a certain subset of Nomad agents
   # that have "meta.is_grapl_plugin_host" set to true.
-  # (We'll want to eventually ensure we have the opposite constraint on 
+  # (We'll want to eventually ensure we have the opposite constraint on
   # non-plugin jobs.)
   # This is set in the Nomad agent's `client` stanza:
   # https://www.nomadproject.io/docs/configuration/client#meta
@@ -84,6 +91,13 @@ job "grapl-plugin" {
       ]
 
       connect {
+        sidecar_task {
+          resources {
+            cpu    = local.consul_connect_proxy_cpu
+            memory = local.consul_connect_proxy_mem_mb
+          }
+        }
+
         sidecar_service {
           proxy {
             upstreams {
@@ -112,6 +126,13 @@ job "grapl-plugin" {
       ]
 
       connect {
+        sidecar_task {
+          resources {
+            cpu    = local.consul_connect_proxy_cpu
+            memory = local.consul_connect_proxy_mem_mb
+          }
+        }
+
         sidecar_service {
           proxy {
             upstreams {
@@ -141,12 +162,30 @@ job "grapl-plugin" {
       }
 
       env {
-        PLUGIN_EXECUTOR_PLUGIN_ID = var.plugin_id
+        ANALYZER_EXECUTION_SIDECAR_PLUGIN_ID = var.plugin_id
 
-        // FYI: the upstream plugin's address is discovered at runtime, not
-        // env{}, because the upstream's name is based on ${PLUGIN_ID}.
+        // The ANALYZER_CLIENT_ADDRESS is discovered at runtime because the
+        // upstream's name is based on the plugin ID.
+        ANALYZER_CLIENT_REQUEST_TIMEOUT               = "1s"
+        ANALYZER_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        ANALYZER_CLIENT_CONCURRENCY_LIMIT             = 16
+        ANALYZER_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        ANALYZER_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        ANALYZER_CLIENT_CONNECT_TIMEOUT               = "5s"
+        ANALYZER_CLIENT_CONNECT_RETRIES               = 10
+        ANALYZER_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        ANALYZER_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
 
-        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS                       = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+        PLUGIN_WORK_QUEUE_CLIENT_REQUEST_TIMEOUT               = "1s"
+        PLUGIN_WORK_QUEUE_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONCURRENCY_LIMIT             = 16
+        PLUGIN_WORK_QUEUE_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
+        PLUGIN_WORK_QUEUE_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_TIMEOUT               = "5s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_RETRIES               = 10
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_INITIAL_BACKOFF_DELAY = "1s"
+        PLUGIN_WORK_QUEUE_CLIENT_CONNECT_MAXIMUM_BACKOFF_DELAY = "60s"
 
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
@@ -202,6 +241,13 @@ job "grapl-plugin" {
       ]
 
       connect {
+        sidecar_task {
+          resources {
+            cpu    = local.consul_connect_proxy_cpu
+            memory = local.consul_connect_proxy_mem_mb
+          }
+        }
+
         sidecar_service {
           proxy {
             upstreams {
@@ -263,12 +309,12 @@ EOF
         PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin}"
 
         # Ideally we'd specify GRAPH_QUERY_CLIENT_ADDRESS here, but
-        # due to HCL limitations + the fact each `graph-query-proxy` service 
+        # due to HCL limitations + the fact each `graph-query-proxy` service
         # has a different name, we instead construct the CLIENT_ADDRESS at
         # runtime.
         # https://github.com/hashicorp/nomad/issues/14813
 
-        ANALYZER_LOG_LEVEL = "DEBUG"
+        GRAPL_LOG_LEVEL = "DEBUG"
       }
 
       // Each plugin should ideally have a very small footprint.

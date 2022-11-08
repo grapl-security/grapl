@@ -82,6 +82,9 @@ def main() -> None:
         compose_project=None, volume_name="dynamodb_dump", artifacts_dir=artifacts_dir
     )
 
+    # Dump metrics and traces to files
+    docker_artifacts.write_otel_files(artifacts_dir)
+
     nomad_dump_options = nomad_artifacts.NomadDumpOptions(
         dump_agent_logs=args.dump_agent_logs,
         dump_connect_proxy_logs=args.dump_connect_proxy_logs,
