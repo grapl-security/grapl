@@ -14,6 +14,7 @@ pub struct ConfigUnion {
     pub service_config: PluginWorkQueueServiceConfig,
     pub db_config: PluginWorkQueueDbConfig,
     pub generator_producer_config: ProducerConfig,
+    pub analyzer_producer_config: ProducerConfig,
 }
 
 #[derive(clap::Parser, Clone, Debug)]

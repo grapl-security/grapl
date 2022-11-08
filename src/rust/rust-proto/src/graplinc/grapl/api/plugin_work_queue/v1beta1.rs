@@ -17,7 +17,10 @@ pub use crate::graplinc::grapl::api::plugin_work_queue::{
     },
 };
 use crate::{
-    graplinc::grapl::api::graph::v1beta1::GraphDescription,
+    graplinc::grapl::api::{
+        graph::v1beta1::GraphDescription,
+        plugin_sdk::analyzers::v1beta1::messages::ExecutionResult,
+    },
     protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
     serde_impl::ProtobufSerializable,
     type_url,
@@ -248,10 +251,10 @@ impl type_url::TypeUrl for AcknowledgeGeneratorResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeGeneratorResponse";
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct AcknowledgeAnalyzerRequest {
     request_id: i64,
-    success: bool,
+    execution_result: Option<ExecutionResult>,
     plugin_id: Uuid,
     tenant_id: Uuid,
     trace_id: Uuid,
@@ -261,7 +264,7 @@ pub struct AcknowledgeAnalyzerRequest {
 impl AcknowledgeAnalyzerRequest {
     pub fn new(
         request_id: i64,
-        success: bool,
+        execution_result: Option<ExecutionResult>,
         plugin_id: Uuid,
         tenant_id: Uuid,
         trace_id: Uuid,
@@ -269,7 +272,7 @@ impl AcknowledgeAnalyzerRequest {
     ) -> Self {
         Self {
             request_id,
-            success,
+            execution_result,
             plugin_id,
             tenant_id,
             trace_id,
@@ -281,8 +284,8 @@ impl AcknowledgeAnalyzerRequest {
         self.request_id
     }
 
-    pub fn success(&self) -> bool {
-        self.success
+    pub fn execution_result(self) -> Option<ExecutionResult> {
+        self.execution_result
     }
 
     pub fn plugin_id(&self) -> Uuid {
@@ -307,7 +310,7 @@ impl TryFrom<proto::AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequest {
 
     fn try_from(value: proto::AcknowledgeAnalyzerRequest) -> Result<Self, Self::Error> {
         let request_id = value.request_id;
-        let success = value.success;
+        let execution_result = value.execution_result.map(TryInto::try_into).transpose()?;
         let plugin_id = value
             .plugin_id
             .ok_or(Self::Error::MissingField("plugin_id"))?
@@ -327,7 +330,7 @@ impl TryFrom<proto::AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequest {
 
         Ok(Self {
             request_id,
-            success,
+            execution_result,
             plugin_id,
             tenant_id,
             trace_id,
@@ -340,7 +343,7 @@ impl From<AcknowledgeAnalyzerRequest> for proto::AcknowledgeAnalyzerRequest {
     fn from(value: AcknowledgeAnalyzerRequest) -> Self {
         Self {
             request_id: value.request_id,
-            success: value.success,
+            execution_result: value.execution_result.map(Into::into),
             plugin_id: Some(value.plugin_id.into()),
             tenant_id: Some(value.tenant_id.into()),
             trace_id: Some(value.trace_id.into()),

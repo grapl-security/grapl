@@ -8,7 +8,10 @@ use kafka::{
 use rust_proto::{
     graplinc::grapl::{
         api::{
-            graph::v1beta1::GraphDescription,
+            graph::v1beta1::{
+                ExecutionHit,
+                GraphDescription,
+            },
             plugin_work_queue::{
                 v1beta1,
                 v1beta1::{
@@ -19,7 +22,7 @@ use rust_proto::{
             protocol::{
                 healthcheck::HealthcheckStatus,
                 status::Status,
-            },
+            }, plugin_sdk::analyzers::v1beta1::messages::ExecutionResult,
         },
         pipeline::v1beta1::Envelope,
     },
@@ -73,15 +76,18 @@ impl From<PluginWorkQueueError> for Status {
 pub struct PluginWorkQueue {
     queue: PsqlQueue,
     generator_producer: Producer<GraphDescription>,
+    analyzer_producer: Producer<ExecutionHit>,
 }
 
 impl PluginWorkQueue {
     pub async fn try_from(configs: &ConfigUnion) -> Result<Self, PluginWorkQueueInitError> {
         let psql_queue = PsqlQueue::init_with_config(configs.db_config.clone()).await?;
         let generator_producer = Producer::new(configs.generator_producer_config.clone())?;
+        let analyzer_producer = Producer::new(configs.analyzer_producer_config.clone())?;
         Ok(Self {
             queue: psql_queue,
             generator_producer,
+            analyzer_producer,
         })
     }
 }
@@ -285,9 +291,28 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let event_source_id = request.event_source_id();
         let plugin_id = request.plugin_id();
 
-        let status = match request.success() {
-            true => psql_queue::Status::Processed,
-            false => psql_queue::Status::Failed,
+        let status = match request.execution_result() {
+            Some(ExecutionResult::ExecutionHit(hit)) => {
+                tracing::debug!(
+                    message = "publishing analyzer execution hit",
+                    tenant_id =% tenant_id,
+                    trace_id =% trace_id,
+                    event_source_id =% event_source_id,
+                    plugin_id =% plugin_id,
+                );
+
+                self.analyzer_producer
+                    .send(Envelope::new(
+                        tenant_id,
+                        trace_id,
+                        event_source_id,
+                        hit
+                    ))
+                    .await?;
+                psql_queue::Status::Processed
+            },
+            Some(ExecutionResult::ExecutionMiss(_)) => psql_queue::Status::Processed,
+            None => psql_queue::Status::Failed,
         };
 
         tracing::debug!(
