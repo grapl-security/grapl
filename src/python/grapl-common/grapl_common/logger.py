@@ -11,6 +11,8 @@ def get_structlogger() -> structlog.stdlib.BoundLogger:
         processors=[
             # include {"level": "INFO"} in the dict
             structlog.processors.add_log_level,
+            # include timestamp in the dict
+            structlog.processors.TimeStamper(fmt="iso"),
             # Output as JSON
             structlog.processors.JSONRenderer(),
         ],
