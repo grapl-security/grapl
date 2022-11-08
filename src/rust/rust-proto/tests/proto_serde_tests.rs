@@ -212,13 +212,6 @@ mod graph {
         ) {
             check_encode_decode_invariant(lens)
         }
-
-        #[test]
-        fn test_execution_hit_encode_decode(
-            execution_hit in st::execution_hits()
-        ) {
-            check_encode_decode_invariant(execution_hit)
-        }
     }
 }
 
@@ -432,10 +425,12 @@ mod plugin_work_queue {
         }
 
 
+        /*
         #[test]
         fn test_acknowledge_analyzer_requests(value in pwq_strats::acknowledge_analyzer_requests()) {
             check_encode_decode_invariant(value)
         }
+        */
 
 
         #[test]
@@ -540,12 +535,25 @@ mod analyzer_sdk {
         fn test_run_analyzer_request(value in as_strats::run_analyzer_requests()) {
             check_encode_decode_invariant(value)
         }
-    }
 
-    proptest! {
         #[test]
         fn test_update(update in as_strats::updates()) {
             check_encode_decode_invariant(update)
+        }
+
+        #[test]
+        fn test_string_filters(value in as_strats::string_filters()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_int_filters(value in as_strats::int_filters()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_uid_filters(value in as_strats::uid_filters()) {
+            check_encode_decode_invariant(value)
         }
     }
 }

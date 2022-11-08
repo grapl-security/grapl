@@ -8,9 +8,10 @@ use kafka::{
 use rust_proto::{
     graplinc::grapl::{
         api::{
-            graph::v1beta1::{
+            graph::v1beta1::GraphDescription,
+            plugin_sdk::analyzers::v1beta1::messages::{
                 ExecutionHit,
-                GraphDescription,
+                ExecutionResult,
             },
             plugin_work_queue::{
                 v1beta1,
@@ -22,7 +23,7 @@ use rust_proto::{
             protocol::{
                 healthcheck::HealthcheckStatus,
                 status::Status,
-            }, plugin_sdk::analyzers::v1beta1::messages::ExecutionResult,
+            },
         },
         pipeline::v1beta1::Envelope,
     },
@@ -290,6 +291,7 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let trace_id = request.trace_id();
         let event_source_id = request.event_source_id();
         let plugin_id = request.plugin_id();
+        let request_id = request.request_id().into();
 
         let status = match request.execution_result() {
             Some(ExecutionResult::ExecutionHit(hit)) => {
@@ -302,15 +304,10 @@ impl PluginWorkQueueApi for PluginWorkQueue {
                 );
 
                 self.analyzer_producer
-                    .send(Envelope::new(
-                        tenant_id,
-                        trace_id,
-                        event_source_id,
-                        hit
-                    ))
+                    .send(Envelope::new(tenant_id, trace_id, event_source_id, hit))
                     .await?;
                 psql_queue::Status::Processed
-            },
+            }
             Some(ExecutionResult::ExecutionMiss(_)) => psql_queue::Status::Processed,
             None => psql_queue::Status::Failed,
         };
@@ -324,9 +321,7 @@ impl PluginWorkQueueApi for PluginWorkQueue {
             status =? status,
         );
 
-        self.queue
-            .ack_analyzer(request.request_id().into(), status)
-            .await?;
+        self.queue.ack_analyzer(request_id, status).await?;
         Ok(v1beta1::AcknowledgeAnalyzerResponse {})
     }
 

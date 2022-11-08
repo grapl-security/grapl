@@ -129,7 +129,6 @@ pub mod graph {
         DecrementOnlyUintProp,
         Edge,
         EdgeList,
-        ExecutionHit,
         GraphDescription,
         IdStrategy,
         IdentifiedEdge,
@@ -151,7 +150,6 @@ pub mod graph {
     };
 
     use super::*;
-    use crate::strategies::common::uids;
 
     //
     // DecrementOnlyIntProp
@@ -299,30 +297,6 @@ pub mod graph {
         ) -> EdgeList {
             EdgeList {
                 edges
-            }
-        }
-    }
-
-    //
-    // ExecutionHit
-    //
-
-    prop_compose! {
-        pub fn execution_hits()(
-            nodes in collection::hash_map(uids(), identified_nodes(), 10),
-            edges in collection::hash_map(uids(), identified_edge_lists(), 10),
-            analyzer_name in any::<String>(),
-            risk_score in any::<u64>(),
-            lenses in collection::vec(lenses(), 10),
-            risky_node_keys in collection::vec(any::<String>(), 10)
-        ) -> ExecutionHit {
-            ExecutionHit{
-                nodes,
-                edges,
-                analyzer_name,
-                risk_score,
-                lenses,
-                risky_node_keys
             }
         }
     }
@@ -967,10 +941,11 @@ pub mod plugin_work_queue {
         Just(native::AcknowledgeGeneratorResponse {})
     }
 
+    /*
     prop_compose! {
         pub fn acknowledge_analyzer_requests()(
             request_id in any::<i64>(),
-            success in any::<bool>(),
+            execution_result in analyzer_sdk::execution_results(),
             plugin_id in uuids(),
             tenant_id in uuids(),
             trace_id in uuids(),
@@ -978,14 +953,14 @@ pub mod plugin_work_queue {
         ) -> native::AcknowledgeAnalyzerRequest {
             native::AcknowledgeAnalyzerRequest::new(
                 request_id,
-                success,
+                execution_result,
                 plugin_id,
                 tenant_id,
                 trace_id,
                 event_source_id,
             )
         }
-    }
+    } */
 
     pub fn acknowledge_analyzer_responses(
     ) -> impl Strategy<Value = native::AcknowledgeAnalyzerResponse> {
@@ -1173,9 +1148,19 @@ pub mod graph_schema_manager {
 }
 
 pub mod analyzer_sdk {
-    use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::{
-        self as native,
-        Update,
+    use rust_proto::graplinc::grapl::api::{
+        graph_query::v1beta1::messages::{
+            IntFilter,
+            IntOperation,
+            StringFilter,
+            StringOperation,
+            UidFilter,
+            UidOperation,
+        },
+        plugin_sdk::analyzers::v1beta1::messages::{
+            self as native,
+            Update,
+        },
     };
 
     use super::{
@@ -1244,6 +1229,80 @@ pub mod analyzer_sdk {
             edge_updates().prop_map(Update::Edge),
         ]
     }
+
+    pub fn string_operations() -> impl Strategy<Value = StringOperation> {
+        prop_oneof![
+            Just(StringOperation::Has),
+            Just(StringOperation::Equal),
+            Just(StringOperation::Contains),
+            Just(StringOperation::Regex),
+        ]
+    }
+
+    prop_compose! {
+        pub fn string_filters()(
+            operation in string_operations(),
+            value in string_not_empty(),
+            negated in any::<bool>(),
+        ) -> StringFilter {
+            StringFilter {
+                operation,
+                value,
+                negated,
+            }
+        }
+    }
+
+    pub fn int_operations() -> impl Strategy<Value = IntOperation> {
+        prop_oneof![
+            Just(IntOperation::Has),
+            Just(IntOperation::Equal),
+            Just(IntOperation::LessThan),
+            Just(IntOperation::LessThanOrEqual),
+            Just(IntOperation::GreaterThan),
+            Just(IntOperation::GreaterThanOrEqual),
+        ]
+    }
+
+    prop_compose! {
+        pub fn int_filters()(
+            operation in int_operations(),
+            value in any::<i64>(),
+            negated in any::<bool>(),
+        ) -> IntFilter {
+            IntFilter {
+                operation,
+                value,
+                negated,
+            }
+        }
+    }
+
+    pub fn uid_operations() -> impl Strategy<Value = UidOperation> {
+        prop_oneof![Just(UidOperation::Equal),]
+    }
+
+    prop_compose! {
+        pub fn uid_filters()(
+            operation in uid_operations(),
+            value in common::uids(),
+        ) -> UidFilter {
+            UidFilter {
+                operation,
+                value,
+            }
+        }
+    }
+
+    /*
+    pub fn execution_results() -> impl Strategy<Value = Option<native::ExecutionResult>> {
+        prop_oneof![
+            // TODO: Flesh this out to include real ExecutionHit/Miss
+            // currently those were only tested in py not rust code
+            Just(None)
+        ]
+    }
+    */
 
     prop_compose! {
         pub fn run_analyzer_requests()(

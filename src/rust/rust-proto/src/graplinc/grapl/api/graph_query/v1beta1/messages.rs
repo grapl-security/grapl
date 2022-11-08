@@ -118,8 +118,9 @@ impl TryFrom<proto::IntFilter> for IntFilter {
 
 impl From<IntFilter> for proto::IntFilter {
     fn from(value: IntFilter) -> proto::IntFilter {
+        let operation: proto::int_filter::Operation = value.operation.into();
         proto::IntFilter {
-            operation: value.operation as i32,
+            operation: operation as i32,
             value: value.value,
             negated: value.negated,
         }
@@ -352,8 +353,9 @@ impl TryFrom<proto::StringFilter> for StringFilter {
 
 impl From<StringFilter> for proto::StringFilter {
     fn from(value: StringFilter) -> proto::StringFilter {
+        let operation: proto::string_filter::Operation = value.operation.into();
         proto::StringFilter {
-            operation: value.operation as i32,
+            operation: operation as i32,
             value: value.value,
             negated: value.negated,
         }
@@ -533,8 +535,9 @@ impl TryFrom<proto::UidFilter> for UidFilter {
 
 impl From<UidFilter> for proto::UidFilter {
     fn from(value: UidFilter) -> proto::UidFilter {
+        let operation: proto::uid_filter::Operation = value.operation.into();
         proto::UidFilter {
-            operation: value.operation as i32,
+            operation: operation as i32,
             value: Some(value.value.into()),
         }
     }
