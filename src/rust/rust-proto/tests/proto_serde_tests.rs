@@ -488,6 +488,26 @@ mod plugin_work_queue {
         fn test_push_execute_generator_responses(value in pwq_strats::push_execute_generator_responses()) {
             check_encode_decode_invariant(value)
         }
+
+        #[test]
+        fn test_queue_depth_for_generator_requests(value in pwq_strats::queue_depth_for_generator_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_queue_depth_for_generator_responses(value in pwq_strats::queue_depth_for_generator_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_queue_depth_for_analyzer_requests(value in pwq_strats::queue_depth_for_analyzer_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_queue_depth_for_analyzer_responses(value in pwq_strats::queue_depth_for_analyzer_responses()) {
+            check_encode_decode_invariant(value)
+        }
     }
 }
 

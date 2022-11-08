@@ -301,6 +301,22 @@ impl PluginWorkQueueApi for PluginWorkQueue {
             .await?;
         Ok(v1beta1::AcknowledgeAnalyzerResponse {})
     }
+
+    #[tracing::instrument(skip(self, _request), err)]
+    async fn queue_depth_for_generator(
+        &self,
+        _request: v1beta1::QueueDepthForGeneratorRequest,
+    ) -> Result<v1beta1::QueueDepthForGeneratorResponse, PluginWorkQueueError> {
+        todo!()
+    }
+
+    #[tracing::instrument(skip(self, _request), err)]
+    async fn queue_depth_for_analyzer(
+        &self,
+        _request: v1beta1::QueueDepthForAnalyzerRequest,
+    ) -> Result<v1beta1::QueueDepthForAnalyzerResponse, PluginWorkQueueError> {
+        todo!()
+    }
 }
 
 pub async fn exec_service(configs: ConfigUnion) -> Result<(), Box<dyn std::error::Error>> {
