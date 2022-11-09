@@ -87,9 +87,8 @@ impl AnalyzerQueueDepth {
             .expect("queue_depth could not be converted to u32")
     }
 
-    pub fn dominant_event_source_id(&self) -> Uuid {
+    pub fn dominant_event_source_id(&self) -> Option<Uuid> {
         self.dominant_event_source_id
-            .expect("dominant_event_source_id was null")
     }
 }
 
@@ -392,7 +391,7 @@ impl PsqlQueue {
             AnalyzerQueueDepth,
             r#"
                 SELECT
-                    COUNT(*) AS queue_depth,
+                    COUNT(plugin_id) AS queue_depth,
                     mode() WITHIN GROUP (ORDER BY event_source_id) AS dominant_event_source_id
                 FROM plugin_work_queue.analyzer_plugin_executions
                 WHERE plugin_id = $1 AND current_status = 'enqueued'

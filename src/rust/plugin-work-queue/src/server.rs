@@ -327,11 +327,14 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         let analyzer_id = request.analyzer_id();
 
         if let Some(result) = self.queue.queue_depth_for_analyzer(analyzer_id).await? {
-            let dominant_event_source_id = result.dominant_event_source_id();
-            Ok(Some(v1beta1::QueueDepthForAnalyzerResponse::new(
-                result.queue_depth(),
-                dominant_event_source_id,
-            )))
+            if let Some(dominant_event_source_id) = result.dominant_event_source_id() {
+                Ok(Some(v1beta1::QueueDepthForAnalyzerResponse::new(
+                    result.queue_depth(),
+                    dominant_event_source_id,
+                )))
+            } else {
+                Ok(None)
+            }
         } else {
             Ok(None)
         }
