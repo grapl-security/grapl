@@ -71,6 +71,16 @@ pub trait PluginWorkQueueApi {
         &self,
         request: native::AcknowledgeAnalyzerRequest,
     ) -> Result<native::AcknowledgeAnalyzerResponse, Self::Error>;
+
+    async fn queue_depth_for_generator(
+        &self,
+        request: native::QueueDepthForGeneratorRequest,
+    ) -> Result<native::QueueDepthForGeneratorResponse, Self::Error>;
+
+    async fn queue_depth_for_analyzer(
+        &self,
+        request: native::QueueDepthForAnalyzerRequest,
+    ) -> Result<native::QueueDepthForAnalyzerResponse, Self::Error>;
 }
 
 #[tonic::async_trait]
@@ -118,6 +128,20 @@ where
         request: tonic::Request<proto::AcknowledgeAnalyzerRequest>,
     ) -> Result<tonic::Response<proto::AcknowledgeAnalyzerResponse>, tonic::Status> {
         execute_rpc!(self, request, acknowledge_analyzer)
+    }
+
+    async fn queue_depth_for_generator(
+        &self,
+        request: tonic::Request<proto::QueueDepthForGeneratorRequest>,
+    ) -> Result<tonic::Response<proto::QueueDepthForGeneratorResponse>, tonic::Status> {
+        execute_rpc!(self, request, queue_depth_for_generator)
+    }
+
+    async fn queue_depth_for_analyzer(
+        &self,
+        request: tonic::Request<proto::QueueDepthForAnalyzerRequest>,
+    ) -> Result<tonic::Response<proto::QueueDepthForAnalyzerResponse>, tonic::Status> {
+        execute_rpc!(self, request, queue_depth_for_analyzer)
     }
 }
 

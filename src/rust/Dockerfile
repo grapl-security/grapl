@@ -178,10 +178,6 @@ sysmon-generator/integration_tests
 uid-allocator/integration_tests
 )
 
-INTEGRATION_TEST_FEATURES=(
-e2e-tests/integration_tests
-)
-
 # cargo --features expects a comma-separated feature1,feature2,feature3
 function join_by { local IFS="$1"; shift; echo "$*"; }
 join_by , "${INTEGRATION_TEST_FEATURES[@]}" > integration_test_features.csv

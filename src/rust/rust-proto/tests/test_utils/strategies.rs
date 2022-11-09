@@ -1071,6 +1071,50 @@ pub mod plugin_work_queue {
     ) -> impl Strategy<Value = native::PushExecuteGeneratorResponse> {
         Just(native::PushExecuteGeneratorResponse {})
     }
+
+    prop_compose! {
+        pub fn queue_depth_for_generator_requests()(
+            generator_id in uuids(),
+        ) -> native::QueueDepthForGeneratorRequest {
+            native::QueueDepthForGeneratorRequest::new(
+                generator_id,
+            )
+        }
+    }
+
+    prop_compose! {
+        pub fn queue_depth_for_generator_responses()(
+            queue_depth in any::<u32>(),
+            event_source_id in uuids(),
+        ) -> native::QueueDepthForGeneratorResponse {
+            native::QueueDepthForGeneratorResponse::new(
+                queue_depth,
+                event_source_id,
+            )
+        }
+    }
+
+    prop_compose! {
+        pub fn queue_depth_for_analyzer_requests()(
+            analyzer_id in uuids(),
+        ) -> native::QueueDepthForAnalyzerRequest {
+            native::QueueDepthForAnalyzerRequest::new(
+                analyzer_id,
+            )
+        }
+    }
+
+    prop_compose! {
+        pub fn queue_depth_for_analyzer_responses()(
+            queue_depth in any::<u32>(),
+            dominant_event_source_id in uuids(),
+        ) -> native::QueueDepthForAnalyzerResponse {
+            native::QueueDepthForAnalyzerResponse::new(
+                queue_depth,
+                dominant_event_source_id,
+            )
+        }
+    }
 }
 
 pub mod graph_schema_manager {

@@ -129,4 +129,36 @@ impl PluginWorkQueueClient {
             )
             .await
     }
+
+    /// Retrieve the current queue depth for the given generator
+    #[tracing::instrument(skip(self, request), err)]
+    pub async fn queue_depth_for_generator(
+        &mut self,
+        request: native::QueueDepthForGeneratorRequest,
+    ) -> Result<native::QueueDepthForGeneratorResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.queue_depth_for_generator(request).await },
+            )
+            .await
+    }
+
+    /// Retrieve the current queue depth for the given analyzer
+    #[tracing::instrument(skip(self, request), err)]
+    pub async fn queue_depth_for_analyzer(
+        &mut self,
+        request: native::QueueDepthForAnalyzerRequest,
+    ) -> Result<native::QueueDepthForAnalyzerResponse, ClientError> {
+        self.client
+            .execute(
+                request,
+                |status| status.code() == tonic::Code::Unavailable,
+                10,
+                |mut client, request| async move { client.queue_depth_for_analyzer(request).await },
+            )
+            .await
+    }
 }

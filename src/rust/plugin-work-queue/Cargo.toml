@@ -31,7 +31,12 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 eyre = { workspace = true }
-tracing-subscriber = "0.3"
+test-context = { workspace = true }
+test-log = { workspace = true }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }
 
 [features]
 test-utils = []
