@@ -94,6 +94,9 @@ job "typescript-integration-tests" {
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
         GRAPL_WEB_UI_ENDPOINT_ADDRESS      = "http://${NOMAD_UPSTREAM_ADDR_web-ui}"
       }
+      resources {
+        memory = 5000
+      }
     }
   }
 }

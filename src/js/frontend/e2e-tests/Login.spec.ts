@@ -3,7 +3,8 @@ import { test, expect } from '@playwright/test';
 
 test('Login Component has title and a form with username and password fields which are filled in with environment variables ' +
   'which check to see that we can submit our login form ', async ({ page }) => {
-  await page.goto('localhost:1234/#/login');
+  const webUIAddress = process.env.GRAPL_WEB_UI_ENDPOINT_ADDRESS;
+  await page.goto(`${webUIAddress}/#/login`);
 
   // Expect a title "to contain" a substring.
   await expect(page).toHaveTitle(/Grapl/);
@@ -23,5 +24,5 @@ test('Login Component has title and a form with username and password fields whi
   await submitButton.click();
 
   // Expects the URL to contain intro.
-  await expect(page).toHaveURL("http://localhost:1234/#/"); // redirects to homepage
+  await expect(page).toHaveURL(`${webUIAddress}/#/`); // redirects to homepage
 });
