@@ -26,7 +26,7 @@ config:
     plugin-registry: 20221109220556-9bc6788
     plugin-work-queue: 20221109220556-9bc6788
     provisioner: 20221109220556-9bc6788
-    rust-integration-tests: 20221109220556-9bc6788
+    rust-integration-tests: 20221109221901-fc79ba6
     scylla-provisioner: 20221109220556-9bc6788
     sysmon-generator: 20220809152144-3c3caf3
     uid-allocator: 20221109220556-9bc6788
