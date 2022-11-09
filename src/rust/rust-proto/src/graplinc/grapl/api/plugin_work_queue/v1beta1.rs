@@ -809,3 +809,207 @@ impl TryFrom<get_execute_generator_response::MaybeJob> for Option<ExecutionJob> 
         Ok(maybe_job)
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QueueDepthForAnalyzerRequest {
+    analyzer_id: Uuid,
+}
+
+impl QueueDepthForAnalyzerRequest {
+    pub fn new(analyzer_id: Uuid) -> Self {
+        Self { analyzer_id }
+    }
+
+    pub fn analyzer_id(&self) -> Uuid {
+        self.analyzer_id
+    }
+}
+
+impl TryFrom<proto::QueueDepthForAnalyzerRequest> for QueueDepthForAnalyzerRequest {
+    type Error = SerDeError;
+
+    fn try_from(request: proto::QueueDepthForAnalyzerRequest) -> Result<Self, Self::Error> {
+        let analyzer_id = request
+            .analyzer_id
+            .ok_or(SerDeError::MissingField("analyzer_id"))?
+            .into();
+
+        Ok(Self { analyzer_id })
+    }
+}
+
+impl From<QueueDepthForAnalyzerRequest> for proto::QueueDepthForAnalyzerRequest {
+    fn from(request: QueueDepthForAnalyzerRequest) -> Self {
+        Self {
+            analyzer_id: Some(request.analyzer_id().into()),
+        }
+    }
+}
+
+impl ProtobufSerializable for QueueDepthForAnalyzerRequest {
+    type ProtobufMessage = proto::QueueDepthForAnalyzerRequest;
+}
+
+impl type_url::TypeUrl for QueueDepthForAnalyzerRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.QueueDepthForAnalyzerRequest";
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QueueDepthForAnalyzerResponse {
+    queue_depth: u32,
+    dominant_event_source_id: Uuid,
+}
+
+impl QueueDepthForAnalyzerResponse {
+    pub fn new(queue_depth: u32, dominant_event_source_id: Uuid) -> Self {
+        Self {
+            queue_depth,
+            dominant_event_source_id,
+        }
+    }
+
+    pub fn queue_depth(&self) -> u32 {
+        self.queue_depth
+    }
+
+    pub fn dominant_event_source_id(&self) -> Uuid {
+        self.dominant_event_source_id
+    }
+}
+
+impl TryFrom<proto::QueueDepthForAnalyzerResponse> for QueueDepthForAnalyzerResponse {
+    type Error = SerDeError;
+
+    fn try_from(response: proto::QueueDepthForAnalyzerResponse) -> Result<Self, Self::Error> {
+        let dominant_event_source_id = response
+            .dominant_event_source_id
+            .ok_or(SerDeError::MissingField("dominant_event_source_id"))?
+            .into();
+
+        Ok(Self {
+            queue_depth: response.queue_depth,
+            dominant_event_source_id,
+        })
+    }
+}
+
+impl From<QueueDepthForAnalyzerResponse> for proto::QueueDepthForAnalyzerResponse {
+    fn from(response: QueueDepthForAnalyzerResponse) -> Self {
+        Self {
+            queue_depth: response.queue_depth(),
+            dominant_event_source_id: Some(response.dominant_event_source_id().into()),
+        }
+    }
+}
+
+impl ProtobufSerializable for QueueDepthForAnalyzerResponse {
+    type ProtobufMessage = proto::QueueDepthForAnalyzerResponse;
+}
+
+impl type_url::TypeUrl for QueueDepthForAnalyzerResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.QueueDepthForAnalyzerResponse";
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QueueDepthForGeneratorRequest {
+    generator_id: Uuid,
+}
+
+impl QueueDepthForGeneratorRequest {
+    pub fn new(generator_id: Uuid) -> Self {
+        Self { generator_id }
+    }
+
+    pub fn generator_id(&self) -> Uuid {
+        self.generator_id
+    }
+}
+
+impl TryFrom<proto::QueueDepthForGeneratorRequest> for QueueDepthForGeneratorRequest {
+    type Error = SerDeError;
+
+    fn try_from(request: proto::QueueDepthForGeneratorRequest) -> Result<Self, Self::Error> {
+        let generator_id = request
+            .generator_id
+            .ok_or(SerDeError::MissingField("generator_id"))?
+            .into();
+
+        Ok(Self { generator_id })
+    }
+}
+
+impl From<QueueDepthForGeneratorRequest> for proto::QueueDepthForGeneratorRequest {
+    fn from(request: QueueDepthForGeneratorRequest) -> Self {
+        Self {
+            generator_id: Some(request.generator_id().into()),
+        }
+    }
+}
+
+impl ProtobufSerializable for QueueDepthForGeneratorRequest {
+    type ProtobufMessage = proto::QueueDepthForGeneratorRequest;
+}
+
+impl type_url::TypeUrl for QueueDepthForGeneratorRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.QueueDepthForGeneratorRequest";
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QueueDepthForGeneratorResponse {
+    queue_depth: u32,
+    event_source_id: Uuid,
+}
+
+impl QueueDepthForGeneratorResponse {
+    pub fn new(queue_depth: u32, event_source_id: Uuid) -> Self {
+        Self {
+            queue_depth,
+            event_source_id,
+        }
+    }
+
+    pub fn queue_depth(&self) -> u32 {
+        self.queue_depth
+    }
+
+    pub fn event_source_id(&self) -> Uuid {
+        self.event_source_id
+    }
+}
+
+impl TryFrom<proto::QueueDepthForGeneratorResponse> for QueueDepthForGeneratorResponse {
+    type Error = SerDeError;
+
+    fn try_from(response: proto::QueueDepthForGeneratorResponse) -> Result<Self, Self::Error> {
+        let event_source_id = response
+            .event_source_id
+            .ok_or(SerDeError::MissingField("event_source_id"))?
+            .into();
+
+        Ok(Self {
+            queue_depth: response.queue_depth,
+            event_source_id,
+        })
+    }
+}
+
+impl From<QueueDepthForGeneratorResponse> for proto::QueueDepthForGeneratorResponse {
+    fn from(response: QueueDepthForGeneratorResponse) -> Self {
+        Self {
+            queue_depth: response.queue_depth,
+            event_source_id: Some(response.event_source_id().into()),
+        }
+    }
+}
+
+impl ProtobufSerializable for QueueDepthForGeneratorResponse {
+    type ProtobufMessage = proto::QueueDepthForGeneratorResponse;
+}
+
+impl type_url::TypeUrl for QueueDepthForGeneratorResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.QueueDepthForGeneratorResponse";
+}
