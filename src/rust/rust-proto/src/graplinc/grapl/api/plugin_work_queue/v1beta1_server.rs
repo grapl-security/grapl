@@ -75,12 +75,12 @@ pub trait PluginWorkQueueApi {
     async fn queue_depth_for_generator(
         &self,
         request: native::QueueDepthForGeneratorRequest,
-    ) -> Result<native::QueueDepthForGeneratorResponse, Self::Error>;
+    ) -> Result<Option<native::QueueDepthForGeneratorResponse>, Self::Error>;
 
     async fn queue_depth_for_analyzer(
         &self,
         request: native::QueueDepthForAnalyzerRequest,
-    ) -> Result<native::QueueDepthForAnalyzerResponse, Self::Error>;
+    ) -> Result<Option<native::QueueDepthForAnalyzerResponse>, Self::Error>;
 }
 
 #[tonic::async_trait]
@@ -134,14 +134,54 @@ where
         &self,
         request: tonic::Request<proto::QueueDepthForGeneratorRequest>,
     ) -> Result<tonic::Response<proto::QueueDepthForGeneratorResponse>, tonic::Status> {
-        execute_rpc!(self, request, queue_depth_for_generator)
+        let proto_request = request.into_inner();
+        let native_request: native::QueueDepthForGeneratorRequest = proto_request.try_into()?;
+        let generator_id = native_request.generator_id();
+
+        if let Some(native_response) = self
+            .api_server
+            .queue_depth_for_generator(native_request)
+            .await
+            .map_err(Into::into)?
+        {
+            let proto_response = native_response
+                .try_into()
+                .map_err(crate::SerDeError::from)?;
+
+            Ok(tonic::Response::new(proto_response))
+        } else {
+            Err(tonic::Status::not_found(format!(
+                "no messages currently enqueued for generator {}",
+                generator_id
+            )))
+        }
     }
 
     async fn queue_depth_for_analyzer(
         &self,
         request: tonic::Request<proto::QueueDepthForAnalyzerRequest>,
     ) -> Result<tonic::Response<proto::QueueDepthForAnalyzerResponse>, tonic::Status> {
-        execute_rpc!(self, request, queue_depth_for_analyzer)
+        let proto_request = request.into_inner();
+        let native_request: native::QueueDepthForAnalyzerRequest = proto_request.try_into()?;
+        let analyzer_id = native_request.analyzer_id();
+
+        if let Some(native_response) = self
+            .api_server
+            .queue_depth_for_analyzer(native_request)
+            .await
+            .map_err(Into::into)?
+        {
+            let proto_response = native_response
+                .try_into()
+                .map_err(crate::SerDeError::from)?;
+
+            Ok(tonic::Response::new(proto_response))
+        } else {
+            Err(tonic::Status::not_found(format!(
+                "no messages currently enqueued for analyzer {}",
+                analyzer_id
+            )))
+        }
     }
 }
 

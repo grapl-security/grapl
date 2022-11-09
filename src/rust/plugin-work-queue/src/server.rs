@@ -302,20 +302,39 @@ impl PluginWorkQueueApi for PluginWorkQueue {
         Ok(v1beta1::AcknowledgeAnalyzerResponse {})
     }
 
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn queue_depth_for_generator(
         &self,
-        _request: v1beta1::QueueDepthForGeneratorRequest,
-    ) -> Result<v1beta1::QueueDepthForGeneratorResponse, PluginWorkQueueError> {
-        todo!()
+        request: v1beta1::QueueDepthForGeneratorRequest,
+    ) -> Result<Option<v1beta1::QueueDepthForGeneratorResponse>, PluginWorkQueueError> {
+        let generator_id = request.generator_id();
+
+        if let Some(result) = self.queue.queue_depth_for_generator(generator_id).await? {
+            Ok(Some(v1beta1::QueueDepthForGeneratorResponse::new(
+                result.queue_depth(),
+                result.event_source_id(),
+            )))
+        } else {
+            Ok(None)
+        }
     }
 
-    #[tracing::instrument(skip(self, _request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn queue_depth_for_analyzer(
         &self,
-        _request: v1beta1::QueueDepthForAnalyzerRequest,
-    ) -> Result<v1beta1::QueueDepthForAnalyzerResponse, PluginWorkQueueError> {
-        todo!()
+        request: v1beta1::QueueDepthForAnalyzerRequest,
+    ) -> Result<Option<v1beta1::QueueDepthForAnalyzerResponse>, PluginWorkQueueError> {
+        let analyzer_id = request.analyzer_id();
+
+        if let Some(result) = self.queue.queue_depth_for_analyzer(analyzer_id).await? {
+            let dominant_event_source_id = result.dominant_event_source_id();
+            Ok(Some(v1beta1::QueueDepthForAnalyzerResponse::new(
+                result.queue_depth(),
+                dominant_event_source_id,
+            )))
+        } else {
+            Ok(None)
+        }
     }
 }
 

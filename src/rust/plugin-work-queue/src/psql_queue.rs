@@ -54,6 +54,45 @@ pub struct Message {
     pub request: NextExecutionRequest,
 }
 
+#[derive(Clone, Debug, sqlx::Type)]
+pub struct GeneratorQueueDepth {
+    queue_depth: Option<i64>,
+    event_source_id: Uuid,
+}
+
+impl GeneratorQueueDepth {
+    pub fn queue_depth(&self) -> u32 {
+        self.queue_depth
+            .expect("queue_depth was null")
+            .try_into()
+            .expect("queue_depth could not be converted to u32")
+    }
+
+    pub fn event_source_id(&self) -> Uuid {
+        self.event_source_id
+    }
+}
+
+#[derive(Clone, Debug, sqlx::Type)]
+pub struct AnalyzerQueueDepth {
+    queue_depth: Option<i64>,
+    dominant_event_source_id: Option<Uuid>,
+}
+
+impl AnalyzerQueueDepth {
+    pub fn queue_depth(self) -> u32 {
+        self.queue_depth
+            .expect("queue_depth was null")
+            .try_into()
+            .expect("queue_depth could not be converted to u32")
+    }
+
+    pub fn dominant_event_source_id(&self) -> Uuid {
+        self.dominant_event_source_id
+            .expect("dominant_event_source_id was null")
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct PsqlQueue {
     pub pool: Pool<Postgres>,
@@ -321,5 +360,46 @@ impl PsqlQueue {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    #[instrument(skip(self), err)]
+    pub async fn queue_depth_for_generator(
+        &self,
+        generator_id: Uuid,
+    ) -> Result<Option<GeneratorQueueDepth>, PsqlQueueError> {
+        Ok(sqlx::query_as!(
+            GeneratorQueueDepth,
+            r#"
+                SELECT
+                    COUNT(plugin_id) AS queue_depth,
+                    event_source_id
+                FROM plugin_work_queue.generator_plugin_executions
+                WHERE plugin_id = $1 AND current_status = 'enqueued'
+                GROUP BY plugin_id, event_source_id
+            "#,
+            generator_id,
+        )
+        .fetch_optional(&self.pool)
+        .await?)
+    }
+
+    #[instrument(skip(self), err)]
+    pub async fn queue_depth_for_analyzer(
+        &self,
+        analyzer_id: Uuid,
+    ) -> Result<Option<AnalyzerQueueDepth>, PsqlQueueError> {
+        Ok(sqlx::query_as!(
+            AnalyzerQueueDepth,
+            r#"
+                SELECT
+                    COUNT(*) AS queue_depth,
+                    mode() WITHIN GROUP (ORDER BY event_source_id) AS dominant_event_source_id
+                FROM plugin_work_queue.analyzer_plugin_executions
+                WHERE plugin_id = $1 AND current_status = 'enqueued'
+            "#,
+            analyzer_id,
+        )
+        .fetch_optional(&self.pool)
+        .await?)
     }
 }
