@@ -131,7 +131,7 @@ impl PluginWorkProcessor for AnalyzerWorkProcessor {
         let execution_hit = process_result.ok();
         let ack_request = AcknowledgeAnalyzerRequest::new(
             request_id,
-            execution_hit.is_some(),
+            execution_hit,
             plugin_id,
             tenant_id,
             trace_id,

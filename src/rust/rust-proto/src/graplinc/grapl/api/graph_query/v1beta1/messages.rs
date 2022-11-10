@@ -18,6 +18,21 @@ use crate::{
     SerDeError,
 };
 
+/// Basically cribbed from std::collection::HashMap's implementation.
+fn fx_hash_map_equals<K, V>(first: &FxHashMap<K, V>, second: &FxHashMap<K, V>) -> bool
+where
+    K: Eq + std::hash::Hash,
+    V: PartialEq,
+{
+    if first.len() != second.len() {
+        return false;
+    }
+
+    first
+        .iter()
+        .all(|(key, value)| second.get(key).map_or(false, |v| *value == *v))
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct QueryId {
     pub value: u64,
@@ -118,8 +133,9 @@ impl TryFrom<proto::IntFilter> for IntFilter {
 
 impl From<IntFilter> for proto::IntFilter {
     fn from(value: IntFilter) -> proto::IntFilter {
+        let operation: proto::int_filter::Operation = value.operation.into();
         proto::IntFilter {
-            operation: value.operation as i32,
+            operation: operation as i32,
             value: value.value,
             negated: value.negated,
         }
@@ -352,8 +368,9 @@ impl TryFrom<proto::StringFilter> for StringFilter {
 
 impl From<StringFilter> for proto::StringFilter {
     fn from(value: StringFilter) -> proto::StringFilter {
+        let operation: proto::string_filter::Operation = value.operation.into();
         proto::StringFilter {
-            operation: value.operation as i32,
+            operation: operation as i32,
             value: value.value,
             negated: value.negated,
         }
@@ -533,8 +550,9 @@ impl TryFrom<proto::UidFilter> for UidFilter {
 
 impl From<UidFilter> for proto::UidFilter {
     fn from(value: UidFilter) -> proto::UidFilter {
+        let operation: proto::uid_filter::Operation = value.operation.into();
         proto::UidFilter {
-            operation: value.operation as i32,
+            operation: operation as i32,
             value: Some(value.value.into()),
         }
     }
@@ -890,6 +908,12 @@ pub struct StringProperties {
     pub prop_map: FxHashMap<PropertyName, String>,
 }
 
+impl PartialEq for StringProperties {
+    fn eq(&self, other: &Self) -> bool {
+        fx_hash_map_equals(&self.prop_map, &other.prop_map)
+    }
+}
+
 impl StringProperties {
     pub fn merge(&mut self, other: Self) {
         self.prop_map.extend(other.prop_map);
@@ -942,7 +966,7 @@ impl serde_impl::ProtobufSerializable for StringProperties {
     type ProtobufMessage = proto::StringProperties;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NodePropertiesView {
     pub uid: Uid,
     pub node_type: NodeType,
@@ -1209,6 +1233,13 @@ impl serde_impl::ProtobufSerializable for EdgeViewMap {
 pub struct GraphView {
     pub nodes: FxHashMap<Uid, NodePropertiesView>,
     pub edges: FxHashMap<(Uid, EdgeName), FxHashSet<Uid>>,
+}
+
+impl PartialEq for GraphView {
+    fn eq(&self, other: &Self) -> bool {
+        fx_hash_map_equals(&self.nodes, &other.nodes)
+            && fx_hash_map_equals(&self.edges, &other.edges)
+    }
 }
 
 impl GraphView {

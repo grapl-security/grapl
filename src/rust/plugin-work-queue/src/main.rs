@@ -16,11 +16,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_config = PluginWorkQueueDbConfig::parse();
     let generator_producer_config =
         ProducerConfig::with_topic_env_var("GENERATOR_KAFKA_PRODUCER_TOPIC");
-    // TODO let analyzer_producer_config = ...
+    let analyzer_producer_config =
+        ProducerConfig::with_topic_env_var("ANALYZER_KAFKA_PRODUCER_TOPIC");
     exec_service(ConfigUnion {
         service_config,
         db_config,
         generator_producer_config,
+        analyzer_producer_config,
     })
     .await?;
     Ok(())

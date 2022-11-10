@@ -4,6 +4,7 @@ package graplinc.grapl.api.plugin_work_queue.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/api/graph/v1beta1/types.proto";
+import "graplinc/grapl/api/plugin_sdk/analyzers/v1beta1/analyzers.proto";
 
 // A job for a given plugin, for a given tenant, to be executed against `data`
 message ExecutionJob {
@@ -106,9 +107,8 @@ message AcknowledgeGeneratorResponse {}
 message AcknowledgeAnalyzerRequest {
   // The request_id of the job that has been completed
   int64 request_id = 1;
-  // 'true' if success, 'false' if failure
-  // TODO: This will likely become an `optional GeneratedMessage` field like AcknowledgeGeneratorRequest
-  bool success = 2;
+  // Some(ExecutionResult) if analyzer ran successfully, None if it failed.
+  optional graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.ExecutionResult execution_result = 2;
   // The plugin id of the plugin that completed the request
   graplinc.common.v1beta1.Uuid plugin_id = 3;
   // The tenant the plugin belongs to
