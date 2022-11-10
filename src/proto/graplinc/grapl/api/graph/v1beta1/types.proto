@@ -200,19 +200,3 @@ message Lens {
   // score (absent prior to engagement-creator)
   optional uint64 score = 4;
 }
-
-// Result computed by an analyzer when it makes a detection.
-message ExecutionHit {
-  // The mapping of node_key to the identified Node
-  map<uint64, graplinc.grapl.api.graph.v1beta1.IdentifiedNode> nodes = 1;
-  // The mapping of node_key to the EdgeLists
-  map<uint64, graplinc.grapl.api.graph.v1beta1.IdentifiedEdgeList> edges = 2;
-  // The name of the analyzer which made the detection
-  string analyzer_name = 3;
-  // The risk score associated with this detection
-  uint64 risk_score = 4;
-  // Fragmentary lenses (only have type and name set)
-  repeated Lens lenses = 5;
-  // The nodes which contributed to the risk score
-  repeated string risky_node_keys = 6;
-}

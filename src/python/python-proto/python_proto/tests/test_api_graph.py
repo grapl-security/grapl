@@ -8,7 +8,6 @@ from python_proto.tests.strategies import (
     decrement_only_uint_props,
     edge_lists,
     edges,
-    execution_hits,
     graph_descriptions,
     id_strategies,
     identified_graphs,
@@ -40,10 +39,6 @@ def test_edge_list_encode_decode() -> None:
 
 def test_edge_encode_decode() -> None:
     check_encode_decode_invariant(edges())
-
-
-def test_execution_hit_encode_decode() -> None:
-    check_encode_decode_invariant(execution_hits())
 
 
 def test_graph_description_encode_decode() -> None:

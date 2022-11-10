@@ -73,6 +73,7 @@ message AnalyzerName {
   string value = 1;
 }
 
+// TODO: This should be turned into a Pipeline message in the future.
 // An ExecutionHit represents the output of an Analyzer, including
 message ExecutionHit {
   // The graph that the Analyzer matched against as well as any context
