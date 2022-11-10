@@ -2,7 +2,8 @@
 
 # grapl-typescript-base
 ################################################################################
-FROM node:18-bullseye-slim AS grapl-typescript-base
+# We're using node:18-bullseye because it allows sudo acccess.
+FROM node:18-bullseye AS grapl-typescript-base
 SHELL ["/bin/bash", "-c"]
 
 RUN adduser \

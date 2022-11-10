@@ -95,7 +95,7 @@ job "typescript-integration-tests" {
         GRAPL_WEB_UI_ENDPOINT_ADDRESS      = "http://${NOMAD_UPSTREAM_ADDR_web-ui}"
       }
       resources {
-        memory = 5000
+        memory = 1024
       }
     }
   }

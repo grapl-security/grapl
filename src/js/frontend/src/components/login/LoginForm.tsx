@@ -65,7 +65,7 @@ const LoginForm = ({ onSubmit }: FormProps) => {
             <button data-testid={"button"} name="submitButton" type="submit">
               SUBMIT
             </button>
-            {state.userLoggedIn && <div data-testid={"loginError"}>Unsuccessful Login</div>}
+            {state.userLoggedIn && <div data-testid={"loginError"}>Login Unsuccessful</div>}
           </Form>
         )}
       </Formik>
