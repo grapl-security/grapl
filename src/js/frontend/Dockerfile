@@ -4,7 +4,7 @@
 ################################################################################
 # We're using node:18-bullseye because it allows sudo acccess.
 FROM node:18-bullseye AS grapl-typescript-base
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN adduser \
         --disabled-password \
@@ -19,9 +19,6 @@ RUN groupadd wheel \
     && usermod -aG wheel grapl \
     && echo "auth       sufficient pam_wheel.so trust" | tee /etc/pam.d/su \
     && echo "permissions" ls -l /usr/bin/su
-
-#RUN chmod u+s /usr/bin/su
-
 
 # Uncomment to get the versions for pins
 #RUN dpkg-query -l && exit 5
@@ -42,12 +39,10 @@ RUN yarn policies set-version $YARN_VERSION
 COPY --chown=grapl . frontend
 WORKDIR "/home/grapl/frontend"
 
-
 RUN yarn install \
     && yarn build \
     && yarn cache clean \
     && yarn playwright install --with-deps
-
 
 
 CMD ["yarn integrationTest"]

@@ -32,7 +32,7 @@ test.describe("navigation", () => {
 
   test("ensure user recieves error when they submit a form with incorrect credentials", async ({ page }) => {
     const submitButton = page.getByRole("button", { name: "Submit" });
-    // Giveen a user who navigates to the login component in our app
+    // Given a user who navigates to the login component in our app
     await page.goto(`${webUIAddress}/#/login`);
     // When the user submits the form with an incorrect username and password
     await page.getByPlaceholder("Username").fill("fakeUsername");
