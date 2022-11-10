@@ -24,13 +24,16 @@ pub enum GraphQueryError {
     NodeQueryError { uid: Uid, source: NodeQueryError },
 }
 
-#[tracing::instrument(skip(graph_query, property_query_executor))]
+#[tracing::instrument(skip(graph_query, property_query_executor), err)]
 pub async fn query_graph(
     graph_query: &GraphQuery,
     uid: Uid,
     tenant_id: uuid::Uuid,
     property_query_executor: PropertyQueryExecutor,
 ) -> Result<Option<(GraphView, Uid)>, GraphQueryError> {
+    // We build N futures, one for each Query in the GraphQuery, 
+    // and join them all at the end.
+
     let mut query_handles = Vec::with_capacity(graph_query.node_property_queries.len());
     let x_query_short_circuiter = ShortCircuit::new();
     for node_query in graph_query.node_property_queries.values() {
@@ -61,6 +64,7 @@ pub async fn query_graph(
             }
         });
     }
+    
     // todo: We don't need to join_all, we can stop polling the other futures
     //       once one of them matches
     //       try_select may work better

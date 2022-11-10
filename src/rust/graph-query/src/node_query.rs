@@ -43,6 +43,8 @@ use crate::{
 pub enum NodeQueryError {
     #[error("Property query failed: {0:?}")]
     PropertyQueryError(#[from] PropertyQueryError),
+    #[error("Invalid edge key: {0:?}")]
+    NoSuchEdgeQueryId(QueryId),
 }
 
 pub(crate) fn match_property(
@@ -229,7 +231,10 @@ pub async fn fetch_node_with_edges(
         let edge_rows = &edges[edge_name];
 
         for edge_query_id in edge_queries {
-            let edge_query = &graph_query.node_property_queries[edge_query_id];
+            let edge_query = match graph_query.node_property_queries.get(edge_query_id) {
+                Some(edge_query) => edge_query,
+                None => return Err(NodeQueryError::NoSuchEdgeQueryId(*edge_query_id))
+            };
             // we have to check the reverse edge as well
             if visited.check_and_add(
                 node_properties_query.query_id,

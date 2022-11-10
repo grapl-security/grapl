@@ -4,7 +4,7 @@ import dataclasses
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable, Mapping
 from uuid import UUID, uuid4
 
 import grpc
@@ -14,6 +14,7 @@ from grapl_plugin_sdk.analyzer.query_and_views import NodeView
 from grpc import aio as grpc_aio  # type: ignore
 
 # ^ grpc_aio: Type checking doesn't exist yet for gRPC asyncio runtime
+from python_proto.metadata import GrpcMetadata
 from python_proto.api.graph_query.v1beta1 import messages as graph_query_messages
 from python_proto.api.graph_query_proxy.v1beta1.client import GraphQueryProxyClient
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_messages
@@ -59,6 +60,23 @@ MISS_RESPONSE: Final[
     )
 )
 
+class RunAnalyzerRequestMetadata:
+    trace_id: str | None
+
+    def __init__(self, grpc_metadata: grpc_aio.Metadata | None) -> None:
+        grpc_metadata = grpc_metadata or {}
+        self.trace_id = grpc_metadata.get("x-trace-id")
+    
+    def to_grpc_metadata(self) -> GrpcMetadata:
+        metadata = [
+            ("x-trace-id", self.trace_id),
+        ]
+        metadata_no_nones = [
+            (k, v) for (k, v) in metadata
+            if v is not None
+        ]
+        return tuple(metadata_no_nones)
+        
 
 @dataclass(slots=True)
 class AnalyzerServiceImpl:
@@ -78,14 +96,14 @@ class AnalyzerServiceImpl:
     ) -> analyzer_messages.RunAnalyzerResponse:
 
         # TODO: Extract a Request ID from context.invocation_metadata()
-        request_id = uuid4()
+        metadata = RunAnalyzerRequestMetadata(grpc_aio.Metadata.from_tuple(context.invocation_metadata()))
         logger = LOGGER.bind(
-            request_id=str(request_id),
+            trace_id=str(metadata.trace_id),
         )
         logger.debug("run_analyzer on request", request=request)
 
         try:
-            return await self._run_analyzer_inner(request, logger)
+            return await self._run_analyzer_inner(request, logger, metadata)
         except Exception as e:
             logger.error("run_analyzer failed", error=str(e))
             details = f"error_as_grpc_abort exception: {str(e)}"
@@ -97,7 +115,10 @@ class AnalyzerServiceImpl:
         raise AssertionError("not reachable")
 
     async def _run_analyzer_inner(
-        self, request: analyzer_messages.RunAnalyzerRequest, logger: Structlogger
+        self,
+        request: analyzer_messages.RunAnalyzerRequest,
+        logger: Structlogger,
+        metadata: RunAnalyzerRequestMetadata,
     ) -> analyzer_messages.RunAnalyzerResponse:
         match request.update.inner:
             case PropertyUpdate() as prop_update:
@@ -106,22 +127,28 @@ class AnalyzerServiceImpl:
                 # process_name, that's obviously a miss
                 prop_name = prop_update.property_name
                 if not check_for_string_property(self._graph_query, prop_name):
-                    logger.debug("No string property")
+                    logger.debug(
+                        "This PropertyUpdate is not for a StringProperty we're querying on."
+                    )
                     return MISS_RESPONSE
 
                 updated_node_uid = prop_update.uid
             case analyzer_messages.EdgeUpdate() as edge_update:
-                raise NotImplementedError(
-                    "I'll implement Edge Updates after we can do tests"
-                )
-                # updated_node_uid = TODO
+                # future potential optimization: add an
+                # if not query_pertains_to_edge_update(self._graph_query, edge_update): 
+                #   return MISS_RESPONSE
+                # where the function checks the names of update's edges against the graph query's edges
+
+                updated_node_uid = edge_update.src_uid
 
         # Now we have the UID of nodes recently updated, and a
         # query. check if the UID could match any in the query.
+
         matched_graph: graph_query_messages.MatchedGraphWithUid | None = (
             self._graph_client.query_with_uid(
                 node_uid=updated_node_uid,
                 graph_query=self._graph_query,
+                metadata=metadata.to_grpc_metadata(),
             ).maybe_match.as_optional()
         )
         # if matched_graphs empty, that's a textbook miss

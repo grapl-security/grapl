@@ -74,6 +74,10 @@ impl GraphQueryApi for GraphQueryService {
         let node_uid = request.node_uid;
 
         let graph_query: GraphQuery = request.graph_query;
+
+        tracing::info!(mesage = "query_graph_with_uid", 
+            graph_query =? graph_query, 
+        );
         let graph = query_graph(
             &graph_query,
             node_uid,
@@ -81,6 +85,9 @@ impl GraphQueryApi for GraphQueryService {
             self.property_query_executor.clone(),
         )
         .await?;
+        tracing::info!(mesage = "resulting graph", 
+            graph =? graph, 
+        );
 
         let (matched_graph, root_uid) = match graph {
             Some((graph, root_uid)) => (graph, root_uid),
