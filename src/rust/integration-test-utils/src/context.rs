@@ -267,6 +267,19 @@ impl E2eTestContext {
         Ok(analyzer_plugin_id)
     }
 
+    pub async fn setup_process_named_svchost_analyzer(
+        &mut self,
+        tenant_id: uuid::Uuid,
+        test_name: &str,
+    ) -> eyre::Result<uuid::Uuid> {
+        let analyzer_artifact = test_fixtures::get_process_named_svchost_analyzer()?;
+        let analyzer_plugin_id = self
+            .create_analyzer(tenant_id, test_name.to_owned(), analyzer_artifact)
+            .await?;
+        self.deploy_analyzer(analyzer_plugin_id).await?;
+        Ok(analyzer_plugin_id)
+    }
+
     pub async fn setup_sysmon_generator(
         &mut self,
         tenant_id: uuid::Uuid,

@@ -122,6 +122,38 @@ message AcknowledgeAnalyzerRequest {
 // A response to an AcknowledgeAnalyzerRequest
 message AcknowledgeAnalyzerResponse {}
 
+// A request for the current queue depth for a given analyzer (useful for
+// backpressure)
+message QueueDepthForAnalyzerRequest {
+  // The analyzer's plugin ID
+  graplinc.common.v1beta1.Uuid analyzer_id = 1;
+}
+
+// A response containing the current queue depth for the given analyzer and the
+// current "dominant event source ID" present in the queue
+message QueueDepthForAnalyzerResponse {
+  // How many messages are currently in the given analyzer's queue
+  uint32 queue_depth = 1;
+
+  // The event source ID which contributes most to this analyzer's queue
+  graplinc.common.v1beta1.Uuid dominant_event_source_id = 2;
+}
+
+// A request for the current queue depth for a given generator (useful for
+// backpressure)
+message QueueDepthForGeneratorRequest {
+  // The generator's plugin ID
+  graplinc.common.v1beta1.Uuid generator_id = 1;
+}
+
+message QueueDepthForGeneratorResponse {
+  // How many messages are currently in the given generator's queue
+  uint32 queue_depth = 1;
+
+  // The event source corresponding to this generator
+  graplinc.common.v1beta1.Uuid event_source_id = 2;
+}
+
 // The PluginWorkQueueService manages ExecutionJobs for Generator and Analyzer plugins
 service PluginWorkQueueService {
   // Adds a new execution job for a generator
@@ -136,4 +168,8 @@ service PluginWorkQueueService {
   rpc AcknowledgeGenerator(AcknowledgeGeneratorRequest) returns (AcknowledgeGeneratorResponse);
   // Acknowledges the completion of an analyzer job
   rpc AcknowledgeAnalyzer(AcknowledgeAnalyzerRequest) returns (AcknowledgeAnalyzerResponse);
+  // Retrieves the current queue depth for a given generator
+  rpc QueueDepthForGenerator(QueueDepthForGeneratorRequest) returns (QueueDepthForGeneratorResponse);
+  // Retrieves the current queue depth for a given analyzer
+  rpc QueueDepthForAnalyzer(QueueDepthForAnalyzerRequest) returns (QueueDepthForAnalyzerResponse);
 }

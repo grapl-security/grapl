@@ -38,12 +38,14 @@ use crate::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginWorkQueueError {
-    #[error("PsqlQueueError {0}")]
+    #[error("Database error: {0}")]
     PsqlQueueError(#[from] PsqlQueueError),
-    #[error("PluginWorkQueueDeserializationError {0}")]
+    #[error("Deserialization error: {0}")]
     DeserializationError(#[from] SerDeError),
-    #[error("KafkaProducerError {0}")]
+    #[error("Kafka producer error: {0}")]
     KafkaProducerError(#[from] ProducerError),
+    #[error("Not found: {0}")]
+    NotFound(String),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -62,6 +64,7 @@ impl From<PluginWorkQueueError> for Status {
             PluginWorkQueueError::DeserializationError(_) => {
                 Status::invalid_argument("Invalid argument")
             }
+            PluginWorkQueueError::NotFound(msg) => Status::not_found(msg),
         }
     }
 }
@@ -300,6 +303,53 @@ impl PluginWorkQueueApi for PluginWorkQueue {
             .ack_analyzer(request.request_id().into(), status)
             .await?;
         Ok(v1beta1::AcknowledgeAnalyzerResponse {})
+    }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn queue_depth_for_generator(
+        &self,
+        request: v1beta1::QueueDepthForGeneratorRequest,
+    ) -> Result<v1beta1::QueueDepthForGeneratorResponse, PluginWorkQueueError> {
+        let generator_id = request.generator_id();
+
+        if let Some(result) = self.queue.queue_depth_for_generator(generator_id).await? {
+            Ok(v1beta1::QueueDepthForGeneratorResponse::new(
+                result.queue_depth(),
+                result.event_source_id(),
+            ))
+        } else {
+            Err(PluginWorkQueueError::NotFound(format!(
+                "no messages currently enqueued for generator {}",
+                generator_id
+            )))
+        }
+    }
+
+    #[tracing::instrument(skip(self, request), err)]
+    async fn queue_depth_for_analyzer(
+        &self,
+        request: v1beta1::QueueDepthForAnalyzerRequest,
+    ) -> Result<v1beta1::QueueDepthForAnalyzerResponse, PluginWorkQueueError> {
+        let analyzer_id = request.analyzer_id();
+
+        if let Some(result) = self.queue.queue_depth_for_analyzer(analyzer_id).await? {
+            if let Some(dominant_event_source_id) = result.dominant_event_source_id() {
+                Ok(v1beta1::QueueDepthForAnalyzerResponse::new(
+                    result.queue_depth(),
+                    dominant_event_source_id,
+                ))
+            } else {
+                Err(PluginWorkQueueError::NotFound(format!(
+                    "no messages currently enqueued for analyzer {}",
+                    analyzer_id
+                )))
+            }
+        } else {
+            Err(PluginWorkQueueError::NotFound(format!(
+                "no messages currently enqueued for analyzer {}",
+                analyzer_id
+            )))
+        }
     }
 }
 

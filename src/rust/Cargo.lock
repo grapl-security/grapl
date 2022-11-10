@@ -3602,6 +3602,8 @@ dependencies = [
  "kafka",
  "rust-proto",
  "sqlx",
+ "test-context",
+ "test-log",
  "thiserror",
  "tokio",
  "tracing",

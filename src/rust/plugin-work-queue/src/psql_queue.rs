@@ -54,6 +54,44 @@ pub struct Message {
     pub request: NextExecutionRequest,
 }
 
+#[derive(Clone, Debug, sqlx::Type)]
+pub struct GeneratorQueueDepth {
+    queue_depth: Option<i64>,
+    event_source_id: Uuid,
+}
+
+impl GeneratorQueueDepth {
+    pub fn queue_depth(&self) -> u32 {
+        self.queue_depth
+            .expect("queue_depth was null")
+            .try_into()
+            .expect("queue_depth could not be converted to u32")
+    }
+
+    pub fn event_source_id(&self) -> Uuid {
+        self.event_source_id
+    }
+}
+
+#[derive(Clone, Debug, sqlx::Type)]
+pub struct AnalyzerQueueDepth {
+    queue_depth: Option<i64>,
+    dominant_event_source_id: Option<Uuid>,
+}
+
+impl AnalyzerQueueDepth {
+    pub fn queue_depth(self) -> u32 {
+        self.queue_depth
+            .expect("queue_depth was null")
+            .try_into()
+            .expect("queue_depth could not be converted to u32")
+    }
+
+    pub fn dominant_event_source_id(&self) -> Option<Uuid> {
+        self.dominant_event_source_id
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct PsqlQueue {
     pub pool: Pool<Postgres>,
@@ -150,7 +188,6 @@ impl PsqlQueue {
     ) -> Result<Option<Message>, PsqlQueueError> {
         // This function does a few things
         // 1. It attempts to get a message from the queue
-        //      -> Where that message isn't over a day old
         //      -> Where that message is "visible"
         //      -> Where that message isn't currently being evaluated by another transaction
         //      -> Where that message is in the 'enqueued' state
@@ -161,11 +198,9 @@ impl PsqlQueue {
         // * messages are invisible for 10 seconds *after* each select
         //      * The 10 second timeout is arbitrary but reasonable.
         // * messages are immediately visible after their insert
-        // * messages 'expire' after one day
         // * messages currently do not have a maximum retry limit
-        // * The one day expiration matches our 1 day partitioning strategy
 
-        // In the future we can leverage a maximum retry limit as well as a batch version of this query
+        // In the future we can leverage a batch version of this query
         // A more dynamic visibility strategy would also be reasonable
         let request: Option<NextExecutionRequest> = sqlx::query_as!(
             NextExecutionRequest,
@@ -189,7 +224,6 @@ impl PsqlQueue {
                  FROM plugin_work_queue.generator_plugin_executions
                  WHERE plugin_id = $1
                    AND current_status = 'enqueued'
-                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
                    AND visible_after <= CURRENT_TIMESTAMP
                  ORDER BY creation_time ASC
                  FOR UPDATE SKIP LOCKED
@@ -219,7 +253,6 @@ impl PsqlQueue {
     ) -> Result<Option<Message>, PsqlQueueError> {
         // `get_message` does a few things
         // 1. It attempts to get a message from the queue
-        //      -> Where that message isn't over a day old
         //      -> Where that message is "visible"
         //      -> Where that message isn't currently being evaluated by another transaction
         //      -> Where that message is in the 'enqueued' state
@@ -230,11 +263,9 @@ impl PsqlQueue {
         // * messages are invisible for 10 seconds *after* each select
         //      * The 10 second timeout is arbitrary but reasonable.
         // * messages are immediately visible after their insert
-        // * messages 'expire' after one day
         // * messages currently do not have a maximum retry limit
-        // * The one day expiration matches our 1 day partitioning strategy
 
-        // In the future we can leverage a maximum retry limit as well as a batch version of this query
+        // In the future we can leverage a batch version of this query
         // A more dynamic visibility strategy would also be reasonable
         let request: Option<NextExecutionRequest> = sqlx::query_as!(
             NextExecutionRequest,
@@ -258,7 +289,6 @@ impl PsqlQueue {
                  FROM plugin_work_queue.analyzer_plugin_executions
                  WHERE plugin_id = $1
                    AND current_status = 'enqueued'
-                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
                    AND visible_after <= CURRENT_TIMESTAMP
                  ORDER BY creation_time ASC
                  FOR UPDATE SKIP LOCKED
@@ -329,5 +359,46 @@ impl PsqlQueue {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    #[instrument(skip(self), err)]
+    pub async fn queue_depth_for_generator(
+        &self,
+        generator_id: Uuid,
+    ) -> Result<Option<GeneratorQueueDepth>, PsqlQueueError> {
+        Ok(sqlx::query_as!(
+            GeneratorQueueDepth,
+            r#"
+                SELECT
+                    COUNT(plugin_id) AS queue_depth,
+                    event_source_id
+                FROM plugin_work_queue.generator_plugin_executions
+                WHERE plugin_id = $1 AND current_status = 'enqueued'
+                GROUP BY plugin_id, event_source_id
+            "#,
+            generator_id,
+        )
+        .fetch_optional(&self.pool)
+        .await?)
+    }
+
+    #[instrument(skip(self), err)]
+    pub async fn queue_depth_for_analyzer(
+        &self,
+        analyzer_id: Uuid,
+    ) -> Result<Option<AnalyzerQueueDepth>, PsqlQueueError> {
+        Ok(sqlx::query_as!(
+            AnalyzerQueueDepth,
+            r#"
+                SELECT
+                    COUNT(plugin_id) AS queue_depth,
+                    mode() WITHIN GROUP (ORDER BY event_source_id) AS dominant_event_source_id
+                FROM plugin_work_queue.analyzer_plugin_executions
+                WHERE plugin_id = $1 AND current_status = 'enqueued'
+            "#,
+            analyzer_id,
+        )
+        .fetch_optional(&self.pool)
+        .await?)
     }
 }

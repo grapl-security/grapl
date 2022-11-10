@@ -1,3 +1,7 @@
+"""
+This is meant as an extremely simple Analyzer to get the pipeline to fire
+during integration tests.
+"""
 from datetime import datetime
 
 from grapl_plugin_sdk.analyzer.analyzer import (
@@ -17,41 +21,14 @@ from python_proto.api.plugin_sdk.analyzers.v1beta1.messages import (
     ExecutionHit,
 )
 from python_proto.common import Timestamp
-from python_proto.grapl.common.v1beta1.messages import EdgeName, NodeType, PropertyName
+from python_proto.grapl.common.v1beta1.messages import NodeType, PropertyName
 
 
-class SuspiciousSvchostAnalyzer(Analyzer):
+class ProcessNamedSvchost(Analyzer):
     @staticmethod
     def query() -> NodeQuery:
-        # Query for parent Process nodes
-        parent_node_query = NodeQuery(
-            NodePropertyQuery(node_type=NodeType(value="Process"))
-        )
-
-        # Where process_name is not any of the following.
-        invalid_parents = [
-            "services.exe",
-            "smss.exe",
-            "ngentask.exe",
-            "userinit.exe",
-            "GoogleUpdate.exe",
-            "conhost.exe",
-            "MpCmdRun.exe",
-        ]
-        for invalid_parent in invalid_parents:
-            parent_node_query.with_string_filters(
-                property_name=PropertyName(value="process_name"),
-                filters=[
-                    StringFilter(
-                        operation=StringOperation.EQUAL,
-                        value=invalid_parent,
-                        negated=True,
-                    ),
-                ],
-            )
-
-        # Describe the susupicious Child node: a Process named svchost.exe
-        child_node_query = NodeQuery(
+        # Describes a Process where `process_name` = `svchost.exe`
+        node_query = NodeQuery(
             NodePropertyQuery(node_type=NodeType(value="Process"))
         ).with_string_filters(
             property_name=PropertyName(value="process_name"),
@@ -64,11 +41,7 @@ class SuspiciousSvchostAnalyzer(Analyzer):
             ],
         )
 
-        return parent_node_query.with_edge_filter(
-            edge_name=EdgeName("children"),
-            reverse_edge_name=EdgeName("parent"),
-            edge_filter=child_node_query,
-        )
+        return node_query
 
     async def analyze(
         self, matched: NodeView, ctx: AnalyzerContext
@@ -95,7 +68,7 @@ def main() -> None:
     """
     main() is invoked by the pex_binary() entrypoint=
     """
-    analyzer = SuspiciousSvchostAnalyzer()
+    analyzer = ProcessNamedSvchost()
     # Perhaps `serve_analyzer` should just take `(analyzer=analyzer)`?
     # We shouldn't pass on the `AnalyzerServiceConfig` to the consumer, right?
     # https://github.com/grapl-security/issue-tracker/issues/1032
