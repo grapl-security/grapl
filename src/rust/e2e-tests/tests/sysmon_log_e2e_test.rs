@@ -299,16 +299,13 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
 
     tracing::info!(">> Test: `analyzer` emits ExecutionHits to `analyzer-executions` topic");
     {
-        let execution_hits = execution_hits_scanner_handle
+        let execution_hits: Vec<ExecutionHit> = execution_hits_scanner_handle
             .await
-            .expect("failed to configure execution hits scanner");
-        let execution_hits: Vec<ExecutionHit> = execution_hits
+            .expect("failed to configure execution hits scanner")
             .into_iter()
             .map(|env| env.inner_message())
             .collect();
 
-        // there are two updates about a process named svchost.exe, hence two
-        // execution hits.
         assert!(
             execution_hits.len() == 1,
             "Expected one execution hit, got: {execution_hits:?}"
