@@ -625,14 +625,21 @@ impl GraphMutationApi for GraphMutationManager {
             .resolve_reverse_edge(tenant_id, source_node_type.clone(), edge_name.clone())
             .await?;
 
-        self.upsert_edges(tenant_id, from_uid, to_uid, edge_name, reverse_edge_name)
-            .await?;
+        self.upsert_edges(
+            tenant_id,
+            from_uid,
+            to_uid,
+            edge_name,
+            reverse_edge_name.clone(),
+        )
+        .await?;
 
         Ok(CreateEdgeResponse {
             // todo: At this point we don't track if the update was redundant
             //       but it is always safe (albeit suboptimal) to assume that
             //       it was not.
             mutation_redundancy: MutationRedundancy::Maybe,
+            reverse_edge_name,
         })
     }
 }

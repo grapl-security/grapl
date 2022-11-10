@@ -65,6 +65,9 @@ message CreateEdgeRequest {
 message CreateEdgeResponse {
   // Indicates whether or not the update was redundant, and therefor dropped
   MutationRedundancy mutation_redundancy = 1;
+  // The reverse edge name is looked up at create-edge process time, and it's
+  // useful to propagate it across the wire back to graph-merger.
+  graplinc.grapl.common.v1beta1.EdgeName reverse_edge_name = 2;
 }
 
 // DeleteEdgeRequest holds the information necessary to create a node

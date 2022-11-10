@@ -15,9 +15,10 @@ use rust_proto::graplinc::grapl::{
     api::{
         pipeline_ingress::v1beta1::PublishRawLogRequest,
         plugin_sdk::analyzers::v1beta1::messages::{
+            EdgeUpdate,
             StringPropertyUpdate,
             UInt64PropertyUpdate,
-            Update, EdgeUpdate,
+            Update,
         },
     },
     common::v1beta1::types::{
@@ -161,7 +162,7 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut E2eTestContext) -> ey
 
     let edge_update = updates.iter().find(|update| {
         matches!(update.clone(), Update::Edge(EdgeUpdate {forward_edge_name, reverse_edge_name, ..}) if {
-            forward_edge_name.value == "children" && reverse_edge_name = "parent"
+            forward_edge_name.value == "children" && reverse_edge_name.value == "parent"
         })
     });
     assert!(
