@@ -251,7 +251,7 @@ impl type_url::TypeUrl for AcknowledgeGeneratorResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeGeneratorResponse";
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AcknowledgeAnalyzerRequest {
     request_id: i64,
     execution_result: Option<ExecutionResult>,

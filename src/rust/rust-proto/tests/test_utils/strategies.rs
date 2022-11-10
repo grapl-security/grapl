@@ -941,11 +941,10 @@ pub mod plugin_work_queue {
         Just(native::AcknowledgeGeneratorResponse {})
     }
 
-    /*
     prop_compose! {
         pub fn acknowledge_analyzer_requests()(
             request_id in any::<i64>(),
-            execution_result in analyzer_sdk::execution_results(),
+            execution_result in proptest::option::of(analyzer_sdk::execution_results()),
             plugin_id in uuids(),
             tenant_id in uuids(),
             trace_id in uuids(),
@@ -960,7 +959,7 @@ pub mod plugin_work_queue {
                 event_source_id,
             )
         }
-    } */
+    }
 
     pub fn acknowledge_analyzer_responses(
     ) -> impl Strategy<Value = native::AcknowledgeAnalyzerResponse> {
@@ -1157,10 +1156,7 @@ pub mod analyzer_sdk {
             UidFilter,
             UidOperation,
         },
-        plugin_sdk::analyzers::v1beta1::messages::{
-            self as native,
-            Update,
-        },
+        plugin_sdk::analyzers::v1beta1::messages::{self as native,},
     };
 
     use super::{
@@ -1221,12 +1217,12 @@ pub mod analyzer_sdk {
         }
     }
 
-    pub fn updates() -> impl Strategy<Value = Update> {
+    pub fn updates() -> impl Strategy<Value = native::Update> {
         prop_oneof![
-            string_property_updates().prop_map(Update::StringProperty),
-            uint_64_property_updates().prop_map(Update::Uint64Property),
-            int_64_property_updates().prop_map(Update::Int64Property),
-            edge_updates().prop_map(Update::Edge),
+            string_property_updates().prop_map(native::Update::StringProperty),
+            uint_64_property_updates().prop_map(native::Update::Uint64Property),
+            int_64_property_updates().prop_map(native::Update::Int64Property),
+            edge_updates().prop_map(native::Update::Edge),
         ]
     }
 
@@ -1294,15 +1290,16 @@ pub mod analyzer_sdk {
         }
     }
 
-    /*
-    pub fn execution_results() -> impl Strategy<Value = Option<native::ExecutionResult>> {
+    pub fn execution_results() -> impl Strategy<Value = native::ExecutionResult> {
         prop_oneof![
-            // TODO: Flesh this out to include real ExecutionHit/Miss
-            // currently those were only tested in py not rust code
-            Just(None)
+            Just(native::ExecutionResult::ExecutionMiss(
+                native::ExecutionMiss {}
+            )),
+            // TODO wimax Nov 10: Flesh this out to also include real ExecutionHit.
+            // Currently those are only tested in python, not rust.
+            // Just(native::ExecutionResult::ExecutionHit(native::ExecutionHit{})),
         ]
     }
-    */
 
     prop_compose! {
         pub fn run_analyzer_requests()(

@@ -425,12 +425,10 @@ mod plugin_work_queue {
         }
 
 
-        /*
         #[test]
         fn test_acknowledge_analyzer_requests(value in pwq_strats::acknowledge_analyzer_requests()) {
             check_encode_decode_invariant(value)
         }
-        */
 
 
         #[test]

@@ -269,7 +269,7 @@ impl From<AnalyzerName> for AnalyzerNameProto {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExecutionHit {
     pub graph_view: GraphView,
     pub lens_refs: Vec<LensRef>,
@@ -365,7 +365,7 @@ impl From<ExecutionMiss> for ExecutionMissProto {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExecutionResult {
     ExecutionHit(ExecutionHit),
     ExecutionMiss(ExecutionMiss),
