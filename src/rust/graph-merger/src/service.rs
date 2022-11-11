@@ -165,13 +165,12 @@ impl GraphMerger {
                             from_uid,
                             edge_name,
                         } = edge;
+                        let forward_edge_name = EdgeName { value: edge_name };
                         let response = self
                             .graph_mutation_client
                             .create_edge(CreateEdgeRequest {
                                 tenant_id,
-                                edge_name: EdgeName {
-                                    value: edge_name.clone(),
-                                },
+                                edge_name: forward_edge_name.clone(),
                                 from_uid,
                                 to_uid,
                                 source_node_type: NodeType {
@@ -194,12 +193,9 @@ impl GraphMerger {
                                         Update::Edge(EdgeUpdate {
                                             src_uid: from_uid,
                                             dst_uid: to_uid,
-                                            forward_edge_name: EdgeName {
-                                                value: edge_name.clone(),
-                                            },
-                                            reverse_edge_name: EdgeName {
-                                                value: edge_name.clone(),
-                                            },
+                                            forward_edge_name: forward_edge_name.clone(),
+                                            reverse_edge_name: create_edge_response
+                                                .reverse_edge_name,
                                         }),
                                     )));
                                 }

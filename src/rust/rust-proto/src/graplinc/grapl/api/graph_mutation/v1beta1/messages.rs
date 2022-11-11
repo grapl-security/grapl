@@ -194,13 +194,21 @@ impl From<CreateEdgeRequest> for CreateEdgeRequestProto {
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreateEdgeResponse {
     pub mutation_redundancy: MutationRedundancy,
+    pub reverse_edge_name: EdgeName,
 }
 
 impl TryFrom<CreateEdgeResponseProto> for CreateEdgeResponse {
     type Error = SerDeError;
     fn try_from(proto: CreateEdgeResponseProto) -> Result<Self, Self::Error> {
+        let mutation_redundancy = proto.mutation_redundancy().try_into()?;
+        let reverse_edge_name = proto
+            .reverse_edge_name
+            .ok_or(SerDeError::MissingField("reverse_edge_name"))?
+            .try_into()?;
+
         Ok(Self {
-            mutation_redundancy: proto.mutation_redundancy().try_into()?,
+            mutation_redundancy,
+            reverse_edge_name,
         })
     }
 }
@@ -210,6 +218,7 @@ impl From<CreateEdgeResponse> for CreateEdgeResponseProto {
         let mutation_redundancy: MutationRedundancyProto = value.mutation_redundancy.into();
         Self {
             mutation_redundancy: mutation_redundancy as i32,
+            reverse_edge_name: Some(value.reverse_edge_name.into()),
         }
     }
 }
