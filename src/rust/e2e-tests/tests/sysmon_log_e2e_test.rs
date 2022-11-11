@@ -29,6 +29,7 @@ use rust_proto::graplinc::grapl::{
         pipeline_ingress::v1beta1::PublishRawLogRequest,
         plugin_registry::v1beta1::PluginHealthStatus,
         plugin_sdk::analyzers::v1beta1::messages::{
+            ExecutionHit,
             StringPropertyUpdate,
             UInt64PropertyUpdate,
             Update,
@@ -137,6 +138,23 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
     .instrument(tracing::span!(
         tracing::Level::INFO,
         "node_identifier_scanner_handle"
+    ))
+    .await;
+
+    let execution_hits_scanner_handle = KafkaTopicScanner::new(
+        ConsumerConfig::with_topic("analyzer-executions"),
+        Duration::from_secs(60),
+        Envelope::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            ExecutionHit::default(),
+        ),
+    )
+    .scan_for_tenant(tenant_id, 1, |_: ExecutionHit| true)
+    .instrument(tracing::span!(
+        tracing::Level::INFO,
+        "execution_hits_scanner_handle"
     ))
     .await;
 
@@ -277,6 +295,34 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         )
         .await;
         assert!(msg.is_some());
+    }
+
+    tracing::info!(">> Test: `analyzer` emits ExecutionHits to `analyzer-executions` topic");
+    {
+        let execution_hits: Vec<ExecutionHit> = execution_hits_scanner_handle
+            .await
+            .expect("failed to configure execution hits scanner")
+            .into_iter()
+            .map(|env| env.inner_message())
+            .collect();
+
+        assert!(
+            execution_hits.len() == 1,
+            "Expected one execution hit, got: {execution_hits:?}"
+        );
+        let matching_nodes = execution_hits[0].graph_view.get_nodes();
+        let has_nodes_for_svchost_exe = matching_nodes.values().into_iter().any(|npv| {
+            let expected_node_type = "Process".to_owned();
+            let expected_process_name = "svchost.exe".to_owned();
+            let process_name_prop = PropertyName::new_unchecked("process_name".to_owned());
+            (npv.node_type.value == expected_node_type)
+                && (npv.string_properties.prop_map.get(&process_name_prop)
+                    == Some(&expected_process_name))
+        });
+        assert!(
+            has_nodes_for_svchost_exe,
+            "Expected the ExecutionHit to contain svchost.exe: {execution_hits:?}"
+        );
     }
 
     Ok(())

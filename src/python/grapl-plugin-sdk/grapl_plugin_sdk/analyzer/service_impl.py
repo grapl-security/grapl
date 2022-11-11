@@ -69,6 +69,7 @@ class AnalyzerServiceImpl:
 
     def __post_init__(self) -> None:
         self._graph_query = self._analyzer.query().into_graph_query()
+        LOGGER.info("Graph query", graph_query=str(self._graph_query))
 
     async def run_analyzer(
         self,

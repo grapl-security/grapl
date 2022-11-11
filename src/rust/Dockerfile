@@ -146,6 +146,10 @@ RUN --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
 ################################################################################
 FROM base AS build-test-integration
 
+# You can override which integration tests are run by
+# specifying this ARG as a comma-separated value. See docker-bake.hcl for more info.
+ARG INTEGRATION_TEST_FEATURES_OVERRIDE
+
 # For running integration tests we're going to copy the test binaries to a new
 # container base and run the directly, as opposed to running them via `cargo
 # test`. Cargo will recompile tests if it thinks the test binaries in target/
@@ -180,7 +184,14 @@ uid-allocator/integration_tests
 
 # cargo --features expects a comma-separated feature1,feature2,feature3
 function join_by { local IFS="$1"; shift; echo "$*"; }
-join_by , "${INTEGRATION_TEST_FEATURES[@]}" > integration_test_features.csv
+
+if [ -n "${INTEGRATION_TEST_FEATURES_OVERRIDE}" ]; then
+  # Override list of features with INTEGRATION_TEST_FEATURES_OVERRIDE if it is set
+  echo "${INTEGRATION_TEST_FEATURES_OVERRIDE}" > integration_test_features.csv
+else
+  join_by , "${INTEGRATION_TEST_FEATURES[@]}" > integration_test_features.csv
+fi
+
 EOF
 
 ENV TEST_DIR=/grapl/tests

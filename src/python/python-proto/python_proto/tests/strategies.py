@@ -8,7 +8,6 @@ from python_proto.api.graph.v1beta1.messages import (
     DecrementOnlyUintProp,
     Edge,
     EdgeList,
-    ExecutionHit,
     GraphDescription,
     IdentifiedEdge,
     IdentifiedEdgeList,
@@ -397,33 +396,6 @@ def lenses(
         lens_name=lens_names,
         uid=uids,
         score=scores,
-    )
-
-
-def execution_hits(
-    nodes: st.SearchStrategy[Mapping[Uid, IdentifiedNode]] = st.dictionaries(
-        keys=uids(), values=identified_nodes(), max_size=MAX_DICT_SIZE
-    ),
-    edges: st.SearchStrategy[Mapping[Uid, IdentifiedEdgeList]] = st.dictionaries(
-        keys=uids(), values=identified_edge_lists(), max_size=MAX_DICT_SIZE
-    ),
-    analyzer_names: st.SearchStrategy[str] = st.text(),
-    risk_scores: st.SearchStrategy[int] = uint64s,
-    lenses: st.SearchStrategy[Sequence[Lens]] = st.lists(
-        lenses(), max_size=MAX_LIST_SIZE
-    ),
-    risky_node_keys: st.SearchStrategy[Sequence[str]] = st.lists(
-        st.text(), max_size=MAX_LIST_SIZE
-    ),
-) -> st.SearchStrategy[ExecutionHit]:
-    return st.builds(
-        ExecutionHit,
-        nodes=nodes,
-        edges=edges,
-        analyzer_name=analyzer_names,
-        risk_score=risk_scores,
-        lenses=lenses,
-        risky_node_keys=risky_node_keys,
     )
 
 

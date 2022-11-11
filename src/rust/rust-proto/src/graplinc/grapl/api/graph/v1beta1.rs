@@ -7,7 +7,6 @@ use crate::{
         DecrementOnlyUintProp as DecrementOnlyUintPropProto,
         Edge as EdgeProto,
         EdgeList as EdgeListProto,
-        ExecutionHit as ExecutionHitProto,
         GraphDescription as GraphDescriptionProto,
         IdStrategy as IdStrategyProto,
         IdentifiedEdge as IdentifiedEdgeProto,
@@ -1360,95 +1359,6 @@ impl type_url::TypeUrl for EdgeList {
 
 impl serde_impl::ProtobufSerializable for EdgeList {
     type ProtobufMessage = EdgeListProto;
-}
-
-//
-// ExecutionHit
-//
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct ExecutionHit {
-    pub nodes: HashMap<Uid, IdentifiedNode>,
-    pub edges: HashMap<Uid, IdentifiedEdgeList>,
-    pub analyzer_name: String,
-    pub risk_score: u64,
-    pub lenses: Vec<Lens>,
-    pub risky_node_keys: Vec<String>,
-}
-
-impl TryFrom<ExecutionHitProto> for ExecutionHit {
-    type Error = SerDeError;
-    fn try_from(execution_hit_proto: ExecutionHitProto) -> Result<Self, Self::Error> {
-        let mut nodes = HashMap::with_capacity(execution_hit_proto.nodes.len());
-        for (key, identified_node) in execution_hit_proto.nodes {
-            nodes.insert(
-                Uid::from_u64(key).unwrap(),
-                IdentifiedNode::try_from(identified_node)?,
-            );
-        }
-
-        let mut edges = HashMap::with_capacity(execution_hit_proto.edges.len());
-        for (key, identified_edge_list) in execution_hit_proto.edges {
-            edges.insert(
-                Uid::from_u64(key).unwrap(),
-                IdentifiedEdgeList::try_from(identified_edge_list)?,
-            );
-        }
-
-        let mut lenses = Vec::with_capacity(execution_hit_proto.lenses.len());
-        for lens in execution_hit_proto.lenses {
-            lenses.push(Lens::from(lens));
-        }
-
-        Ok(ExecutionHit {
-            nodes,
-            edges,
-            analyzer_name: execution_hit_proto.analyzer_name,
-            risk_score: execution_hit_proto.risk_score,
-            lenses,
-            risky_node_keys: execution_hit_proto.risky_node_keys,
-        })
-    }
-}
-
-impl From<ExecutionHit> for ExecutionHitProto {
-    fn from(execution_hit: ExecutionHit) -> Self {
-        let mut nodes = HashMap::with_capacity(execution_hit.nodes.len());
-        for (key, identified_node) in execution_hit.nodes {
-            nodes.insert(key.as_u64(), IdentifiedNodeProto::from(identified_node));
-        }
-
-        let mut edges = HashMap::with_capacity(execution_hit.edges.len());
-        for (key, identified_edge_list) in execution_hit.edges {
-            edges.insert(
-                key.as_u64(),
-                IdentifiedEdgeListProto::from(identified_edge_list),
-            );
-        }
-
-        let mut lenses = Vec::with_capacity(execution_hit.lenses.len());
-        for lens in execution_hit.lenses {
-            lenses.push(LensProto::from(lens));
-        }
-
-        ExecutionHitProto {
-            nodes,
-            edges,
-            analyzer_name: execution_hit.analyzer_name,
-            risk_score: execution_hit.risk_score,
-            lenses,
-            risky_node_keys: execution_hit.risky_node_keys,
-        }
-    }
-}
-
-impl type_url::TypeUrl for ExecutionHit {
-    const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.ExecutionHit";
-}
-
-impl serde_impl::ProtobufSerializable for ExecutionHit {
-    type ProtobufMessage = ExecutionHitProto;
 }
 
 //

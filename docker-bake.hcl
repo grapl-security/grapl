@@ -92,6 +92,14 @@ variable "DIST_DIR" {
 variable "PROTOC_VERSION" {
 }
 
+# Override this variable to limit the integration tests run by 
+# rust-integration-tests to a subset.
+# Specify this as a comma-separated value, i.e.
+# RUST_INTEGRATION_TEST_FEATURES_OVERRIDE="e2e-tests/integration_tests,uid-allocator/integration_tests"
+variable "RUST_INTEGRATION_TEST_FEATURES_OVERRIDE" {
+  default = ""
+}
+
 # When performing a release build, we will tag our images with our
 # "raw" Cloudsmith repository Docker registry address. We have a
 # series of repositories that we promote containers through as they
@@ -298,6 +306,8 @@ target "_rust-base" {
     RUST_BUILD     = "${RUST_BUILD}"
     RUST_VERSION   = "${RUST_VERSION}"
     PROTOC_VERSION = "${PROTOC_VERSION}"
+
+    INTEGRATION_TEST_FEATURES_OVERRIDE = "${RUST_INTEGRATION_TEST_FEATURES_OVERRIDE}"
   }
 }
 

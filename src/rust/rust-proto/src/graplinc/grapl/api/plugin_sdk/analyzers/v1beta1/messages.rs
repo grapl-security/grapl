@@ -25,7 +25,10 @@ use crate::{
         UInt64PropertyUpdate as UInt64PropertyUpdateProto,
         Update as UpdateProto,
     },
-    serde_impl::ProtobufSerializable,
+    serde_impl::{
+        self,
+        ProtobufSerializable,
+    },
     type_url,
     SerDeError,
 };
@@ -247,7 +250,7 @@ impl From<LensRef> for LensRefProto {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct AnalyzerName {
     pub value: String,
 }
@@ -266,7 +269,7 @@ impl From<AnalyzerName> for AnalyzerNameProto {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExecutionHit {
     pub graph_view: GraphView,
     pub lens_refs: Vec<LensRef>,
@@ -274,6 +277,20 @@ pub struct ExecutionHit {
     pub time_of_match: SystemTime,
     pub idempotency_key: u64,
     pub score: i32,
+}
+
+impl Default for ExecutionHit {
+    /// this should only be used for priming messages
+    fn default() -> Self {
+        Self {
+            graph_view: Default::default(),
+            lens_refs: Default::default(),
+            analyzer_name: Default::default(),
+            time_of_match: SystemTime::now(),
+            idempotency_key: Default::default(),
+            score: Default::default(),
+        }
+    }
 }
 
 impl TryFrom<ExecutionHitProto> for ExecutionHit {
@@ -321,6 +338,15 @@ impl From<ExecutionHit> for ExecutionHitProto {
     }
 }
 
+impl serde_impl::ProtobufSerializable for ExecutionHit {
+    type ProtobufMessage = ExecutionHitProto;
+}
+
+impl type_url::TypeUrl for ExecutionHit {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_sdk.analyzers.v1beta1.ExecutionHit";
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecutionMiss {}
 
@@ -339,7 +365,7 @@ impl From<ExecutionMiss> for ExecutionMissProto {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExecutionResult {
     ExecutionHit(ExecutionHit),
     ExecutionMiss(ExecutionMiss),
