@@ -1172,6 +1172,31 @@ pub mod graph_schema_manager {
     }
 }
 
+pub mod throttling_controller {
+    use rust_proto::graplinc::grapl::api::throttling_controller::v1beta1::{
+        ThrottlingRateForEventSourceRequest,
+        ThrottlingRateForEventSourceResponse,
+    };
+
+    use super::*;
+
+    prop_compose! {
+        pub fn throttling_rate_for_event_source_requests()(
+            event_source_id in uuids()
+        ) -> ThrottlingRateForEventSourceRequest {
+            ThrottlingRateForEventSourceRequest::new(event_source_id)
+        }
+    }
+
+    prop_compose! {
+        pub fn throttling_rate_for_event_source_responses()(
+            events_per_second in any::<u32>()
+        ) -> ThrottlingRateForEventSourceResponse {
+            ThrottlingRateForEventSourceResponse::new(events_per_second)
+        }
+    }
+}
+
 pub mod analyzer_sdk {
     use rust_proto::graplinc::grapl::api::plugin_sdk::analyzers::v1beta1::messages::{
         self as native,

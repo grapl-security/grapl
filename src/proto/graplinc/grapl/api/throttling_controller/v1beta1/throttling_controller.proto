@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.throttling_controller.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+
+// Request for the current throttling rate for the given event source
+message ThrottlingRateForEventSourceRequest {
+  graplinc.common.v1beta1.Uuid event_source_id = 1;
+}
+
+// Response containing the current throttling rate
+message ThrottlingRateForEventSourceResponse {
+  uint32 events_per_second = 1;
+}
+
+service ThrottlingControllerService {
+  // Returns the current throttling rate for the given event source
+  rpc ThrottlingRateForEventSource(ThrottlingRateForEventSourceRequest) returns (ThrottlingRateForEventSourceResponse);
+}

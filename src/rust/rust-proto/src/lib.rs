@@ -160,6 +160,15 @@ pub(crate) mod protobufs {
                     }
                 }
 
+                pub(crate) mod throttling_controller {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.throttling_controller.v1beta1.rs"
+                        ));
+                    }
+                }
+
                 pub(crate) mod uid_allocator {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -274,6 +283,10 @@ pub mod graplinc {
             }
 
             pub mod scylla_provisioner {
+                pub mod v1beta1;
+            }
+
+            pub mod throttling_controller {
                 pub mod v1beta1;
             }
 

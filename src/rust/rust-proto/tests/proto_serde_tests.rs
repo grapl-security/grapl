@@ -529,6 +529,28 @@ mod graph_schema_manager {
     }
 }
 
+mod throttling_controller {
+    use strategies::throttling_controller as st;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_throttling_rate_for_event_source_request_encode_decode(
+            request in st::throttling_rate_for_event_source_requests()
+        ) {
+            check_encode_decode_invariant(request)
+        }
+
+        #[test]
+        fn test_throttling_rate_for_event_source_response_encode_decode(
+            response in st::throttling_rate_for_event_source_responses()
+        ) {
+            check_encode_decode_invariant(response)
+        }
+    }
+}
+
 mod analyzer_sdk {
 
     use strategies::analyzer_sdk as as_strats;
