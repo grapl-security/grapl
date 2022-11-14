@@ -22,7 +22,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "integrationTest": "yarn playwright test",
+    "e2eTest": "yarn playwright test",
     "unitTest": "react-scripts test tests/unit --maxWorkers=1",
     "eject": "react-scripts eject",
     "check-types": "tsc --project tsconfig.json --pretty --noEmit",
