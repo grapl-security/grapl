@@ -77,8 +77,6 @@ class AnalyzerServiceImpl:
         context: grpc_aio.ServicerContext,
     ) -> analyzer_messages.RunAnalyzerResponse:
 
-        meta = context.invocation_metadata()
-        LOGGER.debug("META", meta=str(meta))
         # TODO: Extract a Request ID from context.invocation_metadata()
         request_id = uuid4()
         logger = LOGGER.bind(
