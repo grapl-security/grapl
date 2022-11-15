@@ -90,15 +90,20 @@ use serde::{
     Serialize,
 };
 use thiserror::Error;
-use tonic::{transport::Endpoint,};
+use tonic::transport::Endpoint;
 use tracing::Instrument;
 
-use super::{protocol::status::Status, request_metadata::{InvalidRequestMetadataError, RequestMetadata}};
+use super::{
+    protocol::status::Status,
+    request_metadata::{
+        InvalidRequestMetadataError,
+        RequestMetadata,
+    },
+};
 use crate::{
     serde_impl::ProtobufSerializable,
     SerDeError,
 };
-
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
