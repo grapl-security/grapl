@@ -456,7 +456,6 @@ where
         let request_timeout = self.configuration.request_timeout;
         let client_executor = self.client_executor.clone();
         let backoff_strategy = self.configuration.backoff_strategy().take(max_retries);
-        let request_metadata = request_metadata.map(|m| m.validate()).transpose()?;
 
         let result = client_executor
             .spawn_conditional(
