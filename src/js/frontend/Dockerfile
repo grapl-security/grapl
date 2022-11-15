@@ -32,17 +32,23 @@ RUN yarn policies set-version $YARN_VERSION
 COPY --chown=grapl . frontend
 WORKDIR "/home/grapl/frontend"
 
+# Playwright requires root permissions to install browsers.
+# In order to prevent the need to grant the grapl user sudo, we install all dependencies with root and then move any
+# user-specific directories like the browsers created in ~/.cache/ from root to the grapl user.
+# The alternate approach would be to grant the grapl user sudo or su perms.
 RUN yarn install \
     && yarn build \
     && yarn cache clean \
-    && yarn playwright install --with-deps
-
-RUN adduser \
+    && yarn playwright install --with-deps  \
+    && adduser \
         --disabled-password \
         --gecos '' \
         --home /home/grapl \
         --shell /bin/bash \
-        grapl
+        grapl \
+    && mkdir -p /home/grapl/.cache/ms-playwright \
+    && mv "/root/.cache/ms-playwright" "/home/grapl/.cache/" \
+    && chown --recursive grapl:grapl  "/home/grapl/"
 
 USER grapl
 
