@@ -150,7 +150,7 @@ impl PluginWorkProcessor for AnalyzerWorkProcessor {
         job: ExecutionJob,
     ) -> Result<Self::ProducedMessage, PluginWorkProcessorError> {
         let request_metadata =
-            RequestMetadata::new(vec![("x-grapl-trace-id".to_string(), job.trace_id().to_string())]);
+            RequestMetadata::new(vec![("x-trace-id".to_string(), job.trace_id().to_string())]);
         let run_analyzer_response = self
             .analyzer_client
             .run_analyzer(
