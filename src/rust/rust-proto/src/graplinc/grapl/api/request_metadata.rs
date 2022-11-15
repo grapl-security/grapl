@@ -18,7 +18,12 @@ type UnvalidatedKV = (String, String);
 type ValidatedKV = (AsciiMetadataKey, AsciiMetadataValue);
 
 pub struct RequestMetadata(Vec<UnvalidatedKV>);
+
 impl RequestMetadata {
+    pub fn new(input: Vec<UnvalidatedKV>) -> Self {
+        Self(input)
+    }
+
     /// First, validate the user input at `execute()` time, and return an
     /// Err if it's invalid metadata.
     pub fn validate(self) -> Result<ValidatedRequestMetadata, InvalidRequestMetadataError> {
