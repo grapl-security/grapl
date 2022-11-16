@@ -39,6 +39,7 @@ impl GraphQueryClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.query_graph_with_uid(request).await },
@@ -53,6 +54,7 @@ impl GraphQueryClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.query_graph_from_uid(request).await },

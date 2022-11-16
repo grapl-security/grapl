@@ -41,6 +41,7 @@ impl PipelineIngressClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.publish_raw_log(request).await },
