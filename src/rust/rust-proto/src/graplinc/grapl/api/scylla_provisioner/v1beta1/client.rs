@@ -43,6 +43,7 @@ impl ScyllaProvisionerClient {
             .client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.provision_graph_for_tenant(request).await },

@@ -43,6 +43,7 @@ impl PluginWorkQueueClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.push_execute_generator(request).await },
@@ -59,6 +60,7 @@ impl PluginWorkQueueClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.push_execute_analyzer(request).await },
@@ -75,6 +77,7 @@ impl PluginWorkQueueClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.get_execute_generator(request).await },
@@ -91,6 +94,7 @@ impl PluginWorkQueueClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.get_execute_analyzer(request).await },
@@ -107,6 +111,7 @@ impl PluginWorkQueueClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.acknowledge_generator(request).await },
@@ -123,6 +128,7 @@ impl PluginWorkQueueClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.acknowledge_analyzer(request).await },
@@ -139,6 +145,7 @@ impl PluginWorkQueueClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.queue_depth_for_generator(request).await },
@@ -155,6 +162,7 @@ impl PluginWorkQueueClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.queue_depth_for_analyzer(request).await },

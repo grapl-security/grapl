@@ -211,6 +211,8 @@ pub mod graplinc {
 
             pub mod protocol;
 
+            pub mod request_metadata;
+
             pub mod event_source {
                 pub mod v1beta1;
             }

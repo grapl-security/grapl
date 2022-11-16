@@ -93,7 +93,13 @@ use thiserror::Error;
 use tonic::transport::Endpoint;
 use tracing::Instrument;
 
-use super::protocol::status::Status;
+use super::{
+    protocol::status::Status,
+    request_metadata::{
+        InvalidRequestMetadataError,
+        RequestMetadata,
+    },
+};
 use crate::{
     serde_impl::ProtobufSerializable,
     SerDeError,
@@ -262,6 +268,9 @@ pub enum ClientError {
 
     #[error("serialization or deserialization failed {0}")]
     SerDe(#[from] SerDeError),
+
+    #[error("invalid metadata: {0}")]
+    InvalidRequestMetadata(#[from] InvalidRequestMetadataError),
 }
 
 impl From<std::convert::Infallible> for ClientError {
@@ -416,6 +425,7 @@ where
     ///         self.client
     ///         .execute(
     ///             request,
+    ///             None,
     ///             |status| status.code() == tonic::Code::Unavailable,
     ///             10,
     ///             |mut client, request| async move { client.publish_raw_log(request).await },
@@ -427,6 +437,7 @@ where
     pub(crate) async fn execute<PT, NT, PU, NU, P, F, R>(
         &self,
         request: NT,
+        request_metadata: Option<RequestMetadata>,
         retry_predicate: P,
         max_retries: usize,
         grpc_call: F,
@@ -452,11 +463,15 @@ where
                 || {
                     let proto_client = self.proto_client.clone();
                     let proto_request = proto_request.clone();
+                    let request_metadata = request_metadata.clone();
                     let mut grpc_call = grpc_call.clone();
 
                     async move {
                         let mut tonic_request = tonic::Request::new(proto_request);
                         tonic_request.set_timeout(request_timeout);
+                        if let Some(request_metadata) = request_metadata {
+                            request_metadata.merge_into(tonic_request.metadata_mut());
+                        }
 
                         grpc_call(proto_client, tonic_request).await
                     }

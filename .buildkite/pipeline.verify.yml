@@ -21,6 +21,8 @@ steps:
 
       - label: ":codecov: Validate codecov.yml"
         command: curl --proto "=https" --tlsv1.2 --fail-with-body --verbose --data-binary @codecov.yml https://codecov.io/validate
+        # codecov.io/validate went down on Nov 15 2022, so, temporarily allowing failures
+        soft_fail: true
 
       - label: ":python: Ensure regenerated constraints.txt"
         command:
