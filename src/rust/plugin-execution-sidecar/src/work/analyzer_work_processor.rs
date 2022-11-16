@@ -27,6 +27,7 @@ use rust_proto::{
             GetExecuteAnalyzerResponse,
             PluginWorkQueueClient,
         },
+        request_metadata::RequestMetadata,
     },
     SerDe,
 };
@@ -148,9 +149,14 @@ impl PluginWorkProcessor for AnalyzerWorkProcessor {
         _plugin_id: Uuid,
         job: ExecutionJob,
     ) -> Result<Self::ProducedMessage, PluginWorkProcessorError> {
+        let request_metadata =
+            RequestMetadata::new(vec![("x-trace-id".to_string(), job.trace_id().to_string())])?;
         let run_analyzer_response = self
             .analyzer_client
-            .run_analyzer(RunAnalyzerRequest::new(Update::deserialize(job.data())?))
+            .run_analyzer(
+                RunAnalyzerRequest::new(Update::deserialize(job.data())?),
+                Some(request_metadata),
+            )
             .await?;
 
         Ok(run_analyzer_response.execution_result)

@@ -40,6 +40,7 @@ impl EventSourceClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.create_event_source(request).await },
@@ -55,6 +56,7 @@ impl EventSourceClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.update_event_source(request).await },
@@ -70,6 +72,7 @@ impl EventSourceClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.get_event_source(request).await },

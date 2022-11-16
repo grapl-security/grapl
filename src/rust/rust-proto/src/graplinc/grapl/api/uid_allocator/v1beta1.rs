@@ -230,6 +230,7 @@ pub mod client {
             self.client
                 .execute(
                     request,
+                    None,
                     |status| status.code() == tonic::Code::Unavailable,
                     10,
                     |mut client, request| async move { client.allocate_ids(request).await },
@@ -245,6 +246,7 @@ pub mod client {
                 .client
                 .execute(
                     request,
+                    None,
                     |status| status.code() == tonic::Code::Unavailable,
                     10,
                     |mut client, request| async move { client.create_tenant_keyspace(request).await },

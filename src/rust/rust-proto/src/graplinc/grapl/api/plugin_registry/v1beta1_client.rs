@@ -76,6 +76,7 @@ impl PluginRegistryClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.get_plugin(request).await },
@@ -91,6 +92,7 @@ impl PluginRegistryClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.list_plugins(request).await },
@@ -106,6 +108,7 @@ impl PluginRegistryClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.get_plugin_deployment(request).await },
@@ -122,6 +125,7 @@ impl PluginRegistryClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.deploy_plugin(request).await },
@@ -138,6 +142,7 @@ impl PluginRegistryClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.tear_down_plugin(request).await },
@@ -153,6 +158,7 @@ impl PluginRegistryClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.get_plugin_health(request).await },
@@ -169,6 +175,7 @@ impl PluginRegistryClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move {
@@ -187,6 +194,7 @@ impl PluginRegistryClient {
         self.client
             .execute(
                 request,
+                None,
                 |status| status.code() == tonic::Code::Unavailable,
                 10,
                 |mut client, request| async move { client.get_analyzers_for_tenant(request).await },
