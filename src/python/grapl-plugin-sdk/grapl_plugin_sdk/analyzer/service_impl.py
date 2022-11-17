@@ -4,7 +4,7 @@ import dataclasses
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable, Mapping
+from typing import TYPE_CHECKING, Final, Mapping, Protocol, runtime_checkable
 from uuid import UUID, uuid4
 
 import grpc
@@ -12,14 +12,14 @@ from grapl_common.logger import Structlogger, get_structlogger
 from grapl_plugin_sdk.analyzer.analyzer_context import AnalyzerContext
 from grapl_plugin_sdk.analyzer.query_and_views import NodeView
 from grpc import aio as grpc_aio  # type: ignore
-
-# ^ grpc_aio: Type checking doesn't exist yet for gRPC asyncio runtime
-from python_proto.metadata import GrpcMetadata
 from python_proto.api.graph_query.v1beta1 import messages as graph_query_messages
 from python_proto.api.graph_query_proxy.v1beta1.client import GraphQueryProxyClient
 from python_proto.api.plugin_sdk.analyzers.v1beta1 import messages as analyzer_messages
 from python_proto.common import Uuid as PythonProtoUuid
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
+
+# ^ grpc_aio: Type checking doesn't exist yet for gRPC asyncio runtime
+from python_proto.metadata import GrpcMetadata
 
 if TYPE_CHECKING:
     from grapl_plugin_sdk.analyzer.analyzer import Analyzer
@@ -60,23 +60,21 @@ MISS_RESPONSE: Final[
     )
 )
 
+
 class RunAnalyzerRequestMetadata:
     trace_id: str | None
 
     def __init__(self, grpc_metadata: grpc_aio.Metadata | None) -> None:
         grpc_metadata = grpc_metadata or {}
         self.trace_id = grpc_metadata.get("x-trace-id")
-    
+
     def to_grpc_metadata(self) -> GrpcMetadata:
         metadata = [
             ("x-trace-id", self.trace_id),
         ]
-        metadata_no_nones = [
-            (k, v) for (k, v) in metadata
-            if v is not None
-        ]
+        metadata_no_nones = [(k, v) for (k, v) in metadata if v is not None]
         return tuple(metadata_no_nones)
-        
+
 
 @dataclass(slots=True)
 class AnalyzerServiceImpl:
@@ -96,7 +94,9 @@ class AnalyzerServiceImpl:
     ) -> analyzer_messages.RunAnalyzerResponse:
 
         # TODO: Extract a Request ID from context.invocation_metadata()
-        metadata = RunAnalyzerRequestMetadata(grpc_aio.Metadata.from_tuple(context.invocation_metadata()))
+        metadata = RunAnalyzerRequestMetadata(
+            grpc_aio.Metadata.from_tuple(context.invocation_metadata())
+        )
         logger = LOGGER.bind(
             trace_id=str(metadata.trace_id),
         )
@@ -135,7 +135,7 @@ class AnalyzerServiceImpl:
                 updated_node_uid = prop_update.uid
             case analyzer_messages.EdgeUpdate() as edge_update:
                 # future potential optimization: add an
-                # if not query_pertains_to_edge_update(self._graph_query, edge_update): 
+                # if not query_pertains_to_edge_update(self._graph_query, edge_update):
                 #   return MISS_RESPONSE
                 # where the function checks the names of update's edges against the graph query's edges
 

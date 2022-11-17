@@ -233,7 +233,7 @@ pub async fn fetch_node_with_edges(
         for edge_query_id in edge_queries {
             let edge_query = match graph_query.node_property_queries.get(edge_query_id) {
                 Some(edge_query) => edge_query,
-                None => return Err(NodeQueryError::NoSuchEdgeQueryId(*edge_query_id))
+                None => return Err(NodeQueryError::NoSuchEdgeQueryId(*edge_query_id)),
             };
             // we have to check the reverse edge as well
             if visited.check_and_add(

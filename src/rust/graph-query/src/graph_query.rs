@@ -31,7 +31,7 @@ pub async fn query_graph(
     tenant_id: uuid::Uuid,
     property_query_executor: PropertyQueryExecutor,
 ) -> Result<Option<(GraphView, Uid)>, GraphQueryError> {
-    // We build N futures, one for each Query in the GraphQuery, 
+    // We build N futures, one for each Query in the GraphQuery,
     // and join them all at the end.
 
     let mut query_handles = Vec::with_capacity(graph_query.node_property_queries.len());
@@ -64,7 +64,7 @@ pub async fn query_graph(
             }
         });
     }
-    
+
     // todo: We don't need to join_all, we can stop polling the other futures
     //       once one of them matches
     //       try_select may work better
