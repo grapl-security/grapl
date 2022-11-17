@@ -4,8 +4,8 @@ import dataclasses
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Final, Mapping, Protocol, runtime_checkable
-from uuid import UUID, uuid4
+from typing import TYPE_CHECKING, Final, Protocol, runtime_checkable
+from uuid import UUID
 
 import grpc
 from grapl_common.logger import Structlogger, get_structlogger
