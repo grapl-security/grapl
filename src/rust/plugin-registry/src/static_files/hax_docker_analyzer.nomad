@@ -166,8 +166,8 @@ job "grapl-plugin" {
 
         // The ANALYZER_CLIENT_ADDRESS is discovered at runtime because the
         // upstream's name is based on the plugin ID.
-        ANALYZER_CLIENT_REQUEST_TIMEOUT               = "1s"
-        ANALYZER_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        ANALYZER_CLIENT_REQUEST_TIMEOUT               = "3s"
+        ANALYZER_CLIENT_EXECUTOR_TIMEOUT              = "3s"
         ANALYZER_CLIENT_CONCURRENCY_LIMIT             = 16
         ANALYZER_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
         ANALYZER_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"

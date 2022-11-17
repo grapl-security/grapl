@@ -121,8 +121,6 @@ impl PropertyQueryExecutor {
             ",
         );
 
-        println!("query: \n{}\n", &query.contents);
-
         query.set_is_idempotent(true);
 
         let query_result = self

@@ -164,16 +164,10 @@ where
 
         // TODO: add tower tracing, concurrency limits
         let mut server_builder = Server::builder().trace_fn(|request| {
-            let mut headers = request.headers().clone();
-            // Redacting mostly because it clogs up the logs with useless info
-            headers.insert(
-                "x-forwarded-client-cert",
-                "redacted-client-cert".parse().unwrap(),
-            );
             tracing::info_span!(
-                "exec_service",
-                headers = ?headers,
-                method = ?request.method(),
+                "graph-query",
+                request_id = ?request.headers().get("x-request-id"),
+                trace_id = ?request.headers().get("x-trace-id"),
                 uri = %request.uri(),
                 extensions = ?request.extensions(),
             )
