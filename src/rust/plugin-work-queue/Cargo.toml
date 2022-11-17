@@ -17,6 +17,7 @@ bytes = { workspace = true }
 chrono = "0.4"
 clap = { workspace = true }
 figment = { workspace = true }
+eyre = { workspace = true }
 futures = "0.3"
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
@@ -30,7 +31,6 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-eyre = { workspace = true }
 test-context = { workspace = true }
 test-log = { workspace = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
