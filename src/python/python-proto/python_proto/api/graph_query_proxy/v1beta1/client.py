@@ -17,7 +17,7 @@ from python_proto.api.graph_query_proxy.v1beta1.messages import (
 )
 from python_proto.client import Connectable, GrpcClientConfig
 from python_proto.grapl.common.v1beta1.messages import Uid
-from python_proto.metadata import GrpcOutboundMetadata
+from python_proto.metadata import GrpcOutboundMetadata, metadata_to_raw
 
 LOGGER = get_structlogger()
 
@@ -53,7 +53,7 @@ class GraphQueryProxyClient(Connectable):
         proto_response = self.proto_client.QueryGraphWithUid(
             request.into_proto(),
             timeout=5,
-            metadata=metadata,
+            metadata=metadata_to_raw(metadata),
         )
         return QueryGraphWithUidResponse.from_proto(proto_response)
 
@@ -74,6 +74,6 @@ class GraphQueryProxyClient(Connectable):
         proto_response = self.proto_client.QueryGraphFromUid(
             request.into_proto(),
             timeout=5,
-            metadata=metadata,
+            metadata=metadata_to_raw(metadata),
         )
         return QueryGraphFromUidResponse.from_proto(proto_response)

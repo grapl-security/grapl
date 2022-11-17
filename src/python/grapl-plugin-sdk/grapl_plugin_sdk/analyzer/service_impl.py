@@ -69,11 +69,11 @@ class RunAnalyzerRequestMetadata:
         self.trace_id = grpc_metadata.get("x-trace-id")
 
     def to_grpc_metadata(self) -> GrpcOutboundMetadata:
-        metadata = [
-            ("x-trace-id", self.trace_id),
-        ]
-        metadata_no_nones = [(k, v) for (k, v) in metadata if v is not None]
-        return tuple(metadata_no_nones)
+        metadata: GrpcOutboundMetadata = {}
+        if self.trace_id:
+            metadata["x-trace-id"] = self.trace_id
+        # add more as needed
+        return metadata
 
 
 @dataclass(slots=True)
