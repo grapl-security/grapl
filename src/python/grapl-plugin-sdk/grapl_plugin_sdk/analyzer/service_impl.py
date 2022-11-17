@@ -19,7 +19,7 @@ from python_proto.common import Uuid as PythonProtoUuid
 from python_proto.grapl.common.v1beta1 import messages as grapl_common_messages
 
 # ^ grpc_aio: Type checking doesn't exist yet for gRPC asyncio runtime
-from python_proto.metadata import GrpcMetadata
+from python_proto.metadata import GrpcOutboundMetadata
 
 if TYPE_CHECKING:
     from grapl_plugin_sdk.analyzer.analyzer import Analyzer
@@ -68,7 +68,7 @@ class RunAnalyzerRequestMetadata:
         grpc_metadata = grpc_metadata or {}
         self.trace_id = grpc_metadata.get("x-trace-id")
 
-    def to_grpc_metadata(self) -> GrpcMetadata:
+    def to_grpc_metadata(self) -> GrpcOutboundMetadata:
         metadata = [
             ("x-trace-id", self.trace_id),
         ]

@@ -1,2 +1,2 @@
 # N tuples of (str, str)
-GrpcMetadata = tuple[tuple[str, str | bytes], ...]
+GrpcOutboundMetadata = tuple[tuple[str, str | bytes], ...]
