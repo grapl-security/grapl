@@ -285,15 +285,7 @@ where
 
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()
-            .trace_fn(|request| {
-                tracing::info_span!(
-                    "Plugin Registry",
-                    request_id = ?request.headers().get("x-request-id"),
-                    method = ?request.method(),
-                    uri = %request.uri(),
-                    extensions = ?request.extensions(),
-                )
-            })
+            .trace_fn(crate::server_tracing::server_trace_fn)
             .add_service(health_service)
             .add_service(PluginRegistryServiceProto::new(GrpcApi::new(
                 self.api_server,

@@ -163,21 +163,7 @@ where
             .await;
 
         // TODO: add tower tracing, concurrency limits
-        let mut server_builder = Server::builder().trace_fn(|request| {
-            let mut headers = request.headers().clone();
-            // Redacting mostly because it clogs up the logs with useless info
-            headers.insert(
-                "x-forwarded-client-cert",
-                "redacted-client-cert".parse().unwrap(),
-            );
-            tracing::info_span!(
-                "exec_service",
-                headers = ?headers,
-                method = ?request.method(),
-                uri = %request.uri(),
-                extensions = ?request.extensions(),
-            )
-        });
+        let mut server_builder = Server::builder().trace_fn(crate::server_tracing::server_trace_fn);
 
         Ok(server_builder
             .add_service(health_service)

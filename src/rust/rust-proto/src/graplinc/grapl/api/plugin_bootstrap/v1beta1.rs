@@ -361,7 +361,6 @@ pub mod server {
         /// Run the gRPC server and serve the API on this server's socket
         /// address. Returns a ServeError if the gRPC server cannot run.
         pub async fn serve(self) -> Result<(), ServeError> {
-            let service_name = self.service_name();
             let (healthcheck_handle, health_service) =
                 init_health_service::<PluginBootstrapServiceServerProto<GrpcApi<T>>, _, _>(
                     self.healthcheck,
@@ -370,16 +369,7 @@ pub mod server {
                 .await;
 
             Ok(Server::builder()
-                .trace_fn(move |request| {
-                    tracing::info_span!(
-                        "request_log",
-                        service_name = ?service_name,
-                        headers = ?request.headers(),
-                        method = ?request.method(),
-                        uri = %request.uri(),
-                        extensions = ?request.extensions(),
-                    )
-                })
+                .trace_fn(crate::server_tracing::server_trace_fn)
                 .add_service(health_service)
                 .add_service(PluginBootstrapServiceServerProto::new(GrpcApi::new(
                     self.api_server,

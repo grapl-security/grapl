@@ -12,6 +12,7 @@ bytes = { workspace = true }
 client-executor = { path = "../client-executor" }
 figment = { workspace = true }
 futures = "0.3"
+http = "0.2"
 humantime-serde = "1.0"
 prost = "0.11"
 rand = "0.8.5"

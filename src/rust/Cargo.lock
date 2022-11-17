@@ -4238,6 +4238,7 @@ dependencies = [
  "client-executor",
  "figment",
  "futures",
+ "http",
  "humantime-serde",
  "proptest",
  "prost",

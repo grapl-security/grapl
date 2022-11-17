@@ -446,7 +446,6 @@ pub mod server {
         /// address. Returns a ServeError if the gRPC server cannot run.
         #[tracing::instrument(skip(self), err)]
         pub async fn serve(self) -> Result<(), ServeError> {
-            let service_name = self.service_name();
             let (healthcheck_handle, health_service) =
                 init_health_service::<OrganizationManagementServiceServerProto<GrpcApi<T>>, _, _>(
                     self.healthcheck,
@@ -455,16 +454,7 @@ pub mod server {
                 .await;
 
             Ok(Server::builder()
-                .trace_fn(move |request| {
-                    tracing::info_span!(
-                        "request_log",
-                        service_name = ?service_name,
-                        headers = ?request.headers(),
-                        method = ?request.method(),
-                        uri = %request.uri(),
-                        extensions = ?request.extensions(),
-                    )
-                })
+                .trace_fn(crate::server_tracing::server_trace_fn)
                 .add_service(health_service)
                 .add_service(OrganizationManagementServiceServerProto::new(GrpcApi::new(
                     self.api_server,

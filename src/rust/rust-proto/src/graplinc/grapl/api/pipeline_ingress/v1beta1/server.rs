@@ -140,7 +140,7 @@ where
             )
             .await;
         Ok(Server::builder()
-            .trace_fn(|_request| tracing::info_span!("pipeline-ingress"))
+            .trace_fn(crate::server_tracing::server_trace_fn)
             .add_service(health_service)
             .add_service(PipelineIngressServiceServerProto::new(GrpcApi::new(
                 self.api_server,
