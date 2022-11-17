@@ -154,10 +154,10 @@ where
         // TODO: add tower tracing, concurrency limits
         let mut server_builder = Server::builder().trace_fn(|request| {
             tracing::info_span!(
-                "exec_service",
-                headers = ?request.headers(),
+                "graph-query-proxy",
+                request_id = ?request.headers().get("x-request-id"),
+                trace_id = ?request.headers().get("x-trace-id"),
                 method = ?request.method(),
-                uri = %request.uri(),
                 extensions = ?request.extensions(),
             )
         });
