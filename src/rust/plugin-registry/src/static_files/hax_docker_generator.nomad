@@ -123,8 +123,8 @@ job "grapl-plugin" {
 
         // The GENERATOR_CLIENT_ADDRESS is discovered at runtime because the
         // upstream's name is based on the plugin ID.
-        GENERATOR_CLIENT_REQUEST_TIMEOUT               = "1s"
-        GENERATOR_CLIENT_EXECUTOR_TIMEOUT              = "1s"
+        GENERATOR_CLIENT_REQUEST_TIMEOUT               = "3s"
+        GENERATOR_CLIENT_EXECUTOR_TIMEOUT              = "3s"
         GENERATOR_CLIENT_CONCURRENCY_LIMIT             = 16
         GENERATOR_CLIENT_INITIAL_BACKOFF_DELAY         = "10ms"
         GENERATOR_CLIENT_MAXIMUM_BACKOFF_DELAY         = "5s"

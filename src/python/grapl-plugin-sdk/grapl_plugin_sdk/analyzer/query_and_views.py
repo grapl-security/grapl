@@ -100,6 +100,11 @@ class NodeQuery:
         return self.edge_map[edge_name]
 
     def into_graph_query(self) -> GraphQuery:
+        """
+        So what we're doing here is taking a cyclical graph we built in-mem
+        and then we basically flatten it down into a list of property maps
+        and edge maps
+        """
         node_property_queries: NodePropertyQueryMap = NodePropertyQueryMap()
         edge_filters: EdgeQueryMap = EdgeQueryMap()
         edge_map: EdgeNameMap = EdgeNameMap()
@@ -110,7 +115,14 @@ class NodeQuery:
         for node, edge, neighbor in NodeQueryIterator(self):
             node_property_queries[
                 node.node_property_query.query_id
-            ] = self.into_node_property_query()
+            ] = node.into_node_property_query()
+
+            # We also need include the neighbor queries here, so that
+            # `edge_filters` can point back at those edge query IDs.
+            node_property_queries[
+                neighbor.node_property_query.query_id
+            ] = neighbor.into_node_property_query()
+
             key = (node.node_property_query.query_id, edge)
             edge_filters.get_or_init(key).add(neighbor.node_property_query.query_id)
             edge_map.update(node.edge_map)
@@ -123,6 +135,7 @@ class NodeQuery:
         )
 
     def into_node_property_query(self) -> NodePropertyQuery:
+        # TODO: or just return self.node_property_query????
         return NodePropertyQuery(
             node_type=self.node_property_query.node_type,
             query_id=self.node_property_query.query_id,
