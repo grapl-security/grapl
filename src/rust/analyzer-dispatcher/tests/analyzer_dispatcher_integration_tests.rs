@@ -5,10 +5,14 @@ use std::time::Duration;
 use bytes::Bytes;
 use integration_test_utils::{
     context::E2eTestContext,
+    plugin_health::assert_eventual_health,
     test_fixtures,
 };
 use plugin_work_queue::test_utils::scan_analyzer_messages;
-use rust_proto::graplinc::grapl::api::pipeline_ingress::v1beta1::PublishRawLogRequest;
+use rust_proto::graplinc::grapl::api::{
+    pipeline_ingress::v1beta1::PublishRawLogRequest,
+    plugin_registry::v1beta1::PluginHealthStatus,
+};
 use test_context::test_context;
 
 #[test_context(E2eTestContext)]
@@ -26,7 +30,7 @@ async fn test_analyzer_dispatcher_inserts_job_into_plugin_work_queue(
         )
         .await?;
 
-    let generator_id = ctx
+    let generator_plugin_id = ctx
         .create_generator(
             tenant_id,
             "analyzer dispatcher test sysmon generator".to_string(),
@@ -35,7 +39,16 @@ async fn test_analyzer_dispatcher_inserts_job_into_plugin_work_queue(
         )
         .await?;
 
-    ctx.deploy_generator(generator_id).await?;
+    ctx.deploy_generator(generator_plugin_id).await?;
+
+    let plugin_healthy_timeout = Duration::from_secs(60);
+    assert_eventual_health(
+        &ctx.plugin_registry_client,
+        generator_plugin_id,
+        PluginHealthStatus::Running,
+        plugin_healthy_timeout,
+    )
+    .await?;
 
     let analyzer_id = ctx
         .create_analyzer(
@@ -102,14 +115,12 @@ async fn test_analyzer_dispatcher_inserts_job_into_plugin_work_queue(
         ))
         .await?;
 
-    let matching_job = scan_analyzer_messages(
+    scan_analyzer_messages(
         ctx.plugin_work_queue_psql_client.clone(),
         Duration::from_secs(30),
         analyzer_id,
     )
-    .await;
-
-    assert!(matching_job.is_some());
+    .await?;
 
     Ok(())
 }

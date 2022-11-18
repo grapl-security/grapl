@@ -88,11 +88,10 @@ async fn test_dispatcher_inserts_job_into_plugin_work_queue(
         ))
         .await?;
 
-    let matching_job = scan_for_generator_plugin_message_in_pwq(
+    scan_for_generator_plugin_message_in_pwq(
         ctx.plugin_work_queue_psql_client.clone(),
         generator_plugin_id,
     )
-    .await;
-    assert!(matching_job.is_some());
+    .await?;
     Ok(())
 }

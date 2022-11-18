@@ -223,12 +223,11 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         ">> Test: `generator-dispatcher` consumes the raw-log and enqueues it in Plugin Work Queue"
     );
     {
-        let msg = scan_for_generator_plugin_message_in_pwq(
+        scan_for_generator_plugin_message_in_pwq(
             ctx.plugin_work_queue_psql_client.clone(),
             generator_plugin_id,
         )
-        .await;
-        assert!(msg.is_some());
+        .await?;
     }
 
     // Then, the generator-execution-sidecar will pull this PWQ message and
@@ -288,13 +287,12 @@ async fn test_sysmon_log_e2e(ctx: &mut E2eTestContext) -> eyre::Result<()> {
         ">> Test: `analyzer-dispatcher` consumes the Update and enqueues it in Plugin Work Queue"
     );
     {
-        let msg = scan_analyzer_messages(
+        scan_analyzer_messages(
             ctx.plugin_work_queue_psql_client.clone(),
             Duration::from_secs(10), // should be basically instantaneous?
             analyzer_plugin_id,
         )
-        .await;
-        assert!(msg.is_some());
+        .await?;
     }
 
     tracing::info!(">> Test: `analyzer` emits ExecutionHits to `analyzer-executions` topic");
