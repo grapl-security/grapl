@@ -1,0 +1,25 @@
+[package]
+name = "throttling-controller"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1"
+eyre = { workspace = true }
+figment = { workspace = true }
+grapl-config = { path = "../grapl-config" }
+grapl-tracing = { path = "../grapl-tracing" }
+moka = { version = "0.9", features = ["future", "logging"] }
+rust-proto = { path = "../rust-proto", version = "*" }
+serde = { workspace = true }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+test-context = { workspace = true }
+
+[features]
+integration_tests = []

@@ -94,8 +94,8 @@ where
         let (updater_tx, updater_rx) = futures::channel::mpsc::channel(updater_queue_depth);
 
         // The updater task is responsible for handling messages on the update
-        // queue and querying the plugin-registry for updates corresponding to
-        // each message.
+        // queue and querying the underlying data source for updates
+        // corresponding to each message.
         tokio::task::spawn(async move {
             updater_rx
                 .for_each_concurrent(updater_pool_size, move |key: K| {

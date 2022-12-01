@@ -38,6 +38,7 @@ members = [
   "./rust-proto",
   "./scylla-provisioner",
   "./sysmon-parser",
+  "./throttling-controller",
   "./uid-allocator",
 ]
 
@@ -51,6 +52,7 @@ clap = { version = "3.0", default_features = false, features = [
 ] }
 eyre = "0.6"
 figment = { version = "0.10", features = ["env", "json"] }
+moka = { version = "0.9", features = ["future", "logging"] }
 opentelemetry = { version = "0.18", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.17", features = [
   "collector_client",

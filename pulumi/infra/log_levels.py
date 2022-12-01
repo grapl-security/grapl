@@ -7,6 +7,7 @@ RUST_LOG_LEVELS = ",".join(
         "DEBUG",
         "h2=WARN",
         "hyper=WARN",
+        "moka=ERROR",
         "rusoto_core=WARN",
         "rustls=WARN",
         # By default, sqlx outputs an INFO for every query executed.

@@ -60,6 +60,7 @@ sqlx_prepare "${REPOSITORY_ROOT}/src/rust/graph-schema-manager"
 sqlx_prepare "${REPOSITORY_ROOT}/src/rust/event-source"
 sqlx_prepare "${REPOSITORY_ROOT}/src/rust/plugin-work-queue"
 sqlx_prepare "${REPOSITORY_ROOT}/src/rust/plugin-registry"
+sqlx_prepare "${REPOSITORY_ROOT}/src/rust/throttling-controller"
 sqlx_prepare "${REPOSITORY_ROOT}/src/rust/uid-allocator"
 
 # Undo the above trap

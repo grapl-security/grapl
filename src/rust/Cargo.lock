@@ -2836,6 +2836,7 @@ dependencies = [
  "crossbeam-epoch",
  "crossbeam-utils",
  "futures-util",
+ "log",
  "num_cpus",
  "once_cell",
  "parking_lot 0.12.1",
@@ -5110,6 +5111,26 @@ dependencies = [
  "log",
  "ordered-float",
  "threadpool",
+]
+
+[[package]]
+name = "throttling-controller"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "eyre",
+ "figment",
+ "grapl-config",
+ "grapl-tracing",
+ "moka",
+ "rust-proto",
+ "serde",
+ "sqlx",
+ "test-context",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]
