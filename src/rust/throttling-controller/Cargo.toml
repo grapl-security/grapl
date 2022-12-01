@@ -9,7 +9,7 @@ eyre = { workspace = true }
 figment = { workspace = true }
 grapl-config = { path = "../grapl-config" }
 grapl-tracing = { path = "../grapl-tracing" }
-moka = { version = "0.9", features = ["future", "logging"] }
+moka = { workspace = true }
 rust-proto = { path = "../rust-proto", version = "*" }
 serde = { workspace = true }
 sqlx = { workspace = true }
