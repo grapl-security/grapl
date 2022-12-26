@@ -8,6 +8,11 @@
 # Grapl
 Grapl is a graph-based SIEM platform built by-and-for incident response engineers.
 
+## NOTICE
+Grapl has ceased operations as a company. As such, this code is no
+longer being actively developed, but will remain available in an
+archived state.
+
 ## Details
 Grapl leverages graph data structures at its core to ensure that you 
 can query and connect your data efficiently, model complex attacker behaviors for detection, and
